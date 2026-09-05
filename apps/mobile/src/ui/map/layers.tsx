@@ -9,9 +9,8 @@ import {
 import type { FeatureCollection } from 'geojson';
 import type { Ref } from 'react';
 import type { NativeSyntheticEvent } from 'react-native';
-import type { MapTheme } from '../../data/mapStyle';
 import type { LivePosition } from '../../sync/livePosition';
-import { ACTIVITY_COLORS, MAP_COLORS, activityColorExpression } from './mapTokens';
+import { ACTIVITY_COLORS, MAP_COLORS, activityColorExpression, type MapTheme } from '@lupira/cal-tokens/map';
 
 /** One component per map layer, mirroring the web client's layers.tsx split. Each renders a source
  *  plus its paint layers and nothing else — the screen owns state, these own appearance. */

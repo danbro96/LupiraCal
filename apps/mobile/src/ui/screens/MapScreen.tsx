@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NativeSyntheticEvent } from 'react-native';
 import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 import { ActivityIndicator, Banner, Portal, Text, useTheme } from 'react-native-paper';
-import type { MapTheme } from '../../data/mapStyle';
+import type { MapTheme } from '@lupira/cal-tokens/map';
 import { fallbackStyle } from '../../data/mapStyle';
 import { toastError } from '../../feedback/toast';
 import { useAuth } from '../../state/auth-store';

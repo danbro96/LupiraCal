@@ -1,8 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { FAB, List, Portal, Switch, Text } from 'react-native-paper';
-import type { MapTheme } from '../../data/mapStyle';
 import { useColors } from '../theme/useColors';
-import { ACTIVITY_COLORS } from './mapTokens';
+import { ACTIVITY_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 import { ICONS } from '../icons';
 
 /** Map chrome: the layer sheet and the locate button. Six layers don't fit a chip row on a phone, so

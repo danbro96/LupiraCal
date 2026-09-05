@@ -3,7 +3,7 @@ import type { GeoJSONSource, MapGeoJSONFeature } from 'maplibre-gl';
 import { useMemo } from 'react';
 import type { LocationTripDto } from '@lupira/cal-api/models';
 import { useMap } from './MapCanvas';
-import { ACTIVITY_COLORS, activityColorExpression, MAP_COLORS, type MapTheme } from './mapTokens';
+import { ACTIVITY_COLORS, activityColorExpression, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 import { featureProp, useGeoJsonLayer, type LayerSpecSansSource } from './useGeoJsonLayer';
 
 /** What a pin click surfaces — MapScreen renders the popover / navigates. */

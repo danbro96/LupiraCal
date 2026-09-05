@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { loadMapStyle, type BasemapStyle, type MapTheme } from '../data/mapStyle';
+import type { MapTheme } from '@lupira/cal-tokens/map';
+import { loadMapStyle, type BasemapStyle } from '../data/mapStyle';
 import { useSyncStatus } from '../sync/syncStatus';
 
 export function useMapStyle(theme: MapTheme): { style: BasemapStyle | undefined; degraded: boolean } {

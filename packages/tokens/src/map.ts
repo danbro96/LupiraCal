@@ -1,10 +1,12 @@
+export type MapTheme = 'light' | 'dark';
+
 /**
  * Map layer palette. The activity set is the one true categorical scale (all segments co-visible) —
  * blue/yellow/magenta/green is a validated all-pairs set in both modes (dataviz skill validator);
  * Unknown is the neutral non-category and renders DASHED gray, never as a fifth hue. Cross-layer
  * hue reuse (saved≈Cycle) is disambiguated by mark shape, rings, toggles, and popovers.
  */
-export const ACTIVITY_COLORS: Record<'light' | 'dark', Record<string, string>> = {
+export const ACTIVITY_COLORS: Record<MapTheme, Record<string, string>> = {
   light: { Walk: '#008300', Run: '#e87ba4', Cycle: '#eda100', Vehicle: '#2a78d6', Unknown: '#898781' },
   dark: { Walk: '#008300', Run: '#d55181', Cycle: '#c98500', Vehicle: '#3987e5', Unknown: '#898781' },
 };
@@ -30,9 +32,7 @@ export const MAP_COLORS = {
     ring: '#1a1a19',
     ink: '#ffffff',
   },
-} as const;
-
-export type MapTheme = keyof typeof MAP_COLORS;
+} as const satisfies Record<MapTheme, Record<string, string>>;
 
 /** MapLibre `match` expression over the feature's activity property. */
 export function activityColorExpression(theme: MapTheme): unknown[] {

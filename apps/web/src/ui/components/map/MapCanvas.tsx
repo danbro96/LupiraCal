@@ -2,7 +2,7 @@ import { addProtocol, Map as MapLibreMap, NavigationControl, ScaleControl, setWo
 import { Protocol } from 'pmtiles';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { fallbackStyle, loadMapStyle } from './mapStyle';
-import type { MapTheme } from './mapTokens';
+import type { MapTheme } from '@lupira/cal-tokens/map';
 import Paper from '@mui/material/Paper';
 
 // MapLibre's default worker URL (a sibling of the entry module) 404s under bundlers, and bundling the

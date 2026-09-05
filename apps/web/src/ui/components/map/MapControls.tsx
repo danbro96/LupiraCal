@@ -5,7 +5,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { addDays, startOfDay, ymd } from '@lupira/cal-domain/time';
-import { ACTIVITY_COLORS, type MapTheme } from './mapTokens';
+import { ACTIVITY_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 
 export type LayerKey = 'events' | 'movement' | 'contacts' | 'saved' | 'photos';
 export const DEFAULT_LAYERS: LayerKey[] = ['events', 'movement', 'contacts'];
