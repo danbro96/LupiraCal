@@ -6,6 +6,7 @@ import type { ItemDto } from '@lupira/cal-api/models';
 import { fmtDate, fmtTime } from '@lupira/cal-domain/time';
 import { DetailDrawer } from './DetailDrawer';
 import { DrawerSection } from '../DrawerSection';
+import { taskDeepLink, taskWebUrl } from '@lupira/cal-domain/tasks';
 
 /** Read-only view for a task deadline (lives in LupiraTasks, not cal): status, due, notes, and the
  *  deep link into the tasks app. The web fallback lands on the list — tasks-web has no per-task route. */
@@ -61,11 +62,11 @@ function TaskBody({ task }: { task: ItemDto }) {
       )}
 
       <DrawerSection>
-        <Button variant="contained" href={`lupiratasks://task/${task.listId}/${task.id}`}>
+        <Button variant="contained" href={taskDeepLink(task.listId, task.id)}>
           Open in Lupira Tasks
         </Button>
       </DrawerSection>
-      <Button variant="text" href={`https://tasks.lupira.com/lists/${task.listId}`} target="_blank" rel="noreferrer">
+      <Button variant="text" href={taskWebUrl(task.listId)} target="_blank" rel="noreferrer">
         Open list on the web →
       </Button>
     </Box>

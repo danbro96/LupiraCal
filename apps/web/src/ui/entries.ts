@@ -1,6 +1,7 @@
 import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto, OccurrenceOrigin } from '@lupira/cal-api/models';
-import type { ItemDto as TaskDto } from '@lupira/cal-api/models';
+import { isOverdue } from '@lupira/cal-domain/tasks';
 import { parseYmd } from '@lupira/cal-domain/time';
+import type { OpenTask } from '../state/useTaskDeadlines';
 import type { IconName } from '@lupira/cal-tokens/icons';
 import { CALENDAR_KIND_ICONS, calendarColor } from './theme/kinds';
 
@@ -45,10 +46,9 @@ export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: Container
 
 /** A task deadline pinned to its due day's all-day strip — `dueAt` means "done by", not "occurs at",
  *  so a timed block at the due instant would mislead; the exact time lives in the TaskCard. */
-export function fromTask(t: TaskDto, now: Date): GridEntry | null {
-  if (!t.dueAt) return null;
+export function fromTask(t: OpenTask, now: Date): GridEntry {
   const due = new Date(t.dueAt);
-  const overdue = due < now;
+  const overdue = isOverdue(t.dueAt, now);
   return {
     key: `task:${t.id}`,
     itemId: t.id,

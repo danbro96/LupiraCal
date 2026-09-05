@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Text } from 'react-native-paper';
 import { tasksGetItem as getItem } from '@lupira/cal-api/fetch/tasks';
-import { taskDeepLink } from '../../domain/taskRows';
+import { taskDeepLink } from '@lupira/cal-domain/tasks';
 import { Centered } from '../components/Centered';
 import { Button } from '../components/Button';
 import type { RootStackParamList } from '../navigation/types';

@@ -1,6 +1,7 @@
 import { useQueries } from '@tanstack/react-query';
 import { listItems } from '@lupira/cal-api/fetch/tasks';
-import { monthUtcRange, taskDeadlineRows, type TaskDeadlineRow } from '../domain/taskRows';
+import { monthUtcRange } from '@lupira/cal-domain/tasks';
+import { taskDeadlineRows, type TaskDeadlineRow } from '../domain/taskRows';
 import { useSyncStatus } from '../sync/syncStatus';
 import { usePrefs } from './prefs-store';
 
