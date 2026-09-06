@@ -1,9 +1,10 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { PhotoQueryFilters } from '../../state/usePhotoLibrary';
 
 export type RootStackParamList = {
   Settings: undefined;
   Login: undefined;
-  Tabs: undefined;
+  Tabs: NavigatorScreenParams<TabParamList> | undefined;
   /** Reachable from Login too — switching to the LAN preset must not require signing in first. */
   Developer: undefined;
   SyncIssues: undefined;
@@ -25,6 +26,8 @@ export type RootStackParamList = {
 export type TabParamList = {
   Calendar: undefined;
   Contacts: undefined;
-  Map: undefined;
-  Photos: undefined;
+  /** `at` centres the camera on one point — how the gallery hands a photo over. */
+  Map: { at?: { lon: number; lat: number } } | undefined;
+  /** Local day bounds, 'yyyy-MM-dd' — how a map pin hands over "everything from this day". */
+  Photos: { from?: string; to?: string } | undefined;
 };

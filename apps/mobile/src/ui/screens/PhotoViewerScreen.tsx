@@ -174,6 +174,7 @@ function PhotoPage({ photo, width, originalUrl }: { photo: PhotoListItemDto; wid
 
 function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onReprocess: () => void; busy: boolean }) {
   const c = useColors();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const dims = fmtDimensions(photo.width, photo.height);
 
   return (
@@ -194,6 +195,30 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
           ? `${photo.latitude.toFixed(5)}, ${photo.longitude.toFixed(5)} · ${photo.geotagSource === 'ExifGps' ? 'from the camera' : 'matched from your location history'}`
           : 'No location — this photo never appears on the map.'}
       </Text>
+      {photo.latitude != null && photo.longitude != null && (
+        <Button
+          mode="text"
+          compact
+          onPress={() => navigation.navigate('Tabs', {
+            screen: 'Map',
+            params: { at: { lon: photo.longitude!, lat: photo.latitude! } },
+          })}
+        >
+          Show on the map
+        </Button>
+      )}
+
+      {photo.duplicateOfId != null && (
+        <>
+          <List.Subheader>Duplicate</List.Subheader>
+          <Text style={[styles.detail, { color: c.textMuted }]}>
+            The same photo is already in your library; this copy holds no bytes.
+          </Text>
+          <Button mode="text" compact onPress={() => navigation.push('PhotoViewer', { photoId: photo.duplicateOfId! })}>
+            Open the original
+          </Button>
+        </>
+      )}
 
       <List.Subheader>Events</List.Subheader>
       <PhotoEventLinks photoId={photo.id} takenAt={photo.takenAt} />

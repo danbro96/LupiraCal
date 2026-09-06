@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { listRelationEdges, searchItems } from '@lupira/cal-api/fetch/cal';
-import { lookupPhotos } from '@lupira/cal-api/fetch/photo';
+import { listPhotos, lookupPhotos } from '@lupira/cal-api/fetch/photo';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { photoEventLinks } from '@lupira/cal-domain/photoFormat';
+import { eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
 import { getDb } from '../data/db/expoDb';
 import { loadItem } from '../data/mirror';
 import { useSyncStatus } from '../sync/syncStatus';
@@ -53,6 +54,31 @@ export function useEventPhotos(itemId: string): PhotoListItemDto[] {
   });
 
   return query.data ?? [];
+}
+
+/** Photos taken while an event was happening. Candidates only: a photo taken during a 9-to-5 "work"
+ *  block is not of it, so nothing is linked until the user says so. */
+export function useSuggestedPhotos(item: PhotoWindowSource, exclude: readonly string[], enabled: boolean) {
+  const reachable = useSyncStatus((s) => s.serverReachable);
+  const window = useMemo(() => eventPhotoWindow(item), [item]);
+
+  const query = useQuery({
+    queryKey: ['photos', 'suggestions', window?.fromIso, window?.toIso],
+    enabled: enabled && reachable && window !== null,
+    staleTime: THUMB_SAFE_STALE_MS,
+    retry: 1,
+    queryFn: async () => {
+      const r = await listPhotos({ from: window!.fromIso, to: window!.toIso, limit: 24 });
+      if (r.status !== 200) throw new Error(`photos ${r.status}`);
+      return r.data.items;
+    },
+  });
+
+  const items = useMemo(
+    () => (query.data ?? []).filter((p) => !exclude.includes(p.id)),
+    [query.data, exclude],
+  );
+  return { items, isLoading: query.isLoading, hasWindow: window !== null };
 }
 
 export type LinkedEvent = { id: string; title: string };

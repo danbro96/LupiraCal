@@ -320,6 +320,9 @@ findable with psql.
 - [x] `PhotoViewerScreen` — horizontally paged over the loaded page (route carries the grid's filters so the query hits the cache), pinch + double-tap zoom, metadata panel, delete, retry processing
 - [x] `react-native-gesture-handler` + `react-native-reanimated` (native — rides the pending dev-client build); `GestureHandlerRootView` wraps the app
 - [x] Photo↔event links: viewer lists linked events and offers candidates around `takenAt`; `ItemDetailScreen` gains a linked-photos strip
+- [x] Duplicate detection: surrogate match at declare + sha256 during processing; duplicates hidden from the grid, reachable by the Duplicate status chip, viewer links to the original
+- [x] Map ↔ gallery cross-links: photo pin → Open photo / All from this day; viewer → Show on the map (Map tab's `at` param)
+- [x] Suggested photos on an event: `EventPhotosRow` offers what was taken during the event, one tap to link
 - [x] Root `npm run typecheck` / `lint` / `test` green
 
 ### Exit criteria
@@ -331,9 +334,9 @@ findable with psql.
 - [ ] Device: airplane mode shows the empty state, never an error; reconnect repopulates
 - [ ] Device: link a photo to an event, then find it from the event's Photos strip
 - [ ] Device: a Failed asset surfaces on the health chip and Retry processing clears it
+- [ ] Device: back the same photo up from two phones — it appears once, the second is reachable under Duplicates
+- [ ] Device: a photo pin's "All from this day" filters the gallery to that day; the viewer's "Show on the map" flies to it
 
 ### Non-goals
-Duplicate detection (`sha256` is captured at declare and unused, so the same photo from two devices lands
-twice); HEIC transcode (originals are served untranscoded, so the viewer falls back to the thumbnail);
-favourites/albums; bulk select and download; map ↔ gallery cross-linking ("show on map", "all from this
-day"); "on this day" memories.
+HEIC transcode (originals are served untranscoded, so the viewer falls back to the thumbnail);
+favourites/albums; bulk select and download; "on this day" memories; trips as a photo grouping.

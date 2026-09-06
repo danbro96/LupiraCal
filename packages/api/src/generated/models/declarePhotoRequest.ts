@@ -25,6 +25,4 @@ export interface DeclarePhotoRequest {
   height?: number | null;
   /** @nullable */
   durationSeconds?: number | null;
-  /** @nullable */
-  sha256?: string | null;
 }

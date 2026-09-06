@@ -58,7 +58,7 @@ export function PhotoFiltersSheet({ filters, onChange, onDismiss }: {
 
             <Text style={[styles.label, { color: c.textMuted }]}>Status</Text>
             <View style={styles.row}>
-              {(['Ready', 'Failed'] as AssetStatus[]).map((status) => (
+              {(['Ready', 'Failed', 'Duplicate'] as AssetStatus[]).map((status) => (
                 <Chip key={status} compact selected={filters.status === status} showSelectedCheck
                   onPress={() => toggle('status', status)}>{status}</Chip>
               ))}

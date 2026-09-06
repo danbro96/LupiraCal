@@ -9,7 +9,7 @@ import {
   type StyleSpecification,
   type ViewStateChangeEvent,
 } from '@maplibre/maplibre-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,8 +30,9 @@ import {
 import {
   ContactsLayer, EventsLayer, LivePuck, MovementLayer, PhotosLayer, SavedPlacesLayer,
 } from '../map/layers';
-import type { RootStackParamList } from '../navigation/types';
+import type { RootStackParamList, TabParamList } from '../navigation/types';
 import { ICONS } from '../icons';
+import { Button } from '../components/Button';
 
 // Matches the web MapScreen default (Nordics, the basemap extract's home).
 const DEFAULT_CENTER: [number, number] = [18.07, 59.33];
@@ -82,6 +83,7 @@ type VisitPin = { placeLabel: string | null; arriveTs: string; departTs: string;
 export function MapScreen() {
   const paper = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<TabParamList, 'Map'>>();
   const scheme = useColorScheme();
   const theme: MapTheme = scheme === 'dark' ? 'dark' : 'light';
 
@@ -116,6 +118,15 @@ export function MapScreen() {
   const eventSourceRef = useRef<GeoJSONSourceRef>(null);
   const photoSourceRef = useRef<GeoJSONSourceRef>(null);
   const contactSourceRef = useRef<GeoJSONSourceRef>(null);
+
+  // Handed a photo's coordinates by the gallery: fly there and turn the layer on so it is visible.
+  const at = route.params?.at;
+  useEffect(() => {
+    if (!at) return;
+    setEnabled((prev) => ({ ...prev, photos: true }));
+    setFollow('off');
+    cameraRef.current?.easeTo({ center: [at.lon, at.lat], zoom: 15, duration: 600 });
+  }, [at]);
 
   // The puck follows the map's lifetime, not the app's: GPS stops when you leave the tab.
   useEffect(() => {
@@ -272,6 +283,26 @@ export function MapScreen() {
               <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
                 {new Date(openPhoto.takenAt).toLocaleString()}
               </Text>
+              <View style={styles.sheetActions}>
+                <Button
+                  title="Open photo"
+                  variant="text"
+                  onPress={() => {
+                    const photoId = openPhoto.id;
+                    setOpenPhoto(null);
+                    navigation.navigate('PhotoViewer', { photoId });
+                  }}
+                />
+                <Button
+                  title="All from this day"
+                  variant="text"
+                  onPress={() => {
+                    const day = dayKey(new Date(openPhoto.takenAt));
+                    setOpenPhoto(null);
+                    navigation.navigate('Tabs', { screen: 'Photos', params: { from: day, to: day } });
+                  }}
+                />
+              </View>
             </Pressable>
           </Pressable>
         </Portal>
@@ -303,6 +334,7 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   layersFab: { position: 'absolute', right: 16, bottom: 88 },
   locateFab: { position: 'absolute', right: 16, bottom: 24 },
+  sheetActions: { flexDirection: 'row', flexWrap: 'wrap' },
   sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' },
   sheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, gap: 4 },
   sheetImage: { width: '100%', height: 240, borderRadius: 12, marginBottom: 8 },

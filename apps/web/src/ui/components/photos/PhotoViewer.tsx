@@ -99,12 +99,31 @@ export function PhotoViewer({ photoId, siblings, onClose, onNavigate }: {
                     <Typography variant="caption" sx={{ color: 'text.subtle' }}>
                       {photo.geotagSource === 'ExifGps' ? 'From the camera' : 'Matched from your location history'}
                     </Typography>
-                    <Box><Button size="small" component={Link} to="/locations">Show the map</Button></Box>
+                    <Box>
+                      <Button
+                        size="small"
+                        component={Link}
+                        to={`/locations?at=${photo.longitude!},${photo.latitude}&layers=photos`}
+                      >
+                        Show on the map
+                      </Button>
+                    </Box>
                   </>
                 ) : (
                   <Typography variant="body2" sx={{ color: 'text.subtle' }}>No location — this photo never appears on the map.</Typography>
                 )}
               </DrawerSection>
+
+              {photo.duplicateOfId != null && (
+                <DrawerSection title="Duplicate">
+                  <Typography variant="body2" sx={{ color: 'text.subtle' }}>
+                    The same photo is already in your library; this copy holds no bytes.
+                  </Typography>
+                  <Box>
+                    <Button size="small" onClick={() => onNavigate(photo.duplicateOfId!)}>Open the original</Button>
+                  </Box>
+                </DrawerSection>
+              )}
 
               <LinkToEvent photoId={photo.id} takenAt={photo.takenAt} />
 

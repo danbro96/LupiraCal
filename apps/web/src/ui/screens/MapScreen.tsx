@@ -2,7 +2,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ViewListIcon from '@mui/icons-material/ViewList';
-import { addDays, fmtTime, parseYmd } from '@lupira/cal-domain/time';
+import { addDays, fmtTime, parseYmd, ymd } from '@lupira/cal-domain/time';
 import {
   useContactFeatures,
   useEventFeatures,
@@ -29,6 +29,8 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import { Row, RowName } from '../components/Rows';
+import { WrapRow } from '../components/WrapRow';
+import Button from '@mui/material/Button';
 
 /** The map over everything located: events, GPS movement, contacts, saved places. Route stays
  * /locations so ?place=/?q= deep links keep working; state rides the URL (?from ?to ?layers). */
@@ -96,6 +98,13 @@ export default function MapScreen() {
     setFlyTarget([target.lon, target.lat]);
   };
   const [flyTarget, setFlyTarget] = useState<[number, number]>();
+
+  // ?at=lon,lat centres the map on one point — how the gallery hands a photo over.
+  const atParam = params.get('at');
+  useEffect(() => {
+    const at = parseAt(atParam);
+    if (at) setFlyTarget(at);
+  }, [atParam]);
 
   const fitCollections = useMemo(
     () => [events.features, movement.visits, contacts.features, saved.features],
@@ -307,10 +316,27 @@ function PopoverBody({ selection }: { selection: PinSelection }) {
           {props.takenAt ? new Date(String(props.takenAt)).toLocaleString() : ''}
           {props.kind === 'Video' ? ' · video' : ''}
         </Typography>
+        <WrapRow>
+          <Button size="small" component={Link} to={`/photos?photo=${String(props.photoId)}`}>Open photo</Button>
+          {props.takenAt != null && (
+            <Button
+              size="small"
+              component={Link}
+              to={`/photos?from=${ymd(new Date(String(props.takenAt)))}&to=${ymd(new Date(String(props.takenAt)))}`}
+            >
+              All from this day
+            </Button>
+          )}
+        </WrapRow>
       </>
     );
   }
   return <h4>{props.icon ? `${String(props.icon)} ` : ''}{String(props.label ?? 'Saved place')}</h4>;
+}
+
+function parseAt(raw: string | null): [number, number] | undefined {
+  const [lon, lat] = (raw ?? '').split(',').map(Number);
+  return Number.isFinite(lon) && Number.isFinite(lat) ? [lon, lat] : undefined;
 }
 
 function FlyTo({ target }: { target: [number, number] | undefined }) {

@@ -68,7 +68,7 @@ export function ItemDetailScreen() {
       {doc.prompt != null && <Text style={[styles.note, { color: c.textMuted }]}>Has a prompt payload (view on web)</Text>}
       {doc.action != null && <Text style={[styles.note, { color: c.textMuted }]}>Has an action payload (view on web)</Text>}
 
-      <EventPhotosRow itemId={itemId} />
+      <EventPhotosRow itemId={itemId} item={doc} />
       <CalendarsPanel itemId={itemId} memberships={doc.calendars} />
       <MetadataPanel itemId={itemId} metadata={doc.metadata ?? null} />
 

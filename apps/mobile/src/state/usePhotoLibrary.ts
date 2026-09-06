@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { getPhoto, getPhotoStats, listPhotos } from '@lupira/cal-api/fetch/photo';
-import type { AssetKind, AssetStatus, PhotoListItemDto, PhotoSort } from '@lupira/cal-api/models';
+import type { AssetKind, AssetStatus, ListPhotosParams, PhotoListItemDto, PhotoSort } from '@lupira/cal-api/models';
 import { groupByDay as groupDays } from '@lupira/cal-domain/photoFormat';
+import { addDays, parseYmd, startOfDay } from '@lupira/cal-domain/time';
 import { useSyncStatus } from '../sync/syncStatus';
 
 /** The gallery's read model. Photos are network-only — the SQLite mirror covers cal and contacts only —
@@ -21,9 +22,21 @@ export type PhotoQueryFilters = {
   status?: AssetStatus;
   located?: boolean;
   place?: string;
+  /** Local day bounds, 'yyyy-MM-dd'. */
+  from?: string;
+  to?: string;
 };
 
 export const DEFAULT_PHOTO_FILTERS: PhotoQueryFilters = { sort: 'TakenAtDesc' };
+
+/** The day bounds are local calendar days; the endpoint takes instants. */
+function listParams({ from, to, ...rest }: PhotoQueryFilters): ListPhotosParams {
+  return {
+    ...rest,
+    from: from ? startOfDay(parseYmd(from)).toISOString() : undefined,
+    to: to ? addDays(startOfDay(parseYmd(to)), 1).toISOString() : undefined,
+  };
+}
 
 export function usePhotoLibrary(filters: PhotoQueryFilters) {
   const reachable = useSyncStatus((s) => s.serverReachable);
@@ -35,7 +48,7 @@ export function usePhotoLibrary(filters: PhotoQueryFilters) {
     retry: 1,
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
-      const r = await listPhotos({ ...filters, limit: PHOTO_PAGE_SIZE, cursor: pageParam });
+      const r = await listPhotos({ ...listParams(filters), limit: PHOTO_PAGE_SIZE, cursor: pageParam });
       if (r.status !== 200) throw new Error(`photos ${r.status}`);
       return r.data;
     },

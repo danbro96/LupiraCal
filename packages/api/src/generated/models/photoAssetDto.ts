@@ -36,6 +36,11 @@ export interface PhotoAssetDto {
   /** @nullable */
   lastError?: string | null;
   /**
+     * On a Duplicate only: the asset that holds the bytes.
+     * @nullable
+     */
+  duplicateOfId?: string | null;
+  /**
      * Presigned GET, long expiry; null until processed.
      * @nullable
      */

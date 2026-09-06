@@ -7,6 +7,7 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { fmtDuration } from '@lupira/cal-domain/photoFormat';
+import { parseYmd } from '@lupira/cal-domain/time';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { errText } from '../errText';
 import { WrapRow } from '../components/WrapRow';
@@ -17,6 +18,12 @@ import {
 
 /** The whole library, not just the geotagged slice the map shows. Day-grouped, cursor-paged, with the
  *  viewer behind `?photo=`. */
+function dayRangeLabel(from: string, to: string): string {
+  const start = parseYmd(from).toLocaleDateString(undefined, { dateStyle: 'medium' });
+  if (!to || to === from) return start;
+  return `${start} – ${parseYmd(to).toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
+}
+
 export default function PhotosScreen() {
   const [params, setParams] = useSearchParams();
   const filters = usePhotoFilters();
@@ -89,8 +96,26 @@ export default function PhotosScreen() {
           onKeyDown={(e) => { if (e.key === 'Enter') setParam('place', (e.target as HTMLInputElement).value.trim() || undefined); }}
           sx={{ minWidth: 160 }}
         />
-        {filters.status && (
-          <Chip label={`Status: ${filters.status}`} onDelete={() => setParam('status', undefined)} />
+        <TextField
+          select size="small" label="Status" value={filters.status}
+          onChange={(e) => setParam('status', e.target.value || undefined)}
+          sx={{ minWidth: 140 }}
+        >
+          <MenuItem value="">Any</MenuItem>
+          <MenuItem value="Ready">Ready</MenuItem>
+          <MenuItem value="Failed">Failed</MenuItem>
+          <MenuItem value="Duplicate">Duplicates</MenuItem>
+        </TextField>
+        {filters.from && (
+          <Chip
+            label={dayRangeLabel(filters.from, filters.to)}
+            onDelete={() => setParams((prev) => {
+              const next = new URLSearchParams(prev);
+              next.delete('from');
+              next.delete('to');
+              return next;
+            }, { replace: true })}
+          />
         )}
         {filters.event && (
           <Chip label="From one event" onDelete={() => setParam('event', undefined)} />

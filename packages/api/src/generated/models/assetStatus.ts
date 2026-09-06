@@ -14,4 +14,5 @@ export const AssetStatus = {
   Processing: 'Processing',
   Ready: 'Ready',
   Failed: 'Failed',
+  Duplicate: 'Duplicate',
 } as const;

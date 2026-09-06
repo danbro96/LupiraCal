@@ -1,10 +1,11 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Chip, Text } from 'react-native-paper';
 import { fmtDuration } from '@lupira/cal-domain/photoFormat';
+import { parseYmd } from '@lupira/cal-domain/time';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { usePhotoEventLinks } from '../../state/usePhotoEventLinks';
 import { DEFAULT_PHOTO_FILTERS, groupByDay, usePhotoLibrary, usePhotoStats, type PhotoQueryFilters } from '../../state/usePhotoLibrary';
@@ -13,19 +14,32 @@ import { IndeterminateBar } from '../components/IndeterminateBar';
 import { SyncBanner } from '../components/SyncBanner';
 import { useColors } from '../theme';
 import { PhotoFiltersSheet } from '../photos/PhotoFiltersSheet';
-import type { RootStackParamList } from '../navigation/types';
+import type { RootStackParamList, TabParamList } from '../navigation/types';
 import { ICONS } from '../icons';
 
 const COLUMNS = 3;
 const GAP = 2;
+
+function dayRangeLabel(from: string, to?: string): string {
+  const start = parseYmd(from).toLocaleDateString(undefined, { dateStyle: 'medium' });
+  if (!to || to === from) return start;
+  return `${start} – ${parseYmd(to).toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
+}
 
 /** The whole library — including photos with no location, which the map can never show. */
 export function PhotosScreen() {
   const c = useColors();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { width } = useWindowDimensions();
+  const route = useRoute<RouteProp<TabParamList, 'Photos'>>();
   const [filters, setFilters] = useState<PhotoQueryFilters>(DEFAULT_PHOTO_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // A map pin hands over a day; arriving on the tab again with a new one has to replace the old.
+  const { from, to } = route.params ?? {};
+  useEffect(() => {
+    if (from) setFilters((f) => ({ ...f, from, to: to ?? from }));
+  }, [from, to]);
 
   const { items, isLoading, error, hasNextPage, fetchNextPage, isFetchingNextPage, refetch, isRefetching } =
     usePhotoLibrary(filters);
@@ -42,6 +56,7 @@ export function PhotosScreen() {
     filters.located === true ? 'Has a place' : filters.located === false ? 'No location' : null,
     filters.place ? `“${filters.place}”` : null,
     filters.status,
+    filters.from ? dayRangeLabel(filters.from, filters.to) : null,
   ].filter(Boolean).join(' · ');
 
   if (error) return <Centered text="Photos need a connection." />;

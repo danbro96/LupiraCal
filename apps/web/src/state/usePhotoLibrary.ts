@@ -1,7 +1,7 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getListPhotosQueryKey, listPhotos } from '@lupira/cal-api/query/photo';
+import { getListPhotosQueryKey, listPhotos, lookupPhotos } from '@lupira/cal-api/query/photo';
 import {
   type DayGroup,
   groupByDay as groupDays,
@@ -9,6 +9,8 @@ import {
 } from '@lupira/cal-domain/photoFormat';
 import type { ListPhotosParams, PhotoListItemDto } from '@lupira/cal-api/models';
 import { getListRelationEdgesQueryKey, listRelationEdges } from '@lupira/cal-api/query/cal';
+import { addDays, parseYmd, startOfDay } from '@lupira/cal-domain/time';
+import { eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
 
 /** The gallery's read model. Filters live in URL params so a view is linkable and survives a reload,
  *  exactly as useItemSearch does it. */
@@ -25,6 +27,9 @@ export type PhotoFilters = {
   place: string;
   status: string;
   event: string;
+  /** Local day bounds, 'yyyy-MM-dd' — the same vocabulary the map's range uses. */
+  from: string;
+  to: string;
 };
 
 export function usePhotoFilters(): PhotoFilters {
@@ -37,6 +42,8 @@ export function usePhotoFilters(): PhotoFilters {
     place: params.get('place') ?? '',
     status: params.get('status') ?? '',
     event: params.get('event') ?? '',
+    from: params.get('from') ?? '',
+    to: params.get('to') ?? '',
   };
 }
 
@@ -47,6 +54,8 @@ export function usePhotoLibrary(filters: PhotoFilters) {
     status: (filters.status || undefined) as ListPhotosParams['status'],
     located: filters.located === '' ? undefined : filters.located === 'true',
     place: filters.place || undefined,
+    from: filters.from ? startOfDay(parseYmd(filters.from)).toISOString() : undefined,
+    to: filters.to ? addDays(startOfDay(parseYmd(filters.to)), 1).toISOString() : undefined,
     limit: PHOTO_PAGE_SIZE,
   };
 
@@ -88,4 +97,41 @@ export type PhotoDay = DayGroup<PhotoListItemDto>;
 
 export function groupByDay(items: PhotoListItemDto[]): PhotoDay[] {
   return groupDays(items, (date) => date.toLocaleDateString(undefined, { dateStyle: 'full' }));
+}
+
+/** The photos linked to one calendar item, hydrated from the edge map in a single lookup. */
+export function useEventPhotos(itemId: string) {
+  const links = usePhotoEventLinks();
+  const ids = useMemo(
+    () => [...links.entries()].filter(([, items]) => items.includes(itemId)).map(([photoId]) => photoId),
+    [links, itemId],
+  );
+
+  const { data } = useQuery({
+    queryKey: ['/photo-api/photos/lookup', ids],
+    queryFn: ({ signal }) => lookupPhotos({ ids }, { signal }),
+    enabled: ids.length > 0,
+    staleTime: THUMB_SAFE_STALE_MS,
+  });
+
+  return data?.items ?? [];
+}
+
+/** Photos taken while an event was happening. Candidates only: a photo taken during a 9-to-5 "work"
+ *  block is not of it, so nothing is linked until the user says so. */
+export function useSuggestedPhotos(item: PhotoWindowSource, exclude: readonly string[], enabled: boolean) {
+  const window = useMemo(() => eventPhotoWindow(item), [item]);
+
+  const { data, isLoading } = useQuery({
+    queryKey: [...getListPhotosQueryKey({ from: window?.fromIso, to: window?.toIso }), 'suggestions'],
+    queryFn: ({ signal }) => listPhotos({ from: window!.fromIso, to: window!.toIso, limit: 24 }, { signal }),
+    enabled: enabled && window !== null,
+    staleTime: THUMB_SAFE_STALE_MS,
+  });
+
+  const items = useMemo(
+    () => (data?.items ?? []).filter((p) => !exclude.includes(p.id)),
+    [data, exclude],
+  );
+  return { items, isLoading, hasWindow: window !== null };
 }

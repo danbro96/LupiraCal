@@ -33,6 +33,11 @@ export interface PhotoListItemDto {
      * @nullable
      */
   lastError?: string | null;
+  /**
+     * On a Duplicate only: the asset that holds the bytes.
+     * @nullable
+     */
+  duplicateOfId?: string | null;
   /** @nullable */
   thumbUrl?: string | null;
 }

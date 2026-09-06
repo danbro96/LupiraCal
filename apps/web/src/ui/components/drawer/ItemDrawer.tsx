@@ -26,6 +26,7 @@ import { KindDetailsCard } from './KindDetailsCard';
 import { MetadataPanel } from './MetadataPanel';
 import { PayloadPanel } from './PayloadPanel';
 import { PlacePicker } from '../places/PlacePicker';
+import { ItemPhotosPanel } from './ItemPhotosPanel';
 import { RelationsPanel } from './RelationsPanel';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
@@ -226,6 +227,7 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
       <AttendeesPanel item={item} />
       <CalendarsPanel item={item} />
       <HierarchyPanel item={item} />
+      <ItemPhotosPanel itemId={item.id} item={item} />
       <RelationsPanel itemId={item.id} />
       <MetadataPanel itemId={item.id} metadata={item.metadata} />
 

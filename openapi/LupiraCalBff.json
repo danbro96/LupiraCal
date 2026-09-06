@@ -8640,7 +8640,8 @@
           "Uploaded",
           "Processing",
           "Ready",
-          "Failed"
+          "Failed",
+          "Duplicate"
         ]
       },
       "AvailabilityStatus": {
@@ -10686,12 +10687,6 @@
               "number"
             ],
             "format": "double"
-          },
-          "sha256": {
-            "type": [
-              "null",
-              "string"
-            ]
           }
         },
         "description": "Client-side MediaStore metadata for one asset. (DeviceId, MediaStoreId) under the caller is\n            the idempotency key — retrying a declare returns the same asset."
@@ -12059,6 +12054,14 @@
               "string"
             ]
           },
+          "duplicateOfId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "On a Duplicate only: the asset that holds the bytes.",
+            "format": "uuid"
+          },
           "thumbUrl": {
             "type": [
               "null",
@@ -12158,6 +12161,14 @@
               "string"
             ],
             "description": "Only set on a Failed asset — lets the health view explain itself without a per-item fetch."
+          },
+          "duplicateOfId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "On a Duplicate only: the asset that holds the bytes.",
+            "format": "uuid"
           },
           "thumbUrl": {
             "type": [
