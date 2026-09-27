@@ -1,7 +1,7 @@
 import { partialDateBadge } from '@lupira/cal-domain/partialDate';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Avatar, FAB, List, Searchbar, Text } from 'react-native-paper';
 import type { ContactListRow } from '../../data/mirror';
@@ -14,6 +14,8 @@ import { useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
 
+const contactKey = (r: ContactListRow) => r.id;
+
 export function ContactsScreen() {
   const c = useColors();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -21,11 +23,27 @@ export function ContactsScreen() {
   const [query, setQuery] = useState('');
 
   const q = query.trim().toLowerCase();
-  const rows = (data ?? []).filter((r) =>
+  const rows = useMemo(() => (data ?? []).filter((r) =>
     !q
     || r.displayName.toLowerCase().includes(q)
     || (r.doc.nickname ?? '').toLowerCase().includes(q)
-    || (r.doc.tags ?? []).some((t) => t.toLowerCase().includes(q)));
+    || (r.doc.tags ?? []).some((t) => t.toLowerCase().includes(q))), [data, q]);
+
+  // Stable, so the memoized rows skip re-rendering on each keystroke in the search box.
+  const openContact = useCallback(
+    (contactId: string) => navigation.navigate('ContactDetail', { contactId }),
+    [navigation],
+  );
+  const renderItem = useCallback(
+    ({ item }: { item: ContactListRow }) => <ContactRow row={item} onOpen={openContact} />,
+    [openContact],
+  );
+  const hasContacts = !!data?.length;
+  const empty = useMemo(() => (
+    <Text style={[styles.empty, { color: c.textMuted }]}>
+      {hasContacts ? 'No matches' : 'No contacts in the mirror yet'}
+    </Text>
+  ), [hasContacts, c.textMuted]);
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
@@ -42,26 +60,23 @@ export function ContactsScreen() {
       </ScreenToolbar>
       <FlatList
         data={rows}
-        keyExtractor={(r) => r.id}
-        ListEmptyComponent={
-          <Text style={[styles.empty, { color: c.textMuted }]}>
-            {data?.length ? 'No matches' : 'No contacts in the mirror yet'}
-          </Text>
-        }
-        renderItem={({ item }) => (
-          <ContactRow row={item} onPress={() => navigation.navigate('ContactDetail', { contactId: item.id })} />
-        )}
+        keyExtractor={contactKey}
+        ListEmptyComponent={empty}
+        renderItem={renderItem}
+        // The whole address book is one list; the default window mounts ~21 screens of it.
+        initialNumToRender={15}
+        windowSize={7}
       />
     </View>
   );
 }
 
-function ContactRow({ row, onPress }: { row: ContactListRow; onPress: () => void }) {
+const ContactRow = memo(function ContactRow({ row, onOpen }: { row: ContactListRow; onOpen: (contactId: string) => void }) {
   const c = useColors();
   const firstChannel = (row.doc.channels ?? []).find((c) => c.preferred) ?? (row.doc.channels ?? [])[0];
   return (
     <List.Item
-      onPress={onPress}
+      onPress={() => onOpen(row.id)}
       title={row.displayName}
       description={firstChannel?.value}
       descriptionNumberOfLines={1}
@@ -75,7 +90,7 @@ function ContactRow({ row, onPress }: { row: ContactListRow; onPress: () => void
       }
     />
   );
-}
+});
 
 export function initialsOf(name: string): string {
   const parts = name.split(/\s+/).filter(Boolean);

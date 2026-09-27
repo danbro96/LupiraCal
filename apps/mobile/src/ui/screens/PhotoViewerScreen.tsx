@@ -2,8 +2,8 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fmtBytes, fmtDimensions, fmtDuration } from '@lupira/cal-domain/photoFormat';
 import { Image } from 'expo-image';
-import { useLayoutEffect, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { memo, useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Button, List, Text } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -42,7 +42,8 @@ export function PhotoViewerScreen() {
   // cache eviction, the single-asset fetch is the whole list. Tracking the id rather than the index
   // keeps that decision correct when the page arrives mid-render.
   const found = items.findIndex((i) => i.id === currentId);
-  const pages: PhotoListItemDto[] = found >= 0 ? items : detail ? [detail] : [];
+  const inPage = found >= 0;
+  const pages = useMemo<PhotoListItemDto[]>(() => (inPage ? items : detail ? [detail] : []), [inPage, items, detail]);
   const index = Math.max(0, found);
 
   const onDelete = async () => {
@@ -93,6 +94,29 @@ export function PhotoViewerScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation, c.danger, busy, infoOpen, index, pages.length, currentId]);
 
+  // Stable list props: a new renderItem re-renders every mounted page, and each page owns gestures.
+  const originalUrl = detail?.originalUrl;
+  const renderItem = useCallback(({ item, index: i }: { item: PhotoListItemDto; index: number }) => (
+    <PhotoPage
+      photo={item}
+      width={width}
+      // The original is presigned per asset with a short expiry, so it is fetched only for the
+      // page in view; neighbours show their thumbnail until swiped to.
+      originalUrl={i === index ? originalUrl : undefined}
+    />
+  ), [width, index, originalUrl]);
+  const getItemLayout = useCallback(
+    (_: unknown, i: number) => ({ length: width, offset: width * i, index: i }),
+    [width],
+  );
+  const onMomentumScrollEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const next = pages[Math.round(e.nativeEvent.contentOffset.x / width)];
+    if (next) setCurrentId(next.id);
+  }, [pages, width]);
+  const onEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   if (pages.length === 0) return <Centered text={isLoading ? 'Loading…' : 'This photo is no longer available.'} />;
 
   return (
@@ -104,24 +128,17 @@ export function PhotoViewerScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
+        keyExtractor={photoKey}
         initialScrollIndex={index}
-        getItemLayout={(_, i) => ({ length: width, offset: width * i, index: i })}
-        onMomentumScrollEnd={(e) => {
-          const next = pages[Math.round(e.nativeEvent.contentOffset.x / width)];
-          if (next) setCurrentId(next.id);
-        }}
-        onEndReached={() => { if (hasNextPage && !isFetchingNextPage) void fetchNextPage(); }}
+        getItemLayout={getItemLayout}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        onEndReached={onEndReached}
         onEndReachedThreshold={1}
-        renderItem={({ item, index: i }) => (
-          <PhotoPage
-            photo={item}
-            width={width}
-            // The original is presigned per asset with a short expiry, so it is fetched only for the
-            // page in view; neighbours show their thumbnail until swiped to.
-            originalUrl={i === index ? detail?.originalUrl : undefined}
-          />
-        )}
+        renderItem={renderItem}
+        // Full-screen pages: one on each side is enough, the default window holds ~21 of them.
+        windowSize={3}
+        initialNumToRender={1}
+        maxToRenderPerBatch={2}
       />
 
       {infoOpen && (
@@ -133,20 +150,25 @@ export function PhotoViewerScreen() {
   );
 }
 
-function PhotoPage({ photo, width, originalUrl }: { photo: PhotoListItemDto; width: number; originalUrl?: string | null }) {
+const photoKey = (item: PhotoListItemDto) => item.id;
+
+const PhotoPage = memo(function PhotoPage({ photo, width, originalUrl }: { photo: PhotoListItemDto; width: number; originalUrl?: string | null }) {
   const c = useColors();
   const scale = useSharedValue(1);
   const saved = useSharedValue(1);
 
-  const pinch = Gesture.Pinch()
-    .onUpdate((e) => { scale.value = Math.min(Math.max(saved.value * e.scale, 1), MAX_SCALE); })
-    .onEnd(() => { saved.value = scale.value; });
-
-  const doubleTap = Gesture.Tap().numberOfTaps(2).onEnd(() => {
-    const next = scale.value > 1 ? 1 : 2;
-    scale.value = withTiming(next);
-    saved.value = next;
-  });
+  // Memoized: a fresh gesture makes GestureDetector re-attach its native handlers every render.
+  const gesture = useMemo(() => {
+    const pinch = Gesture.Pinch()
+      .onUpdate((e) => { scale.value = Math.min(Math.max(saved.value * e.scale, 1), MAX_SCALE); })
+      .onEnd(() => { saved.value = scale.value; });
+    const doubleTap = Gesture.Tap().numberOfTaps(2).onEnd(() => {
+      const next = scale.value > 1 ? 1 : 2;
+      scale.value = withTiming(next);
+      saved.value = next;
+    });
+    return Gesture.Simultaneous(pinch, doubleTap);
+  }, [scale, saved]);
 
   const zoom = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
@@ -156,7 +178,7 @@ function PhotoPage({ photo, width, originalUrl }: { photo: PhotoListItemDto; wid
   const uri = heic ? photo.thumbUrl : (originalUrl ?? photo.thumbUrl);
 
   return (
-    <GestureDetector gesture={Gesture.Simultaneous(pinch, doubleTap)}>
+    <GestureDetector gesture={gesture}>
       <View style={[styles.page, { width }]}>
         {uri ? (
           <Animated.View style={[styles.fill, zoom]}>
@@ -170,7 +192,7 @@ function PhotoPage({ photo, width, originalUrl }: { photo: PhotoListItemDto; wid
       </View>
     </GestureDetector>
   );
-}
+});
 
 function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onReprocess: () => void; busy: boolean }) {
   const c = useColors();

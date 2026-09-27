@@ -1,7 +1,7 @@
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Chip, Text } from 'react-native-paper';
 import { fmtDuration } from '@lupira/cal-domain/photoFormat';
@@ -25,6 +25,8 @@ function dayRangeLabel(from: string, to?: string): string {
   if (!to || to === from) return start;
   return `${start} – ${parseYmd(to).toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
 }
+
+const photoKey = (item: PhotoListItemDto) => item.id;
 
 /** The whole library — including photos with no location, which the map can never show. */
 export function PhotosScreen() {
@@ -59,6 +61,37 @@ export function PhotosScreen() {
     filters.from ? dayRangeLabel(filters.from, filters.to) : null,
   ].filter(Boolean).join(' · ');
 
+  // Stable list props: a new renderItem re-renders every mounted day row and tile.
+  const openPhoto = useCallback(
+    (photoId: string) => navigation.navigate('PhotoViewer', { photoId, filters }),
+    [navigation, filters],
+  );
+  const onRefresh = useCallback(() => void refetch(), [refetch]);
+  const onEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const renderSectionHeader = useCallback(({ section }: { section: (typeof sections)[number] }) => (
+    <Text style={[styles.dayHeader, { backgroundColor: c.bg, color: c.textMuted }]}>{section.label}</Text>
+  ), [c]);
+  // SectionList renders one row per item, so each "row" is a full day laid out as a wrapped grid.
+  const renderItem = useCallback(({ index, section }: { index: number; section: (typeof sections)[number] }) => {
+    if (index % COLUMNS !== 0) return null;
+    const row = section.data.slice(index, index + COLUMNS);
+    return (
+      <View style={styles.row}>
+        {row.map((photo) => (
+          <PhotoTile
+            key={photo.id}
+            photo={photo}
+            size={tile}
+            linked={(links.get(photo.id)?.length ?? 0) > 0}
+            onOpen={openPhoto}
+          />
+        ))}
+      </View>
+    );
+  }, [tile, links, openPhoto]);
+
   if (error) return <Centered text="Photos need a connection." />;
   if (isLoading) return <Centered text="Loading…" />;
 
@@ -82,33 +115,15 @@ export function PhotosScreen() {
 
       <SectionList
         sections={sections}
-        keyExtractor={(item) => item.id}
+        keyExtractor={photoKey}
         stickySectionHeadersEnabled
-        onRefresh={() => void refetch()}
+        onRefresh={onRefresh}
         refreshing={isRefetching}
-        onEndReached={() => { if (hasNextPage && !isFetchingNextPage) void fetchNextPage(); }}
+        onEndReached={onEndReached}
         onEndReachedThreshold={1.5}
-        renderSectionHeader={({ section }) => (
-          <Text style={[styles.dayHeader, { backgroundColor: c.bg, color: c.textMuted }]}>{section.label}</Text>
-        )}
-        // SectionList renders one row per item, so each "row" is a full day laid out as a wrapped grid.
-        renderItem={({ index, section }) => {
-          if (index % COLUMNS !== 0) return null;
-          const row = section.data.slice(index, index + COLUMNS);
-          return (
-            <View style={styles.row}>
-              {row.map((photo) => (
-                <PhotoTile
-                  key={photo.id}
-                  photo={photo}
-                  size={tile}
-                  linked={(links.get(photo.id)?.length ?? 0) > 0}
-                  onPress={() => navigation.navigate('PhotoViewer', { photoId: photo.id, filters })}
-                />
-              ))}
-            </View>
-          );
-        }}
+        renderSectionHeader={renderSectionHeader}
+        renderItem={renderItem}
+        windowSize={7}
         ListEmptyComponent={
           <Text style={[styles.empty, { color: c.textMuted }]}>
             {filterSummary ? 'No photos match these filters.' : 'No photos yet.'}
@@ -128,12 +143,12 @@ export function PhotosScreen() {
   );
 }
 
-function PhotoTile({ photo, size, linked, onPress }: {
-  photo: PhotoListItemDto; size: number; linked: boolean; onPress: () => void;
+const PhotoTile = memo(function PhotoTile({ photo, size, linked, onOpen }: {
+  photo: PhotoListItemDto; size: number; linked: boolean; onOpen: (photoId: string) => void;
 }) {
   const c = useColors();
   return (
-    <Pressable onPress={onPress} style={{ width: size, height: size }}>
+    <Pressable onPress={() => onOpen(photo.id)} style={{ width: size, height: size }}>
       {photo.thumbUrl ? (
         <Image
           source={{ uri: photo.thumbUrl }}
@@ -157,7 +172,7 @@ function PhotoTile({ photo, size, linked, onPress }: {
       {linked && <Text style={[styles.badge, styles.badgeLeft]}>event</Text>}
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
