@@ -1,3 +1,5 @@
+import { getItem } from '@lupira/cal-api/fetch/cal';
+import { getContact } from '@lupira/cal-api/fetch/contact';
 import NetInfo from '@react-native-community/netinfo';
 import { AppState } from 'react-native';
 import { authPort } from '../data/api/authProvider';
@@ -6,12 +8,13 @@ import type { Db } from '../data/db/types';
 import { migrate } from '../data/db/schema';
 import * as mirror from '../data/mirror';
 import { ApiError, isNetworkError } from '../domain/apiError';
+import { emptyContactGuards, emptyItemGuards, type ContactDoc, type ItemDoc } from '../domain/docTypes';
 import type { Horizon } from '../domain/materialize';
 import { birthdayRows, currentHorizon, horizonDrifted, monthKeyOf, occurrenceRowsForItem } from '../domain/materialize';
 import { logDebug } from '../debug/log';
 import { bridgePublish, drainBridgeInbox } from './bridge';
 import { toContactDoc, toItemDoc } from './docAdapters';
-import { drain } from './outbox';
+import { discardParked, drain } from './outbox';
 import { runPhotoBackup } from './photoUploader';
 import type { PullDeps } from './pull';
 import { pullCal, pullContacts, pullContainers, realPullDeps } from './pull';
@@ -115,16 +118,13 @@ async function maintainHorizon(db: Db, horizon: Horizon): Promise<void> {
  *  delta pull re-seeds the real ones. */
 export async function discardParkedAndRestore(seq: number, dbOverride?: Db): Promise<void> {
   const db = dbOverride ?? (await getDb());
-  const { discardParked } = await import('./outbox');
   const target = await discardParked(db, seq);
   if (!target) return;
 
-  const { emptyContactGuards, emptyItemGuards } = await import('../domain/docTypes');
   const horizon = currentHorizon();
   const monthKeys = new Set<string>();
   if (target.domain === 'cal') {
-    const { getItem } = await import('@lupira/cal-api/fetch/cal');
-    let fetched: import('../domain/docTypes').ItemDoc | null = null;
+    let fetched: ItemDoc | null = null;
     try {
       const r = await getItem(target.aggregateId);
       if (r.status === 200) fetched = toItemDoc(r.data);
@@ -143,8 +143,7 @@ export async function discardParkedAndRestore(seq: number, dbOverride?: Db): Pro
     });
     invalidateItems();
   } else {
-    const { getContact } = await import('@lupira/cal-api/fetch/contact');
-    let fetched: import('../domain/docTypes').ContactDoc | null = null;
+    let fetched: ContactDoc | null = null;
     try {
       const r = await getContact(target.aggregateId);
       if (r.status === 200) fetched = toContactDoc(r.data);
