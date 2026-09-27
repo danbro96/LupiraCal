@@ -1597,8 +1597,7 @@
           "Gps",
           "Network",
           "Fused",
-          "Passive",
-          null
+          "Passive"
         ]
       },
       "LocationTripDto": {
@@ -1741,8 +1740,7 @@
           "Walk",
           "Run",
           "Cycle",
-          "Vehicle",
-          null
+          "Vehicle"
         ]
       },
       "PauseTrackingRequest": {
