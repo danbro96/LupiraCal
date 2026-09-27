@@ -137,11 +137,19 @@ export const getCreatePlaceUrl = () => {
  */
 export const createPlace = async (createPlaceRequest: CreatePlaceRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createPlaceResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<createPlaceResponse>(getCreatePlaceUrl(),
   {
@@ -364,11 +372,19 @@ export const getUpdatePlaceUrl = (id: string,) => {
 export const updatePlace = async (id: string,
     updatePlaceRequest: UpdatePlaceRequest, options?: Parameters<typeof apiRequest>[1]): Promise<updatePlaceResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<updatePlaceResponse>(getUpdatePlaceUrl(id),
   {
@@ -488,11 +504,19 @@ export const getLookupPlacesUrl = () => {
  */
 export const lookupPlaces = async (lookupPlacesRequest: LookupPlacesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<lookupPlacesResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<lookupPlacesResponse>(getLookupPlacesUrl(),
   {
@@ -551,11 +575,19 @@ export const getCreatePlaceFromGeocodeUrl = () => {
  */
 export const createPlaceFromGeocode = async (createPlaceFromGeocodeRequest: CreatePlaceFromGeocodeRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createPlaceFromGeocodeResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<createPlaceFromGeocodeResponse>(getCreatePlaceFromGeocodeUrl(),
   {
@@ -661,11 +693,19 @@ export const getPrunePlacesUrl = () => {
  */
 export const prunePlaces = async (prunePlacesRequest: PrunePlacesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<prunePlacesResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<prunePlacesResponse>(getPrunePlacesUrl(),
   {

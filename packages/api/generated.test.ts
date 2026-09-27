@@ -42,7 +42,9 @@ describe('generated client', () => {
   it('generates both flavours over one set of models', () => {
     const tags = ['bff-contacts', 'cal', 'comms', 'contact', 'geo', 'location', 'lupira-cal-bff', 'photo', 'tasks'];
     for (const dir of ['query', 'fetch']) {
-      expect(readdirSync(join(root, dir)).sort()).toEqual(tags);
+      // Directories only: orval also writes an index.ts barrel beside them.
+      const entries = readdirSync(join(root, dir), { withFileTypes: true });
+      expect(entries.filter((e) => e.isDirectory()).map((e) => e.name).sort()).toEqual(tags);
     }
     // Both import types from the shared models dir rather than carrying their own copy.
     for (const f of [...queryFiles, ...walk(join(root, 'fetch'))]) {

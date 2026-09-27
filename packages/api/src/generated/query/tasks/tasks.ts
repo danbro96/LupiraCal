@@ -392,11 +392,19 @@ export const moveItem = async (listId: string,
     itemId: string,
     moveItemRequest: MoveItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ItemDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ItemDto>(getMoveItemUrl(listId,itemId),
   {
@@ -411,11 +419,13 @@ return apiRequest<ItemDto>(getMoveItemUrl(listId,itemId),
 
 
 
-export const getMoveItemMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveItem>>, TError,{listId: string;itemId: string;data: MoveItemRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof moveItem>>, TError,{listId: string;itemId: string;data: MoveItemRequest}, TContext> => {
+export const getMoveItemMutationKey = () => ['moveItem'] as const;
 
-const mutationKey = ['moveItem'];
+export const getMoveItemMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveItem>>, TError,MoveItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof moveItem>>, TError,MoveItemMutationVariables, TContext> => {
+
+const mutationKey = getMoveItemMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -425,7 +435,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof moveItem>>, {listId: string;itemId: string;data: MoveItemRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof moveItem>>, MoveItemMutationVariables> = (props) => {
           const {listId,itemId,data} = props ?? {};
 
           return  moveItem(listId,itemId,data,requestOptions)
@@ -441,16 +451,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type MoveItemMutationResult = NonNullable<Awaited<ReturnType<typeof moveItem>>>
     export type MoveItemMutationBody = MoveItemRequest
     export type MoveItemMutationError = ProblemDetails
+    export type MoveItemMutationVariables = {listId: string;itemId: string;data: MoveItemRequest}
 
     /**
  * @summary Reparent / reorder an item (Editor+).
  */
 export const useMoveItem = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveItem>>, TError,{listId: string;itemId: string;data: MoveItemRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveItem>>, TError,MoveItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof moveItem>>,
         TError,
-        {listId: string;itemId: string;data: MoveItemRequest},
+        MoveItemMutationVariables,
         TContext
       > => {
       return useMutation(getMoveItemMutationOptions(options), queryClient);
@@ -472,11 +483,19 @@ export const createRelation = async (listId: string,
     itemId: string,
     createRelationRequest: CreateRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<RelationDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<RelationDto>(getCreateRelationUrl(listId,itemId),
   {
@@ -491,11 +510,13 @@ return apiRequest<RelationDto>(getCreateRelationUrl(listId,itemId),
 
 
 
-export const getCreateRelationMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRelation>>, TError,{listId: string;itemId: string;data: CreateRelationRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof createRelation>>, TError,{listId: string;itemId: string;data: CreateRelationRequest}, TContext> => {
+export const getCreateRelationMutationKey = () => ['createRelation'] as const;
 
-const mutationKey = ['createRelation'];
+export const getCreateRelationMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRelation>>, TError,CreateRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createRelation>>, TError,CreateRelationMutationVariables, TContext> => {
+
+const mutationKey = getCreateRelationMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -505,7 +526,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRelation>>, {listId: string;itemId: string;data: CreateRelationRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRelation>>, CreateRelationMutationVariables> = (props) => {
           const {listId,itemId,data} = props ?? {};
 
           return  createRelation(listId,itemId,data,requestOptions)
@@ -521,16 +542,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateRelationMutationResult = NonNullable<Awaited<ReturnType<typeof createRelation>>>
     export type CreateRelationMutationBody = CreateRelationRequest
     export type CreateRelationMutationError = ProblemDetails
+    export type CreateRelationMutationVariables = {listId: string;itemId: string;data: CreateRelationRequest}
 
     /**
  * @summary Link a task to a cal-api Prompt heartbeat or an external ref (Editor+).
  */
 export const useCreateRelation = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRelation>>, TError,{listId: string;itemId: string;data: CreateRelationRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRelation>>, TError,CreateRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createRelation>>,
         TError,
-        {listId: string;itemId: string;data: CreateRelationRequest},
+        CreateRelationMutationVariables,
         TContext
       > => {
       return useMutation(getCreateRelationMutationOptions(options), queryClient);

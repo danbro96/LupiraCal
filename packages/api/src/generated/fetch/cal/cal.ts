@@ -223,11 +223,19 @@ export const getCreateCalendarUrl = () => {
  */
 export const createCalendar = async (createCalendarRequest: CreateCalendarRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createCalendarResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<createCalendarResponse>(getCreateCalendarUrl(),
   {
@@ -292,11 +300,19 @@ export const getGrantCalendarOwnerUrl = (calendarId: string,) => {
 export const grantCalendarOwner = async (calendarId: string,
     grantOwnerRequest: GrantOwnerRequest, options?: Parameters<typeof apiRequest>[1]): Promise<grantCalendarOwnerResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<grantCalendarOwnerResponse>(getGrantCalendarOwnerUrl(calendarId),
   {
@@ -485,11 +501,19 @@ export const getCreateItemUrl = () => {
  */
 export const createItem = async (createCalendarItemRequest: CreateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createItemResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<createItemResponse>(getCreateItemUrl(),
   {
@@ -596,11 +620,19 @@ export const getUpdateItemUrl = (id: string,) => {
 export const updateItem = async (id: string,
     updateCalendarItemRequest: UpdateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<updateItemResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<updateItemResponse>(getUpdateItemUrl(id),
   {
@@ -763,11 +795,19 @@ export const mergeItemMetadata = async (id: string,
     jsonNode: JsonNode,
     params?: MergeItemMetadataParams, options?: Parameters<typeof apiRequest>[1]): Promise<mergeItemMetadataResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<mergeItemMetadataResponse>(getMergeItemMetadataUrl(id,params),
   {
@@ -827,11 +867,19 @@ export const getSetItemPromptUrl = (id: string,) => {
 export const setItemPrompt = async (id: string,
     setItemPromptRequest: SetItemPromptRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setItemPromptResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<setItemPromptResponse>(getSetItemPromptUrl(id),
   {
@@ -952,11 +1000,19 @@ export const getSetItemActionUrl = (id: string,) => {
 export const setItemAction = async (id: string,
     setItemActionRequest: SetItemActionRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setItemActionResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<setItemActionResponse>(getSetItemActionUrl(id),
   {
@@ -1072,11 +1128,19 @@ export const getCreateItemRelationUrl = (id: string,) => {
 export const createItemRelation = async (id: string,
     createRelationRequest: CreateRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createItemRelationResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<createItemRelationResponse>(getCreateItemRelationUrl(id),
   {

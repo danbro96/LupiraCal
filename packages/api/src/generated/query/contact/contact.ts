@@ -212,11 +212,13 @@ export const contactBootstrapMe = async ( options?: Parameters<typeof apiRequest
 
 
 
+export const getContactBootstrapMeMutationKey = () => ['contactBootstrapMe'] as const;
+
 export const getContactBootstrapMeMutationOptions = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof contactBootstrapMe>>, TError,void, TContext>, request?: SecondParameter<typeof apiRequest>}
 ): UseMutationOptions<Awaited<ReturnType<typeof contactBootstrapMe>>, TError,void, TContext> => {
 
-const mutationKey = ['contactBootstrapMe'];
+const mutationKey = getContactBootstrapMeMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -242,6 +244,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ContactBootstrapMeMutationResult = NonNullable<Awaited<ReturnType<typeof contactBootstrapMe>>>
 
     export type ContactBootstrapMeMutationError = ProblemDetails
+
 
     /**
  * @summary Idempotently ensure the caller has a personal address book; returns all accessible books.
@@ -269,11 +272,19 @@ export const useContactBootstrapMe = <TError = ProblemDetails,
  */
 export const setMyContact = async (setMyContactRequest: SetMyContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<void>(getSetMyContactUrl(),
   {
@@ -288,11 +299,13 @@ return apiRequest<void>(getSetMyContactUrl(),
 
 
 
-export const getSetMyContactMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyContact>>, TError,{data: SetMyContactRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof setMyContact>>, TError,{data: SetMyContactRequest}, TContext> => {
+export const getSetMyContactMutationKey = () => ['setMyContact'] as const;
 
-const mutationKey = ['setMyContact'];
+export const getSetMyContactMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyContact>>, TError,SetMyContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setMyContact>>, TError,SetMyContactMutationVariables, TContext> => {
+
+const mutationKey = getSetMyContactMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -302,7 +315,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setMyContact>>, {data: SetMyContactRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setMyContact>>, SetMyContactMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  setMyContact(data,requestOptions)
@@ -318,16 +331,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetMyContactMutationResult = NonNullable<Awaited<ReturnType<typeof setMyContact>>>
     export type SetMyContactMutationBody = SetMyContactRequest
     export type SetMyContactMutationError = ProblemDetails
+    export type SetMyContactMutationVariables = {data: SetMyContactRequest}
 
     /**
  * @summary Link the caller's identity to its own contact ("this card is me") — the default focus for contact circles.
  */
 export const useSetMyContact = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyContact>>, TError,{data: SetMyContactRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyContact>>, TError,SetMyContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setMyContact>>,
         TError,
-        {data: SetMyContactRequest},
+        SetMyContactMutationVariables,
         TContext
       > => {
       return useMutation(getSetMyContactMutationOptions(options), queryClient);
@@ -445,11 +459,19 @@ export const getCreateAddressBookUrl = () => {
  */
 export const createAddressBook = async (createAddressBookRequest: CreateAddressBookRequest, options?: Parameters<typeof apiRequest>[1]): Promise<AddressBookDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<AddressBookDto>(getCreateAddressBookUrl(),
   {
@@ -464,11 +486,13 @@ return apiRequest<AddressBookDto>(getCreateAddressBookUrl(),
 
 
 
-export const getCreateAddressBookMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAddressBook>>, TError,{data: CreateAddressBookRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof createAddressBook>>, TError,{data: CreateAddressBookRequest}, TContext> => {
+export const getCreateAddressBookMutationKey = () => ['createAddressBook'] as const;
 
-const mutationKey = ['createAddressBook'];
+export const getCreateAddressBookMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAddressBook>>, TError,CreateAddressBookMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAddressBook>>, TError,CreateAddressBookMutationVariables, TContext> => {
+
+const mutationKey = getCreateAddressBookMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -478,7 +502,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAddressBook>>, {data: CreateAddressBookRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAddressBook>>, CreateAddressBookMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createAddressBook(data,requestOptions)
@@ -494,16 +518,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateAddressBookMutationResult = NonNullable<Awaited<ReturnType<typeof createAddressBook>>>
     export type CreateAddressBookMutationBody = CreateAddressBookRequest
     export type CreateAddressBookMutationError = ProblemDetails
+    export type CreateAddressBookMutationVariables = {data: CreateAddressBookRequest}
 
     /**
  * @summary Create an address book; the caller becomes its owner.
  */
 export const useCreateAddressBook = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAddressBook>>, TError,{data: CreateAddressBookRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAddressBook>>, TError,CreateAddressBookMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createAddressBook>>,
         TError,
-        {data: CreateAddressBookRequest},
+        CreateAddressBookMutationVariables,
         TContext
       > => {
       return useMutation(getCreateAddressBookMutationOptions(options), queryClient);
@@ -522,11 +547,19 @@ export const useCreateAddressBook = <TError = ProblemDetails,
 export const updateAddressBook = async (addressBookId: string,
     updateAddressBookRequest: UpdateAddressBookRequest, options?: Parameters<typeof apiRequest>[1]): Promise<AddressBookDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<AddressBookDto>(getUpdateAddressBookUrl(addressBookId),
   {
@@ -541,11 +574,13 @@ return apiRequest<AddressBookDto>(getUpdateAddressBookUrl(addressBookId),
 
 
 
-export const getUpdateAddressBookMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAddressBook>>, TError,{addressBookId: string;data: UpdateAddressBookRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateAddressBook>>, TError,{addressBookId: string;data: UpdateAddressBookRequest}, TContext> => {
+export const getUpdateAddressBookMutationKey = () => ['updateAddressBook'] as const;
 
-const mutationKey = ['updateAddressBook'];
+export const getUpdateAddressBookMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAddressBook>>, TError,UpdateAddressBookMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAddressBook>>, TError,UpdateAddressBookMutationVariables, TContext> => {
+
+const mutationKey = getUpdateAddressBookMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -555,7 +590,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAddressBook>>, {addressBookId: string;data: UpdateAddressBookRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAddressBook>>, UpdateAddressBookMutationVariables> = (props) => {
           const {addressBookId,data} = props ?? {};
 
           return  updateAddressBook(addressBookId,data,requestOptions)
@@ -571,16 +606,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateAddressBookMutationResult = NonNullable<Awaited<ReturnType<typeof updateAddressBook>>>
     export type UpdateAddressBookMutationBody = UpdateAddressBookRequest
     export type UpdateAddressBookMutationError = ProblemDetails
+    export type UpdateAddressBookMutationVariables = {addressBookId: string;data: UpdateAddressBookRequest}
 
     /**
  * @summary Rename an address book or change its display name (owner only; merge — omitted fields are kept).
  */
 export const useUpdateAddressBook = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAddressBook>>, TError,{addressBookId: string;data: UpdateAddressBookRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAddressBook>>, TError,UpdateAddressBookMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateAddressBook>>,
         TError,
-        {addressBookId: string;data: UpdateAddressBookRequest},
+        UpdateAddressBookMutationVariables,
         TContext
       > => {
       return useMutation(getUpdateAddressBookMutationOptions(options), queryClient);
@@ -611,11 +647,13 @@ export const deleteAddressBook = async (addressBookId: string, options?: Paramet
 
 
 
-export const getDeleteAddressBookMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAddressBook>>, TError,{addressBookId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteAddressBook>>, TError,{addressBookId: string}, TContext> => {
+export const getDeleteAddressBookMutationKey = () => ['deleteAddressBook'] as const;
 
-const mutationKey = ['deleteAddressBook'];
+export const getDeleteAddressBookMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAddressBook>>, TError,DeleteAddressBookMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAddressBook>>, TError,DeleteAddressBookMutationVariables, TContext> => {
+
+const mutationKey = getDeleteAddressBookMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -625,7 +663,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAddressBook>>, {addressBookId: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAddressBook>>, DeleteAddressBookMutationVariables> = (props) => {
           const {addressBookId} = props ?? {};
 
           return  deleteAddressBook(addressBookId,requestOptions)
@@ -641,16 +679,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteAddressBookMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAddressBook>>>
 
     export type DeleteAddressBookMutationError = ProblemDetails
+    export type DeleteAddressBookMutationVariables = {addressBookId: string}
 
     /**
  * @summary Delete an empty address book (owner only). 409 if it still holds contacts or groups, or is the personal book.
  */
 export const useDeleteAddressBook = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAddressBook>>, TError,{addressBookId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAddressBook>>, TError,DeleteAddressBookMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteAddressBook>>,
         TError,
-        {addressBookId: string},
+        DeleteAddressBookMutationVariables,
         TContext
       > => {
       return useMutation(getDeleteAddressBookMutationOptions(options), queryClient);
@@ -769,11 +808,19 @@ export const getGrantAddressBookOwnerUrl = (addressBookId: string,) => {
 export const grantAddressBookOwner = async (addressBookId: string,
     grantOwnerRequest: GrantOwnerRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactOwnerGrantDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactOwnerGrantDto>(getGrantAddressBookOwnerUrl(addressBookId),
   {
@@ -788,11 +835,13 @@ return apiRequest<ContactOwnerGrantDto>(getGrantAddressBookOwnerUrl(addressBookI
 
 
 
-export const getGrantAddressBookOwnerMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantAddressBookOwner>>, TError,{addressBookId: string;data: GrantOwnerRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof grantAddressBookOwner>>, TError,{addressBookId: string;data: GrantOwnerRequest}, TContext> => {
+export const getGrantAddressBookOwnerMutationKey = () => ['grantAddressBookOwner'] as const;
 
-const mutationKey = ['grantAddressBookOwner'];
+export const getGrantAddressBookOwnerMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantAddressBookOwner>>, TError,GrantAddressBookOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof grantAddressBookOwner>>, TError,GrantAddressBookOwnerMutationVariables, TContext> => {
+
+const mutationKey = getGrantAddressBookOwnerMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -802,7 +851,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof grantAddressBookOwner>>, {addressBookId: string;data: GrantOwnerRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof grantAddressBookOwner>>, GrantAddressBookOwnerMutationVariables> = (props) => {
           const {addressBookId,data} = props ?? {};
 
           return  grantAddressBookOwner(addressBookId,data,requestOptions)
@@ -818,16 +867,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type GrantAddressBookOwnerMutationResult = NonNullable<Awaited<ReturnType<typeof grantAddressBookOwner>>>
     export type GrantAddressBookOwnerMutationBody = GrantOwnerRequest
     export type GrantAddressBookOwnerMutationError = ProblemDetails
+    export type GrantAddressBookOwnerMutationVariables = {addressBookId: string;data: GrantOwnerRequest}
 
     /**
  * @summary Grant a member access to an address book (access = owner|read-write|read; default owner).
  */
 export const useGrantAddressBookOwner = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantAddressBookOwner>>, TError,{addressBookId: string;data: GrantOwnerRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantAddressBookOwner>>, TError,GrantAddressBookOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof grantAddressBookOwner>>,
         TError,
-        {addressBookId: string;data: GrantOwnerRequest},
+        GrantAddressBookOwnerMutationVariables,
         TContext
       > => {
       return useMutation(getGrantAddressBookOwnerMutationOptions(options), queryClient);
@@ -867,11 +917,13 @@ export const revokeAddressBookOwner = async (addressBookId: string,
 
 
 
-export const getRevokeAddressBookOwnerMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAddressBookOwner>>, TError,{addressBookId: string;params: RevokeAddressBookOwnerParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof revokeAddressBookOwner>>, TError,{addressBookId: string;params: RevokeAddressBookOwnerParams}, TContext> => {
+export const getRevokeAddressBookOwnerMutationKey = () => ['revokeAddressBookOwner'] as const;
 
-const mutationKey = ['revokeAddressBookOwner'];
+export const getRevokeAddressBookOwnerMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAddressBookOwner>>, TError,RevokeAddressBookOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeAddressBookOwner>>, TError,RevokeAddressBookOwnerMutationVariables, TContext> => {
+
+const mutationKey = getRevokeAddressBookOwnerMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -881,7 +933,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeAddressBookOwner>>, {addressBookId: string;params: RevokeAddressBookOwnerParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeAddressBookOwner>>, RevokeAddressBookOwnerMutationVariables> = (props) => {
           const {addressBookId,params} = props ?? {};
 
           return  revokeAddressBookOwner(addressBookId,params,requestOptions)
@@ -897,16 +949,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RevokeAddressBookOwnerMutationResult = NonNullable<Awaited<ReturnType<typeof revokeAddressBookOwner>>>
 
     export type RevokeAddressBookOwnerMutationError = ProblemDetails
+    export type RevokeAddressBookOwnerMutationVariables = {addressBookId: string;params: RevokeAddressBookOwnerParams}
 
     /**
  * @summary Revoke a member's access to an address book (by email). 409 if it would remove the last owner.
  */
 export const useRevokeAddressBookOwner = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAddressBookOwner>>, TError,{addressBookId: string;params: RevokeAddressBookOwnerParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAddressBookOwner>>, TError,RevokeAddressBookOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof revokeAddressBookOwner>>,
         TError,
-        {addressBookId: string;params: RevokeAddressBookOwnerParams},
+        RevokeAddressBookOwnerMutationVariables,
         TContext
       > => {
       return useMutation(getRevokeAddressBookOwnerMutationOptions(options), queryClient);
@@ -1031,11 +1084,19 @@ export const getCreateContactUrl = () => {
  */
 export const createContact = async (createContactRequest: CreateContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getCreateContactUrl(),
   {
@@ -1050,11 +1111,13 @@ return apiRequest<ContactDto>(getCreateContactUrl(),
 
 
 
-export const getCreateContactMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContact>>, TError,{data: CreateContactRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof createContact>>, TError,{data: CreateContactRequest}, TContext> => {
+export const getCreateContactMutationKey = () => ['createContact'] as const;
 
-const mutationKey = ['createContact'];
+export const getCreateContactMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContact>>, TError,CreateContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createContact>>, TError,CreateContactMutationVariables, TContext> => {
+
+const mutationKey = getCreateContactMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1064,7 +1127,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createContact>>, {data: CreateContactRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createContact>>, CreateContactMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createContact(data,requestOptions)
@@ -1080,16 +1143,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateContactMutationResult = NonNullable<Awaited<ReturnType<typeof createContact>>>
     export type CreateContactMutationBody = CreateContactRequest
     export type CreateContactMutationError = ProblemDetails
+    export type CreateContactMutationVariables = {data: CreateContactRequest}
 
     /**
  * @summary Create a contact.
  */
 export const useCreateContact = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContact>>, TError,{data: CreateContactRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContact>>, TError,CreateContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createContact>>,
         TError,
-        {data: CreateContactRequest},
+        CreateContactMutationVariables,
         TContext
       > => {
       return useMutation(getCreateContactMutationOptions(options), queryClient);
@@ -1208,11 +1272,19 @@ export const getReviseContactUrl = (id: string,) => {
 export const reviseContact = async (id: string,
     reviseContactRequest: ReviseContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getReviseContactUrl(id),
   {
@@ -1227,11 +1299,13 @@ return apiRequest<ContactDto>(getReviseContactUrl(id),
 
 
 
-export const getReviseContactMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseContact>>, TError,{id: string;data: ReviseContactRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof reviseContact>>, TError,{id: string;data: ReviseContactRequest}, TContext> => {
+export const getReviseContactMutationKey = () => ['reviseContact'] as const;
 
-const mutationKey = ['reviseContact'];
+export const getReviseContactMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseContact>>, TError,ReviseContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviseContact>>, TError,ReviseContactMutationVariables, TContext> => {
+
+const mutationKey = getReviseContactMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1241,7 +1315,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviseContact>>, {id: string;data: ReviseContactRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviseContact>>, ReviseContactMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  reviseContact(id,data,requestOptions)
@@ -1257,16 +1331,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ReviseContactMutationResult = NonNullable<Awaited<ReturnType<typeof reviseContact>>>
     export type ReviseContactMutationBody = ReviseContactRequest
     export type ReviseContactMutationError = ProblemDetails
+    export type ReviseContactMutationVariables = {id: string;data: ReviseContactRequest}
 
     /**
  * @summary Update a contact (merge — provided fields overwrite/append, unmentioned fields are kept).
  */
 export const useReviseContact = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseContact>>, TError,{id: string;data: ReviseContactRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseContact>>, TError,ReviseContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof reviseContact>>,
         TError,
-        {id: string;data: ReviseContactRequest},
+        ReviseContactMutationVariables,
         TContext
       > => {
       return useMutation(getReviseContactMutationOptions(options), queryClient);
@@ -1297,11 +1372,13 @@ export const deleteContact = async (id: string, options?: Parameters<typeof apiR
 
 
 
-export const getDeleteContactMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContact>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteContact>>, TError,{id: string}, TContext> => {
+export const getDeleteContactMutationKey = () => ['deleteContact'] as const;
 
-const mutationKey = ['deleteContact'];
+export const getDeleteContactMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContact>>, TError,DeleteContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteContact>>, TError,DeleteContactMutationVariables, TContext> => {
+
+const mutationKey = getDeleteContactMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1311,7 +1388,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteContact>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteContact>>, DeleteContactMutationVariables> = (props) => {
           const {id} = props ?? {};
 
           return  deleteContact(id,requestOptions)
@@ -1327,16 +1404,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteContactMutationResult = NonNullable<Awaited<ReturnType<typeof deleteContact>>>
 
     export type DeleteContactMutationError = ProblemDetails
+    export type DeleteContactMutationVariables = {id: string}
 
     /**
  * @summary Delete a contact (soft delete + tombstone).
  */
 export const useDeleteContact = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContact>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContact>>, TError,DeleteContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteContact>>,
         TError,
-        {id: string},
+        DeleteContactMutationVariables,
         TContext
       > => {
       return useMutation(getDeleteContactMutationOptions(options), queryClient);
@@ -1462,11 +1540,19 @@ export const getMarkContactDeceasedUrl = (id: string,) => {
 export const markContactDeceased = async (id: string,
     setDeceasedRequest: SetDeceasedRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getMarkContactDeceasedUrl(id),
   {
@@ -1481,11 +1567,13 @@ return apiRequest<ContactDto>(getMarkContactDeceasedUrl(id),
 
 
 
-export const getMarkContactDeceasedMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markContactDeceased>>, TError,{id: string;data: SetDeceasedRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof markContactDeceased>>, TError,{id: string;data: SetDeceasedRequest}, TContext> => {
+export const getMarkContactDeceasedMutationKey = () => ['markContactDeceased'] as const;
 
-const mutationKey = ['markContactDeceased'];
+export const getMarkContactDeceasedMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markContactDeceased>>, TError,MarkContactDeceasedMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof markContactDeceased>>, TError,MarkContactDeceasedMutationVariables, TContext> => {
+
+const mutationKey = getMarkContactDeceasedMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1495,7 +1583,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markContactDeceased>>, {id: string;data: SetDeceasedRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof markContactDeceased>>, MarkContactDeceasedMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  markContactDeceased(id,data,requestOptions)
@@ -1511,16 +1599,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type MarkContactDeceasedMutationResult = NonNullable<Awaited<ReturnType<typeof markContactDeceased>>>
     export type MarkContactDeceasedMutationBody = SetDeceasedRequest
     export type MarkContactDeceasedMutationError = ProblemDetails
+    export type MarkContactDeceasedMutationVariables = {id: string;data: SetDeceasedRequest}
 
     /**
  * @summary Mark a contact as deceased (idempotent; the date may be unknown). Deceased contacts stay in the kinship graph — death is not deletion.
  */
 export const useMarkContactDeceased = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markContactDeceased>>, TError,{id: string;data: SetDeceasedRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markContactDeceased>>, TError,MarkContactDeceasedMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof markContactDeceased>>,
         TError,
-        {id: string;data: SetDeceasedRequest},
+        MarkContactDeceasedMutationVariables,
         TContext
       > => {
       return useMutation(getMarkContactDeceasedMutationOptions(options), queryClient);
@@ -1560,11 +1649,13 @@ export const clearContactDeceased = async (id: string,
 
 
 
-export const getClearContactDeceasedMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearContactDeceased>>, TError,{id: string;params?: ClearContactDeceasedParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof clearContactDeceased>>, TError,{id: string;params?: ClearContactDeceasedParams}, TContext> => {
+export const getClearContactDeceasedMutationKey = () => ['clearContactDeceased'] as const;
 
-const mutationKey = ['clearContactDeceased'];
+export const getClearContactDeceasedMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearContactDeceased>>, TError,ClearContactDeceasedMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearContactDeceased>>, TError,ClearContactDeceasedMutationVariables, TContext> => {
+
+const mutationKey = getClearContactDeceasedMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1574,7 +1665,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearContactDeceased>>, {id: string;params?: ClearContactDeceasedParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearContactDeceased>>, ClearContactDeceasedMutationVariables> = (props) => {
           const {id,params} = props ?? {};
 
           return  clearContactDeceased(id,params,requestOptions)
@@ -1590,16 +1681,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ClearContactDeceasedMutationResult = NonNullable<Awaited<ReturnType<typeof clearContactDeceased>>>
 
     export type ClearContactDeceasedMutationError = ProblemDetails
+    export type ClearContactDeceasedMutationVariables = {id: string;params?: ClearContactDeceasedParams}
 
     /**
  * @summary Undo a deceased marking recorded in error. (CardDAV can set but never clear deceased — clearing is API-only.)
  */
 export const useClearContactDeceased = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearContactDeceased>>, TError,{id: string;params?: ClearContactDeceasedParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearContactDeceased>>, TError,ClearContactDeceasedMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof clearContactDeceased>>,
         TError,
-        {id: string;params?: ClearContactDeceasedParams},
+        ClearContactDeceasedMutationVariables,
         TContext
       > => {
       return useMutation(getClearContactDeceasedMutationOptions(options), queryClient);
@@ -1618,11 +1710,19 @@ export const useClearContactDeceased = <TError = ProblemDetails,
 export const setContactProfiles = async (id: string,
     setContactProfilesRequest: SetContactProfilesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getSetContactProfilesUrl(id),
   {
@@ -1637,11 +1737,13 @@ return apiRequest<ContactDto>(getSetContactProfilesUrl(id),
 
 
 
-export const getSetContactProfilesMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactProfiles>>, TError,{id: string;data: SetContactProfilesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof setContactProfiles>>, TError,{id: string;data: SetContactProfilesRequest}, TContext> => {
+export const getSetContactProfilesMutationKey = () => ['setContactProfiles'] as const;
 
-const mutationKey = ['setContactProfiles'];
+export const getSetContactProfilesMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactProfiles>>, TError,SetContactProfilesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setContactProfiles>>, TError,SetContactProfilesMutationVariables, TContext> => {
+
+const mutationKey = getSetContactProfilesMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1651,7 +1753,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setContactProfiles>>, {id: string;data: SetContactProfilesRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setContactProfiles>>, SetContactProfilesMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  setContactProfiles(id,data,requestOptions)
@@ -1667,16 +1769,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetContactProfilesMutationResult = NonNullable<Awaited<ReturnType<typeof setContactProfiles>>>
     export type SetContactProfilesMutationBody = SetContactProfilesRequest
     export type SetContactProfilesMutationError = ProblemDetails
+    export type SetContactProfilesMutationVariables = {id: string;data: SetContactProfilesRequest}
 
     /**
  * @summary Replace the contact's social/IM handles wholesale. Service names are canonicalized; well-known services (telegram, messenger, whatsapp…) get the profile URL derived from the handle. At most one preferred handle per service.
  */
 export const useSetContactProfiles = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactProfiles>>, TError,{id: string;data: SetContactProfilesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactProfiles>>, TError,SetContactProfilesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setContactProfiles>>,
         TError,
-        {id: string;data: SetContactProfilesRequest},
+        SetContactProfilesMutationVariables,
         TContext
       > => {
       return useMutation(getSetContactProfilesMutationOptions(options), queryClient);
@@ -1695,11 +1798,19 @@ export const useSetContactProfiles = <TError = ProblemDetails,
 export const setContactAddresses = async (id: string,
     setContactAddressesRequest: SetContactAddressesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getSetContactAddressesUrl(id),
   {
@@ -1714,11 +1825,13 @@ return apiRequest<ContactDto>(getSetContactAddressesUrl(id),
 
 
 
-export const getSetContactAddressesMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactAddresses>>, TError,{id: string;data: SetContactAddressesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof setContactAddresses>>, TError,{id: string;data: SetContactAddressesRequest}, TContext> => {
+export const getSetContactAddressesMutationKey = () => ['setContactAddresses'] as const;
 
-const mutationKey = ['setContactAddresses'];
+export const getSetContactAddressesMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactAddresses>>, TError,SetContactAddressesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setContactAddresses>>, TError,SetContactAddressesMutationVariables, TContext> => {
+
+const mutationKey = getSetContactAddressesMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1728,7 +1841,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setContactAddresses>>, {id: string;data: SetContactAddressesRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setContactAddresses>>, SetContactAddressesMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  setContactAddresses(id,data,requestOptions)
@@ -1744,16 +1857,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetContactAddressesMutationResult = NonNullable<Awaited<ReturnType<typeof setContactAddresses>>>
     export type SetContactAddressesMutationBody = SetContactAddressesRequest
     export type SetContactAddressesMutationError = ProblemDetails
+    export type SetContactAddressesMutationVariables = {id: string;data: SetContactAddressesRequest}
 
     /**
  * @summary Replace the contact's postal addresses wholesale; each entry needs a LupiraGeoApi place id (resolve the address there first — no free-text).
  */
 export const useSetContactAddresses = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactAddresses>>, TError,{id: string;data: SetContactAddressesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactAddresses>>, TError,SetContactAddressesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setContactAddresses>>,
         TError,
-        {id: string;data: SetContactAddressesRequest},
+        SetContactAddressesMutationVariables,
         TContext
       > => {
       return useMutation(getSetContactAddressesMutationOptions(options), queryClient);
@@ -1772,11 +1886,19 @@ export const useSetContactAddresses = <TError = ProblemDetails,
 export const setEmergencyContacts = async (id: string,
     setEmergencyContactsRequest: SetEmergencyContactsRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getSetEmergencyContactsUrl(id),
   {
@@ -1791,11 +1913,13 @@ return apiRequest<ContactDto>(getSetEmergencyContactsUrl(id),
 
 
 
-export const getSetEmergencyContactsMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setEmergencyContacts>>, TError,{id: string;data: SetEmergencyContactsRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof setEmergencyContacts>>, TError,{id: string;data: SetEmergencyContactsRequest}, TContext> => {
+export const getSetEmergencyContactsMutationKey = () => ['setEmergencyContacts'] as const;
 
-const mutationKey = ['setEmergencyContacts'];
+export const getSetEmergencyContactsMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setEmergencyContacts>>, TError,SetEmergencyContactsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setEmergencyContacts>>, TError,SetEmergencyContactsMutationVariables, TContext> => {
+
+const mutationKey = getSetEmergencyContactsMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1805,7 +1929,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setEmergencyContacts>>, {id: string;data: SetEmergencyContactsRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setEmergencyContacts>>, SetEmergencyContactsMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  setEmergencyContacts(id,data,requestOptions)
@@ -1821,16 +1945,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetEmergencyContactsMutationResult = NonNullable<Awaited<ReturnType<typeof setEmergencyContacts>>>
     export type SetEmergencyContactsMutationBody = SetEmergencyContactsRequest
     export type SetEmergencyContactsMutationError = ProblemDetails
+    export type SetEmergencyContactsMutationVariables = {id: string;data: SetEmergencyContactsRequest}
 
     /**
  * @summary Replace the contact's emergency-contact designation wholesale (order = priority, empty clears). A designation, not a relation kind — your emergency contact is usually also a spouse or friend.
  */
 export const useSetEmergencyContacts = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setEmergencyContacts>>, TError,{id: string;data: SetEmergencyContactsRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setEmergencyContacts>>, TError,SetEmergencyContactsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setEmergencyContacts>>,
         TError,
-        {id: string;data: SetEmergencyContactsRequest},
+        SetEmergencyContactsMutationVariables,
         TContext
       > => {
       return useMutation(getSetEmergencyContactsMutationOptions(options), queryClient);
@@ -1849,11 +1974,19 @@ export const useSetEmergencyContacts = <TError = ProblemDetails,
 export const setContactChannels = async (id: string,
     setContactChannelsRequest: SetContactChannelsRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getSetContactChannelsUrl(id),
   {
@@ -1868,11 +2001,13 @@ return apiRequest<ContactDto>(getSetContactChannelsUrl(id),
 
 
 
-export const getSetContactChannelsMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactChannels>>, TError,{id: string;data: SetContactChannelsRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof setContactChannels>>, TError,{id: string;data: SetContactChannelsRequest}, TContext> => {
+export const getSetContactChannelsMutationKey = () => ['setContactChannels'] as const;
 
-const mutationKey = ['setContactChannels'];
+export const getSetContactChannelsMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactChannels>>, TError,SetContactChannelsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setContactChannels>>, TError,SetContactChannelsMutationVariables, TContext> => {
+
+const mutationKey = getSetContactChannelsMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1882,7 +2017,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setContactChannels>>, {id: string;data: SetContactChannelsRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setContactChannels>>, SetContactChannelsMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  setContactChannels(id,data,requestOptions)
@@ -1898,16 +2033,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetContactChannelsMutationResult = NonNullable<Awaited<ReturnType<typeof setContactChannels>>>
     export type SetContactChannelsMutationBody = SetContactChannelsRequest
     export type SetContactChannelsMutationError = ProblemDetails
+    export type SetContactChannelsMutationVariables = {id: string;data: SetContactChannelsRequest}
 
     /**
  * @summary Replace the contact's reach channels (emails + phones) wholesale (empty clears). Unlike the merge update, this can remove a channel; values are trimmed, type tokens lowercased, duplicates dropped, at most one preferred per medium.
  */
 export const useSetContactChannels = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactChannels>>, TError,{id: string;data: SetContactChannelsRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactChannels>>, TError,SetContactChannelsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setContactChannels>>,
         TError,
-        {id: string;data: SetContactChannelsRequest},
+        SetContactChannelsMutationVariables,
         TContext
       > => {
       return useMutation(getSetContactChannelsMutationOptions(options), queryClient);
@@ -1926,11 +2062,19 @@ export const useSetContactChannels = <TError = ProblemDetails,
 export const setContactTags = async (id: string,
     setContactTagsRequest: SetContactTagsRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getSetContactTagsUrl(id),
   {
@@ -1945,11 +2089,13 @@ return apiRequest<ContactDto>(getSetContactTagsUrl(id),
 
 
 
-export const getSetContactTagsMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactTags>>, TError,{id: string;data: SetContactTagsRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof setContactTags>>, TError,{id: string;data: SetContactTagsRequest}, TContext> => {
+export const getSetContactTagsMutationKey = () => ['setContactTags'] as const;
 
-const mutationKey = ['setContactTags'];
+export const getSetContactTagsMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactTags>>, TError,SetContactTagsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setContactTags>>, TError,SetContactTagsMutationVariables, TContext> => {
+
+const mutationKey = getSetContactTagsMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1959,7 +2105,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setContactTags>>, {id: string;data: SetContactTagsRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setContactTags>>, SetContactTagsMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  setContactTags(id,data,requestOptions)
@@ -1975,16 +2121,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetContactTagsMutationResult = NonNullable<Awaited<ReturnType<typeof setContactTags>>>
     export type SetContactTagsMutationBody = SetContactTagsRequest
     export type SetContactTagsMutationError = ProblemDetails
+    export type SetContactTagsMutationVariables = {id: string;data: SetContactTagsRequest}
 
     /**
  * @summary Replace the contact's tags wholesale (empty clears). Unlike the merge update, this can remove a tag; entries are trimmed and de-duplicated case-insensitively.
  */
 export const useSetContactTags = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactTags>>, TError,{id: string;data: SetContactTagsRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactTags>>, TError,SetContactTagsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setContactTags>>,
         TError,
-        {id: string;data: SetContactTagsRequest},
+        SetContactTagsMutationVariables,
         TContext
       > => {
       return useMutation(getSetContactTagsMutationOptions(options), queryClient);
@@ -2118,11 +2265,19 @@ export const getAddContactRelationUrl = (id: string,) => {
 export const addContactRelation = async (id: string,
     addContactRelationRequest: AddContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getAddContactRelationUrl(id),
   {
@@ -2137,11 +2292,13 @@ return apiRequest<ContactDto>(getAddContactRelationUrl(id),
 
 
 
-export const getAddContactRelationMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactRelation>>, TError,{id: string;data: AddContactRelationRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof addContactRelation>>, TError,{id: string;data: AddContactRelationRequest}, TContext> => {
+export const getAddContactRelationMutationKey = () => ['addContactRelation'] as const;
 
-const mutationKey = ['addContactRelation'];
+export const getAddContactRelationMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactRelation>>, TError,AddContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof addContactRelation>>, TError,AddContactRelationMutationVariables, TContext> => {
+
+const mutationKey = getAddContactRelationMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2151,7 +2308,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addContactRelation>>, {id: string;data: AddContactRelationRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addContactRelation>>, AddContactRelationMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  addContactRelation(id,data,requestOptions)
@@ -2167,16 +2324,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AddContactRelationMutationResult = NonNullable<Awaited<ReturnType<typeof addContactRelation>>>
     export type AddContactRelationMutationBody = AddContactRelationRequest
     export type AddContactRelationMutationError = ProblemDetails
+    export type AddContactRelationMutationVariables = {id: string;data: AddContactRelationRequest}
 
     /**
  * @summary Upsert a relation: 'toContactId is this contact's kind' (re-adding the same target+kind revises the label).
  */
 export const useAddContactRelation = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactRelation>>, TError,{id: string;data: AddContactRelationRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactRelation>>, TError,AddContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof addContactRelation>>,
         TError,
-        {id: string;data: AddContactRelationRequest},
+        AddContactRelationMutationVariables,
         TContext
       > => {
       return useMutation(getAddContactRelationMutationOptions(options), queryClient);
@@ -2218,11 +2376,13 @@ export const removeContactRelation = async (id: string,
 
 
 
-export const getRemoveContactRelationMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactRelation>>, TError,{id: string;toContactId: string;params: RemoveContactRelationParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof removeContactRelation>>, TError,{id: string;toContactId: string;params: RemoveContactRelationParams}, TContext> => {
+export const getRemoveContactRelationMutationKey = () => ['removeContactRelation'] as const;
 
-const mutationKey = ['removeContactRelation'];
+export const getRemoveContactRelationMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactRelation>>, TError,RemoveContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeContactRelation>>, TError,RemoveContactRelationMutationVariables, TContext> => {
+
+const mutationKey = getRemoveContactRelationMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2232,7 +2392,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeContactRelation>>, {id: string;toContactId: string;params: RemoveContactRelationParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeContactRelation>>, RemoveContactRelationMutationVariables> = (props) => {
           const {id,toContactId,params} = props ?? {};
 
           return  removeContactRelation(id,toContactId,params,requestOptions)
@@ -2248,16 +2408,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveContactRelationMutationResult = NonNullable<Awaited<ReturnType<typeof removeContactRelation>>>
 
     export type RemoveContactRelationMutationError = ProblemDetails
+    export type RemoveContactRelationMutationVariables = {id: string;toContactId: string;params: RemoveContactRelationParams}
 
     /**
  * @summary Remove the relation edge to a contact with the given kind — for edges entered by mistake. A relationship that ran its course should be ended instead.
  */
 export const useRemoveContactRelation = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactRelation>>, TError,{id: string;toContactId: string;params: RemoveContactRelationParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactRelation>>, TError,RemoveContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof removeContactRelation>>,
         TError,
-        {id: string;toContactId: string;params: RemoveContactRelationParams},
+        RemoveContactRelationMutationVariables,
         TContext
       > => {
       return useMutation(getRemoveContactRelationMutationOptions(options), queryClient);
@@ -2278,11 +2439,19 @@ export const endContactRelation = async (id: string,
     toContactId: string,
     endContactRelationRequest: EndContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContactDto>(getEndContactRelationUrl(id,toContactId),
   {
@@ -2297,11 +2466,13 @@ return apiRequest<ContactDto>(getEndContactRelationUrl(id,toContactId),
 
 
 
-export const getEndContactRelationMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endContactRelation>>, TError,{id: string;toContactId: string;data: EndContactRelationRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof endContactRelation>>, TError,{id: string;toContactId: string;data: EndContactRelationRequest}, TContext> => {
+export const getEndContactRelationMutationKey = () => ['endContactRelation'] as const;
 
-const mutationKey = ['endContactRelation'];
+export const getEndContactRelationMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endContactRelation>>, TError,EndContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof endContactRelation>>, TError,EndContactRelationMutationVariables, TContext> => {
+
+const mutationKey = getEndContactRelationMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2311,7 +2482,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof endContactRelation>>, {id: string;toContactId: string;data: EndContactRelationRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof endContactRelation>>, EndContactRelationMutationVariables> = (props) => {
           const {id,toContactId,data} = props ?? {};
 
           return  endContactRelation(id,toContactId,data,requestOptions)
@@ -2327,16 +2498,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type EndContactRelationMutationResult = NonNullable<Awaited<ReturnType<typeof endContactRelation>>>
     export type EndContactRelationMutationBody = EndContactRelationRequest
     export type EndContactRelationMutationError = ProblemDetails
+    export type EndContactRelationMutationVariables = {id: string;toContactId: string;data: EndContactRelationRequest}
 
     /**
  * @summary Mark a relation as ended (ex-spouse, falling-out): the edge stays, flagged with an optional end date, and no longer asserts current kinship. Re-adding the same relation revives it.
  */
 export const useEndContactRelation = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endContactRelation>>, TError,{id: string;toContactId: string;data: EndContactRelationRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endContactRelation>>, TError,EndContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof endContactRelation>>,
         TError,
-        {id: string;toContactId: string;data: EndContactRelationRequest},
+        EndContactRelationMutationVariables,
         TContext
       > => {
       return useMutation(getEndContactRelationMutationOptions(options), queryClient);
@@ -2476,11 +2648,13 @@ export const createContactGroup = async (addressBookId: string,
 
 
 
-export const getCreateContactGroupMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContactGroup>>, TError,{addressBookId: string;params: CreateContactGroupParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof createContactGroup>>, TError,{addressBookId: string;params: CreateContactGroupParams}, TContext> => {
+export const getCreateContactGroupMutationKey = () => ['createContactGroup'] as const;
 
-const mutationKey = ['createContactGroup'];
+export const getCreateContactGroupMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContactGroup>>, TError,CreateContactGroupMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createContactGroup>>, TError,CreateContactGroupMutationVariables, TContext> => {
+
+const mutationKey = getCreateContactGroupMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2490,7 +2664,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createContactGroup>>, {addressBookId: string;params: CreateContactGroupParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createContactGroup>>, CreateContactGroupMutationVariables> = (props) => {
           const {addressBookId,params} = props ?? {};
 
           return  createContactGroup(addressBookId,params,requestOptions)
@@ -2506,16 +2680,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateContactGroupMutationResult = NonNullable<Awaited<ReturnType<typeof createContactGroup>>>
 
     export type CreateContactGroupMutationError = ProblemDetails
+    export type CreateContactGroupMutationVariables = {addressBookId: string;params: CreateContactGroupParams}
 
     /**
  * @summary Create a group. kind = group|organization (an employer is an organization-kind group).
  */
 export const useCreateContactGroup = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContactGroup>>, TError,{addressBookId: string;params: CreateContactGroupParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContactGroup>>, TError,CreateContactGroupMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createContactGroup>>,
         TError,
-        {addressBookId: string;params: CreateContactGroupParams},
+        CreateContactGroupMutationVariables,
         TContext
       > => {
       return useMutation(getCreateContactGroupMutationOptions(options), queryClient);
@@ -2555,11 +2730,13 @@ export const renameContactGroup = async (groupId: string,
 
 
 
-export const getRenameContactGroupMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameContactGroup>>, TError,{groupId: string;params: RenameContactGroupParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof renameContactGroup>>, TError,{groupId: string;params: RenameContactGroupParams}, TContext> => {
+export const getRenameContactGroupMutationKey = () => ['renameContactGroup'] as const;
 
-const mutationKey = ['renameContactGroup'];
+export const getRenameContactGroupMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameContactGroup>>, TError,RenameContactGroupMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof renameContactGroup>>, TError,RenameContactGroupMutationVariables, TContext> => {
+
+const mutationKey = getRenameContactGroupMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2569,7 +2746,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof renameContactGroup>>, {groupId: string;params: RenameContactGroupParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof renameContactGroup>>, RenameContactGroupMutationVariables> = (props) => {
           const {groupId,params} = props ?? {};
 
           return  renameContactGroup(groupId,params,requestOptions)
@@ -2585,16 +2762,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RenameContactGroupMutationResult = NonNullable<Awaited<ReturnType<typeof renameContactGroup>>>
 
     export type RenameContactGroupMutationError = ProblemDetails
+    export type RenameContactGroupMutationVariables = {groupId: string;params: RenameContactGroupParams}
 
     /**
  * @summary Rename a group.
  */
 export const useRenameContactGroup = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameContactGroup>>, TError,{groupId: string;params: RenameContactGroupParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameContactGroup>>, TError,RenameContactGroupMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof renameContactGroup>>,
         TError,
-        {groupId: string;params: RenameContactGroupParams},
+        RenameContactGroupMutationVariables,
         TContext
       > => {
       return useMutation(getRenameContactGroupMutationOptions(options), queryClient);
@@ -2625,11 +2803,13 @@ export const deleteContactGroup = async (groupId: string, options?: Parameters<t
 
 
 
-export const getDeleteContactGroupMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContactGroup>>, TError,{groupId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteContactGroup>>, TError,{groupId: string}, TContext> => {
+export const getDeleteContactGroupMutationKey = () => ['deleteContactGroup'] as const;
 
-const mutationKey = ['deleteContactGroup'];
+export const getDeleteContactGroupMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContactGroup>>, TError,DeleteContactGroupMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteContactGroup>>, TError,DeleteContactGroupMutationVariables, TContext> => {
+
+const mutationKey = getDeleteContactGroupMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2639,7 +2819,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteContactGroup>>, {groupId: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteContactGroup>>, DeleteContactGroupMutationVariables> = (props) => {
           const {groupId} = props ?? {};
 
           return  deleteContactGroup(groupId,requestOptions)
@@ -2655,16 +2835,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteContactGroupMutationResult = NonNullable<Awaited<ReturnType<typeof deleteContactGroup>>>
 
     export type DeleteContactGroupMutationError = ProblemDetails
+    export type DeleteContactGroupMutationVariables = {groupId: string}
 
     /**
  * @summary Delete a group.
  */
 export const useDeleteContactGroup = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContactGroup>>, TError,{groupId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContactGroup>>, TError,DeleteContactGroupMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteContactGroup>>,
         TError,
-        {groupId: string},
+        DeleteContactGroupMutationVariables,
         TContext
       > => {
       return useMutation(getDeleteContactGroupMutationOptions(options), queryClient);
@@ -2704,11 +2885,13 @@ export const addContactGroupMember = async (groupId: string,
 
 
 
-export const getAddContactGroupMemberMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactGroupMember>>, TError,{groupId: string;params: AddContactGroupMemberParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof addContactGroupMember>>, TError,{groupId: string;params: AddContactGroupMemberParams}, TContext> => {
+export const getAddContactGroupMemberMutationKey = () => ['addContactGroupMember'] as const;
 
-const mutationKey = ['addContactGroupMember'];
+export const getAddContactGroupMemberMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactGroupMember>>, TError,AddContactGroupMemberMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof addContactGroupMember>>, TError,AddContactGroupMemberMutationVariables, TContext> => {
+
+const mutationKey = getAddContactGroupMemberMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2718,7 +2901,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addContactGroupMember>>, {groupId: string;params: AddContactGroupMemberParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addContactGroupMember>>, AddContactGroupMemberMutationVariables> = (props) => {
           const {groupId,params} = props ?? {};
 
           return  addContactGroupMember(groupId,params,requestOptions)
@@ -2734,16 +2917,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AddContactGroupMemberMutationResult = NonNullable<Awaited<ReturnType<typeof addContactGroupMember>>>
 
     export type AddContactGroupMemberMutationError = ProblemDetails
+    export type AddContactGroupMemberMutationVariables = {groupId: string;params: AddContactGroupMemberParams}
 
     /**
  * @summary Add a contact to a group; for an organization, role is the title held there (re-adding updates it).
  */
 export const useAddContactGroupMember = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactGroupMember>>, TError,{groupId: string;params: AddContactGroupMemberParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactGroupMember>>, TError,AddContactGroupMemberMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof addContactGroupMember>>,
         TError,
-        {groupId: string;params: AddContactGroupMemberParams},
+        AddContactGroupMemberMutationVariables,
         TContext
       > => {
       return useMutation(getAddContactGroupMemberMutationOptions(options), queryClient);
@@ -2776,11 +2960,13 @@ export const removeContactGroupMember = async (groupId: string,
 
 
 
-export const getRemoveContactGroupMemberMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactGroupMember>>, TError,{groupId: string;contactId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof removeContactGroupMember>>, TError,{groupId: string;contactId: string}, TContext> => {
+export const getRemoveContactGroupMemberMutationKey = () => ['removeContactGroupMember'] as const;
 
-const mutationKey = ['removeContactGroupMember'];
+export const getRemoveContactGroupMemberMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactGroupMember>>, TError,RemoveContactGroupMemberMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeContactGroupMember>>, TError,RemoveContactGroupMemberMutationVariables, TContext> => {
+
+const mutationKey = getRemoveContactGroupMemberMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2790,7 +2976,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeContactGroupMember>>, {groupId: string;contactId: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeContactGroupMember>>, RemoveContactGroupMemberMutationVariables> = (props) => {
           const {groupId,contactId} = props ?? {};
 
           return  removeContactGroupMember(groupId,contactId,requestOptions)
@@ -2806,16 +2992,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveContactGroupMemberMutationResult = NonNullable<Awaited<ReturnType<typeof removeContactGroupMember>>>
 
     export type RemoveContactGroupMemberMutationError = ProblemDetails
+    export type RemoveContactGroupMemberMutationVariables = {groupId: string;contactId: string}
 
     /**
  * @summary Remove a contact from a group.
  */
 export const useRemoveContactGroupMember = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactGroupMember>>, TError,{groupId: string;contactId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactGroupMember>>, TError,RemoveContactGroupMemberMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof removeContactGroupMember>>,
         TError,
-        {groupId: string;contactId: string},
+        RemoveContactGroupMemberMutationVariables,
         TContext
       > => {
       return useMutation(getRemoveContactGroupMemberMutationOptions(options), queryClient);

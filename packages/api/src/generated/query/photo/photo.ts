@@ -75,11 +75,19 @@ export const getDeclarePhotoUrl = () => {
  */
 export const declarePhoto = async (declarePhotoRequest: DeclarePhotoRequest, options?: Parameters<typeof apiRequest>[1]): Promise<DeclaredPhotoResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<DeclaredPhotoResponse>(getDeclarePhotoUrl(),
   {
@@ -94,11 +102,13 @@ return apiRequest<DeclaredPhotoResponse>(getDeclarePhotoUrl(),
 
 
 
-export const getDeclarePhotoMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declarePhoto>>, TError,{data: DeclarePhotoRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof declarePhoto>>, TError,{data: DeclarePhotoRequest}, TContext> => {
+export const getDeclarePhotoMutationKey = () => ['declarePhoto'] as const;
 
-const mutationKey = ['declarePhoto'];
+export const getDeclarePhotoMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declarePhoto>>, TError,DeclarePhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof declarePhoto>>, TError,DeclarePhotoMutationVariables, TContext> => {
+
+const mutationKey = getDeclarePhotoMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -108,7 +118,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof declarePhoto>>, {data: DeclarePhotoRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof declarePhoto>>, DeclarePhotoMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  declarePhoto(data,requestOptions)
@@ -124,16 +134,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeclarePhotoMutationResult = NonNullable<Awaited<ReturnType<typeof declarePhoto>>>
     export type DeclarePhotoMutationBody = DeclarePhotoRequest
     export type DeclarePhotoMutationError = ProblemDetails
+    export type DeclarePhotoMutationVariables = {data: DeclarePhotoRequest}
 
     /**
  * @summary Declare an asset (idempotent) and receive a presigned upload URL while bytes are pending.
  */
 export const useDeclarePhoto = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declarePhoto>>, TError,{data: DeclarePhotoRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof declarePhoto>>, TError,DeclarePhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof declarePhoto>>,
         TError,
-        {data: DeclarePhotoRequest},
+        DeclarePhotoMutationVariables,
         TContext
       > => {
       return useMutation(getDeclarePhotoMutationOptions(options), queryClient);
@@ -271,11 +282,13 @@ export const completePhotoUpload = async (id: string, options?: Parameters<typeo
 
 
 
-export const getCompletePhotoUploadMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePhotoUpload>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof completePhotoUpload>>, TError,{id: string}, TContext> => {
+export const getCompletePhotoUploadMutationKey = () => ['completePhotoUpload'] as const;
 
-const mutationKey = ['completePhotoUpload'];
+export const getCompletePhotoUploadMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePhotoUpload>>, TError,CompletePhotoUploadMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof completePhotoUpload>>, TError,CompletePhotoUploadMutationVariables, TContext> => {
+
+const mutationKey = getCompletePhotoUploadMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -285,7 +298,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completePhotoUpload>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completePhotoUpload>>, CompletePhotoUploadMutationVariables> = (props) => {
           const {id} = props ?? {};
 
           return  completePhotoUpload(id,requestOptions)
@@ -301,16 +314,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CompletePhotoUploadMutationResult = NonNullable<Awaited<ReturnType<typeof completePhotoUpload>>>
 
     export type CompletePhotoUploadMutationError = ProblemDetails
+    export type CompletePhotoUploadMutationVariables = {id: string}
 
     /**
  * @summary Verify the uploaded bytes and queue processing (idempotent).
  */
 export const useCompletePhotoUpload = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePhotoUpload>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completePhotoUpload>>, TError,CompletePhotoUploadMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof completePhotoUpload>>,
         TError,
-        {id: string},
+        CompletePhotoUploadMutationVariables,
         TContext
       > => {
       return useMutation(getCompletePhotoUploadMutationOptions(options), queryClient);
@@ -341,11 +355,13 @@ export const reprocessPhoto = async (id: string, options?: Parameters<typeof api
 
 
 
-export const getReprocessPhotoMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reprocessPhoto>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof reprocessPhoto>>, TError,{id: string}, TContext> => {
+export const getReprocessPhotoMutationKey = () => ['reprocessPhoto'] as const;
 
-const mutationKey = ['reprocessPhoto'];
+export const getReprocessPhotoMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reprocessPhoto>>, TError,ReprocessPhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof reprocessPhoto>>, TError,ReprocessPhotoMutationVariables, TContext> => {
+
+const mutationKey = getReprocessPhotoMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -355,7 +371,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reprocessPhoto>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reprocessPhoto>>, ReprocessPhotoMutationVariables> = (props) => {
           const {id} = props ?? {};
 
           return  reprocessPhoto(id,requestOptions)
@@ -371,16 +387,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ReprocessPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof reprocessPhoto>>>
 
     export type ReprocessPhotoMutationError = ProblemDetails
+    export type ReprocessPhotoMutationVariables = {id: string}
 
     /**
  * @summary Re-queue a Ready or Failed asset through the processing pipeline.
  */
 export const useReprocessPhoto = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reprocessPhoto>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reprocessPhoto>>, TError,ReprocessPhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof reprocessPhoto>>,
         TError,
-        {id: string},
+        ReprocessPhotoMutationVariables,
         TContext
       > => {
       return useMutation(getReprocessPhotoMutationOptions(options), queryClient);
@@ -398,11 +415,19 @@ export const useReprocessPhoto = <TError = ProblemDetails,
  */
 export const lookupPhotos = async (lookupPhotosRequest: LookupPhotosRequest, options?: Parameters<typeof apiRequest>[1]): Promise<PhotoListResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<PhotoListResponse>(getLookupPhotosUrl(),
   {
@@ -417,11 +442,13 @@ return apiRequest<PhotoListResponse>(getLookupPhotosUrl(),
 
 
 
-export const getLookupPhotosMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupPhotos>>, TError,{data: LookupPhotosRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof lookupPhotos>>, TError,{data: LookupPhotosRequest}, TContext> => {
+export const getLookupPhotosMutationKey = () => ['lookupPhotos'] as const;
 
-const mutationKey = ['lookupPhotos'];
+export const getLookupPhotosMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupPhotos>>, TError,LookupPhotosMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof lookupPhotos>>, TError,LookupPhotosMutationVariables, TContext> => {
+
+const mutationKey = getLookupPhotosMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -431,7 +458,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof lookupPhotos>>, {data: LookupPhotosRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof lookupPhotos>>, LookupPhotosMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  lookupPhotos(data,requestOptions)
@@ -447,16 +474,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type LookupPhotosMutationResult = NonNullable<Awaited<ReturnType<typeof lookupPhotos>>>
     export type LookupPhotosMutationBody = LookupPhotosRequest
     export type LookupPhotosMutationError = ProblemDetails
+    export type LookupPhotosMutationVariables = {data: LookupPhotosRequest}
 
     /**
  * @summary Hydrate up to 200 assets by id — turns relation references into renderable items.
  */
 export const useLookupPhotos = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupPhotos>>, TError,{data: LookupPhotosRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupPhotos>>, TError,LookupPhotosMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof lookupPhotos>>,
         TError,
-        {data: LookupPhotosRequest},
+        LookupPhotosMutationVariables,
         TContext
       > => {
       return useMutation(getLookupPhotosMutationOptions(options), queryClient);
@@ -794,11 +822,13 @@ export const deletePhoto = async (id: string, options?: Parameters<typeof apiReq
 
 
 
-export const getDeletePhotoMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,{id: string}, TContext> => {
+export const getDeletePhotoMutationKey = () => ['deletePhoto'] as const;
 
-const mutationKey = ['deletePhoto'];
+export const getDeletePhotoMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,DeletePhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,DeletePhotoMutationVariables, TContext> => {
+
+const mutationKey = getDeletePhotoMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -808,7 +838,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePhoto>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePhoto>>, DeletePhotoMutationVariables> = (props) => {
           const {id} = props ?? {};
 
           return  deletePhoto(id,requestOptions)
@@ -824,16 +854,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeletePhotoMutationResult = NonNullable<Awaited<ReturnType<typeof deletePhoto>>>
 
     export type DeletePhotoMutationError = ProblemDetails
+    export type DeletePhotoMutationVariables = {id: string}
 
     /**
  * @summary Delete an asset: objects first, then the document.
  */
 export const useDeletePhoto = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,DeletePhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deletePhoto>>,
         TError,
-        {id: string},
+        DeletePhotoMutationVariables,
         TContext
       > => {
       return useMutation(getDeletePhotoMutationOptions(options), queryClient);

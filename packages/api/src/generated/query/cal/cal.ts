@@ -107,11 +107,13 @@ export const bootstrapMe = async ( options?: Parameters<typeof apiRequest>[1]): 
 
 
 
+export const getBootstrapMeMutationKey = () => ['bootstrapMe'] as const;
+
 export const getBootstrapMeMutationOptions = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapMe>>, TError,void, TContext>, request?: SecondParameter<typeof apiRequest>}
 ): UseMutationOptions<Awaited<ReturnType<typeof bootstrapMe>>, TError,void, TContext> => {
 
-const mutationKey = ['bootstrapMe'];
+const mutationKey = getBootstrapMeMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -137,6 +139,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type BootstrapMeMutationResult = NonNullable<Awaited<ReturnType<typeof bootstrapMe>>>
 
     export type BootstrapMeMutationError = ProblemDetails
+
 
     /**
  * @summary Idempotently ensure the caller has the standard calendar set; returns it.
@@ -371,11 +374,19 @@ export const getCreateCalendarUrl = () => {
  */
 export const createCalendar = async (createCalendarRequest: CreateCalendarRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContainerDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ContainerDto>(getCreateCalendarUrl(),
   {
@@ -390,11 +401,13 @@ return apiRequest<ContainerDto>(getCreateCalendarUrl(),
 
 
 
-export const getCreateCalendarMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCalendar>>, TError,{data: CreateCalendarRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof createCalendar>>, TError,{data: CreateCalendarRequest}, TContext> => {
+export const getCreateCalendarMutationKey = () => ['createCalendar'] as const;
 
-const mutationKey = ['createCalendar'];
+export const getCreateCalendarMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCalendar>>, TError,CreateCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCalendar>>, TError,CreateCalendarMutationVariables, TContext> => {
+
+const mutationKey = getCreateCalendarMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -404,7 +417,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCalendar>>, {data: CreateCalendarRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCalendar>>, CreateCalendarMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createCalendar(data,requestOptions)
@@ -420,16 +433,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateCalendarMutationResult = NonNullable<Awaited<ReturnType<typeof createCalendar>>>
     export type CreateCalendarMutationBody = CreateCalendarRequest
     export type CreateCalendarMutationError = ProblemDetails
+    export type CreateCalendarMutationVariables = {data: CreateCalendarRequest}
 
     /**
  * @summary Create a calendar. (Address books are managed by LupiraContactApi.)
  */
 export const useCreateCalendar = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCalendar>>, TError,{data: CreateCalendarRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCalendar>>, TError,CreateCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createCalendar>>,
         TError,
-        {data: CreateCalendarRequest},
+        CreateCalendarMutationVariables,
         TContext
       > => {
       return useMutation(getCreateCalendarMutationOptions(options), queryClient);
@@ -448,11 +462,19 @@ export const useCreateCalendar = <TError = ProblemDetails,
 export const grantCalendarOwner = async (calendarId: string,
     grantOwnerRequest: GrantOwnerRequest, options?: Parameters<typeof apiRequest>[1]): Promise<OwnerGrantDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<OwnerGrantDto>(getGrantCalendarOwnerUrl(calendarId),
   {
@@ -467,11 +489,13 @@ return apiRequest<OwnerGrantDto>(getGrantCalendarOwnerUrl(calendarId),
 
 
 
-export const getGrantCalendarOwnerMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantCalendarOwner>>, TError,{calendarId: string;data: GrantOwnerRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof grantCalendarOwner>>, TError,{calendarId: string;data: GrantOwnerRequest}, TContext> => {
+export const getGrantCalendarOwnerMutationKey = () => ['grantCalendarOwner'] as const;
 
-const mutationKey = ['grantCalendarOwner'];
+export const getGrantCalendarOwnerMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantCalendarOwner>>, TError,GrantCalendarOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof grantCalendarOwner>>, TError,GrantCalendarOwnerMutationVariables, TContext> => {
+
+const mutationKey = getGrantCalendarOwnerMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -481,7 +505,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof grantCalendarOwner>>, {calendarId: string;data: GrantOwnerRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof grantCalendarOwner>>, GrantCalendarOwnerMutationVariables> = (props) => {
           const {calendarId,data} = props ?? {};
 
           return  grantCalendarOwner(calendarId,data,requestOptions)
@@ -497,16 +521,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type GrantCalendarOwnerMutationResult = NonNullable<Awaited<ReturnType<typeof grantCalendarOwner>>>
     export type GrantCalendarOwnerMutationBody = GrantOwnerRequest
     export type GrantCalendarOwnerMutationError = ProblemDetails
+    export type GrantCalendarOwnerMutationVariables = {calendarId: string;data: GrantOwnerRequest}
 
     /**
  * @summary Grant a member access to a calendar (access = owner|read-write|read; default owner).
  */
 export const useGrantCalendarOwner = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantCalendarOwner>>, TError,{calendarId: string;data: GrantOwnerRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantCalendarOwner>>, TError,GrantCalendarOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof grantCalendarOwner>>,
         TError,
-        {calendarId: string;data: GrantOwnerRequest},
+        GrantCalendarOwnerMutationVariables,
         TContext
       > => {
       return useMutation(getGrantCalendarOwnerMutationOptions(options), queryClient);
@@ -546,11 +571,13 @@ export const revokeCalendarOwner = async (calendarId: string,
 
 
 
-export const getRevokeCalendarOwnerMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeCalendarOwner>>, TError,{calendarId: string;params: RevokeCalendarOwnerParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof revokeCalendarOwner>>, TError,{calendarId: string;params: RevokeCalendarOwnerParams}, TContext> => {
+export const getRevokeCalendarOwnerMutationKey = () => ['revokeCalendarOwner'] as const;
 
-const mutationKey = ['revokeCalendarOwner'];
+export const getRevokeCalendarOwnerMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeCalendarOwner>>, TError,RevokeCalendarOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof revokeCalendarOwner>>, TError,RevokeCalendarOwnerMutationVariables, TContext> => {
+
+const mutationKey = getRevokeCalendarOwnerMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -560,7 +587,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeCalendarOwner>>, {calendarId: string;params: RevokeCalendarOwnerParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeCalendarOwner>>, RevokeCalendarOwnerMutationVariables> = (props) => {
           const {calendarId,params} = props ?? {};
 
           return  revokeCalendarOwner(calendarId,params,requestOptions)
@@ -576,16 +603,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RevokeCalendarOwnerMutationResult = NonNullable<Awaited<ReturnType<typeof revokeCalendarOwner>>>
 
     export type RevokeCalendarOwnerMutationError = ProblemDetails
+    export type RevokeCalendarOwnerMutationVariables = {calendarId: string;params: RevokeCalendarOwnerParams}
 
     /**
  * @summary Revoke a member's access to a calendar (by email). 409 if it would remove the last owner.
  */
 export const useRevokeCalendarOwner = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeCalendarOwner>>, TError,{calendarId: string;params: RevokeCalendarOwnerParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeCalendarOwner>>, TError,RevokeCalendarOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof revokeCalendarOwner>>,
         TError,
-        {calendarId: string;params: RevokeCalendarOwnerParams},
+        RevokeCalendarOwnerMutationVariables,
         TContext
       > => {
       return useMutation(getRevokeCalendarOwnerMutationOptions(options), queryClient);
@@ -710,11 +738,19 @@ export const getCreateItemUrl = () => {
  */
 export const createItem = async (createCalendarItemRequest: CreateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<CalendarItemDto>(getCreateItemUrl(),
   {
@@ -729,11 +765,13 @@ return apiRequest<CalendarItemDto>(getCreateItemUrl(),
 
 
 
-export const getCreateItemMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItem>>, TError,{data: CreateCalendarItemRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof createItem>>, TError,{data: CreateCalendarItemRequest}, TContext> => {
+export const getCreateItemMutationKey = () => ['createItem'] as const;
 
-const mutationKey = ['createItem'];
+export const getCreateItemMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItem>>, TError,CreateItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createItem>>, TError,CreateItemMutationVariables, TContext> => {
+
+const mutationKey = getCreateItemMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -743,7 +781,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createItem>>, {data: CreateCalendarItemRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createItem>>, CreateItemMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createItem(data,requestOptions)
@@ -759,16 +797,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateItemMutationResult = NonNullable<Awaited<ReturnType<typeof createItem>>>
     export type CreateItemMutationBody = CreateCalendarItemRequest
     export type CreateItemMutationError = ProblemDetails
+    export type CreateItemMutationVariables = {data: CreateCalendarItemRequest}
 
     /**
  * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location must be a resolved PlaceId (free text is CalDAV-only).
  */
 export const useCreateItem = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItem>>, TError,{data: CreateCalendarItemRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItem>>, TError,CreateItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createItem>>,
         TError,
-        {data: CreateCalendarItemRequest},
+        CreateItemMutationVariables,
         TContext
       > => {
       return useMutation(getCreateItemMutationOptions(options), queryClient);
@@ -887,11 +926,19 @@ export const getUpdateItemUrl = (id: string,) => {
 export const updateItem = async (id: string,
     updateCalendarItemRequest: UpdateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<CalendarItemDto>(getUpdateItemUrl(id),
   {
@@ -906,11 +953,13 @@ return apiRequest<CalendarItemDto>(getUpdateItemUrl(id),
 
 
 
-export const getUpdateItemMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateItem>>, TError,{id: string;data: UpdateCalendarItemRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateItem>>, TError,{id: string;data: UpdateCalendarItemRequest}, TContext> => {
+export const getUpdateItemMutationKey = () => ['updateItem'] as const;
 
-const mutationKey = ['updateItem'];
+export const getUpdateItemMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateItem>>, TError,UpdateItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateItem>>, TError,UpdateItemMutationVariables, TContext> => {
+
+const mutationKey = getUpdateItemMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -920,7 +969,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateItem>>, {id: string;data: UpdateCalendarItemRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateItem>>, UpdateItemMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  updateItem(id,data,requestOptions)
@@ -936,16 +985,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateItemMutationResult = NonNullable<Awaited<ReturnType<typeof updateItem>>>
     export type UpdateItemMutationBody = UpdateCalendarItemRequest
     export type UpdateItemMutationError = ProblemDetails
+    export type UpdateItemMutationVariables = {id: string;data: UpdateCalendarItemRequest}
 
     /**
  * @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones). Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates.
  */
 export const useUpdateItem = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateItem>>, TError,{id: string;data: UpdateCalendarItemRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateItem>>, TError,UpdateItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateItem>>,
         TError,
-        {id: string;data: UpdateCalendarItemRequest},
+        UpdateItemMutationVariables,
         TContext
       > => {
       return useMutation(getUpdateItemMutationOptions(options), queryClient);
@@ -976,11 +1026,13 @@ export const deleteItem = async (id: string, options?: Parameters<typeof apiRequ
 
 
 
-export const getDeleteItemMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteItem>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof deleteItem>>, TError,{id: string}, TContext> => {
+export const getDeleteItemMutationKey = () => ['deleteItem'] as const;
 
-const mutationKey = ['deleteItem'];
+export const getDeleteItemMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteItem>>, TError,DeleteItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteItem>>, TError,DeleteItemMutationVariables, TContext> => {
+
+const mutationKey = getDeleteItemMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -990,7 +1042,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteItem>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteItem>>, DeleteItemMutationVariables> = (props) => {
           const {id} = props ?? {};
 
           return  deleteItem(id,requestOptions)
@@ -1006,16 +1058,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteItemMutationResult = NonNullable<Awaited<ReturnType<typeof deleteItem>>>
 
     export type DeleteItemMutationError = ProblemDetails
+    export type DeleteItemMutationVariables = {id: string}
 
     /**
  * @summary Delete a calendar item (soft delete + tombstone). A replay bearing the same Idempotency-Key succeeds instead of 404ing.
  */
 export const useDeleteItem = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteItem>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteItem>>, TError,DeleteItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof deleteItem>>,
         TError,
-        {id: string},
+        DeleteItemMutationVariables,
         TContext
       > => {
       return useMutation(getDeleteItemMutationOptions(options), queryClient);
@@ -1143,11 +1196,19 @@ export const mergeItemMetadata = async (id: string,
     jsonNode: JsonNode,
     params?: MergeItemMetadataParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<CalendarItemDto>(getMergeItemMetadataUrl(id,params),
   {
@@ -1162,11 +1223,13 @@ return apiRequest<CalendarItemDto>(getMergeItemMetadataUrl(id,params),
 
 
 
-export const getMergeItemMetadataMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mergeItemMetadata>>, TError,{id: string;data: JsonNode;params?: MergeItemMetadataParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof mergeItemMetadata>>, TError,{id: string;data: JsonNode;params?: MergeItemMetadataParams}, TContext> => {
+export const getMergeItemMetadataMutationKey = () => ['mergeItemMetadata'] as const;
 
-const mutationKey = ['mergeItemMetadata'];
+export const getMergeItemMetadataMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mergeItemMetadata>>, TError,MergeItemMetadataMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof mergeItemMetadata>>, TError,MergeItemMetadataMutationVariables, TContext> => {
+
+const mutationKey = getMergeItemMetadataMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1176,7 +1239,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof mergeItemMetadata>>, {id: string;data: JsonNode;params?: MergeItemMetadataParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof mergeItemMetadata>>, MergeItemMetadataMutationVariables> = (props) => {
           const {id,data,params} = props ?? {};
 
           return  mergeItemMetadata(id,data,params,requestOptions)
@@ -1192,16 +1255,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type MergeItemMetadataMutationResult = NonNullable<Awaited<ReturnType<typeof mergeItemMetadata>>>
     export type MergeItemMetadataMutationBody = JsonNode
     export type MergeItemMetadataMutationError = ProblemDetails
+    export type MergeItemMetadataMutationVariables = {id: string;data: JsonNode;params?: MergeItemMetadataParams}
 
     /**
  * @summary Merge arbitrary JSON metadata into a calendar item. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe, last-writer-wins merges.
  */
 export const useMergeItemMetadata = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mergeItemMetadata>>, TError,{id: string;data: JsonNode;params?: MergeItemMetadataParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mergeItemMetadata>>, TError,MergeItemMetadataMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof mergeItemMetadata>>,
         TError,
-        {id: string;data: JsonNode;params?: MergeItemMetadataParams},
+        MergeItemMetadataMutationVariables,
         TContext
       > => {
       return useMutation(getMergeItemMetadataMutationOptions(options), queryClient);
@@ -1220,11 +1284,19 @@ export const useMergeItemMetadata = <TError = ProblemDetails,
 export const setItemPrompt = async (id: string,
     setItemPromptRequest: SetItemPromptRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<CalendarItemDto>(getSetItemPromptUrl(id),
   {
@@ -1239,11 +1311,13 @@ return apiRequest<CalendarItemDto>(getSetItemPromptUrl(id),
 
 
 
-export const getSetItemPromptMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemPrompt>>, TError,{id: string;data: SetItemPromptRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof setItemPrompt>>, TError,{id: string;data: SetItemPromptRequest}, TContext> => {
+export const getSetItemPromptMutationKey = () => ['setItemPrompt'] as const;
 
-const mutationKey = ['setItemPrompt'];
+export const getSetItemPromptMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemPrompt>>, TError,SetItemPromptMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setItemPrompt>>, TError,SetItemPromptMutationVariables, TContext> => {
+
+const mutationKey = getSetItemPromptMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1253,7 +1327,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setItemPrompt>>, {id: string;data: SetItemPromptRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setItemPrompt>>, SetItemPromptMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  setItemPrompt(id,data,requestOptions)
@@ -1269,16 +1343,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetItemPromptMutationResult = NonNullable<Awaited<ReturnType<typeof setItemPrompt>>>
     export type SetItemPromptMutationBody = SetItemPromptRequest
     export type SetItemPromptMutationError = ProblemDetails
+    export type SetItemPromptMutationVariables = {id: string;data: SetItemPromptRequest}
 
     /**
  * @summary Set the LLM-interpreted payload on an item (server-side only; never in the export). 409 if the item carries an action.
  */
 export const useSetItemPrompt = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemPrompt>>, TError,{id: string;data: SetItemPromptRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemPrompt>>, TError,SetItemPromptMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setItemPrompt>>,
         TError,
-        {id: string;data: SetItemPromptRequest},
+        SetItemPromptMutationVariables,
         TContext
       > => {
       return useMutation(getSetItemPromptMutationOptions(options), queryClient);
@@ -1318,11 +1393,13 @@ export const clearItemPrompt = async (id: string,
 
 
 
-export const getClearItemPromptMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemPrompt>>, TError,{id: string;params?: ClearItemPromptParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof clearItemPrompt>>, TError,{id: string;params?: ClearItemPromptParams}, TContext> => {
+export const getClearItemPromptMutationKey = () => ['clearItemPrompt'] as const;
 
-const mutationKey = ['clearItemPrompt'];
+export const getClearItemPromptMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemPrompt>>, TError,ClearItemPromptMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearItemPrompt>>, TError,ClearItemPromptMutationVariables, TContext> => {
+
+const mutationKey = getClearItemPromptMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1332,7 +1409,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearItemPrompt>>, {id: string;params?: ClearItemPromptParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearItemPrompt>>, ClearItemPromptMutationVariables> = (props) => {
           const {id,params} = props ?? {};
 
           return  clearItemPrompt(id,params,requestOptions)
@@ -1348,16 +1425,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ClearItemPromptMutationResult = NonNullable<Awaited<ReturnType<typeof clearItemPrompt>>>
 
     export type ClearItemPromptMutationError = ProblemDetails
+    export type ClearItemPromptMutationVariables = {id: string;params?: ClearItemPromptParams}
 
     /**
  * @summary Clear the item's LLM payload.
  */
 export const useClearItemPrompt = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemPrompt>>, TError,{id: string;params?: ClearItemPromptParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemPrompt>>, TError,ClearItemPromptMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof clearItemPrompt>>,
         TError,
-        {id: string;params?: ClearItemPromptParams},
+        ClearItemPromptMutationVariables,
         TContext
       > => {
       return useMutation(getClearItemPromptMutationOptions(options), queryClient);
@@ -1376,11 +1454,19 @@ export const useClearItemPrompt = <TError = ProblemDetails,
 export const setItemAction = async (id: string,
     setItemActionRequest: SetItemActionRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<CalendarItemDto>(getSetItemActionUrl(id),
   {
@@ -1395,11 +1481,13 @@ return apiRequest<CalendarItemDto>(getSetItemActionUrl(id),
 
 
 
-export const getSetItemActionMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemAction>>, TError,{id: string;data: SetItemActionRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof setItemAction>>, TError,{id: string;data: SetItemActionRequest}, TContext> => {
+export const getSetItemActionMutationKey = () => ['setItemAction'] as const;
 
-const mutationKey = ['setItemAction'];
+export const getSetItemActionMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemAction>>, TError,SetItemActionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setItemAction>>, TError,SetItemActionMutationVariables, TContext> => {
+
+const mutationKey = getSetItemActionMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1409,7 +1497,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setItemAction>>, {id: string;data: SetItemActionRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setItemAction>>, SetItemActionMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  setItemAction(id,data,requestOptions)
@@ -1425,16 +1513,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetItemActionMutationResult = NonNullable<Awaited<ReturnType<typeof setItemAction>>>
     export type SetItemActionMutationBody = SetItemActionRequest
     export type SetItemActionMutationError = ProblemDetails
+    export type SetItemActionMutationVariables = {id: string;data: SetItemActionRequest}
 
     /**
  * @summary Set the deterministic payload on an item (server-side only; never in the export). 409 if the item carries a prompt.
  */
 export const useSetItemAction = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemAction>>, TError,{id: string;data: SetItemActionRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemAction>>, TError,SetItemActionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof setItemAction>>,
         TError,
-        {id: string;data: SetItemActionRequest},
+        SetItemActionMutationVariables,
         TContext
       > => {
       return useMutation(getSetItemActionMutationOptions(options), queryClient);
@@ -1474,11 +1563,13 @@ export const clearItemAction = async (id: string,
 
 
 
-export const getClearItemActionMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemAction>>, TError,{id: string;params?: ClearItemActionParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof clearItemAction>>, TError,{id: string;params?: ClearItemActionParams}, TContext> => {
+export const getClearItemActionMutationKey = () => ['clearItemAction'] as const;
 
-const mutationKey = ['clearItemAction'];
+export const getClearItemActionMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemAction>>, TError,ClearItemActionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearItemAction>>, TError,ClearItemActionMutationVariables, TContext> => {
+
+const mutationKey = getClearItemActionMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1488,7 +1579,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearItemAction>>, {id: string;params?: ClearItemActionParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearItemAction>>, ClearItemActionMutationVariables> = (props) => {
           const {id,params} = props ?? {};
 
           return  clearItemAction(id,params,requestOptions)
@@ -1504,16 +1595,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ClearItemActionMutationResult = NonNullable<Awaited<ReturnType<typeof clearItemAction>>>
 
     export type ClearItemActionMutationError = ProblemDetails
+    export type ClearItemActionMutationVariables = {id: string;params?: ClearItemActionParams}
 
     /**
  * @summary Clear the item's deterministic payload.
  */
 export const useClearItemAction = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemAction>>, TError,{id: string;params?: ClearItemActionParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemAction>>, TError,ClearItemActionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof clearItemAction>>,
         TError,
-        {id: string;params?: ClearItemActionParams},
+        ClearItemActionMutationVariables,
         TContext
       > => {
       return useMutation(getClearItemActionMutationOptions(options), queryClient);
@@ -1532,11 +1624,19 @@ export const useClearItemAction = <TError = ProblemDetails,
 export const createItemRelation = async (id: string,
     createRelationRequest: CreateRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<RelationDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<RelationDto>(getCreateItemRelationUrl(id),
   {
@@ -1551,11 +1651,13 @@ return apiRequest<RelationDto>(getCreateItemRelationUrl(id),
 
 
 
-export const getCreateItemRelationMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItemRelation>>, TError,{id: string;data: CreateRelationRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof createItemRelation>>, TError,{id: string;data: CreateRelationRequest}, TContext> => {
+export const getCreateItemRelationMutationKey = () => ['createItemRelation'] as const;
 
-const mutationKey = ['createItemRelation'];
+export const getCreateItemRelationMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItemRelation>>, TError,CreateItemRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createItemRelation>>, TError,CreateItemRelationMutationVariables, TContext> => {
+
+const mutationKey = getCreateItemRelationMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1565,7 +1667,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createItemRelation>>, {id: string;data: CreateRelationRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createItemRelation>>, CreateItemRelationMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  createItemRelation(id,data,requestOptions)
@@ -1581,16 +1683,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateItemRelationMutationResult = NonNullable<Awaited<ReturnType<typeof createItemRelation>>>
     export type CreateItemRelationMutationBody = CreateRelationRequest
     export type CreateItemRelationMutationError = ProblemDetails
+    export type CreateItemRelationMutationVariables = {id: string;data: CreateRelationRequest}
 
     /**
  * @summary Link a calendar item to an external reference (e.g. a LupiraTasks item, or an Activity-API engagement/project).
  */
 export const useCreateItemRelation = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItemRelation>>, TError,{id: string;data: CreateRelationRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItemRelation>>, TError,CreateItemRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createItemRelation>>,
         TError,
-        {id: string;data: CreateRelationRequest},
+        CreateItemRelationMutationVariables,
         TContext
       > => {
       return useMutation(getCreateItemRelationMutationOptions(options), queryClient);
@@ -1939,11 +2042,13 @@ export const acceptItemIntoCalendar = async (itemId: string,
 
 
 
-export const getAcceptItemIntoCalendarMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptItemIntoCalendar>>, TError,{itemId: string;calendarId: string;params?: AcceptItemIntoCalendarParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof acceptItemIntoCalendar>>, TError,{itemId: string;calendarId: string;params?: AcceptItemIntoCalendarParams}, TContext> => {
+export const getAcceptItemIntoCalendarMutationKey = () => ['acceptItemIntoCalendar'] as const;
 
-const mutationKey = ['acceptItemIntoCalendar'];
+export const getAcceptItemIntoCalendarMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptItemIntoCalendar>>, TError,AcceptItemIntoCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptItemIntoCalendar>>, TError,AcceptItemIntoCalendarMutationVariables, TContext> => {
+
+const mutationKey = getAcceptItemIntoCalendarMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1953,7 +2058,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptItemIntoCalendar>>, {itemId: string;calendarId: string;params?: AcceptItemIntoCalendarParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptItemIntoCalendar>>, AcceptItemIntoCalendarMutationVariables> = (props) => {
           const {itemId,calendarId,params} = props ?? {};
 
           return  acceptItemIntoCalendar(itemId,calendarId,params,requestOptions)
@@ -1969,16 +2074,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AcceptItemIntoCalendarMutationResult = NonNullable<Awaited<ReturnType<typeof acceptItemIntoCalendar>>>
 
     export type AcceptItemIntoCalendarMutationError = ProblemDetails
+    export type AcceptItemIntoCalendarMutationVariables = {itemId: string;calendarId: string;params?: AcceptItemIntoCalendarParams}
 
     /**
  * @summary Accept a proposed item into a calendar. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe, last-writer-wins filing.
  */
 export const useAcceptItemIntoCalendar = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptItemIntoCalendar>>, TError,{itemId: string;calendarId: string;params?: AcceptItemIntoCalendarParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptItemIntoCalendar>>, TError,AcceptItemIntoCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof acceptItemIntoCalendar>>,
         TError,
-        {itemId: string;calendarId: string;params?: AcceptItemIntoCalendarParams},
+        AcceptItemIntoCalendarMutationVariables,
         TContext
       > => {
       return useMutation(getAcceptItemIntoCalendarMutationOptions(options), queryClient);
@@ -2020,11 +2126,13 @@ export const fileItemToCalendar = async (itemId: string,
 
 
 
-export const getFileItemToCalendarMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof fileItemToCalendar>>, TError,{itemId: string;calendarId: string;params?: FileItemToCalendarParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof fileItemToCalendar>>, TError,{itemId: string;calendarId: string;params?: FileItemToCalendarParams}, TContext> => {
+export const getFileItemToCalendarMutationKey = () => ['fileItemToCalendar'] as const;
 
-const mutationKey = ['fileItemToCalendar'];
+export const getFileItemToCalendarMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof fileItemToCalendar>>, TError,FileItemToCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof fileItemToCalendar>>, TError,FileItemToCalendarMutationVariables, TContext> => {
+
+const mutationKey = getFileItemToCalendarMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2034,7 +2142,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof fileItemToCalendar>>, {itemId: string;calendarId: string;params?: FileItemToCalendarParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof fileItemToCalendar>>, FileItemToCalendarMutationVariables> = (props) => {
           const {itemId,calendarId,params} = props ?? {};
 
           return  fileItemToCalendar(itemId,calendarId,params,requestOptions)
@@ -2050,16 +2158,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type FileItemToCalendarMutationResult = NonNullable<Awaited<ReturnType<typeof fileItemToCalendar>>>
 
     export type FileItemToCalendarMutationError = ProblemDetails
+    export type FileItemToCalendarMutationVariables = {itemId: string;calendarId: string;params?: FileItemToCalendarParams}
 
     /**
  * @summary File an existing item into a calendar (status=proposed|accepted, default proposed). Offline clients pass ?occurredAt= + Idempotency-Key.
  */
 export const useFileItemToCalendar = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof fileItemToCalendar>>, TError,{itemId: string;calendarId: string;params?: FileItemToCalendarParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof fileItemToCalendar>>, TError,FileItemToCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof fileItemToCalendar>>,
         TError,
-        {itemId: string;calendarId: string;params?: FileItemToCalendarParams},
+        FileItemToCalendarMutationVariables,
         TContext
       > => {
       return useMutation(getFileItemToCalendarMutationOptions(options), queryClient);
@@ -2101,11 +2210,13 @@ export const removeItemFromCalendar = async (itemId: string,
 
 
 
-export const getRemoveItemFromCalendarMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeItemFromCalendar>>, TError,{itemId: string;calendarId: string;params?: RemoveItemFromCalendarParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof removeItemFromCalendar>>, TError,{itemId: string;calendarId: string;params?: RemoveItemFromCalendarParams}, TContext> => {
+export const getRemoveItemFromCalendarMutationKey = () => ['removeItemFromCalendar'] as const;
 
-const mutationKey = ['removeItemFromCalendar'];
+export const getRemoveItemFromCalendarMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeItemFromCalendar>>, TError,RemoveItemFromCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeItemFromCalendar>>, TError,RemoveItemFromCalendarMutationVariables, TContext> => {
+
+const mutationKey = getRemoveItemFromCalendarMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2115,7 +2226,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeItemFromCalendar>>, {itemId: string;calendarId: string;params?: RemoveItemFromCalendarParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeItemFromCalendar>>, RemoveItemFromCalendarMutationVariables> = (props) => {
           const {itemId,calendarId,params} = props ?? {};
 
           return  removeItemFromCalendar(itemId,calendarId,params,requestOptions)
@@ -2131,16 +2242,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveItemFromCalendarMutationResult = NonNullable<Awaited<ReturnType<typeof removeItemFromCalendar>>>
 
     export type RemoveItemFromCalendarMutationError = ProblemDetails
+    export type RemoveItemFromCalendarMutationVariables = {itemId: string;calendarId: string;params?: RemoveItemFromCalendarParams}
 
     /**
  * @summary Remove an item from a calendar (reject / unfile). Offline clients pass ?occurredAt= + Idempotency-Key.
  */
 export const useRemoveItemFromCalendar = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeItemFromCalendar>>, TError,{itemId: string;calendarId: string;params?: RemoveItemFromCalendarParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeItemFromCalendar>>, TError,RemoveItemFromCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof removeItemFromCalendar>>,
         TError,
-        {itemId: string;calendarId: string;params?: RemoveItemFromCalendarParams},
+        RemoveItemFromCalendarMutationVariables,
         TContext
       > => {
       return useMutation(getRemoveItemFromCalendarMutationOptions(options), queryClient);
@@ -2180,11 +2292,13 @@ export const inviteParticipant = async (id: string,
 
 
 
-export const getInviteParticipantMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,{id: string;params: InviteParticipantParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,{id: string;params: InviteParticipantParams}, TContext> => {
+export const getInviteParticipantMutationKey = () => ['inviteParticipant'] as const;
 
-const mutationKey = ['inviteParticipant'];
+export const getInviteParticipantMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,InviteParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,InviteParticipantMutationVariables, TContext> => {
+
+const mutationKey = getInviteParticipantMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2194,7 +2308,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inviteParticipant>>, {id: string;params: InviteParticipantParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inviteParticipant>>, InviteParticipantMutationVariables> = (props) => {
           const {id,params} = props ?? {};
 
           return  inviteParticipant(id,params,requestOptions)
@@ -2210,16 +2324,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type InviteParticipantMutationResult = NonNullable<Awaited<ReturnType<typeof inviteParticipant>>>
 
     export type InviteParticipantMutationError = ProblemDetails
+    export type InviteParticipantMutationVariables = {id: string;params: InviteParticipantParams}
 
     /**
  * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant.
  */
 export const useInviteParticipant = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,{id: string;params: InviteParticipantParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,InviteParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof inviteParticipant>>,
         TError,
-        {id: string;params: InviteParticipantParams},
+        InviteParticipantMutationVariables,
         TContext
       > => {
       return useMutation(getInviteParticipantMutationOptions(options), queryClient);
@@ -2261,11 +2376,13 @@ export const respondToInvitation = async (id: string,
 
 
 
-export const getRespondToInvitationMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToInvitation>>, TError,{id: string;participationId: string;params?: RespondToInvitationParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof respondToInvitation>>, TError,{id: string;participationId: string;params?: RespondToInvitationParams}, TContext> => {
+export const getRespondToInvitationMutationKey = () => ['respondToInvitation'] as const;
 
-const mutationKey = ['respondToInvitation'];
+export const getRespondToInvitationMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToInvitation>>, TError,RespondToInvitationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof respondToInvitation>>, TError,RespondToInvitationMutationVariables, TContext> => {
+
+const mutationKey = getRespondToInvitationMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2275,7 +2392,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof respondToInvitation>>, {id: string;participationId: string;params?: RespondToInvitationParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof respondToInvitation>>, RespondToInvitationMutationVariables> = (props) => {
           const {id,participationId,params} = props ?? {};
 
           return  respondToInvitation(id,participationId,params,requestOptions)
@@ -2291,16 +2408,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RespondToInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof respondToInvitation>>>
 
     export type RespondToInvitationMutationError = ProblemDetails
+    export type RespondToInvitationMutationVariables = {id: string;participationId: string;params?: RespondToInvitationParams}
 
     /**
  * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated.
  */
 export const useRespondToInvitation = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToInvitation>>, TError,{id: string;participationId: string;params?: RespondToInvitationParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToInvitation>>, TError,RespondToInvitationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof respondToInvitation>>,
         TError,
-        {id: string;participationId: string;params?: RespondToInvitationParams},
+        RespondToInvitationMutationVariables,
         TContext
       > => {
       return useMutation(getRespondToInvitationMutationOptions(options), queryClient);
@@ -2333,11 +2451,13 @@ export const confirmAttendance = async (id: string,
 
 
 
-export const getConfirmAttendanceMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmAttendance>>, TError,{id: string;participationId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof confirmAttendance>>, TError,{id: string;participationId: string}, TContext> => {
+export const getConfirmAttendanceMutationKey = () => ['confirmAttendance'] as const;
 
-const mutationKey = ['confirmAttendance'];
+export const getConfirmAttendanceMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmAttendance>>, TError,ConfirmAttendanceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmAttendance>>, TError,ConfirmAttendanceMutationVariables, TContext> => {
+
+const mutationKey = getConfirmAttendanceMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2347,7 +2467,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmAttendance>>, {id: string;participationId: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmAttendance>>, ConfirmAttendanceMutationVariables> = (props) => {
           const {id,participationId} = props ?? {};
 
           return  confirmAttendance(id,participationId,requestOptions)
@@ -2363,16 +2483,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ConfirmAttendanceMutationResult = NonNullable<Awaited<ReturnType<typeof confirmAttendance>>>
 
     export type ConfirmAttendanceMutationError = ProblemDetails
+    export type ConfirmAttendanceMutationVariables = {id: string;participationId: string}
 
     /**
  * @summary Confirm attendance.
  */
 export const useConfirmAttendance = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmAttendance>>, TError,{id: string;participationId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmAttendance>>, TError,ConfirmAttendanceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof confirmAttendance>>,
         TError,
-        {id: string;participationId: string},
+        ConfirmAttendanceMutationVariables,
         TContext
       > => {
       return useMutation(getConfirmAttendanceMutationOptions(options), queryClient);
@@ -2405,11 +2526,13 @@ export const leaveItem = async (id: string,
 
 
 
-export const getLeaveItemMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveItem>>, TError,{id: string;participationId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof leaveItem>>, TError,{id: string;participationId: string}, TContext> => {
+export const getLeaveItemMutationKey = () => ['leaveItem'] as const;
 
-const mutationKey = ['leaveItem'];
+export const getLeaveItemMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveItem>>, TError,LeaveItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof leaveItem>>, TError,LeaveItemMutationVariables, TContext> => {
+
+const mutationKey = getLeaveItemMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2419,7 +2542,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof leaveItem>>, {id: string;participationId: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof leaveItem>>, LeaveItemMutationVariables> = (props) => {
           const {id,participationId} = props ?? {};
 
           return  leaveItem(id,participationId,requestOptions)
@@ -2435,16 +2558,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type LeaveItemMutationResult = NonNullable<Awaited<ReturnType<typeof leaveItem>>>
 
     export type LeaveItemMutationError = ProblemDetails
+    export type LeaveItemMutationVariables = {id: string;participationId: string}
 
     /**
  * @summary Record that the participant left.
  */
 export const useLeaveItem = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveItem>>, TError,{id: string;participationId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveItem>>, TError,LeaveItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof leaveItem>>,
         TError,
-        {id: string;participationId: string},
+        LeaveItemMutationVariables,
         TContext
       > => {
       return useMutation(getLeaveItemMutationOptions(options), queryClient);
@@ -2477,11 +2601,13 @@ export const removeParticipant = async (id: string,
 
 
 
-export const getRemoveParticipantMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeParticipant>>, TError,{id: string;participationId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof removeParticipant>>, TError,{id: string;participationId: string}, TContext> => {
+export const getRemoveParticipantMutationKey = () => ['removeParticipant'] as const;
 
-const mutationKey = ['removeParticipant'];
+export const getRemoveParticipantMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeParticipant>>, TError,RemoveParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeParticipant>>, TError,RemoveParticipantMutationVariables, TContext> => {
+
+const mutationKey = getRemoveParticipantMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2491,7 +2617,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeParticipant>>, {id: string;participationId: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeParticipant>>, RemoveParticipantMutationVariables> = (props) => {
           const {id,participationId} = props ?? {};
 
           return  removeParticipant(id,participationId,requestOptions)
@@ -2507,16 +2633,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveParticipantMutationResult = NonNullable<Awaited<ReturnType<typeof removeParticipant>>>
 
     export type RemoveParticipantMutationError = ProblemDetails
+    export type RemoveParticipantMutationVariables = {id: string;participationId: string}
 
     /**
  * @summary Remove an attendee.
  */
 export const useRemoveParticipant = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeParticipant>>, TError,{id: string;participationId: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeParticipant>>, TError,RemoveParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof removeParticipant>>,
         TError,
-        {id: string;participationId: string},
+        RemoveParticipantMutationVariables,
         TContext
       > => {
       return useMutation(getRemoveParticipantMutationOptions(options), queryClient);

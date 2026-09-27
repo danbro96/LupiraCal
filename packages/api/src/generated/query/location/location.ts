@@ -77,11 +77,19 @@ export const getRegisterDeviceUrl = () => {
  */
 export const registerDevice = async (registerDeviceRequest: RegisterDeviceRequest, options?: Parameters<typeof apiRequest>[1]): Promise<RegisterDeviceResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<RegisterDeviceResponse>(getRegisterDeviceUrl(),
   {
@@ -96,11 +104,13 @@ return apiRequest<RegisterDeviceResponse>(getRegisterDeviceUrl(),
 
 
 
-export const getRegisterDeviceMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerDevice>>, TError,{data: RegisterDeviceRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof registerDevice>>, TError,{data: RegisterDeviceRequest}, TContext> => {
+export const getRegisterDeviceMutationKey = () => ['registerDevice'] as const;
 
-const mutationKey = ['registerDevice'];
+export const getRegisterDeviceMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerDevice>>, TError,RegisterDeviceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerDevice>>, TError,RegisterDeviceMutationVariables, TContext> => {
+
+const mutationKey = getRegisterDeviceMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -110,7 +120,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerDevice>>, {data: RegisterDeviceRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerDevice>>, RegisterDeviceMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  registerDevice(data,requestOptions)
@@ -126,16 +136,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RegisterDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof registerDevice>>>
     export type RegisterDeviceMutationBody = RegisterDeviceRequest
     export type RegisterDeviceMutationError = ProblemDetails
+    export type RegisterDeviceMutationVariables = {data: RegisterDeviceRequest}
 
     /**
  * @summary Register a device; returns the one-time ingest API key.
  */
 export const useRegisterDevice = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerDevice>>, TError,{data: RegisterDeviceRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerDevice>>, TError,RegisterDeviceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof registerDevice>>,
         TError,
-        {data: RegisterDeviceRequest},
+        RegisterDeviceMutationVariables,
         TContext
       > => {
       return useMutation(getRegisterDeviceMutationOptions(options), queryClient);
@@ -166,11 +177,13 @@ export const retireDevice = async (id: string, options?: Parameters<typeof apiRe
 
 
 
-export const getRetireDeviceMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retireDevice>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof retireDevice>>, TError,{id: string}, TContext> => {
+export const getRetireDeviceMutationKey = () => ['retireDevice'] as const;
 
-const mutationKey = ['retireDevice'];
+export const getRetireDeviceMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retireDevice>>, TError,RetireDeviceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof retireDevice>>, TError,RetireDeviceMutationVariables, TContext> => {
+
+const mutationKey = getRetireDeviceMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -180,7 +193,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof retireDevice>>, {id: string}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof retireDevice>>, RetireDeviceMutationVariables> = (props) => {
           const {id} = props ?? {};
 
           return  retireDevice(id,requestOptions)
@@ -196,16 +209,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RetireDeviceMutationResult = NonNullable<Awaited<ReturnType<typeof retireDevice>>>
 
     export type RetireDeviceMutationError = ProblemDetails
+    export type RetireDeviceMutationVariables = {id: string}
 
     /**
  * @summary Retire a device (revokes its ingest keys).
  */
 export const useRetireDevice = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retireDevice>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof retireDevice>>, TError,RetireDeviceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof retireDevice>>,
         TError,
-        {id: string},
+        RetireDeviceMutationVariables,
         TContext
       > => {
       return useMutation(getRetireDeviceMutationOptions(options), queryClient);
@@ -671,11 +685,13 @@ export const purgeLocationHistory = async (params?: PurgeLocationHistoryParams, 
 
 
 
-export const getPurgeLocationHistoryMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof purgeLocationHistory>>, TError,{params?: PurgeLocationHistoryParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof purgeLocationHistory>>, TError,{params?: PurgeLocationHistoryParams}, TContext> => {
+export const getPurgeLocationHistoryMutationKey = () => ['purgeLocationHistory'] as const;
 
-const mutationKey = ['purgeLocationHistory'];
+export const getPurgeLocationHistoryMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof purgeLocationHistory>>, TError,PurgeLocationHistoryMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof purgeLocationHistory>>, TError,PurgeLocationHistoryMutationVariables, TContext> => {
+
+const mutationKey = getPurgeLocationHistoryMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -685,7 +701,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof purgeLocationHistory>>, {params?: PurgeLocationHistoryParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof purgeLocationHistory>>, PurgeLocationHistoryMutationVariables> = (props) => {
           const {params} = props ?? {};
 
           return  purgeLocationHistory(params,requestOptions)
@@ -701,16 +717,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PurgeLocationHistoryMutationResult = NonNullable<Awaited<ReturnType<typeof purgeLocationHistory>>>
 
     export type PurgeLocationHistoryMutationError = ProblemDetails
+    export type PurgeLocationHistoryMutationVariables = {params?: PurgeLocationHistoryParams}
 
     /**
  * @summary Purge raw fixes + derived docs in a time range (owner erase).
  */
 export const usePurgeLocationHistory = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof purgeLocationHistory>>, TError,{params?: PurgeLocationHistoryParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof purgeLocationHistory>>, TError,PurgeLocationHistoryMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof purgeLocationHistory>>,
         TError,
-        {params?: PurgeLocationHistoryParams},
+        PurgeLocationHistoryMutationVariables,
         TContext
       > => {
       return useMutation(getPurgeLocationHistoryMutationOptions(options), queryClient);

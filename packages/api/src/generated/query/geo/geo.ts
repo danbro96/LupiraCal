@@ -199,11 +199,19 @@ export const getCreatePlaceUrl = () => {
  */
 export const createPlace = async (createPlaceRequest: CreatePlaceRequest, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<PlaceDto>(getCreatePlaceUrl(),
   {
@@ -218,11 +226,13 @@ return apiRequest<PlaceDto>(getCreatePlaceUrl(),
 
 
 
-export const getCreatePlaceMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlace>>, TError,{data: CreatePlaceRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof createPlace>>, TError,{data: CreatePlaceRequest}, TContext> => {
+export const getCreatePlaceMutationKey = () => ['createPlace'] as const;
 
-const mutationKey = ['createPlace'];
+export const getCreatePlaceMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlace>>, TError,CreatePlaceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPlace>>, TError,CreatePlaceMutationVariables, TContext> => {
+
+const mutationKey = getCreatePlaceMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -232,7 +242,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPlace>>, {data: CreatePlaceRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPlace>>, CreatePlaceMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createPlace(data,requestOptions)
@@ -248,16 +258,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreatePlaceMutationResult = NonNullable<Awaited<ReturnType<typeof createPlace>>>
     export type CreatePlaceMutationBody = CreatePlaceRequest
     export type CreatePlaceMutationError = ProblemDetails
+    export type CreatePlaceMutationVariables = {data: CreatePlaceRequest}
 
     /**
  * @summary Create a user place directly (name + optional coordinates/category).
  */
 export const useCreatePlace = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlace>>, TError,{data: CreatePlaceRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlace>>, TError,CreatePlaceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createPlace>>,
         TError,
-        {data: CreatePlaceRequest},
+        CreatePlaceMutationVariables,
         TContext
       > => {
       return useMutation(getCreatePlaceMutationOptions(options), queryClient);
@@ -583,11 +594,19 @@ export const getUpdatePlaceUrl = (id: string,) => {
 export const updatePlace = async (id: string,
     updatePlaceRequest: UpdatePlaceRequest, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceDto> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<PlaceDto>(getUpdatePlaceUrl(id),
   {
@@ -602,11 +621,13 @@ return apiRequest<PlaceDto>(getUpdatePlaceUrl(id),
 
 
 
-export const getUpdatePlaceMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlace>>, TError,{id: string;data: UpdatePlaceRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof updatePlace>>, TError,{id: string;data: UpdatePlaceRequest}, TContext> => {
+export const getUpdatePlaceMutationKey = () => ['updatePlace'] as const;
 
-const mutationKey = ['updatePlace'];
+export const getUpdatePlaceMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlace>>, TError,UpdatePlaceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePlace>>, TError,UpdatePlaceMutationVariables, TContext> => {
+
+const mutationKey = getUpdatePlaceMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -616,7 +637,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePlace>>, {id: string;data: UpdatePlaceRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePlace>>, UpdatePlaceMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
           return  updatePlace(id,data,requestOptions)
@@ -632,16 +653,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdatePlaceMutationResult = NonNullable<Awaited<ReturnType<typeof updatePlace>>>
     export type UpdatePlaceMutationBody = UpdatePlaceRequest
     export type UpdatePlaceMutationError = ProblemDetails
+    export type UpdatePlaceMutationVariables = {id: string;data: UpdatePlaceRequest}
 
     /**
  * @summary Curate a place: rename, recategorize, or verify.
  */
 export const useUpdatePlace = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlace>>, TError,{id: string;data: UpdatePlaceRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePlace>>, TError,UpdatePlaceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updatePlace>>,
         TError,
-        {id: string;data: UpdatePlaceRequest},
+        UpdatePlaceMutationVariables,
         TContext
       > => {
       return useMutation(getUpdatePlaceMutationOptions(options), queryClient);
@@ -681,11 +703,13 @@ export const regeocodePlace = async (id: string,
 
 
 
-export const getRegeocodePlaceMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regeocodePlace>>, TError,{id: string;params?: RegeocodePlaceParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof regeocodePlace>>, TError,{id: string;params?: RegeocodePlaceParams}, TContext> => {
+export const getRegeocodePlaceMutationKey = () => ['regeocodePlace'] as const;
 
-const mutationKey = ['regeocodePlace'];
+export const getRegeocodePlaceMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regeocodePlace>>, TError,RegeocodePlaceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof regeocodePlace>>, TError,RegeocodePlaceMutationVariables, TContext> => {
+
+const mutationKey = getRegeocodePlaceMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -695,7 +719,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof regeocodePlace>>, {id: string;params?: RegeocodePlaceParams}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof regeocodePlace>>, RegeocodePlaceMutationVariables> = (props) => {
           const {id,params} = props ?? {};
 
           return  regeocodePlace(id,params,requestOptions)
@@ -711,16 +735,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RegeocodePlaceMutationResult = NonNullable<Awaited<ReturnType<typeof regeocodePlace>>>
 
     export type RegeocodePlaceMutationError = ProblemDetails
+    export type RegeocodePlaceMutationVariables = {id: string;params?: RegeocodePlaceParams}
 
     /**
  * @summary Re-geocode a place from its address/name and attach coordinates, containment, and OSM id — heals a coordinate-less stub or refreshes a stale fix. force=true bypasses and overwrites the frozen geocode cache (heals a frozen empty answer). 400 on a no-hit or transient geocoder outage; the place is left unchanged.
  */
 export const useRegeocodePlace = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regeocodePlace>>, TError,{id: string;params?: RegeocodePlaceParams}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof regeocodePlace>>, TError,RegeocodePlaceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof regeocodePlace>>,
         TError,
-        {id: string;params?: RegeocodePlaceParams},
+        RegeocodePlaceMutationVariables,
         TContext
       > => {
       return useMutation(getRegeocodePlaceMutationOptions(options), queryClient);
@@ -738,11 +763,19 @@ export const useRegeocodePlace = <TError = ProblemDetails,
  */
 export const lookupPlaces = async (lookupPlacesRequest: LookupPlacesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceLookupItemDto[]> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<PlaceLookupItemDto[]>(getLookupPlacesUrl(),
   {
@@ -757,11 +790,13 @@ return apiRequest<PlaceLookupItemDto[]>(getLookupPlacesUrl(),
 
 
 
-export const getLookupPlacesMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupPlaces>>, TError,{data: LookupPlacesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof lookupPlaces>>, TError,{data: LookupPlacesRequest}, TContext> => {
+export const getLookupPlacesMutationKey = () => ['lookupPlaces'] as const;
 
-const mutationKey = ['lookupPlaces'];
+export const getLookupPlacesMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupPlaces>>, TError,LookupPlacesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof lookupPlaces>>, TError,LookupPlacesMutationVariables, TContext> => {
+
+const mutationKey = getLookupPlacesMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -771,7 +806,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof lookupPlaces>>, {data: LookupPlacesRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof lookupPlaces>>, LookupPlacesMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  lookupPlaces(data,requestOptions)
@@ -787,16 +822,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type LookupPlacesMutationResult = NonNullable<Awaited<ReturnType<typeof lookupPlaces>>>
     export type LookupPlacesMutationBody = LookupPlacesRequest
     export type LookupPlacesMutationError = ProblemDetails
+    export type LookupPlacesMutationVariables = {data: LookupPlacesRequest}
 
     /**
  * @summary Bulk get-by-ids (max 200) — hydrate stored place ids into coordinates in one call. Responses align index-for-index; a null place means unknown or deleted, a merged id returns the survivor. Containment is omitted (use GET /places/{id} for detail).
  */
 export const useLookupPlaces = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupPlaces>>, TError,{data: LookupPlacesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupPlaces>>, TError,LookupPlacesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof lookupPlaces>>,
         TError,
-        {data: LookupPlacesRequest},
+        LookupPlacesMutationVariables,
         TContext
       > => {
       return useMutation(getLookupPlacesMutationOptions(options), queryClient);
@@ -814,11 +850,19 @@ export const useLookupPlaces = <TError = ProblemDetails,
  */
 export const createPlaceFromGeocode = async (createPlaceFromGeocodeRequest: CreatePlaceFromGeocodeRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResolvePlaceResponse> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<ResolvePlaceResponse>(getCreatePlaceFromGeocodeUrl(),
   {
@@ -833,11 +877,13 @@ return apiRequest<ResolvePlaceResponse>(getCreatePlaceFromGeocodeUrl(),
 
 
 
-export const getCreatePlaceFromGeocodeMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlaceFromGeocode>>, TError,{data: CreatePlaceFromGeocodeRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof createPlaceFromGeocode>>, TError,{data: CreatePlaceFromGeocodeRequest}, TContext> => {
+export const getCreatePlaceFromGeocodeMutationKey = () => ['createPlaceFromGeocode'] as const;
 
-const mutationKey = ['createPlaceFromGeocode'];
+export const getCreatePlaceFromGeocodeMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlaceFromGeocode>>, TError,CreatePlaceFromGeocodeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createPlaceFromGeocode>>, TError,CreatePlaceFromGeocodeMutationVariables, TContext> => {
+
+const mutationKey = getCreatePlaceFromGeocodeMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -847,7 +893,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPlaceFromGeocode>>, {data: CreatePlaceFromGeocodeRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPlaceFromGeocode>>, CreatePlaceFromGeocodeMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  createPlaceFromGeocode(data,requestOptions)
@@ -863,16 +909,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreatePlaceFromGeocodeMutationResult = NonNullable<Awaited<ReturnType<typeof createPlaceFromGeocode>>>
     export type CreatePlaceFromGeocodeMutationBody = CreatePlaceFromGeocodeRequest
     export type CreatePlaceFromGeocodeMutationError = ProblemDetails
+    export type CreatePlaceFromGeocodeMutationVariables = {data: CreatePlaceFromGeocodeRequest}
 
     /**
  * @summary Create/dedupe a place from one specific forward-geocode hit the user picked (query + OSM identity). Reuses the frozen geocode cache — no extra geocoder call. 400 if the hit is not among the query's geocode results.
  */
 export const useCreatePlaceFromGeocode = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlaceFromGeocode>>, TError,{data: CreatePlaceFromGeocodeRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPlaceFromGeocode>>, TError,CreatePlaceFromGeocodeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createPlaceFromGeocode>>,
         TError,
-        {data: CreatePlaceFromGeocodeRequest},
+        CreatePlaceFromGeocodeMutationVariables,
         TContext
       > => {
       return useMutation(getCreatePlaceFromGeocodeMutationOptions(options), queryClient);
@@ -990,11 +1037,19 @@ export const getPrunePlacesUrl = () => {
  */
 export const prunePlaces = async (prunePlacesRequest: PrunePlacesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<PrunePlaceResultDto[]> => {
 
-    const getHeaders = (h?: HeadersInit | Headers): Record<string, string> => {
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
     if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Array.isArray(h)) return Object.fromEntries(h);
-    return h;
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
   };
 return apiRequest<PrunePlaceResultDto[]>(getPrunePlacesUrl(),
   {
@@ -1009,11 +1064,13 @@ return apiRequest<PrunePlaceResultDto[]>(getPrunePlacesUrl(),
 
 
 
-export const getPrunePlacesMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof prunePlaces>>, TError,{data: PrunePlacesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof prunePlaces>>, TError,{data: PrunePlacesRequest}, TContext> => {
+export const getPrunePlacesMutationKey = () => ['prunePlaces'] as const;
 
-const mutationKey = ['prunePlaces'];
+export const getPrunePlacesMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof prunePlaces>>, TError,PrunePlacesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof prunePlaces>>, TError,PrunePlacesMutationVariables, TContext> => {
+
+const mutationKey = getPrunePlacesMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1023,7 +1080,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof prunePlaces>>, {data: PrunePlacesRequest}> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof prunePlaces>>, PrunePlacesMutationVariables> = (props) => {
           const {data} = props ?? {};
 
           return  prunePlaces(data,requestOptions)
@@ -1039,16 +1096,17 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PrunePlacesMutationResult = NonNullable<Awaited<ReturnType<typeof prunePlaces>>>
     export type PrunePlacesMutationBody = PrunePlacesRequest
     export type PrunePlacesMutationError = ProblemDetails
+    export type PrunePlacesMutationVariables = {data: PrunePlacesRequest}
 
     /**
  * @summary Soft-delete orphan places (max 100 per call). References are re-checked per id at prune time; a place referenced since the find returns Referenced and is left alone. Places referenced only by soft-deleted calendar items are never pruned here — use DELETE /places/{id} to override.
  */
 export const usePrunePlaces = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof prunePlaces>>, TError,{data: PrunePlacesRequest}, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof prunePlaces>>, TError,PrunePlacesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof prunePlaces>>,
         TError,
-        {data: PrunePlacesRequest},
+        PrunePlacesMutationVariables,
         TContext
       > => {
       return useMutation(getPrunePlacesMutationOptions(options), queryClient);
