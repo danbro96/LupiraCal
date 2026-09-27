@@ -48,15 +48,15 @@ async function run(dbOverride: Db | undefined, deps: PullDeps): Promise<void> {
 
     const horizon = currentHorizon(deps.now());
     status.setPhase('containers');
-    await pullContainers(db, deps);
-    invalidateContainers();
+    if (await pullContainers(db, deps)) invalidateContainers();
     status.setPhase('items');
-    const calMonths = await pullCal(db, horizon, deps);
+    const cal = await pullCal(db, horizon, deps);
     status.setPhase('contacts');
-    const contactMonths = await pullContacts(db, horizon, deps);
-    invalidateMonthKeys([...calMonths, ...contactMonths]);
-    invalidateContacts();
-    invalidateItems();
+    const contacts = await pullContacts(db, horizon, deps);
+    // Only what the pull touched: an empty delta (most resumes) must not refetch every mounted query.
+    invalidateMonthKeys([...cal.monthKeys, ...contacts.monthKeys]);
+    if (contacts.changed) invalidateContacts();
+    if (cal.changed) invalidateItems();
 
     await maintainHorizon(db, horizon);
 

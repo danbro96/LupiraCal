@@ -263,6 +263,24 @@ describe('pull', () => {
     expect(await mirror.listContainerDocs(db, 'calendars')).toHaveLength(1);
     expect(await mirror.listContainerDocs(db, 'address_books')).toHaveLength(1);
   });
+
+  it('reports whether a pull changed anything, so an empty delta invalidates nothing', async () => {
+    const first = await pullCal(db, horizon, pagesDeps([
+      { cursor: '1', hasMore: false, changed: [{ item: serverItem('a'), guards: serverGuards() }], deleted: [] },
+    ]));
+    expect(first.changed).toBe(true);
+    const empty = await pullCal(db, horizon, pagesDeps([{ cursor: '1', hasMore: false, changed: [], deleted: [] }]));
+    expect(empty).toEqual({ monthKeys: new Set(), changed: false });
+  });
+
+  it('leaves identical containers alone and reports a real change', async () => {
+    const deps = pagesDeps([{ cursor: '1', hasMore: false, changed: [], deleted: [] }]);
+    expect(await pullContainers(db, deps)).toBe(true);
+    expect(await pullContainers(db, deps)).toBe(false);
+    await db.exclusive(async (tx) => {
+      expect(await mirror.replaceContainers(tx, 'calendars', [{ id: 'other' }])).toBe(true);
+    });
+  });
 });
 
 describe('migrations', () => {

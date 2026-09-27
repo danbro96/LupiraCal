@@ -218,10 +218,16 @@ export async function listContacts(tx: Tx): Promise<ContactListRow[]> {
   return rows.map((r) => ({ id: r.id, displayName: r.display_name, doc: JSON.parse(r.doc) as ContactDoc }));
 }
 
-export async function replaceContainers(tx: Tx, table: 'calendars' | 'address_books' | 'contact_groups', docs: { id: string }[]): Promise<void> {
+/** Returns whether anything changed — every sync fetches the full container set, which is usually
+ *  identical, and rewriting it would refetch every container query for nothing. */
+export async function replaceContainers(tx: Tx, table: 'calendars' | 'address_books' | 'contact_groups', docs: { id: string }[]): Promise<boolean> {
+  const stored = await tx.all<{ id: string; doc: string }>(`SELECT id, doc FROM ${table}`);
+  const storedById = new Map(stored.map((r) => [r.id, r.doc]));
+  if (stored.length === docs.length && docs.every((d) => storedById.get(d.id) === JSON.stringify(d))) return false;
   await tx.run(`DELETE FROM ${table}`);
   for (const doc of docs)
     await tx.run(`INSERT INTO ${table} (id, doc) VALUES (?, ?)`, [doc.id, JSON.stringify(doc)]);
+  return true;
 }
 
 export type OutboxRow = {

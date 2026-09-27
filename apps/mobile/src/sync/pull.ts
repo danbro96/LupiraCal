@@ -53,24 +53,32 @@ export const realPullDeps: PullDeps = {
   now: () => new Date(),
 };
 
-export async function pullContainers(db: Db, deps: PullDeps): Promise<void> {
+/** Returns whether any container changed. */
+export async function pullContainers(db: Db, deps: PullDeps): Promise<boolean> {
   const [cal, contact] = [await deps.calContainers(), await deps.contactContainers()];
+  let changed = false;
   await db.exclusive(async (tx) => {
-    await mirror.replaceContainers(tx, 'calendars', cal);
-    await mirror.replaceContainers(tx, 'address_books', contact.addressBooks);
-    await mirror.replaceContainers(tx, 'contact_groups', contact.groups);
+    changed = (await mirror.replaceContainers(tx, 'calendars', cal)) || changed;
+    changed = (await mirror.replaceContainers(tx, 'address_books', contact.addressBooks)) || changed;
+    changed = (await mirror.replaceContainers(tx, 'contact_groups', contact.groups)) || changed;
   });
+  return changed;
 }
 
-/** Returns the touched month keys for query invalidation. */
-export async function pullCal(db: Db, horizon: Horizon, deps: PullDeps): Promise<Set<string>> {
+/** What a pull touched, for query invalidation. `changed` is separate from `monthKeys`: an aggregate
+ *  with no occurrence in the horizon still changes its detail and list queries. */
+export type PullResult = { monthKeys: Set<string>; changed: boolean };
+
+export async function pullCal(db: Db, horizon: Horizon, deps: PullDeps): Promise<PullResult> {
   const monthKeys = new Set<string>();
+  let changed = false;
   let cursor = await mirror.getCursor(db, 'cal');
   const full = cursor === null;
   const seen = new Set<string>();
 
   for (;;) {
     const page = await deps.calChanges(cursor);
+    if (page.changed.length + page.deleted.length > 0) changed = true;
     await db.exclusive(async (tx) => {
       for (const change of page.changed) {
         seen.add(change.item.id);
@@ -93,20 +101,23 @@ export async function pullCal(db: Db, horizon: Horizon, deps: PullDeps): Promise
         if (seen.has(id) || keep.has(id)) continue;
         await collectItemMonths(tx, id, horizon, monthKeys);
         await mirror.removeItem(tx, id);
+        changed = true;
       }
     });
   }
-  return monthKeys;
+  return { monthKeys, changed };
 }
 
-export async function pullContacts(db: Db, horizon: Horizon, deps: PullDeps): Promise<Set<string>> {
+export async function pullContacts(db: Db, horizon: Horizon, deps: PullDeps): Promise<PullResult> {
   const monthKeys = new Set<string>();
+  let changed = false;
   let cursor = await mirror.getCursor(db, 'contact');
   const full = cursor === null;
   const seen = new Set<string>();
 
   for (;;) {
     const page = await deps.contactChanges(cursor);
+    if (page.changed.length + page.deleted.length > 0) changed = true;
     await db.exclusive(async (tx) => {
       for (const change of page.changed) {
         seen.add(change.contact.id);
@@ -130,10 +141,11 @@ export async function pullContacts(db: Db, horizon: Horizon, deps: PullDeps): Pr
         if (seen.has(id) || keep.has(id)) continue;
         await collectBirthdayMonths(tx, id, monthKeys);
         await mirror.removeContact(tx, id);
+        changed = true;
       }
     });
   }
-  return monthKeys;
+  return { monthKeys, changed };
 }
 
 /** Server truth + pending local ops replayed through the reducer twin = the state the server will converge
