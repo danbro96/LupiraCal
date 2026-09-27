@@ -1,7 +1,7 @@
 import { addDays, addMonths, fmtMonthTitle, fmtTime, parseYmd, startOfWeek } from '@lupira/cal-domain/time';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Chip, FAB, IconButton, Text } from 'react-native-paper';
 import { isTaskRow } from '../../domain/taskRows';
@@ -70,7 +70,8 @@ export function CalendarScreen() {
     }),
   ).current;
 
-  const weekStart = startOfWeek(anchor);
+  // Memoized: a new Date each render would defeat WeekView's memo.
+  const weekStart = useMemo(() => startOfWeek(anchor), [anchor]);
   const title = mode === 'month'
     ? fmtMonthTitle(anchor)
     : `${weekStart.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${addDays(weekStart, 6).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;

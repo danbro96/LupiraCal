@@ -81,10 +81,11 @@ export type MovementFeatures = { visits: FeatureCollection; track: FeatureCollec
 
 const EMPTY_MOVEMENT: MovementFeatures = { visits: EMPTY_FEATURES, track: EMPTY_FEATURES, current: EMPTY_FEATURES };
 /** Where you've been: dwell circles, an activity-coloured track, and the last fix each device reported. */
-export function useMovementFeatures(fromIso: string, toIso: string, enabled: boolean): MovementFeatures {
+/** `live` polls the current fixes — only while the map is on screen. */
+export function useMovementFeatures(fromIso: string, toIso: string, enabled: boolean, live: boolean): MovementFeatures {
   const visitsQ = useVisits(fromIso, toIso, enabled);
   const trackQ = useThinnedTrack(fromIso, toIso, enabled);
-  const currentQ = useCurrentFixes(enabled);
+  const currentQ = useCurrentFixes(enabled, live);
 
   return useMemo(() => {
     if (!enabled) return EMPTY_MOVEMENT;

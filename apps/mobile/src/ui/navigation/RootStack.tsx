@@ -34,7 +34,8 @@ const tabIcon = (name: ComponentProps<typeof MaterialIcons>['name']) =>
 
 function Tabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true, headerRight: () => <SettingsButton /> }}>
+    // A visited tab stays mounted; freezing stops it re-rendering (the map on every GPS fix) while hidden.
+    <Tab.Navigator screenOptions={{ headerShown: true, freezeOnBlur: true, headerRight: () => <SettingsButton /> }}>
       <Tab.Screen name="Calendar" component={CalendarScreen} options={{ title: 'Calendar', tabBarIcon: tabIcon(ICONS.calendar) }} />
       <Tab.Screen name="Contacts" component={ContactsScreen} options={{ title: 'Contacts', tabBarIcon: tabIcon(ICONS.group) }} />
       <Tab.Screen name="Map" component={MapScreen} options={{ title: 'Map', tabBarIcon: tabIcon(ICONS.map) }} />

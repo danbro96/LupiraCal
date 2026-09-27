@@ -39,13 +39,13 @@ export function useThinnedTrack(fromIso: string, toIso: string, enabled: boolean
   });
 }
 
-export function useCurrentFixes(enabled: boolean) {
+export function useCurrentFixes(enabled: boolean, live: boolean) {
   const reachable = useSyncStatus((s) => s.serverReachable);
   return useQuery({
     queryKey: ['map', 'current'],
     enabled: enabled && reachable,
     staleTime: 15_000,
-    refetchInterval: 30_000,
+    refetchInterval: live ? 30_000 : false,
     retry: 1,
     queryFn: async () => {
       const r = await getCurrentLocation();

@@ -9,7 +9,7 @@ import {
   type StyleSpecification,
   type ViewStateChangeEvent,
 } from '@maplibre/maplibre-react-native';
-import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -111,7 +111,8 @@ export function MapScreen() {
   const saved = useSavedPlaceFeatures(enabled.saved);
   const photos = usePhotoFeatures(bbox, enabled.photos);
   const contacts = useContactFeatures(enabled.contacts);
-  const movement = useMovementFeatures(movementFrom, movementTo, enabled.movement);
+  const isFocused = useIsFocused();
+  const movement = useMovementFeatures(movementFrom, movementTo, enabled.movement, isFocused);
   const livePosition = useLivePosition((s) => s.position);
 
   const cameraRef = useRef<CameraRef>(null);
@@ -128,11 +129,11 @@ export function MapScreen() {
     cameraRef.current?.easeTo({ center: [at.lon, at.lat], zoom: 15, duration: 600 });
   }, [at]);
 
-  // The puck follows the map's lifetime, not the app's: GPS stops when you leave the tab.
-  useEffect(() => {
+  // GPS stops when you leave the tab. Focus, not mount: a bottom tab stays mounted once visited.
+  useFocusEffect(useCallback(() => {
     void useLivePosition.getState().start();
     return () => useLivePosition.getState().stop();
-  }, []);
+  }, []));
 
   // Camera.trackUserLocation would start MapLibre's own location engine — a second GPS subscription.
   useEffect(() => {
