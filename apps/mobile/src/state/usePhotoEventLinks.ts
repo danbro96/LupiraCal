@@ -1,14 +1,13 @@
 import { useMemo } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { listRelationEdges, searchItems } from '@lupira/cal-api/fetch/cal';
+import { createItemRelation, listRelationEdges, searchItems } from '@lupira/cal-api/fetch/cal';
 import { listPhotos, lookupPhotos } from '@lupira/cal-api/fetch/photo';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
-import { photoEventLinks } from '@lupira/cal-domain/photoFormat';
-import { eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
+import { photoEventLinks, THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
+import { captureWindow, eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
 import { getDb } from '../data/db/expoDb';
 import { loadItem } from '../data/mirror';
 import { useSyncStatus } from '../sync/syncStatus';
-import { THUMB_SAFE_STALE_MS } from './usePhotoLibrary';
 
 /** Every photo↔event edge the caller can see, in one call rather than a request per tile. */
 function usePhotoEventEdges() {
@@ -33,7 +32,7 @@ export function usePhotoEventLinks(): Map<string, string[]> {
 }
 
 /** The photos linked to one calendar item, hydrated in a single batch lookup. */
-export function useEventPhotos(itemId: string): PhotoListItemDto[] {
+export function useEventPhotoQuery(itemId: string) {
   const reachable = useSyncStatus((s) => s.serverReachable);
   const edges = usePhotoEventEdges();
   const ids = useMemo(
@@ -53,7 +52,17 @@ export function useEventPhotos(itemId: string): PhotoListItemDto[] {
     },
   });
 
-  return query.data ?? [];
+  return {
+    data: query.data,
+    isLoading: edges.isLoading || query.isLoading,
+    isRefetching: edges.isRefetching || query.isRefetching,
+    error: edges.error ?? query.error,
+    refetch: async () => { await edges.refetch(); await query.refetch(); },
+  };
+}
+
+export function useEventPhotos(itemId: string): PhotoListItemDto[] {
+  return useEventPhotoQuery(itemId).data ?? [];
 }
 
 /** Photos taken while an event was happening. Candidates only: a photo taken during a 9-to-5 "work"
@@ -96,24 +105,34 @@ export function useLinkedEvents(itemIds: string[]): LinkedEvent[] {
   return itemIds.map((id, i) => ({ id, title: results[i]?.data?.doc.title ?? 'Untitled event' }));
 }
 
-/** Events overlapping a capture time — offered as link candidates, never linked automatically: a photo
- *  taken during a 9-to-5 "work" block is not of it. */
-export function useLinkCandidates(takenAt: string, enabled: boolean) {
+/** Events around the photos' capture times — offered as link candidates, never linked automatically: a
+ *  photo taken during a 9-to-5 "work" block is not of it. */
+export function useLinkCandidates(takenAts: readonly string[], enabled: boolean) {
   const reachable = useSyncStatus((s) => s.serverReachable);
+  const window = captureWindow(takenAts);
   return useQuery({
-    queryKey: ['photos', 'link-candidates', takenAt],
-    enabled: enabled && reachable,
+    queryKey: ['photos', 'link-candidates', window?.fromIso, window?.toIso],
+    enabled: enabled && reachable && window !== null,
     staleTime: 60_000,
     retry: 1,
     queryFn: async () => {
-      const t = new Date(takenAt).getTime();
-      const r = await searchItems({
-        from: new Date(t - 3600_000).toISOString(),
-        to: new Date(t + 3600_000).toISOString(),
-        take: 25,
-      });
+      const r = await searchItems({ from: window!.fromIso, to: window!.toIso, take: 50 });
       if (r.status !== 200) throw new Error(`item search ${r.status}`);
       return r.data;
     },
   });
+}
+
+/** Links each photo not already linked to the event; returns how many links failed. */
+export async function linkPhotosToEvent(
+  itemId: string, photoIds: readonly string[], links: ReadonlyMap<string, string[]>,
+): Promise<{ linked: number; failed: number }> {
+  let failed = 0;
+  const pending = photoIds.filter((id) => !links.get(id)?.includes(itemId));
+  for (const photoId of pending) {
+    const r = await createItemRelation(itemId, { toKind: 'photo', toRef: photoId, relationType: 'depicts' })
+      .catch(() => null);
+    if (r?.status !== 200) failed++;
+  }
+  return { linked: pending.length - failed, failed };
 }

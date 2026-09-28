@@ -2,9 +2,11 @@ import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { getPhoto, getPhotoStats, listPhotos } from '@lupira/cal-api/fetch/photo';
 import type { AssetKind, AssetStatus, ListPhotosParams, PhotoListItemDto, PhotoSort } from '@lupira/cal-api/models';
-import { groupByDay as groupDays } from '@lupira/cal-domain/photoFormat';
+import { filterPhotos } from '@lupira/cal-domain/photoFilter';
+import { groupByDay as groupDays, THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
 import { addDays, parseYmd, startOfDay } from '@lupira/cal-domain/time';
 import { useSyncStatus } from '../sync/syncStatus';
+import { useEventPhotoQuery } from './usePhotoEventLinks';
 
 /** The gallery's read model. Photos are network-only — the SQLite mirror covers cal and contacts only —
  *  so every hook here gates on `serverReachable` and overrides the mirror-tuned query defaults
@@ -12,9 +14,6 @@ import { useSyncStatus } from '../sync/syncStatus';
  *  ['photos'] root, outside every sync-invalidation prefix. */
 
 export const PHOTO_PAGE_SIZE = 90;
-
-/** Comfortably inside the 24 h presigned-thumbnail expiry; a longer cache would serve dead URLs. */
-export const THUMB_SAFE_STALE_MS = 15 * 60_000;
 
 export type PhotoQueryFilters = {
   sort: PhotoSort;
@@ -25,12 +24,14 @@ export type PhotoQueryFilters = {
   /** Local day bounds, 'yyyy-MM-dd'. */
   from?: string;
   to?: string;
+  /** A calendar item id — its linked photos, which the photo API itself knows nothing about. */
+  event?: string;
 };
 
 export const DEFAULT_PHOTO_FILTERS: PhotoQueryFilters = { sort: 'TakenAtDesc' };
 
 /** The day bounds are local calendar days; the endpoint takes instants. */
-function listParams({ from, to, ...rest }: PhotoQueryFilters): ListPhotosParams {
+function listParams({ from, to, event: _event, ...rest }: PhotoQueryFilters): ListPhotosParams {
   return {
     ...rest,
     from: from ? startOfDay(parseYmd(from)).toISOString() : undefined,
@@ -43,7 +44,7 @@ export function usePhotoLibrary(filters: PhotoQueryFilters) {
 
   const query = useInfiniteQuery({
     queryKey: ['photos', 'list', filters],
-    enabled: reachable,
+    enabled: reachable && !filters.event,
     staleTime: THUMB_SAFE_STALE_MS,
     retry: 1,
     initialPageParam: undefined as string | undefined,
@@ -55,7 +56,26 @@ export function usePhotoLibrary(filters: PhotoQueryFilters) {
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
 
+  const event = useEventPhotoQuery(filters.event ?? '');
+  const eventItems = useMemo(() => {
+    const { from, to } = listParams(filters);
+    return filterPhotos(event.data ?? [], { ...filters, fromIso: from, toIso: to });
+  }, [event.data, filters]);
   const items = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data]);
+
+  if (filters.event) {
+    return {
+      items: eventItems,
+      isLoading: event.isLoading,
+      isRefetching: event.isRefetching,
+      error: event.error,
+      hasNextPage: false,
+      fetchNextPage: query.fetchNextPage,
+      isFetchingNextPage: false,
+      refetch: event.refetch,
+    };
+  }
+
   return {
     items,
     isLoading: query.isLoading,

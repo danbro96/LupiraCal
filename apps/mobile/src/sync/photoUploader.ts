@@ -1,10 +1,11 @@
 import NetInfo from '@react-native-community/netinfo';
 import { v7 as uuidv7 } from 'uuid';
 import { declarePhoto, completePhotoUpload } from '@lupira/cal-api/fetch/photo';
+import type { PhotoAssetDto } from '@lupira/cal-api/models';
 import { getDb } from '../data/db/expoDb';
 import type { Db } from '../data/db/types';
 import * as mirror from '../data/mirror';
-import { scanAssets, uploadToPresignedUrl } from '../data/photoLibrary';
+import { saveToDevice, scanAssets, uploadToPresignedUrl } from '../data/photoLibrary';
 import * as queue from '../data/photoQueue';
 import { loadBackupSettings } from '../data/photoSettings';
 import { nextAttemptDelayMs, PARK_AFTER_ATTEMPTS } from '../domain/backoff';
@@ -160,4 +161,28 @@ export async function retryParkedPhotos(dbOverride?: Db): Promise<void> {
   const db = dbOverride ?? (await getDb());
   await db.exclusive((tx) => queue.retryParkedUploads(tx));
   await runPhotoBackup(db);
+}
+
+/** Saves an original back to the phone. The copy is a new media-store asset with a fresh creation time
+ *  that the next scan would upload all over again, so it is filed as already backed up. False when
+ *  the gallery refused write access. */
+export async function restorePhoto(photo: PhotoAssetDto & { originalUrl: string }, dbOverride?: Db): Promise<boolean> {
+  const mediaStoreId = await saveToDevice(photo.originalUrl, photo.id, photo.contentType);
+  if (!mediaStoreId) return false;
+  const db = dbOverride ?? (await getDb());
+  await db.exclusive((tx) => queue.recordUploaded(tx, {
+    media_store_id: mediaStoreId,
+    content_type: photo.contentType,
+    size_bytes: photo.sizeBytes,
+    taken_at: photo.takenAt,
+    latitude: photo.latitude ?? null,
+    longitude: photo.longitude ?? null,
+    width: photo.width ?? null,
+    height: photo.height ?? null,
+    duration_seconds: photo.durationSeconds ?? null,
+    local_uri: '',
+    created_at: new Date().toISOString(),
+  }, photo.id));
+  await usePhotoBackupStatus.getState().refresh(db);
+  return true;
 }

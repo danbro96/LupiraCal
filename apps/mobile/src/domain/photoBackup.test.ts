@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contentTypeOf, isSupportedContentType } from './photoBackup';
+import { contentTypeOf, extensionOf, isSupportedContentType } from './photoBackup';
 
 describe('contentTypeOf', () => {
   it('derives the mime type from the extension, case-insensitively', () => {
@@ -37,5 +37,18 @@ describe('isSupportedContentType', () => {
     for (const t of ['application/pdf', 'image/svg+xml', 'audio/mpeg', '']) {
       expect(isSupportedContentType(t)).toBe(false);
     }
+  });
+});
+
+describe('extensionOf', () => {
+  it('maps a known type back to its first extension', () => {
+    expect(extensionOf('image/jpeg')).toBe('jpg');
+    expect(extensionOf('image/HEIC')).toBe('heic');
+    expect(extensionOf('video/quicktime')).toBe('mov');
+  });
+
+  it('falls back by kind for an unknown type', () => {
+    expect(extensionOf('video/x-unknown')).toBe('mp4');
+    expect(extensionOf('application/octet-stream')).toBe('jpg');
   });
 });

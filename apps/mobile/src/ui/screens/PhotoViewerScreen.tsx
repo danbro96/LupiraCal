@@ -2,21 +2,25 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fmtBytes, fmtDimensions, fmtDuration } from '@lupira/cal-domain/photoFormat';
 import { Image } from 'expo-image';
-import { memo, useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { Button, List, Text } from 'react-native-paper';
+import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Button, IconButton, List, Menu, Text } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { deletePhoto, reprocessPhoto } from '@lupira/cal-api/fetch/photo';
 import { toast, toastError } from '../../feedback/toast';
 import { DEFAULT_PHOTO_FILTERS, usePhoto, usePhotoLibrary } from '../../state/usePhotoLibrary';
+import { restorePhoto } from '../../sync/photoUploader';
 import { invalidatePhotos } from '../../sync/reactivity';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
+import { LinkEventSheet } from '../photos/LinkEventSheet';
 import { PhotoEventLinks } from '../photos/PhotoEventLinks';
 import { useColors } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
+import { ICONS } from '../icons';
 
 const MAX_SCALE = 4;
 
@@ -33,7 +37,10 @@ export function PhotoViewerScreen() {
 
   const { items, hasNextPage, fetchNextPage, isFetchingNextPage } = usePhotoLibrary(filters ?? DEFAULT_PHOTO_FILTERS);
   const [currentId, setCurrentId] = useState(photoId);
-  const [infoOpen, setInfoOpen] = useState(true);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const { data: detail, isLoading } = usePhoto(currentId);
@@ -45,8 +52,10 @@ export function PhotoViewerScreen() {
   const inPage = found >= 0;
   const pages = useMemo<PhotoListItemDto[]>(() => (inPage ? items : detail ? [detail] : []), [inPage, items, detail]);
   const index = Math.max(0, found);
+  const current = detail ?? pages[index] ?? pages[0];
 
   const onDelete = async () => {
+    setMenuOpen(false);
     const ok = await confirm({
       title: 'Delete photo',
       message: 'This removes the original and its thumbnail from storage. It cannot be undone.',
@@ -67,6 +76,7 @@ export function PhotoViewerScreen() {
   };
 
   const onReprocess = async () => {
+    setMenuOpen(false);
     setBusy(true);
     const r = await reprocessPhoto(currentId).catch(() => null);
     setBusy(false);
@@ -78,21 +88,18 @@ export function PhotoViewerScreen() {
     }
   };
 
+  const onSave = async () => {
+    if (!detail?.originalUrl) return;
+    setBusy(true);
+    const saved = await restorePhoto({ ...detail, originalUrl: detail.originalUrl }).catch(() => null);
+    setBusy(false);
+    if (saved) toast('Saved to this phone');
+    else toastError(saved === false ? 'Saving needs access to your photos.' : 'Could not save the photo.');
+  };
+
   useLayoutEffect(() => {
-    navigation.setOptions({
-      title: pages.length > 1 ? `${index + 1} of ${pages.length}` : 'Photo',
-      headerRight: () => (
-        <View style={styles.headerActions}>
-          <Button mode="text" compact onPress={() => setInfoOpen((v) => !v)}>{infoOpen ? 'Hide' : 'Info'}</Button>
-          <Button mode="text" compact textColor={c.danger} disabled={busy} onPress={() => void onDelete()}>
-            Delete
-          </Button>
-        </View>
-      ),
-    });
-    // onDelete closes over the current id, so the header must re-register when the page changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigation, c.danger, busy, infoOpen, index, pages.length, currentId]);
+    navigation.setOptions({ title: pages.length > 1 ? `${index + 1} of ${pages.length}` : 'Photo' });
+  }, [navigation, index, pages.length]);
 
   // Stable list props: a new renderItem re-renders every mounted page, and each page owns gestures.
   const originalUrl = detail?.originalUrl;
@@ -100,9 +107,12 @@ export function PhotoViewerScreen() {
     <PhotoPage
       photo={item}
       width={width}
+      active={i === index}
       // The original is presigned per asset with a short expiry, so it is fetched only for the
       // page in view; neighbours show their thumbnail until swiped to.
       originalUrl={i === index ? originalUrl : undefined}
+      onZoomChange={setZoomed}
+      onSwipeInfo={setInfoOpen}
     />
   ), [width, index, originalUrl]);
   const getItemLayout = useCallback(
@@ -119,6 +129,8 @@ export function PhotoViewerScreen() {
 
   if (pages.length === 0) return <Centered text={isLoading ? 'Loading…' : 'This photo is no longer available.'} />;
 
+  const located = current.latitude != null && current.longitude != null;
+
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
       <FlatList
@@ -127,6 +139,8 @@ export function PhotoViewerScreen() {
         data={pages}
         horizontal
         pagingEnabled
+        // A zoomed photo pans under the finger; paging would steal the drag.
+        scrollEnabled={!zoomed}
         showsHorizontalScrollIndicator={false}
         keyExtractor={photoKey}
         initialScrollIndex={index}
@@ -143,8 +157,47 @@ export function PhotoViewerScreen() {
 
       {infoOpen && (
         <ScrollView style={[styles.meta, { borderTopColor: c.divider }]} contentContainerStyle={styles.metaContent}>
-          <Metadata photo={detail ?? pages[index] ?? pages[0]} onReprocess={() => void onReprocess()} busy={busy} />
+          <Metadata photo={current} onReprocess={() => void onReprocess()} busy={busy} />
         </ScrollView>
+      )}
+
+      <View style={[styles.actions, { borderTopColor: c.divider, backgroundColor: c.bg }]}>
+        <IconButton
+          icon={ICONS.info}
+          selected={infoOpen}
+          onPress={() => setInfoOpen((v) => !v)}
+          accessibilityLabel={infoOpen ? 'Hide info' : 'Info'}
+        />
+        <IconButton
+          icon={ICONS.download}
+          disabled={busy || !detail?.originalUrl}
+          onPress={() => void onSave()}
+          accessibilityLabel="Save to this phone"
+        />
+        <IconButton
+          icon={ICONS.map}
+          disabled={!located}
+          onPress={() => navigation.navigate('Tabs', {
+            screen: 'Map',
+            params: { at: { lon: current.longitude!, lat: current.latitude! } },
+          })}
+          accessibilityLabel="Show on the map"
+        />
+        <IconButton icon={ICONS.link} onPress={() => setLinking(true)} accessibilityLabel="Link to event" />
+        <Menu
+          visible={menuOpen}
+          onDismiss={() => setMenuOpen(false)}
+          anchor={<IconButton icon={ICONS.more} onPress={() => setMenuOpen(true)} accessibilityLabel="More" />}
+        >
+          {current.status === 'Failed' && (
+            <Menu.Item leadingIcon={ICONS.schedule} title="Retry processing" disabled={busy} onPress={() => void onReprocess()} />
+          )}
+          <Menu.Item leadingIcon={ICONS.delete} title="Delete" titleStyle={{ color: c.danger }} disabled={busy} onPress={() => void onDelete()} />
+        </Menu>
+      </View>
+
+      {linking && (
+        <LinkEventSheet photos={[{ id: current.id, takenAt: current.takenAt }]} onDismiss={() => setLinking(false)} />
       )}
     </View>
   );
@@ -152,25 +205,98 @@ export function PhotoViewerScreen() {
 
 const photoKey = (item: PhotoListItemDto) => item.id;
 
-const PhotoPage = memo(function PhotoPage({ photo, width, originalUrl }: { photo: PhotoListItemDto; width: number; originalUrl?: string | null }) {
+const PhotoPage = memo(function PhotoPage({ photo, width, active, originalUrl, onZoomChange, onSwipeInfo }: {
+  photo: PhotoListItemDto;
+  width: number;
+  active: boolean;
+  originalUrl?: string | null;
+  onZoomChange: (zoomed: boolean) => void;
+  onSwipeInfo: (open: boolean) => void;
+}) {
   const c = useColors();
   const scale = useSharedValue(1);
   const saved = useSharedValue(1);
+  const x = useSharedValue(0);
+  const y = useSharedValue(0);
+  const savedX = useSharedValue(0);
+  const savedY = useSharedValue(0);
+  const height = useSharedValue(0);
+  const [zoomed, setZoomed] = useState(false);
+
+  // A neighbour swiped away keeps its zoom otherwise, and comes back magnified.
+  useEffect(() => {
+    if (active) return;
+    scale.value = 1;
+    saved.value = 1;
+    x.value = 0;
+    y.value = 0;
+    savedX.value = 0;
+    savedY.value = 0;
+    setZoomed(false);
+  }, [active, scale, saved, x, y, savedX, savedY]);
 
   // Memoized: a fresh gesture makes GestureDetector re-attach its native handlers every render.
   const gesture = useMemo(() => {
+    const report = (next: boolean) => {
+      setZoomed(next);
+      onZoomChange(next);
+    };
+    const clampX = (v: number) => {
+      'worklet';
+      const max = (width * (scale.value - 1)) / 2;
+      return Math.min(Math.max(v, -max), max);
+    };
+    const clampY = (v: number) => {
+      'worklet';
+      const max = (height.value * (scale.value - 1)) / 2;
+      return Math.min(Math.max(v, -max), max);
+    };
+    const settle = (next: number) => {
+      'worklet';
+      saved.value = next;
+      if (next <= 1) {
+        x.value = withTiming(0);
+        y.value = withTiming(0);
+        savedX.value = 0;
+        savedY.value = 0;
+      } else {
+        x.value = clampX(x.value);
+        y.value = clampY(y.value);
+        savedX.value = x.value;
+        savedY.value = y.value;
+      }
+      scheduleOnRN(report, next > 1);
+    };
+
     const pinch = Gesture.Pinch()
       .onUpdate((e) => { scale.value = Math.min(Math.max(saved.value * e.scale, 1), MAX_SCALE); })
-      .onEnd(() => { saved.value = scale.value; });
+      .onEnd(() => settle(scale.value));
+    const pan = Gesture.Pan()
+      .enabled(zoomed)
+      .averageTouches(true)
+      .onUpdate((e) => {
+        x.value = clampX(savedX.value + e.translationX);
+        y.value = clampY(savedY.value + e.translationY);
+      })
+      .onEnd(() => {
+        savedX.value = x.value;
+        savedY.value = y.value;
+      });
     const doubleTap = Gesture.Tap().numberOfTaps(2).onEnd(() => {
       const next = scale.value > 1 ? 1 : 2;
       scale.value = withTiming(next);
-      saved.value = next;
+      settle(next);
     });
-    return Gesture.Simultaneous(pinch, doubleTap);
-  }, [scale, saved]);
+    const swipeUp = Gesture.Fling().direction(Directions.UP).enabled(!zoomed)
+      .onEnd((_e, success) => { if (success) scheduleOnRN(onSwipeInfo, true); });
+    const swipeDown = Gesture.Fling().direction(Directions.DOWN).enabled(!zoomed)
+      .onEnd((_e, success) => { if (success) scheduleOnRN(onSwipeInfo, false); });
+    return Gesture.Simultaneous(pinch, pan, doubleTap, swipeUp, swipeDown);
+  }, [scale, saved, x, y, savedX, savedY, height, width, zoomed, onZoomChange, onSwipeInfo]);
 
-  const zoom = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const zoom = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.value }, { translateY: y.value }, { scale: scale.value }],
+  }));
 
   // HEIC originals are stored untranscoded and the decoder can't read them — the WebP thumbnail is the
   // only viewable rendition.
@@ -179,7 +305,7 @@ const PhotoPage = memo(function PhotoPage({ photo, width, originalUrl }: { photo
 
   return (
     <GestureDetector gesture={gesture}>
-      <View style={[styles.page, { width }]}>
+      <View style={[styles.page, { width }]} onLayout={(e) => { height.value = e.nativeEvent.layout.height; }}>
         {uri ? (
           <Animated.View style={[styles.fill, zoom]}>
             <Image source={{ uri }} style={styles.fill} contentFit="contain" transition={150} recyclingKey={photo.id} />
@@ -217,18 +343,6 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
           ? `${photo.latitude.toFixed(5)}, ${photo.longitude.toFixed(5)} · ${photo.geotagSource === 'ExifGps' ? 'from the camera' : 'matched from your location history'}`
           : 'No location — this photo never appears on the map.'}
       </Text>
-      {photo.latitude != null && photo.longitude != null && (
-        <Button
-          mode="text"
-          compact
-          onPress={() => navigation.navigate('Tabs', {
-            screen: 'Map',
-            params: { at: { lon: photo.longitude!, lat: photo.latitude! } },
-          })}
-        >
-          Show on the map
-        </Button>
-      )}
 
       {photo.duplicateOfId != null && (
         <>
@@ -251,7 +365,9 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
           <Text style={[styles.detail, { color: photo.lastError ? c.danger : c.textMuted }]}>
             {photo.lastError ?? photo.status}
           </Text>
-          <Button mode="text" compact disabled={busy} onPress={onReprocess}>Retry processing</Button>
+          {photo.status === 'Failed' && (
+            <Button mode="text" compact disabled={busy} onPress={onReprocess}>Retry processing</Button>
+          )}
         </>
       )}
     </>
@@ -260,11 +376,11 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  headerActions: { flexDirection: 'row' },
   page: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' },
   fill: { width: '100%', height: '100%' },
   meta: { maxHeight: '40%', borderTopWidth: StyleSheet.hairlineWidth },
   metaContent: { padding: 16, paddingTop: 8, gap: 2 },
+  actions: { flexDirection: 'row', justifyContent: 'space-around', borderTopWidth: StyleSheet.hairlineWidth },
   title: { fontSize: 16, fontWeight: '600' },
   detail: { fontSize: 13 },
 });

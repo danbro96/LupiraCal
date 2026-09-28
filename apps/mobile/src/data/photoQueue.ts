@@ -42,6 +42,14 @@ export async function markDone(tx: Tx, mediaStoreId: string, assetId: string): P
   );
 }
 
+/** Files an asset as already backed up, so no scan ever uploads it. */
+export async function recordUploaded(
+  tx: Tx, row: Omit<PhotoQueueRow, 'state' | 'attempts' | 'next_attempt_at' | 'error' | 'asset_id'>, assetId: string,
+): Promise<void> {
+  await enqueueAsset(tx, row);
+  await markDone(tx, row.media_store_id, assetId);
+}
+
 export async function markFailure(tx: Tx, mediaStoreId: string, error: string, parked: boolean, nextAttemptAt: string | null): Promise<void> {
   await tx.run(
     `UPDATE photo_upload_queue

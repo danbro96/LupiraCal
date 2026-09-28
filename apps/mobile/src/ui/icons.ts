@@ -15,6 +15,7 @@ export const ICONS = {
   check: 'check',
   checkBox: 'check-box',
   checkCircle: 'check-circle',
+  circle: 'radio-button-unchecked',
   chevronLeft: 'chevron-left',
   chevronRight: 'chevron-right',
   cleaning: 'cleaning-services',
@@ -22,6 +23,7 @@ export const ICONS = {
   close: 'close',
   contacts: 'contacts',
   delete: 'delete',
+  download: 'file-download',
   email: 'email',
   event: 'event',
   expand: 'expand-more',
@@ -29,6 +31,7 @@ export const ICONS = {
   group: 'group',
   hotel: 'hotel',
   inbox: 'inbox',
+  info: 'info-outline',
   layers: 'layers',
   link: 'link',
   locationOff: 'location-off',
@@ -55,6 +58,7 @@ export const ICONS = {
   target: 'track-changes',
   tools: 'construction',
   tune: 'tune',
+  upload: 'cloud-upload',
   walk: 'directions-walk',
 } as const;
 

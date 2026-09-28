@@ -1,6 +1,6 @@
-import { File } from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import { Asset, AssetField, MediaType, Query, requestPermissionsAsync } from 'expo-media-library';
-import { contentTypeOf, isSupportedContentType } from '../domain/photoBackup';
+import { contentTypeOf, extensionOf, isSupportedContentType } from '../domain/photoBackup';
 import { logDebug } from '../debug/log';
 
 /** MediaStore adapter for the backup queue. Scanning uses `exeForMetadata()` — it reads the cheap
@@ -107,4 +107,19 @@ export async function uploadToPresignedUrl(
   });
   const result = await task.uploadAsync();
   return result.status;
+}
+
+/** Downloads an original into the device gallery and returns its new media-store id, or null when
+ *  refused. Write-only access is enough to insert, so this never asks to read the whole library. */
+export async function saveToDevice(url: string, photoId: string, contentType: string): Promise<string | null> {
+  const permission = await requestPermissionsAsync(true);
+  if (!permission.granted) return null;
+  const target = new File(Paths.cache, `${photoId}.${extensionOf(contentType)}`);
+  if (target.exists) target.delete();
+  const file = await File.downloadFileAsync(url, target);
+  try {
+    return (await Asset.create(file.uri)).id;
+  } finally {
+    file.delete();
+  }
 }

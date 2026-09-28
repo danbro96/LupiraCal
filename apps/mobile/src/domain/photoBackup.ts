@@ -49,18 +49,26 @@ export function isSupportedContentType(contentType: string): boolean {
   return SUPPORTED_CONTENT_TYPES.has(contentType.toLowerCase());
 }
 
+const CONTENT_TYPE_BY_EXT: Record<string, string> = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
+  heic: 'image/heic', heif: 'image/heif', gif: 'image/gif', avif: 'image/avif',
+  mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', mkv: 'video/x-matroska', '3gp': 'video/3gpp',
+};
+
 /** MediaLibrary gives a filename + mediaType, not a mime type. Extension wins because it distinguishes
  *  heic from jpeg where mediaType only says "photo". */
 export function contentTypeOf(filename: string, mediaType: 'image' | 'video' | string): string | null {
   const ext = filename.toLowerCase().split('.').pop() ?? '';
-  const byExt: Record<string, string> = {
-    jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp',
-    heic: 'image/heic', heif: 'image/heif', gif: 'image/gif', avif: 'image/avif',
-    mp4: 'video/mp4', mov: 'video/quicktime', webm: 'video/webm', mkv: 'video/x-matroska', '3gp': 'video/3gpp',
-  };
-  if (byExt[ext]) return byExt[ext];
+  if (CONTENT_TYPE_BY_EXT[ext]) return CONTENT_TYPE_BY_EXT[ext];
   // Unknown extension: fall back to the coarse kind so common camera output still uploads.
   if (mediaType === 'image') return 'image/jpeg';
   if (mediaType === 'video') return 'video/mp4';
   return null;
+}
+
+/** The file extension a downloaded original is saved under — the media store infers its type from it. */
+export function extensionOf(contentType: string): string {
+  const type = contentType.toLowerCase();
+  return Object.keys(CONTENT_TYPE_BY_EXT).find((ext) => CONTENT_TYPE_BY_EXT[ext] === type)
+    ?? (type.startsWith('video/') ? 'mp4' : 'jpg');
 }

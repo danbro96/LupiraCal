@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { eventPhotoWindow } from './photoWindow';
+import { captureWindow, eventPhotoWindow } from './photoWindow';
 
 describe('eventPhotoWindow', () => {
   it('pads a timed event on both ends', () => {
@@ -33,5 +33,24 @@ describe('eventPhotoWindow', () => {
     expect(eventPhotoWindow({})).toBeNull();
     expect(eventPhotoWindow({ isAllDay: true })).toBeNull();
     expect(eventPhotoWindow({ startsAt: 'not a date' })).toBeNull();
+  });
+});
+
+describe('captureWindow', () => {
+  it('pads a single capture an hour each way', () => {
+    const w = captureWindow(['2026-08-20T10:00:00Z'])!;
+    expect(w.fromIso).toBe('2026-08-20T09:00:00.000Z');
+    expect(w.toIso).toBe('2026-08-20T11:00:00.000Z');
+  });
+
+  it('spans the earliest to the latest capture, in any order', () => {
+    const w = captureWindow(['2026-08-20T15:00:00Z', '2026-08-20T10:00:00Z'])!;
+    expect(w.fromIso).toBe('2026-08-20T09:00:00.000Z');
+    expect(w.toIso).toBe('2026-08-20T16:00:00.000Z');
+  });
+
+  it('is null for nothing to search around', () => {
+    expect(captureWindow([])).toBeNull();
+    expect(captureWindow(['not a date'])).toBeNull();
   });
 });

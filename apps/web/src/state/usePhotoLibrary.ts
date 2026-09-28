@@ -1,24 +1,23 @@
 import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getListPhotosQueryKey, listPhotos, lookupPhotos } from '@lupira/cal-api/query/photo';
+import { getListPhotosQueryKey, listPhotos, lookupPhotos, useGetPhotoStats } from '@lupira/cal-api/query/photo';
 import {
   type DayGroup,
   groupByDay as groupDays,
   photoEventLinks,
+  THUMB_SAFE_STALE_MS,
 } from '@lupira/cal-domain/photoFormat';
+import { filterPhotos } from '@lupira/cal-domain/photoFilter';
 import type { ListPhotosParams, PhotoListItemDto } from '@lupira/cal-api/models';
-import { getListRelationEdgesQueryKey, listRelationEdges } from '@lupira/cal-api/query/cal';
+import { getListRelationEdgesQueryKey, listRelationEdges, useSearchItems } from '@lupira/cal-api/query/cal';
 import { addDays, parseYmd, startOfDay } from '@lupira/cal-domain/time';
-import { eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
+import { captureWindow, eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
 
 /** The gallery's read model. Filters live in URL params so a view is linkable and survives a reload,
  *  exactly as useItemSearch does it. */
 
 export const PHOTO_PAGE_SIZE = 120;
-
-/** Well inside the 24 h presigned-thumbnail expiry — a longer cache would serve dead URLs. */
-const THUMB_SAFE_STALE_MS = 15 * 60_000;
 
 export type PhotoFilters = {
   sort: 'TakenAtDesc' | 'TakenAtAsc';
@@ -66,9 +65,30 @@ export function usePhotoLibrary(filters: PhotoFilters) {
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     placeholderData: keepPreviousData,
     staleTime: THUMB_SAFE_STALE_MS,
+    enabled: !filters.event,
   });
 
+  // The photo API has no notion of events, so an event's set is the link map's ids, fetched whole.
+  const event = useEventPhotoQuery(filters.event);
+  const { kind, status, located, place, from, to } = params;
+  const { sort } = filters;
+  const eventItems = useMemo(
+    () => filterPhotos(event.items, { sort, kind, status, located, place, fromIso: from, toIso: to }),
+    [event.items, sort, kind, status, located, place, from, to],
+  );
   const items = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data]);
+
+  if (filters.event) {
+    return {
+      items: eventItems,
+      isLoading: event.isLoading,
+      isFetching: event.isFetching,
+      error: event.error,
+      hasNextPage: false,
+      fetchNextPage: query.fetchNextPage,
+      isFetchingNextPage: false,
+    };
+  }
 
   return {
     items,
@@ -81,8 +101,13 @@ export function usePhotoLibrary(filters: PhotoFilters) {
   };
 }
 
-/** photoId → the calendar items it's linked to, from one call. Powers the "linked" badge, the event
- *  filter, and the viewer's event list without a request per tile. */
+/** Library totals — the month timeline and the failed chip, without paging the library to count. */
+export function usePhotoStats() {
+  return useGetPhotoStats({ query: { staleTime: 5 * 60_000 } });
+}
+
+/** photoId → the calendar items it's linked to, from one call. Powers the tile badge and the viewer's
+ *  event list without a request per tile. */
 export function usePhotoEventLinks() {
   const query = useQuery({
     queryKey: getListRelationEdgesQueryKey({ toKind: 'photo' }),
@@ -99,22 +124,47 @@ export function groupByDay(items: PhotoListItemDto[]): PhotoDay[] {
   return groupDays(items, (date) => date.toLocaleDateString(undefined, { dateStyle: 'full' }));
 }
 
-/** The photos linked to one calendar item, hydrated from the edge map in a single lookup. */
-export function useEventPhotos(itemId: string) {
-  const links = usePhotoEventLinks();
+function useEventPhotoQuery(itemId: string) {
+  const edges = useQuery({
+    queryKey: getListRelationEdgesQueryKey({ toKind: 'photo' }),
+    queryFn: ({ signal }) => listRelationEdges({ toKind: 'photo' }, { signal }),
+    staleTime: 5 * 60_000,
+    enabled: !!itemId,
+  });
   const ids = useMemo(
-    () => [...links.entries()].filter(([, items]) => items.includes(itemId)).map(([photoId]) => photoId),
-    [links, itemId],
+    () => (edges.data ?? []).filter((e) => e.fromId === itemId).map((e) => e.toRef),
+    [edges.data, itemId],
   );
 
-  const { data } = useQuery({
+  const lookup = useQuery({
     queryKey: ['/photo-api/photos/lookup', ids],
     queryFn: ({ signal }) => lookupPhotos({ ids }, { signal }),
     enabled: ids.length > 0,
     staleTime: THUMB_SAFE_STALE_MS,
   });
 
-  return data?.items ?? [];
+  return {
+    items: lookup.data?.items ?? EMPTY,
+    isLoading: edges.isLoading || lookup.isLoading,
+    isFetching: edges.isFetching || lookup.isFetching,
+    error: edges.error ?? lookup.error,
+  };
+}
+
+const EMPTY: PhotoListItemDto[] = [];
+
+/** The photos linked to one calendar item, hydrated from the edge map in a single lookup. */
+export function useEventPhotos(itemId: string) {
+  return useEventPhotoQuery(itemId).items;
+}
+
+/** Events around the photos' capture times, offered as link targets. */
+export function useLinkCandidates(takenAts: readonly string[], enabled: boolean) {
+  const window = useMemo(() => captureWindow(takenAts), [takenAts]);
+  return useSearchItems(
+    { from: window?.fromIso, to: window?.toIso, take: 50 },
+    { query: { enabled: enabled && window !== null } },
+  );
 }
 
 /** Photos taken while an event was happening. Candidates only: a photo taken during a 9-to-5 "work"

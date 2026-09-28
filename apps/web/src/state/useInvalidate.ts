@@ -56,3 +56,15 @@ export function useInvalidatePlaces() {
       },
     });
 }
+
+/** Photo writes: every gallery query plus the photo↔event edge map, which a link or a delete changes. */
+export function useInvalidatePhotos() {
+  const queryClient = useQueryClient();
+  return () =>
+    queryClient.invalidateQueries({
+      predicate: (q) => {
+        const key = String(q.queryKey[0] ?? '');
+        return key.startsWith('/photo-api/photos') || key.startsWith('/api/relations/edges');
+      },
+    });
+}

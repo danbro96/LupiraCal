@@ -1,14 +1,19 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Portal, Text } from 'react-native-paper';
 import type { AssetKind, AssetStatus } from '@lupira/cal-api/models';
+import {
+  fmtMonth, fmtPhotoRange, monthRange, type TimelineYear, wholeSpan, yearRange,
+} from '@lupira/cal-domain/photoTimeline';
 import type { PhotoQueryFilters } from '../../state/usePhotoLibrary';
 import { Input } from '../components/Input';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 
 /** Sort and filter controls, in the same Portal-and-backdrop sheet shape as the map's layer sheet. */
-export function PhotoFiltersSheet({ filters, onChange, onDismiss }: {
+export function PhotoFiltersSheet({ filters, timeline, eventTitle, onChange, onDismiss }: {
   filters: PhotoQueryFilters;
+  timeline: TimelineYear[];
+  eventTitle: string | undefined;
   onChange: (next: PhotoQueryFilters) => void;
   onDismiss: () => void;
 }) {
@@ -16,6 +21,11 @@ export function PhotoFiltersSheet({ filters, onChange, onDismiss }: {
   const set = (patch: Partial<PhotoQueryFilters>) => onChange({ ...filters, ...patch });
   const toggle = <K extends keyof PhotoQueryFilters>(key: K, value: PhotoQueryFilters[K]) =>
     set({ [key]: filters[key] === value ? undefined : value } as Partial<PhotoQueryFilters>);
+
+  const span = filters.from ? wholeSpan(filters.from, filters.to ?? filters.from) : null;
+  const openYear = span?.kind === 'year' ? span.year : span?.kind === 'month' ? span.key.slice(0, 4) : null;
+  const months = timeline.find((y) => y.year === openYear)?.months ?? [];
+  const clearRange = { from: undefined, to: undefined };
 
   return (
     <Portal>
@@ -31,6 +41,50 @@ export function PhotoFiltersSheet({ filters, onChange, onDismiss }: {
               <Chip compact selected={filters.sort === 'TakenAtAsc'} showSelectedCheck
                 onPress={() => set({ sort: 'TakenAtAsc' })}>Oldest first</Chip>
             </View>
+
+            {filters.event && (
+              <>
+                <Text style={[styles.label, { color: c.textMuted }]}>Event</Text>
+                <View style={styles.row}>
+                  <Chip compact icon={ICONS.calendar} selected showSelectedCheck={false}
+                    onPress={() => set({ event: undefined })} onClose={() => set({ event: undefined })}>
+                    {eventTitle ?? 'One event'}
+                  </Chip>
+                </View>
+              </>
+            )}
+
+            {timeline.length > 0 && (
+              <>
+                <Text style={[styles.label, { color: c.textMuted }]}>When</Text>
+                <View style={styles.row}>
+                  {filters.from && !span && (
+                    <Chip compact selected showSelectedCheck onPress={() => set(clearRange)}>
+                      {fmtPhotoRange(filters.from, filters.to)}
+                    </Chip>
+                  )}
+                  {timeline.map((y) => (
+                    <Chip key={y.year} compact selected={openYear === y.year} showSelectedCheck
+                      onPress={() => set(span?.kind === 'year' && span.year === y.year ? clearRange : yearRange(y.year))}>
+                      {y.year}
+                    </Chip>
+                  ))}
+                </View>
+                {months.length > 0 && (
+                  <View style={[styles.row, styles.subRow]}>
+                    {months.map((m) => {
+                      const on = span?.kind === 'month' && span.key === m.key;
+                      return (
+                        <Chip key={m.key} compact selected={on} showSelectedCheck
+                          onPress={() => set(on ? yearRange(m.key.slice(0, 4)) : monthRange(m.key))}>
+                          {`${fmtMonth(m.key, 'short')} · ${m.count}`}
+                        </Chip>
+                      );
+                    })}
+                  </View>
+                )}
+              </>
+            )}
 
             <Text style={[styles.label, { color: c.textMuted }]}>Type</Text>
             <View style={styles.row}>
@@ -80,4 +134,5 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
   label: { fontSize: 12, marginTop: 12, marginBottom: 4 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  subRow: { marginTop: 8 },
 });

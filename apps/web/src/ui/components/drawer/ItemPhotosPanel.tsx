@@ -42,9 +42,12 @@ export function ItemPhotosPanel({ itemId, item }: { itemId: string; item: PhotoW
       )}
       <WrapRow>
         {linked.map((photo) => (
-          <Thumb key={photo.id} photo={photo} />
+          <Thumb key={photo.id} photo={photo} eventId={itemId} />
         ))}
       </WrapRow>
+      {linked.length > 0 && !suggesting && (
+        <Button size="small" component={Link} to={`/photos?event=${itemId}`}>See all {linked.length} in Photos</Button>
+      )}
 
       {suggesting ? (
         <>
@@ -65,7 +68,7 @@ export function ItemPhotosPanel({ itemId, item }: { itemId: string; item: PhotoW
   );
 }
 
-function Thumb({ photo, onAdd }: { photo: PhotoListItemDto; onAdd?: () => void }) {
+function Thumb({ photo, eventId, onAdd }: { photo: PhotoListItemDto; eventId?: string; onAdd?: () => void }) {
   const image = (
     <Box
       component="img"
@@ -76,7 +79,8 @@ function Thumb({ photo, onAdd }: { photo: PhotoListItemDto; onAdd?: () => void }
     />
   );
 
-  if (!onAdd) return <Link to={`/photos?photo=${photo.id}`}>{image}</Link>;
+  // Opened inside the event's own set, so the viewer pages through this event rather than the library.
+  if (!onAdd) return <Link to={`/photos?event=${eventId}&photo=${photo.id}`}>{image}</Link>;
   return (
     <Box
       component="button"

@@ -54,10 +54,18 @@ export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWi
               key={photo.id}
               photo={photo}
               surface={c.surface}
-              onPress={() => navigation.navigate('PhotoViewer', { photoId: photo.id })}
+              // Paged within the event's own set, not the whole library.
+              onPress={() => navigation.navigate('PhotoViewer', { photoId: photo.id, filters: { sort: 'TakenAtDesc', event: itemId } })}
             />
           ))}
         </Strip>
+      )}
+      {linked.length > 0 && !suggesting && (
+        <Button
+          title={`See all ${linked.length} in Photos`}
+          variant="text"
+          onPress={() => navigation.navigate('Tabs', { screen: 'Photos', params: { event: itemId } })}
+        />
       )}
 
       {suggesting ? (

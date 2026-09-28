@@ -28,6 +28,7 @@ export type TabParamList = {
   Contacts: undefined;
   /** `at` centres the camera on one point — how the gallery hands a photo over. */
   Map: { at?: { lon: number; lat: number } } | undefined;
-  /** Local day bounds, 'yyyy-MM-dd' — how a map pin hands over "everything from this day". */
-  Photos: { from?: string; to?: string } | undefined;
+  /** Local day bounds, 'yyyy-MM-dd' — how a map pin hands over "everything from this day"; `event`
+   *  is how an event hands over its linked photos. */
+  Photos: { from?: string; to?: string; event?: string } | undefined;
 };

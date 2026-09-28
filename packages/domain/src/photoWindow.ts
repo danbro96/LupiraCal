@@ -43,3 +43,16 @@ export function eventPhotoWindow(item: PhotoWindowSource): PhotoWindow | null {
     toIso: new Date(end + PAD_MS).toISOString(),
   };
 }
+
+/** Either side of a capture time, events still count as candidates for it. */
+const CAPTURE_PAD_MS = 60 * 60_000;
+
+/** The span to search for events a set of photos might belong to. Null for an empty set. */
+export function captureWindow(takenAts: readonly string[]): PhotoWindow | null {
+  const times = takenAts.map((t) => Date.parse(t)).filter((t) => !Number.isNaN(t));
+  if (times.length === 0) return null;
+  return {
+    fromIso: new Date(Math.min(...times) - CAPTURE_PAD_MS).toISOString(),
+    toIso: new Date(Math.max(...times) + CAPTURE_PAD_MS).toISOString(),
+  };
+}
