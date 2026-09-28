@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Duende.AccessTokenManagement;
 using Duende.AccessTokenManagement.OpenIdConnect;
 using LupiraCalBff.Auth;
+using LupiraCalBff.Dependencies;
 using LupiraCalBff.Endpoints;
 using LupiraCalBff.OpenApi;
 using LupiraCalBff.Proxy;
@@ -54,6 +55,16 @@ if (!string.IsNullOrWhiteSpace(keyPath))
 
 builder.Services.AddAppHealthChecks();
 builder.Services.AddUpstreamClients(builder.Configuration);
+
+// Non-gating dependency probe (/depz): edges derive from the proxy's clusters, probed on a dedicated client.
+builder.Services.Configure<DepzOptions>(builder.Configuration.GetSection(DepzOptions.SectionName));
+var depzOptions = builder.Configuration.GetSection(DepzOptions.SectionName).Get<DepzOptions>() ?? new DepzOptions();
+builder.Services.AddSingleton(DependencyTargets.From(builder.Configuration));
+builder.Services.AddSingleton<DependencyReportCache>();
+builder.Services.AddSingleton<DependencyProbe>();
+builder.Services.AddHttpClient(DependencyProbe.ProbeClientName, c => c.Timeout = depzOptions.ProbeTimeout);
+if (depzOptions.Enabled)
+    builder.Services.AddHostedService<DependencyPollWorker>();
 
 // MSBuild runs this same pipeline on build and writes openapi/LupiraCalBff.json — the file the
 // TypeScript client generates from.
@@ -111,7 +122,8 @@ if (!string.IsNullOrWhiteSpace(otlpEndpoint))
             {
                 o.RecordException = true;
                 // Health probes are polled constantly by docker + devops-monitor; their spans add nothing.
-                o.Filter = ctx => ctx.Request.Path != "/livez" && ctx.Request.Path != "/readyz";
+                o.Filter = ctx => ctx.Request.Path != "/livez" && ctx.Request.Path != "/readyz"
+                    && ctx.Request.Path != "/depz";
             })
             .AddHttpClientInstrumentation()
             .AddOtlpExporter())
@@ -119,6 +131,7 @@ if (!string.IsNullOrWhiteSpace(otlpEndpoint))
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
             .AddRuntimeInstrumentation()
+            .AddMeter("LupiraCalBff.*")
             .AddOtlpExporter());
 
     builder.Logging.AddOpenTelemetry(o =>
@@ -173,6 +186,7 @@ app.UseAuthorization();
 
 app.MapAuthEndpoints(app.Environment);
 app.MapContactEndpoints();
+app.MapDepz();
 
 // Authenticated: the document is the whole internal API map, and the client reads the committed
 // file rather than this endpoint.
