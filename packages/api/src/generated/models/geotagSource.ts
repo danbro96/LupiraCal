@@ -12,4 +12,5 @@ export const GeotagSource = {
   None: 'None',
   ExifGps: 'ExifGps',
   LocationHistory: 'LocationHistory',
+  Folder: 'Folder',
 } as const;

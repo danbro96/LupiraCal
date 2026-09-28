@@ -16,6 +16,7 @@ kind?: AssetKind;
 status?: AssetStatus;
 located?: boolean;
 place?: string;
+sourceAlbum?: string;
 sort?: PhotoSort;
 limit?: number;
 cursor?: string;

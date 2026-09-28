@@ -6,7 +6,10 @@
  */
 import type { AssetKind } from './assetKind';
 import type { AssetStatus } from './assetStatus';
+import type { CameraDto } from './cameraDto';
+import type { CapturedBySource } from './capturedBySource';
 import type { GeotagSource } from './geotagSource';
+import type { TakenAtSource } from './takenAtSource';
 
 export interface PhotoListItemDto {
   id: string;
@@ -38,6 +41,13 @@ export interface PhotoListItemDto {
      * @nullable
      */
   duplicateOfId?: string | null;
+  camera?: null | CameraDto;
+  takenAtSource: TakenAtSource;
+  /** @nullable */
+  capturedByContactId?: string | null;
+  capturedBySource?: null | CapturedBySource;
+  /** @nullable */
+  sourceAlbum?: string | null;
   /** @nullable */
   thumbUrl?: string | null;
 }

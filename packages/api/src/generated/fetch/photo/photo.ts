@@ -10,11 +10,13 @@ import type {
   GetPhotoMapParams,
   ListPhotosParams,
   LookupPhotosRequest,
+  PhotoAlbumDto,
   PhotoAssetDto,
   PhotoListResponse,
   PhotoMapResponse,
   PhotoStats,
-  ProblemDetails
+  ProblemDetails,
+  UpdatePhotoRequest
 } from '../../models';
 
 import { apiRequest } from '../../../transport';
@@ -346,6 +348,53 @@ export const getPhotoStats = async ( options?: Parameters<typeof apiRequest>[1])
 );}
 
 
+export type listPhotoAlbumsResponse200 = {
+  data: PhotoAlbumDto[]
+  status: 200
+}
+
+export type listPhotoAlbumsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type listPhotoAlbumsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type listPhotoAlbumsResponseSuccess = (listPhotoAlbumsResponse200) & {
+  headers: Headers;
+};
+export type listPhotoAlbumsResponseError = (listPhotoAlbumsResponse401 | listPhotoAlbumsResponse500) & {
+  headers: Headers;
+};
+
+export type listPhotoAlbumsResponse = (listPhotoAlbumsResponseSuccess | listPhotoAlbumsResponseError)
+
+export const getListPhotoAlbumsUrl = () => {
+
+
+
+
+  return `/photo-api/photos/albums`
+}
+
+/**
+ * @summary Imported event folders and albums with their core date span, for linking to calendar events.
+ */
+export const listPhotoAlbums = async ( options?: Parameters<typeof apiRequest>[1]): Promise<listPhotoAlbumsResponse> => {
+
+  return apiRequest<listPhotoAlbumsResponse>(getListPhotoAlbumsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
 export type getPhotoMapResponse200 = {
   data: PhotoMapResponse
   status: 200
@@ -448,6 +497,73 @@ export const getPhoto = async (id: string, options?: Parameters<typeof apiReques
     method: 'GET'
 
 
+  }
+);}
+
+
+export type updatePhotoResponse200 = {
+  data: PhotoAssetDto
+  status: 200
+}
+
+export type updatePhotoResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type updatePhotoResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type updatePhotoResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type updatePhotoResponseSuccess = (updatePhotoResponse200) & {
+  headers: Headers;
+};
+export type updatePhotoResponseError = (updatePhotoResponse401 | updatePhotoResponse404 | updatePhotoResponse500) & {
+  headers: Headers;
+};
+
+export type updatePhotoResponse = (updatePhotoResponseSuccess | updatePhotoResponseError)
+
+export const getUpdatePhotoUrl = (id: string,) => {
+
+
+
+
+  return `/photo-api/photos/${id}`
+}
+
+/**
+ * @summary Hand-set metadata (the photographer); outranks anything derived.
+ */
+export const updatePhoto = async (id: string,
+    updatePhotoRequest: UpdatePhotoRequest, options?: Parameters<typeof apiRequest>[1]): Promise<updatePhotoResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<updatePhotoResponse>(getUpdatePhotoUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updatePhotoRequest)
   }
 );}
 

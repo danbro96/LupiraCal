@@ -25,4 +25,9 @@ export interface DeclarePhotoRequest {
   height?: number | null;
   /** @nullable */
   durationSeconds?: number | null;
+  /**
+     * The photographer's contact — the phone sends its owner's own contact.
+     * @nullable
+     */
+  capturedByContactId?: string | null;
 }

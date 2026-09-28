@@ -6,7 +6,10 @@
  */
 import type { AssetKind } from './assetKind';
 import type { AssetStatus } from './assetStatus';
+import type { CameraDto } from './cameraDto';
+import type { CapturedBySource } from './capturedBySource';
 import type { GeotagSource } from './geotagSource';
+import type { TakenAtSource } from './takenAtSource';
 
 export interface PhotoAssetDto {
   id: string;
@@ -40,6 +43,13 @@ export interface PhotoAssetDto {
      * @nullable
      */
   duplicateOfId?: string | null;
+  camera?: null | CameraDto;
+  takenAtSource: TakenAtSource;
+  /** @nullable */
+  capturedByContactId?: string | null;
+  capturedBySource?: null | CapturedBySource;
+  /** @nullable */
+  sourceAlbum?: string | null;
   /**
      * Presigned GET, long expiry; null until processed.
      * @nullable

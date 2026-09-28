@@ -4,6 +4,7 @@
  * LupiraCal BFF
  * OpenAPI spec version: v1
  */
+import type { PhotoStatsByCamera } from './photoStatsByCamera';
 import type { PhotoStatsByGeotagSource } from './photoStatsByGeotagSource';
 import type { PhotoStatsByKind } from './photoStatsByKind';
 import type { PhotoStatsByMonth } from './photoStatsByMonth';
@@ -16,4 +17,6 @@ export interface PhotoStats {
   byStatus: PhotoStatsByStatus;
   byGeotagSource: PhotoStatsByGeotagSource;
   byMonth: PhotoStatsByMonth;
+  /** "Sony G8341" → count; what the importer's camera map is built from. */
+  byCamera: PhotoStatsByCamera;
 }

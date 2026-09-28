@@ -29,11 +29,13 @@ import type {
   GetPhotoMapParams,
   ListPhotosParams,
   LookupPhotosRequest,
+  PhotoAlbumDto,
   PhotoAssetDto,
   PhotoListResponse,
   PhotoMapResponse,
   PhotoStats,
-  ProblemDetails
+  ProblemDetails,
+  UpdatePhotoRequest
 } from '../../models';
 
 import { apiRequest } from '../../../transport';
@@ -589,6 +591,106 @@ export function useGetPhotoStats<TData = Awaited<ReturnType<typeof getPhotoStats
 
 
 
+export const getListPhotoAlbumsUrl = () => {
+
+
+
+
+  return `/photo-api/photos/albums`
+}
+
+/**
+ * @summary Imported event folders and albums with their core date span, for linking to calendar events.
+ */
+export const listPhotoAlbums = async ( options?: Parameters<typeof apiRequest>[1]): Promise<PhotoAlbumDto[]> => {
+
+  return apiRequest<PhotoAlbumDto[]>(getListPhotoAlbumsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPhotoAlbumsQueryKey = () => {
+    return [
+    `/photo-api/photos/albums`
+    ] as const;
+    }
+
+
+export const getListPhotoAlbumsQueryOptions = <TData = Awaited<ReturnType<typeof listPhotoAlbums>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoAlbums>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPhotoAlbumsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPhotoAlbums>>> = ({ signal }) => listPhotoAlbums({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPhotoAlbums>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPhotoAlbumsQueryResult = NonNullable<Awaited<ReturnType<typeof listPhotoAlbums>>>
+export type ListPhotoAlbumsQueryError = ProblemDetails
+
+
+export function useListPhotoAlbums<TData = Awaited<ReturnType<typeof listPhotoAlbums>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoAlbums>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPhotoAlbums>>,
+          TError,
+          Awaited<ReturnType<typeof listPhotoAlbums>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPhotoAlbums<TData = Awaited<ReturnType<typeof listPhotoAlbums>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoAlbums>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPhotoAlbums>>,
+          TError,
+          Awaited<ReturnType<typeof listPhotoAlbums>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPhotoAlbums<TData = Awaited<ReturnType<typeof listPhotoAlbums>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoAlbums>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Imported event folders and albums with their core date span, for linking to calendar events.
+ */
+
+export function useListPhotoAlbums<TData = Awaited<ReturnType<typeof listPhotoAlbums>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoAlbums>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPhotoAlbumsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 export const getGetPhotoMapUrl = (params: GetPhotoMapParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -796,7 +898,95 @@ export function useGetPhoto<TData = Awaited<ReturnType<typeof getPhoto>>, TError
 
 
 
-export const getDeletePhotoUrl = (id: string,) => {
+export const getUpdatePhotoUrl = (id: string,) => {
+
+
+
+
+  return `/photo-api/photos/${id}`
+}
+
+/**
+ * @summary Hand-set metadata (the photographer); outranks anything derived.
+ */
+export const updatePhoto = async (id: string,
+    updatePhotoRequest: UpdatePhotoRequest, options?: Parameters<typeof apiRequest>[1]): Promise<PhotoAssetDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<PhotoAssetDto>(getUpdatePhotoUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updatePhotoRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdatePhotoMutationKey = () => ['updatePhoto'] as const;
+
+export const getUpdatePhotoMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePhoto>>, TError,UpdatePhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePhoto>>, TError,UpdatePhotoMutationVariables, TContext> => {
+
+const mutationKey = getUpdatePhotoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePhoto>>, UpdatePhotoMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updatePhoto(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePhotoMutationResult = NonNullable<Awaited<ReturnType<typeof updatePhoto>>>
+    export type UpdatePhotoMutationBody = UpdatePhotoRequest
+    export type UpdatePhotoMutationError = ProblemDetails
+    export type UpdatePhotoMutationVariables = {id: string;data: UpdatePhotoRequest}
+
+    /**
+ * @summary Hand-set metadata (the photographer); outranks anything derived.
+ */
+export const useUpdatePhoto = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePhoto>>, TError,UpdatePhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updatePhoto>>,
+        TError,
+        UpdatePhotoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdatePhotoMutationOptions(options), queryClient);
+    }
+    export const getDeletePhotoUrl = (id: string,) => {
 
 
 
