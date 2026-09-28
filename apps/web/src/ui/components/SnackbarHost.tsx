@@ -1,10 +1,19 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 
 type Severity = 'error' | 'success' | 'info';
 
-const SnackbarContext = createContext<(message: string, severity?: Severity) => void>(() => {});
+/** Same shape as the mobile toast's action, e.g. Undo. */
+export interface SnackAction {
+  label: string;
+  onPress: () => void;
+}
+
+type Show = (message: string, severity?: Severity, action?: SnackAction) => void;
+
+const SnackbarContext = createContext<Show>(() => {});
 
 /** Transient mutation feedback (errors mostly); field-level validation stays inline next to its input. */
 export function useSnackbar() {
@@ -12,9 +21,9 @@ export function useSnackbar() {
 }
 
 export function SnackbarHost({ children }: { children: ReactNode }) {
-  const [current, setCurrent] = useState<{ message: string; severity: Severity; key: number } | null>(null);
-  const show = useCallback((message: string, severity: Severity = 'error') => {
-    setCurrent({ message, severity, key: Date.now() });
+  const [current, setCurrent] = useState<{ message: string; severity: Severity; action?: SnackAction; key: number } | null>(null);
+  const show = useCallback<Show>((message, severity = 'error', action) => {
+    setCurrent({ message, severity, action, key: Date.now() });
   }, []);
   const value = useMemo(() => show, [show]);
 
@@ -31,7 +40,20 @@ export function SnackbarHost({ children }: { children: ReactNode }) {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         {current ? (
-          <Alert severity={current.severity} variant="filled" onClose={() => setCurrent(null)}>
+          <Alert
+            severity={current.severity}
+            variant="filled"
+            onClose={() => setCurrent(null)}
+            action={current.action && (
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => { current.action!.onPress(); setCurrent(null); }}
+              >
+                {current.action.label}
+              </Button>
+            )}
+          >
             {current.message}
           </Alert>
         ) : undefined}

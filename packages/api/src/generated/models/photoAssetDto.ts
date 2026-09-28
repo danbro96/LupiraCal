@@ -50,6 +50,13 @@ export interface PhotoAssetDto {
   capturedBySource?: null | CapturedBySource;
   /** @nullable */
   sourceAlbum?: string | null;
+  /** @nullable */
+  trashedAt?: string | null;
+  /**
+     * When the trash is purged of it (`TrashedAt` + retention); null unless trashed.
+     * @nullable
+     */
+  purgesAt?: string | null;
   /**
      * Presigned GET, long expiry; null until processed.
      * @nullable

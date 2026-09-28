@@ -166,7 +166,7 @@ export async function retryParkedPhotos(dbOverride?: Db): Promise<void> {
 /** Saves an original back to the phone. The copy is a new media-store asset with a fresh creation time
  *  that the next scan would upload all over again, so it is filed as already backed up. False when
  *  the gallery refused write access. */
-export async function restorePhoto(photo: PhotoAssetDto & { originalUrl: string }, dbOverride?: Db): Promise<boolean> {
+export async function saveOriginalToPhone(photo: PhotoAssetDto & { originalUrl: string }, dbOverride?: Db): Promise<boolean> {
   const mediaStoreId = await saveToDevice(photo.originalUrl, photo.id, photo.contentType);
   if (!mediaStoreId) return false;
   const db = dbOverride ?? (await getDb());

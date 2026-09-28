@@ -3,8 +3,7 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { List, Portal, Text } from 'react-native-paper';
 import { fmtWhen } from '@lupira/cal-domain/time';
 import { toast, toastError } from '../../feedback/toast';
-import { linkPhotosToEvent, useLinkCandidates, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
-import { invalidatePhotos } from '../../sync/reactivity';
+import { linkPhotosToEvent, unlinkPhotosFromEvent, useLinkCandidates, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 
@@ -21,12 +20,16 @@ export function LinkEventSheet({ photos, onDismiss, onLinked }: {
 
   const onPick = async (itemId: string) => {
     setBusy(true);
-    const { linked, failed } = await linkPhotosToEvent(itemId, photos.map((p) => p.id), links);
+    const { linked, ok } = await linkPhotosToEvent(itemId, photos.map((p) => p.id), links);
     setBusy(false);
-    invalidatePhotos();
-    if (failed > 0) toastError(`Linked ${linked}, ${failed} failed.`);
-    else toast(linked === 1 ? 'Linked to the event' : `Linked ${linked} photos`);
-    onLinked?.();
+    if (!ok) {
+      toastError('Could not link the photos.');
+    } else {
+      toast(photos.length === 1 ? 'Linked to the event' : `Linked ${linked.length} photos`, linked.length > 0
+        ? { action: { label: 'Undo', onPress: () => void unlinkPhotosFromEvent(itemId, linked) } }
+        : undefined);
+      onLinked?.();
+    }
     onDismiss();
   };
 

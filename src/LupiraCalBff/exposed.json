@@ -27,6 +27,7 @@
       "POST /items/{id}/participants/{participationId}/respond",
       "POST /items/{id}/relations",
       "POST /items/{id}/relations/batch",
+      "POST /items/{id}/relations/batch/delete",
       "POST /items/{itemId}/calendars/{calendarId}",
       "POST /items/{itemId}/calendars/{calendarId}/accept",
       "POST /me/bootstrap",
@@ -103,17 +104,21 @@
       "POST /devices"
     ],
     "photo-api": [
+      "DELETE /photos/trash",
       "DELETE /photos/{id}",
       "GET /photos",
       "GET /photos/albums",
       "GET /photos/map",
+      "GET /photos/places",
       "GET /photos/stats",
       "GET /photos/{id}",
       "PATCH /photos/{id}",
       "POST /photos",
       "POST /photos/lookup",
       "POST /photos/{id}/complete",
-      "POST /photos/{id}/reprocess"
+      "POST /photos/{id}/reprocess",
+      "POST /photos/{id}/restore",
+      "POST /photos/{id}/trash"
     ],
     "comms-api": [
       "GET /search",

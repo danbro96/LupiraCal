@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { createItemRelation, listRelationEdges, searchItems } from '@lupira/cal-api/fetch/cal';
+import { createItemRelationsBatch, deleteItemRelationsBatch, listRelationEdges, searchItems } from '@lupira/cal-api/fetch/cal';
 import { listPhotos, lookupPhotos } from '@lupira/cal-api/fetch/photo';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
-import { photoEventLinks, THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
+import { PHOTO_LINK, photoEventLinks, THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
 import { captureWindow, eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
 import { getDb } from '../data/db/expoDb';
 import { loadItem } from '../data/mirror';
+import { invalidatePhotos } from '../sync/reactivity';
 import { useSyncStatus } from '../sync/syncStatus';
 
 /** Every photo↔event edge the caller can see, in one call rather than a request per tile. */
@@ -123,16 +124,36 @@ export function useLinkCandidates(takenAts: readonly string[], enabled: boolean)
   });
 }
 
-/** Links each photo not already linked to the event; returns how many links failed. */
+/** Links the photos not already linked to the event, in one call. `linked` is what an Undo unlinks. */
 export async function linkPhotosToEvent(
   itemId: string, photoIds: readonly string[], links: ReadonlyMap<string, string[]>,
-): Promise<{ linked: number; failed: number }> {
-  let failed = 0;
+): Promise<{ linked: string[]; ok: boolean }> {
   const pending = photoIds.filter((id) => !links.get(id)?.includes(itemId));
-  for (const photoId of pending) {
-    const r = await createItemRelation(itemId, { toKind: 'photo', toRef: photoId, relationType: 'depicts' })
-      .catch(() => null);
-    if (r?.status !== 200) failed++;
-  }
-  return { linked: pending.length - failed, failed };
+  if (pending.length === 0) return { linked: [], ok: true };
+  const r = await createItemRelationsBatch(itemId, { ...PHOTO_LINK, toRefs: pending }).catch(() => null);
+  invalidatePhotos();
+  return r?.status === 200 ? { linked: pending, ok: true } : { linked: [], ok: false };
+}
+
+export async function unlinkPhotosFromEvent(itemId: string, photoIds: readonly string[]): Promise<boolean> {
+  const r = await deleteItemRelationsBatch(itemId, { ...PHOTO_LINK, toRefs: [...photoIds] }).catch(() => null);
+  invalidatePhotos();
+  return r?.status === 204;
+}
+
+/** Events by name, newest first — a photo search usually means a past event. */
+export function useEventSearch(query: string) {
+  const reachable = useSyncStatus((s) => s.serverReachable);
+  const term = query.trim();
+  return useQuery({
+    queryKey: ['photos', 'event-search', term],
+    enabled: reachable && term.length >= 2,
+    staleTime: 60_000,
+    retry: 1,
+    queryFn: async () => {
+      const r = await searchItems({ query: term, take: 6, desc: true });
+      if (r.status !== 200) throw new Error(`item search ${r.status}`);
+      return r.data;
+    },
+  });
 }

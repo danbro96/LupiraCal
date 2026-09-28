@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fmtPhotoRange, monthRange, photoTimeline, wholeSpan, yearRange } from './photoTimeline';
+import { fmtMonth, fmtPhotoRange, matchTimeline, monthRange, photoTimeline, wholeSpan, yearRange } from './photoTimeline';
 
 describe('photoTimeline', () => {
   const byMonth = { '2024-11': 3, '2025-01': 5, '2025-03': 2, '2024-12': 0 };
@@ -53,5 +53,28 @@ describe('fmtPhotoRange', () => {
 
   it('collapses a single day', () => {
     expect(fmtPhotoRange('2024-08-03', '2024-08-03')).toBe(fmtPhotoRange('2024-08-03'));
+  });
+});
+
+describe('matchTimeline', () => {
+  const years = photoTimeline({ '2023-07': 4, '2024-07': 6, '2024-08': 1 }, true);
+  const july = fmtMonth('2024-07', 'long').toLocaleLowerCase();
+
+  it('offers the year before its months', () => {
+    expect(matchTimeline(years, '2024', 10).map((m) => m.label)).toEqual([
+      '2024', `${fmtMonth('2024-08', 'long')} 2024`, `${fmtMonth('2024-07', 'long')} 2024`,
+    ]);
+  });
+
+  it('matches a month across years, and narrows by every word', () => {
+    expect(matchTimeline(years, july.slice(0, 3), 10).map((m) => m.range.from)).toEqual(['2024-07-01', '2023-07-01']);
+    expect(matchTimeline(years, `${july.slice(0, 3)} 2023`, 10)).toEqual([
+      { range: { from: '2023-07-01', to: '2023-07-31' }, label: `${fmtMonth('2023-07', 'long')} 2023`, count: 4 },
+    ]);
+  });
+
+  it('caps the list and ignores a blank query', () => {
+    expect(matchTimeline(years, '20', 2)).toHaveLength(2);
+    expect(matchTimeline(years, '  ', 10)).toEqual([]);
   });
 });

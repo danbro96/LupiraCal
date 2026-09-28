@@ -11,11 +11,13 @@ import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
 import { fmtBytes, fmtDimensions, fmtDuration } from '@lupira/cal-domain/photoFormat';
 import { fmtDateTime } from '@lupira/cal-domain/time';
-import { useDeletePhoto, useGetPhoto, useReprocessPhoto } from '@lupira/cal-api/query/photo';
+import { useGetPhoto, useReprocessPhoto } from '@lupira/cal-api/query/photo';
+import { daysLeft } from '@lupira/cal-domain/photoFormat';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { useInvalidatePhotos } from '../../../state/useInvalidate';
+import { usePhotoActions } from '../../../state/usePhotoActions';
 import { useIsPhone } from '../../hooks/useIsPhone';
-import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, DeleteIcon, OpenInNewIcon } from '../../icons';
+import { ChevronLeftIcon, ChevronRightIcon, CloseIcon, DeleteIcon, OpenInNewIcon, RestoreIcon } from '../../icons';
 import { useSnackbar } from '../SnackbarHost';
 import { DrawerSection } from '../DrawerSection';
 import { LinkToEvent } from './LinkToEvent';
@@ -34,7 +36,7 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
   onNavigate: (id: string) => void;
 }) {
   const { data: photo, isLoading } = useGetPhoto(photoId);
-  const del = useDeletePhoto();
+  const actions = usePhotoActions();
   const reprocess = useReprocessPhoto();
   const invalidate = useInvalidatePhotos();
   const showSnack = useSnackbar();
@@ -73,17 +75,30 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
     return heic ? (photo.thumbUrl ?? undefined) : (photo.originalUrl ?? photo.thumbUrl ?? undefined);
   }, [photo]);
 
-  const onDelete = () => {
+  const leave = () => {
+    const neighbour = next ?? prev;
+    if (neighbour) onNavigate(neighbour.id);
+    else onClose();
+  };
+
+  const onTrash = async () => {
+    leave();
+    const { failed } = await actions.trash([photoId]);
+    if (failed > 0) showSnack('Could not move the photo to trash');
+    else showSnack('Moved to trash', 'success', { label: 'Undo', onPress: () => void actions.restore([photoId]) });
+  };
+
+  const onRestore = async () => {
+    leave();
+    const { failed } = await actions.restore([photoId]);
+    showSnack(failed > 0 ? 'Could not restore the photo' : 'Restored', failed > 0 ? 'error' : 'success');
+  };
+
+  const onPurge = async () => {
     setConfirming(false);
-    del.mutate({ id: photoId }, {
-      onSuccess: () => {
-        showSnack('Photo deleted', 'success');
-        void invalidate();
-        if (next ?? prev) onNavigate((next ?? prev)!.id);
-        else onClose();
-      },
-      onError: (e) => showSnack(e instanceof Error ? e.message : 'Delete failed'),
-    });
+    leave();
+    const { failed } = await actions.purge([photoId]);
+    showSnack(failed > 0 ? 'Delete failed' : 'Deleted for good', failed > 0 ? 'error' : 'success');
   };
 
   const onReprocess = () =>
@@ -109,11 +124,26 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
                 </IconButton>
               </Tooltip>
             )}
-            <Tooltip title="Delete">
-              <IconButton onClick={() => setConfirming(true)} disabled={del.isPending} sx={onImage} aria-label="Delete">
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
+            {photo?.trashedAt ? (
+              <>
+                <Tooltip title="Restore">
+                  <IconButton onClick={() => void onRestore()} disabled={actions.busy} sx={onImage} aria-label="Restore">
+                    <RestoreIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete for good">
+                  <IconButton onClick={() => setConfirming(true)} disabled={actions.busy} sx={onImage} aria-label="Delete for good">
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </>
+            ) : (
+              <Tooltip title="Move to trash">
+                <IconButton onClick={() => void onTrash()} disabled={actions.busy || !photo} sx={onImage} aria-label="Move to trash">
+                  <DeleteIcon />
+                </IconButton>
+              </Tooltip>
+            )}
             <IconButton onClick={onClose} sx={onImage} aria-label="Close">
               <CloseIcon />
             </IconButton>
@@ -145,6 +175,11 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
                 <Typography variant="body2" sx={{ color: 'text.subtle', mb: 1 }}>
                   {fmtDateTime(new Date(photo.takenAt))}
                 </Typography>
+                {photo.purgesAt && (
+                  <Typography variant="body2" sx={{ color: 'warning.main', mb: 1 }}>
+                    In trash · deleted for good in {daysLeft(photo.purgesAt, new Date())} days
+                  </Typography>
+                )}
 
                 <DrawerSection title="File">
                   <Typography variant="body2">{photo.contentType} · {fmtBytes(photo.sizeBytes)}</Typography>
@@ -211,13 +246,13 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
       </Box>
 
       <Dialog open={confirming} onClose={() => setConfirming(false)}>
-        <DialogTitle>Delete this photo?</DialogTitle>
+        <DialogTitle>Delete this photo for good?</DialogTitle>
         <DialogContent>
           <Typography variant="body2">This removes the original and its thumbnail from storage. It cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirming(false)}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={onDelete}>Delete</Button>
+          <Button variant="contained" color="error" onClick={() => void onPurge()}>Delete for good</Button>
         </DialogActions>
       </Dialog>
     </Dialog>

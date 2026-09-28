@@ -49,5 +49,12 @@ export interface PhotoListItemDto {
   /** @nullable */
   sourceAlbum?: string | null;
   /** @nullable */
+  trashedAt?: string | null;
+  /**
+     * When the trash is purged of it (`TrashedAt` + retention); null unless trashed.
+     * @nullable
+     */
+  purgesAt?: string | null;
+  /** @nullable */
   thumbUrl?: string | null;
 }

@@ -27,12 +27,14 @@ import type {
   DeclarePhotoRequest,
   DeclaredPhotoResponse,
   GetPhotoMapParams,
+  ListPhotoPlacesParams,
   ListPhotosParams,
   LookupPhotosRequest,
   PhotoAlbumDto,
   PhotoAssetDto,
   PhotoListResponse,
   PhotoMapResponse,
+  PhotoPlaceCount,
   PhotoStats,
   ProblemDetails,
   UpdatePhotoRequest
@@ -167,7 +169,7 @@ export const useDeclarePhoto = <TError = ProblemDetails,
 }
 
 /**
- * @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs.
+ * @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash.
  */
 export const listPhotos = async (params?: ListPhotosParams, options?: Parameters<typeof apiRequest>[1]): Promise<PhotoListResponse> => {
 
@@ -238,7 +240,7 @@ export function useListPhotos<TData = Awaited<ReturnType<typeof listPhotos>>, TE
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs.
+ * @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash.
  */
 
 export function useListPhotos<TData = Awaited<ReturnType<typeof listPhotos>>, TError = ProblemDetails>(
@@ -403,6 +405,152 @@ export const useReprocessPhoto = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getReprocessPhotoMutationOptions(options), queryClient);
+    }
+    export const getTrashPhotoUrl = (id: string,) => {
+
+
+
+
+  return `/photo-api/photos/${id}/trash`
+}
+
+/**
+ * @summary Move an asset to the trash (idempotent). It keeps its bytes and status until restored or purged.
+ */
+export const trashPhoto = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<PhotoAssetDto> => {
+
+  return apiRequest<PhotoAssetDto>(getTrashPhotoUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getTrashPhotoMutationKey = () => ['trashPhoto'] as const;
+
+export const getTrashPhotoMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trashPhoto>>, TError,TrashPhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof trashPhoto>>, TError,TrashPhotoMutationVariables, TContext> => {
+
+const mutationKey = getTrashPhotoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof trashPhoto>>, TrashPhotoMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  trashPhoto(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TrashPhotoMutationResult = NonNullable<Awaited<ReturnType<typeof trashPhoto>>>
+
+    export type TrashPhotoMutationError = ProblemDetails
+    export type TrashPhotoMutationVariables = {id: string}
+
+    /**
+ * @summary Move an asset to the trash (idempotent). It keeps its bytes and status until restored or purged.
+ */
+export const useTrashPhoto = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trashPhoto>>, TError,TrashPhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof trashPhoto>>,
+        TError,
+        TrashPhotoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTrashPhotoMutationOptions(options), queryClient);
+    }
+    export const getRestorePhotoUrl = (id: string,) => {
+
+
+
+
+  return `/photo-api/photos/${id}/restore`
+}
+
+/**
+ * @summary Take an asset back out of the trash (idempotent).
+ */
+export const restorePhoto = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<PhotoAssetDto> => {
+
+  return apiRequest<PhotoAssetDto>(getRestorePhotoUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRestorePhotoMutationKey = () => ['restorePhoto'] as const;
+
+export const getRestorePhotoMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restorePhoto>>, TError,RestorePhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof restorePhoto>>, TError,RestorePhotoMutationVariables, TContext> => {
+
+const mutationKey = getRestorePhotoMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restorePhoto>>, RestorePhotoMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  restorePhoto(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestorePhotoMutationResult = NonNullable<Awaited<ReturnType<typeof restorePhoto>>>
+
+    export type RestorePhotoMutationError = ProblemDetails
+    export type RestorePhotoMutationVariables = {id: string}
+
+    /**
+ * @summary Take an asset back out of the trash (idempotent).
+ */
+export const useRestorePhoto = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restorePhoto>>, TError,RestorePhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof restorePhoto>>,
+        TError,
+        RestorePhotoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRestorePhotoMutationOptions(options), queryClient);
     }
     export const getLookupPhotosUrl = () => {
 
@@ -680,6 +828,113 @@ export function useListPhotoAlbums<TData = Awaited<ReturnType<typeof listPhotoAl
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListPhotoAlbumsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getListPhotoPlacesUrl = (params?: ListPhotoPlacesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/photo-api/photos/places?${stringifiedParams}` : `/photo-api/photos/places`
+}
+
+/**
+ * @summary Place labels by asset count, most used first — suggestions for the place filter (q = substring).
+ */
+export const listPhotoPlaces = async (params?: ListPhotoPlacesParams, options?: Parameters<typeof apiRequest>[1]): Promise<PhotoPlaceCount[]> => {
+
+  return apiRequest<PhotoPlaceCount[]>(getListPhotoPlacesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListPhotoPlacesQueryKey = (params?: ListPhotoPlacesParams,) => {
+    return [
+    `/photo-api/photos/places`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListPhotoPlacesQueryOptions = <TData = Awaited<ReturnType<typeof listPhotoPlaces>>, TError = ProblemDetails>(params?: ListPhotoPlacesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoPlaces>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPhotoPlacesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPhotoPlaces>>> = ({ signal }) => listPhotoPlaces(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPhotoPlaces>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPhotoPlacesQueryResult = NonNullable<Awaited<ReturnType<typeof listPhotoPlaces>>>
+export type ListPhotoPlacesQueryError = ProblemDetails
+
+
+export function useListPhotoPlaces<TData = Awaited<ReturnType<typeof listPhotoPlaces>>, TError = ProblemDetails>(
+ params: undefined |  ListPhotoPlacesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoPlaces>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPhotoPlaces>>,
+          TError,
+          Awaited<ReturnType<typeof listPhotoPlaces>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPhotoPlaces<TData = Awaited<ReturnType<typeof listPhotoPlaces>>, TError = ProblemDetails>(
+ params?: ListPhotoPlacesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoPlaces>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPhotoPlaces>>,
+          TError,
+          Awaited<ReturnType<typeof listPhotoPlaces>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPhotoPlaces<TData = Awaited<ReturnType<typeof listPhotoPlaces>>, TError = ProblemDetails>(
+ params?: ListPhotoPlacesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoPlaces>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Place labels by asset count, most used first — suggestions for the place filter (q = substring).
+ */
+
+export function useListPhotoPlaces<TData = Awaited<ReturnType<typeof listPhotoPlaces>>, TError = ProblemDetails>(
+ params?: ListPhotoPlacesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotoPlaces>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPhotoPlacesQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -995,7 +1250,7 @@ export const useUpdatePhoto = <TError = ProblemDetails,
 }
 
 /**
- * @summary Delete an asset: objects first, then the document.
+ * @summary Delete an asset permanently, trashed or not: objects first, then the document.
  */
 export const deletePhoto = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
@@ -1047,7 +1302,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeletePhotoMutationVariables = {id: string}
 
     /**
- * @summary Delete an asset: objects first, then the document.
+ * @summary Delete an asset permanently, trashed or not: objects first, then the document.
  */
 export const useDeletePhoto = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePhoto>>, TError,DeletePhotoMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -1058,4 +1313,77 @@ export const useDeletePhoto = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getDeletePhotoMutationOptions(options), queryClient);
+    }
+    export const getEmptyPhotoTrashUrl = () => {
+
+
+
+
+  return `/photo-api/photos/trash`
+}
+
+/**
+ * @summary Permanently delete every trashed asset.
+ */
+export const emptyPhotoTrash = async ( options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
+
+  return apiRequest<void>(getEmptyPhotoTrashUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getEmptyPhotoTrashMutationKey = () => ['emptyPhotoTrash'] as const;
+
+export const getEmptyPhotoTrashMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emptyPhotoTrash>>, TError,void, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof emptyPhotoTrash>>, TError,void, TContext> => {
+
+const mutationKey = getEmptyPhotoTrashMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof emptyPhotoTrash>>, void> = () => {
+
+
+          return  emptyPhotoTrash(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EmptyPhotoTrashMutationResult = NonNullable<Awaited<ReturnType<typeof emptyPhotoTrash>>>
+
+    export type EmptyPhotoTrashMutationError = ProblemDetails
+
+
+    /**
+ * @summary Permanently delete every trashed asset.
+ */
+export const useEmptyPhotoTrash = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emptyPhotoTrash>>, TError,void, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof emptyPhotoTrash>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getEmptyPhotoTrashMutationOptions(options), queryClient);
     }

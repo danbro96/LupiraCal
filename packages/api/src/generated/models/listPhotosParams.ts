@@ -17,6 +17,7 @@ status?: AssetStatus;
 located?: boolean;
 place?: string;
 sourceAlbum?: string;
+trashed?: boolean;
 sort?: PhotoSort;
 limit?: number;
 cursor?: string;

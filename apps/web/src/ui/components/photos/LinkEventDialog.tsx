@@ -8,9 +8,8 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
-import { useCreateItemRelation } from '@lupira/cal-api/query/cal';
 import { fmtWhen } from '@lupira/cal-domain/time';
-import { useInvalidatePhotos } from '../../../state/useInvalidate';
+import { usePhotoActions } from '../../../state/usePhotoActions';
 import { useLinkCandidates, usePhotoEventLinks } from '../../../state/usePhotoLibrary';
 import { useSnackbar } from '../SnackbarHost';
 
@@ -24,26 +23,25 @@ export function LinkEventDialog({ photos, onClose, onLinked }: {
   const links = usePhotoEventLinks();
   const takenAts = photos.map((p) => p.takenAt);
   const { data: candidates, isLoading } = useLinkCandidates(takenAts, true);
-  const create = useCreateItemRelation();
-  const invalidate = useInvalidatePhotos();
+  const actions = usePhotoActions();
   const showSnack = useSnackbar();
   const [busy, setBusy] = useState(false);
 
   const onPick = async (itemId: string) => {
-    const pending = photos.filter((p) => !links.get(p.id)?.includes(itemId));
+    const pending = photos.filter((p) => !links.get(p.id)?.includes(itemId)).map((p) => p.id);
     setBusy(true);
-    let failed = 0;
-    for (const photo of pending) {
-      await create
-        .mutateAsync({ id: itemId, data: { toKind: 'photo', toRef: photo.id, relationType: 'depicts' } })
-        .catch(() => { failed++; });
-    }
+    const { done, failed } = pending.length > 0 ? await actions.link(itemId, pending) : { done: 0, failed: 0 };
     setBusy(false);
-    void invalidate();
-    const linked = pending.length - failed;
-    if (failed > 0) showSnack(`Linked ${linked}, ${failed} failed`);
-    else showSnack(linked === 1 ? 'Linked to the event' : `Linked ${linked} photos`, 'success');
-    onLinked?.();
+    if (failed > 0) {
+      showSnack('Could not link the photos');
+    } else {
+      showSnack(
+        photos.length === 1 ? 'Linked to the event' : `Linked ${done} photos`,
+        'success',
+        done > 0 ? { label: 'Undo', onPress: () => void actions.unlink(itemId, pending) } : undefined,
+      );
+      onLinked?.();
+    }
     onClose();
   };
 

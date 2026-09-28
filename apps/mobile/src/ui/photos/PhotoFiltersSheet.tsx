@@ -5,7 +5,6 @@ import {
   fmtMonth, fmtPhotoRange, monthRange, type TimelineYear, wholeSpan, yearRange,
 } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoQueryFilters } from '../../state/usePhotoLibrary';
-import { Input } from '../components/Input';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 
@@ -33,6 +32,14 @@ export function PhotoFiltersSheet({ filters, timeline, eventTitle, onChange, onD
         <Pressable style={[styles.sheet, { backgroundColor: c.surface }]}>
           <ScrollView>
             <Text style={[styles.title, { color: c.text }]}>Photos</Text>
+
+            <Text style={[styles.label, { color: c.textMuted }]}>Show</Text>
+            <View style={styles.row}>
+              <Chip compact selected={!filters.trashed} showSelectedCheck
+                onPress={() => set({ trashed: undefined })}>Library</Chip>
+              <Chip compact icon={ICONS.delete} selected={!!filters.trashed} showSelectedCheck
+                onPress={() => onChange({ sort: filters.sort, trashed: true })}>Trash</Chip>
+            </View>
 
             <Text style={[styles.label, { color: c.textMuted }]}>Order</Text>
             <View style={styles.row}>
@@ -103,12 +110,17 @@ export function PhotoFiltersSheet({ filters, timeline, eventTitle, onChange, onD
                 onPress={() => toggle('located', false)}>No location</Chip>
             </View>
 
-            <Text style={[styles.label, { color: c.textMuted }]}>Place</Text>
-            <Input
-              label="Place name"
-              defaultValue={filters.place}
-              onEndEditing={(e) => set({ place: e.nativeEvent.text.trim() || undefined })}
-            />
+            {filters.place && (
+              <>
+                <Text style={[styles.label, { color: c.textMuted }]}>Place</Text>
+                <View style={styles.row}>
+                  <Chip compact icon={ICONS.place} selected showSelectedCheck={false}
+                    onPress={() => set({ place: undefined })} onClose={() => set({ place: undefined })}>
+                    {filters.place}
+                  </Chip>
+                </View>
+              </>
+            )}
 
             <Text style={[styles.label, { color: c.textMuted }]}>Status</Text>
             <View style={styles.row}>

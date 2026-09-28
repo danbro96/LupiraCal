@@ -26,6 +26,8 @@ export type PhotoFilters = {
   place: string;
   status: string;
   event: string;
+  /** 'true' shows the trash instead of the library. */
+  trashed: string;
   /** Local day bounds, 'yyyy-MM-dd' — the same vocabulary the map's range uses. */
   from: string;
   to: string;
@@ -41,6 +43,7 @@ export function usePhotoFilters(): PhotoFilters {
     place: params.get('place') ?? '',
     status: params.get('status') ?? '',
     event: params.get('event') ?? '',
+    trashed: params.get('trashed') ?? '',
     from: params.get('from') ?? '',
     to: params.get('to') ?? '',
   };
@@ -55,6 +58,7 @@ export function usePhotoLibrary(filters: PhotoFilters) {
     place: filters.place || undefined,
     from: filters.from ? startOfDay(parseYmd(filters.from)).toISOString() : undefined,
     to: filters.to ? addDays(startOfDay(parseYmd(filters.to)), 1).toISOString() : undefined,
+    trashed: filters.trashed === 'true' || undefined,
     limit: PHOTO_PAGE_SIZE,
   };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fmtBytes, fmtDimensions, fmtDuration, groupByDay, photoEventLinks } from './photoFormat';
+import { daysLeft, fmtBytes, fmtDimensions, fmtDuration, groupByDay, linkedEventIds, photoEventLinks, topPlaces } from './photoFormat';
 
 describe('fmtBytes', () => {
   it('scales through the binary units', () => {
@@ -84,5 +84,29 @@ describe('photoEventLinks', () => {
     expect(links.get('p1')).toEqual(['i1', 'i3']);
     expect(links.get('p2')).toEqual(['i2']);
     expect(links.has('p3')).toBe(false);
+  });
+});
+
+describe('topPlaces', () => {
+  it('ranks by photo count and keeps first-seen order on ties', () => {
+    const items = [{ placeLabel: 'Visby' }, { placeLabel: 'Fårö' }, { placeLabel: 'Fårö' }, { placeLabel: null }, { placeLabel: 'Slite' }];
+    expect(topPlaces(items, 2)).toEqual(['Fårö', 'Visby']);
+    expect(topPlaces([], 2)).toEqual([]);
+  });
+});
+
+describe('linkedEventIds', () => {
+  it('collects distinct events across the photos', () => {
+    const links = new Map([['p1', ['e1']], ['p2', ['e1', 'e2']]]);
+    expect(linkedEventIds(['p1', 'p2', 'p3'], links)).toEqual(['e1', 'e2']);
+  });
+});
+
+describe('daysLeft', () => {
+  const now = new Date('2026-09-28T12:00:00Z');
+  it('rounds a partial day up and floors at zero', () => {
+    expect(daysLeft('2026-09-30T13:00:00Z', now)).toBe(3);
+    expect(daysLeft('2026-09-28T12:00:01Z', now)).toBe(1);
+    expect(daysLeft('2026-09-27T00:00:00Z', now)).toBe(0);
   });
 });

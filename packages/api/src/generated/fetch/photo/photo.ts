@@ -8,12 +8,14 @@ import type {
   DeclarePhotoRequest,
   DeclaredPhotoResponse,
   GetPhotoMapParams,
+  ListPhotoPlacesParams,
   ListPhotosParams,
   LookupPhotosRequest,
   PhotoAlbumDto,
   PhotoAssetDto,
   PhotoListResponse,
   PhotoMapResponse,
+  PhotoPlaceCount,
   PhotoStats,
   ProblemDetails,
   UpdatePhotoRequest
@@ -122,7 +124,7 @@ export const getListPhotosUrl = (params?: ListPhotosParams,) => {
 }
 
 /**
- * @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs.
+ * @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash.
  */
 export const listPhotos = async (params?: ListPhotosParams, options?: Parameters<typeof apiRequest>[1]): Promise<listPhotosResponse> => {
 
@@ -231,6 +233,110 @@ export const getReprocessPhotoUrl = (id: string,) => {
 export const reprocessPhoto = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<reprocessPhotoResponse> => {
 
   return apiRequest<reprocessPhotoResponse>(getReprocessPhotoUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+export type trashPhotoResponse200 = {
+  data: PhotoAssetDto
+  status: 200
+}
+
+export type trashPhotoResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type trashPhotoResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type trashPhotoResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type trashPhotoResponseSuccess = (trashPhotoResponse200) & {
+  headers: Headers;
+};
+export type trashPhotoResponseError = (trashPhotoResponse401 | trashPhotoResponse404 | trashPhotoResponse500) & {
+  headers: Headers;
+};
+
+export type trashPhotoResponse = (trashPhotoResponseSuccess | trashPhotoResponseError)
+
+export const getTrashPhotoUrl = (id: string,) => {
+
+
+
+
+  return `/photo-api/photos/${id}/trash`
+}
+
+/**
+ * @summary Move an asset to the trash (idempotent). It keeps its bytes and status until restored or purged.
+ */
+export const trashPhoto = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<trashPhotoResponse> => {
+
+  return apiRequest<trashPhotoResponse>(getTrashPhotoUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+export type restorePhotoResponse200 = {
+  data: PhotoAssetDto
+  status: 200
+}
+
+export type restorePhotoResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type restorePhotoResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type restorePhotoResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type restorePhotoResponseSuccess = (restorePhotoResponse200) & {
+  headers: Headers;
+};
+export type restorePhotoResponseError = (restorePhotoResponse401 | restorePhotoResponse404 | restorePhotoResponse500) & {
+  headers: Headers;
+};
+
+export type restorePhotoResponse = (restorePhotoResponseSuccess | restorePhotoResponseError)
+
+export const getRestorePhotoUrl = (id: string,) => {
+
+
+
+
+  return `/photo-api/photos/${id}/restore`
+}
+
+/**
+ * @summary Take an asset back out of the trash (idempotent).
+ */
+export const restorePhoto = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<restorePhotoResponse> => {
+
+  return apiRequest<restorePhotoResponse>(getRestorePhotoUrl(id),
   {
     ...options,
     method: 'POST'
@@ -386,6 +492,60 @@ export const getListPhotoAlbumsUrl = () => {
 export const listPhotoAlbums = async ( options?: Parameters<typeof apiRequest>[1]): Promise<listPhotoAlbumsResponse> => {
 
   return apiRequest<listPhotoAlbumsResponse>(getListPhotoAlbumsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type listPhotoPlacesResponse200 = {
+  data: PhotoPlaceCount[]
+  status: 200
+}
+
+export type listPhotoPlacesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type listPhotoPlacesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type listPhotoPlacesResponseSuccess = (listPhotoPlacesResponse200) & {
+  headers: Headers;
+};
+export type listPhotoPlacesResponseError = (listPhotoPlacesResponse401 | listPhotoPlacesResponse500) & {
+  headers: Headers;
+};
+
+export type listPhotoPlacesResponse = (listPhotoPlacesResponseSuccess | listPhotoPlacesResponseError)
+
+export const getListPhotoPlacesUrl = (params?: ListPhotoPlacesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/photo-api/photos/places?${stringifiedParams}` : `/photo-api/photos/places`
+}
+
+/**
+ * @summary Place labels by asset count, most used first — suggestions for the place filter (q = substring).
+ */
+export const listPhotoPlaces = async (params?: ListPhotoPlacesParams, options?: Parameters<typeof apiRequest>[1]): Promise<listPhotoPlacesResponse> => {
+
+  return apiRequest<listPhotoPlacesResponse>(getListPhotoPlacesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -606,11 +766,58 @@ export const getDeletePhotoUrl = (id: string,) => {
 }
 
 /**
- * @summary Delete an asset: objects first, then the document.
+ * @summary Delete an asset permanently, trashed or not: objects first, then the document.
  */
 export const deletePhoto = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<deletePhotoResponse> => {
 
   return apiRequest<deletePhotoResponse>(getDeletePhotoUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export type emptyPhotoTrashResponse204 = {
+  data: void
+  status: 204
+}
+
+export type emptyPhotoTrashResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type emptyPhotoTrashResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type emptyPhotoTrashResponseSuccess = (emptyPhotoTrashResponse204) & {
+  headers: Headers;
+};
+export type emptyPhotoTrashResponseError = (emptyPhotoTrashResponse401 | emptyPhotoTrashResponse500) & {
+  headers: Headers;
+};
+
+export type emptyPhotoTrashResponse = (emptyPhotoTrashResponseSuccess | emptyPhotoTrashResponseError)
+
+export const getEmptyPhotoTrashUrl = () => {
+
+
+
+
+  return `/photo-api/photos/trash`
+}
+
+/**
+ * @summary Permanently delete every trashed asset.
+ */
+export const emptyPhotoTrash = async ( options?: Parameters<typeof apiRequest>[1]): Promise<emptyPhotoTrashResponse> => {
+
+  return apiRequest<emptyPhotoTrashResponse>(getEmptyPhotoTrashUrl(),
   {
     ...options,
     method: 'DELETE'

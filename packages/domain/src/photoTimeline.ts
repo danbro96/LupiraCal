@@ -75,3 +75,25 @@ export function fmtPhotoRange(from: string, to?: string): string {
   if (!to || to === from) return start;
   return `${start} – ${parseYmd(to).toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
 }
+
+export interface TimelineMatch {
+  range: DayRange;
+  label: string;
+  count: number;
+}
+
+/** Years and months whose name holds every word of the query — "2024", "jul", "jul 2023". */
+export function matchTimeline(years: readonly TimelineYear[], query: string, max: number): TimelineMatch[] {
+  const words = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+  const hit = (label: string) => words.every((w) => label.toLocaleLowerCase().includes(w));
+  const matches: TimelineMatch[] = [];
+  for (const y of years) {
+    if (hit(y.year)) matches.push({ range: yearRange(y.year), label: y.year, count: y.count });
+    for (const m of y.months) {
+      const label = `${fmtMonth(m.key, 'long')} ${y.year}`;
+      if (hit(label)) matches.push({ range: monthRange(m.key), label, count: m.count });
+    }
+  }
+  return matches.slice(0, max);
+}

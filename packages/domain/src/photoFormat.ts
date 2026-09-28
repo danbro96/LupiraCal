@@ -72,3 +72,27 @@ export function photoEventLinks(
 
 /** Presigned thumbnail URLs live 24 h; a list cached longer than this starts serving dead ones. */
 export const THUMB_SAFE_STALE_MS = 15 * 60_000;
+
+/** A day's most photographed places, most first — ties keep first-seen order. */
+export function topPlaces(items: readonly { placeLabel?: string | null }[], max: number): string[] {
+  const counts = new Map<string, number>();
+  for (const { placeLabel } of items) {
+    if (placeLabel) counts.set(placeLabel, (counts.get(placeLabel) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, max).map(([label]) => label);
+}
+
+/** Distinct event ids linked to any of the photos, in first-seen order. */
+export function linkedEventIds(photoIds: readonly string[], links: ReadonlyMap<string, readonly string[]>): string[] {
+  const ids = new Set<string>();
+  for (const id of photoIds) for (const eventId of links.get(id) ?? []) ids.add(eventId);
+  return [...ids];
+}
+
+/** The cal-api relation that ties a photo to the event it depicts. */
+export const PHOTO_LINK = { toKind: 'photo', relationType: 'depicts' } as const;
+
+/** Whole days until a trashed photo is purged, never negative — "3 days left". */
+export function daysLeft(purgesAt: string, now: Date): number {
+  return Math.max(0, Math.ceil((Date.parse(purgesAt) - now.getTime()) / 86_400_000));
+}

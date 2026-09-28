@@ -13,6 +13,8 @@ import type { PhotoStatsByStatus } from './photoStatsByStatus';
 export interface PhotoStats {
   totalAssets: number;
   totalBytes: number;
+  /** Excluded from every other figure. */
+  trashedAssets: number;
   byKind: PhotoStatsByKind;
   byStatus: PhotoStatsByStatus;
   byGeotagSource: PhotoStatsByGeotagSource;

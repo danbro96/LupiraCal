@@ -34,6 +34,7 @@ import type {
   CreateCalendarRequest,
   CreateRelationRequest,
   CreateRelationsBatchRequest,
+  DeleteRelationsBatchRequest,
   FileItemToCalendarParams,
   GetChangesParams,
   GetParticipationSummaryParams,
@@ -1886,6 +1887,94 @@ export const useCreateItemRelationsBatch = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getCreateItemRelationsBatchMutationOptions(options), queryClient);
+    }
+    export const getDeleteItemRelationsBatchUrl = (id: string,) => {
+
+
+
+
+  return `/api/items/${id}/relations/batch/delete`
+}
+
+/**
+ * @summary Unlink many references of one kind from an item at once (idempotent: references with no matching edge are ignored).
+ */
+export const deleteItemRelationsBatch = async (id: string,
+    deleteRelationsBatchRequest: DeleteRelationsBatchRequest, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<void>(getDeleteItemRelationsBatchUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(deleteRelationsBatchRequest)
+  }
+);}
+
+
+
+
+
+export const getDeleteItemRelationsBatchMutationKey = () => ['deleteItemRelationsBatch'] as const;
+
+export const getDeleteItemRelationsBatchMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteItemRelationsBatch>>, TError,DeleteItemRelationsBatchMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteItemRelationsBatch>>, TError,DeleteItemRelationsBatchMutationVariables, TContext> => {
+
+const mutationKey = getDeleteItemRelationsBatchMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteItemRelationsBatch>>, DeleteItemRelationsBatchMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  deleteItemRelationsBatch(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteItemRelationsBatchMutationResult = NonNullable<Awaited<ReturnType<typeof deleteItemRelationsBatch>>>
+    export type DeleteItemRelationsBatchMutationBody = DeleteRelationsBatchRequest
+    export type DeleteItemRelationsBatchMutationError = ProblemDetails
+    export type DeleteItemRelationsBatchMutationVariables = {id: string;data: DeleteRelationsBatchRequest}
+
+    /**
+ * @summary Unlink many references of one kind from an item at once (idempotent: references with no matching edge are ignored).
+ */
+export const useDeleteItemRelationsBatch = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteItemRelationsBatch>>, TError,DeleteItemRelationsBatchMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteItemRelationsBatch>>,
+        TError,
+        DeleteItemRelationsBatchMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteItemRelationsBatchMutationOptions(options), queryClient);
     }
     export const getListRelationEdgesUrl = (params: ListRelationEdgesParams,) => {
   const normalizedParams = new URLSearchParams();

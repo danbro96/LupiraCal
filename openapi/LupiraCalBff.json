@@ -1701,6 +1701,99 @@
         ]
       }
     },
+    "/api/items/{id}/relations/batch/delete": {
+      "post": {
+        "tags": [
+          "cal"
+        ],
+        "summary": "Unlink many references of one kind from an item at once (idempotent: references with no matching edge are ignored).",
+        "operationId": "DeleteItemRelationsBatch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteRelationsBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/relations/edges": {
       "get": {
         "tags": [
@@ -7616,7 +7709,7 @@
         "tags": [
           "photo"
         ],
-        "summary": "List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs.",
+        "summary": "List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash.",
         "operationId": "ListPhotos",
         "parameters": [
           {
@@ -7675,6 +7768,13 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "trashed",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
             }
           },
           {
@@ -7882,6 +7982,146 @@
         ]
       }
     },
+    "/photo-api/photos/{id}/trash": {
+      "post": {
+        "tags": [
+          "photo"
+        ],
+        "summary": "Move an asset to the trash (idempotent). It keeps its bytes and status until restored or purged.",
+        "operationId": "TrashPhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoAssetDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/photo-api/photos/{id}/restore": {
+      "post": {
+        "tags": [
+          "photo"
+        ],
+        "summary": "Take an asset back out of the trash (idempotent).",
+        "operationId": "RestorePhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoAssetDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/photo-api/photos/lookup": {
       "post": {
         "tags": [
@@ -8006,6 +8246,75 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/PhotoAlbumDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/photo-api/photos/places": {
+      "get": {
+        "tags": [
+          "photo"
+        ],
+        "summary": "Place labels by asset count, most used first — suggestions for the place filter (q = substring).",
+        "operationId": "ListPhotoPlaces",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PhotoPlaceCount"
                   }
                 }
               }
@@ -8268,7 +8577,7 @@
         "tags": [
           "photo"
         ],
-        "summary": "Delete an asset: objects first, then the document.",
+        "summary": "Delete an asset permanently, trashed or not: objects first, then the document.",
         "operationId": "DeletePhoto",
         "parameters": [
           {
@@ -8294,6 +8603,48 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/photo-api/photos/trash": {
+      "delete": {
+        "tags": [
+          "photo"
+        ],
+        "summary": "Permanently delete every trashed asset.",
+        "operationId": "EmptyPhotoTrash",
+        "responses": {
+          "204": {
+            "description": "No Content"
           },
           "401": {
             "description": "Unauthorized",
@@ -11010,6 +11361,29 @@
         },
         "description": "Client-side MediaStore metadata for one asset. (DeviceId, MediaStoreId) under the caller is\n            the idempotency key — retrying a declare returns the same asset."
       },
+      "DeleteRelationsBatchRequest": {
+        "required": [
+          "toKind",
+          "relationType",
+          "toRefs"
+        ],
+        "type": "object",
+        "properties": {
+          "toKind": {
+            "type": "string"
+          },
+          "relationType": {
+            "type": "string"
+          },
+          "toRefs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Many references of one kind unlinked from one item in a single call (e.g. photos removed from an event's album)."
+      },
       "DeviceDto": {
         "required": [
           "id",
@@ -12485,6 +12859,21 @@
               "string"
             ]
           },
+          "trashedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "purgesAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the trash is purged of it (`TrashedAt` + retention); null unless trashed.",
+            "format": "date-time"
+          },
           "thumbUrl": {
             "type": [
               "null",
@@ -12630,6 +13019,21 @@
               "string"
             ]
           },
+          "trashedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "purgesAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the trash is purged of it (`TrashedAt` + retention); null unless trashed.",
+            "format": "date-time"
+          },
           "thumbUrl": {
             "type": [
               "null",
@@ -12756,6 +13160,22 @@
         },
         "description": "GeoJSON-shaped map payload — feeds a MapLibre GeoJSON source directly."
       },
+      "PhotoPlaceCount": {
+        "required": [
+          "label",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "PhotoSort": {
         "enum": [
           "TakenAtDesc",
@@ -12766,6 +13186,7 @@
         "required": [
           "totalAssets",
           "totalBytes",
+          "trashedAssets",
           "byKind",
           "byStatus",
           "byGeotagSource",
@@ -12780,6 +13201,11 @@
           },
           "totalBytes": {
             "type": "integer",
+            "format": "int64"
+          },
+          "trashedAssets": {
+            "type": "integer",
+            "description": "Excluded from every other figure.",
             "format": "int64"
           },
           "byKind": {

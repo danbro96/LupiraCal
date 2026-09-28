@@ -3,7 +3,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Chip, Text } from 'react-native-paper';
-import { useLinkedEvents, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
+import { toast, toastError } from '../../feedback/toast';
+import { linkPhotosToEvent, unlinkPhotosFromEvent, useLinkedEvents, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
 import { useColors } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
 import { ICONS } from '../icons';
@@ -18,6 +19,16 @@ export function PhotoEventLinks({ photoId, takenAt }: { photoId: string; takenAt
   const linked = useLinkedEvents(links.get(photoId) ?? []);
   const [picking, setPicking] = useState(false);
 
+  const onRemove = async (eventId: string) => {
+    if (!(await unlinkPhotosFromEvent(eventId, [photoId]))) {
+      toastError('Could not remove the link.');
+      return;
+    }
+    toast('Removed from the event', {
+      action: { label: 'Undo', onPress: () => void linkPhotosToEvent(eventId, [photoId], new Map()) },
+    });
+  };
+
   return (
     <View style={styles.root}>
       {linked.length === 0 && (
@@ -26,7 +37,8 @@ export function PhotoEventLinks({ photoId, takenAt }: { photoId: string; takenAt
       <View style={styles.chips}>
         {linked.map((event) => (
           <Chip key={event.id} compact icon={ICONS.calendar}
-            onPress={() => navigation.navigate('ItemDetail', { itemId: event.id })}>
+            onPress={() => navigation.navigate('ItemDetail', { itemId: event.id })}
+            onClose={() => void onRemove(event.id)} closeIconAccessibilityLabel="Remove from event">
             {event.title}
           </Chip>
         ))}

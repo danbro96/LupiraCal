@@ -3,8 +3,10 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
 import { useGetItem } from '@lupira/cal-api/query/cal';
+import { usePhotoActions } from '../../../state/usePhotoActions';
 import { usePhotoEventLinks } from '../../../state/usePhotoLibrary';
 import { DrawerSection } from '../DrawerSection';
+import { useSnackbar } from '../SnackbarHost';
 import { WrapRow } from '../WrapRow';
 import { LinkEventDialog } from './LinkEventDialog';
 
@@ -19,7 +21,7 @@ export function LinkToEvent({ photoId, takenAt }: { photoId: string; takenAt: st
       {linkedIds.length === 0 && (
         <Typography variant="body2" sx={{ color: 'text.subtle' }}>Not linked to an event.</Typography>
       )}
-      {linkedIds.map((id) => <LinkedEvent key={id} itemId={id} />)}
+      {linkedIds.map((id) => <LinkedEvent key={id} itemId={id} photoId={photoId} />)}
       <WrapRow>
         <Button size="small" onClick={() => setPicking(true)}>Link to event…</Button>
       </WrapRow>
@@ -28,12 +30,22 @@ export function LinkToEvent({ photoId, takenAt }: { photoId: string; takenAt: st
   );
 }
 
-function LinkedEvent({ itemId }: { itemId: string }) {
+function LinkedEvent({ itemId, photoId }: { itemId: string; photoId: string }) {
   const { data: item } = useGetItem(itemId);
+  const actions = usePhotoActions();
+  const showSnack = useSnackbar();
+
+  const onRemove = async () => {
+    const { failed } = await actions.unlink(itemId, [photoId]);
+    if (failed > 0) showSnack('Could not remove the link');
+    else showSnack('Removed from the event', 'success', { label: 'Undo', onPress: () => void actions.link(itemId, [photoId]) });
+  };
+
   return (
     <WrapRow sx={{ my: 0 }}>
       <Button size="small" component={Link} to={`/items?item=${itemId}`}>{item?.title ?? 'Untitled event'}</Button>
       <Button size="small" component={Link} to={`/photos?event=${itemId}`}>All its photos</Button>
+      <Button size="small" color="inherit" onClick={() => void onRemove()} disabled={actions.busy}>Remove</Button>
     </WrapRow>
   );
 }

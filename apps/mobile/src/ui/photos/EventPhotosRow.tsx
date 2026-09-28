@@ -12,6 +12,7 @@ import { useEventPhotos, useSuggestedPhotos } from '../../state/usePhotoEventLin
 import { invalidatePhotos } from '../../sync/reactivity';
 import { Button } from '../components/Button';
 import { useColors } from '../theme';
+import { thumbCacheKey } from './imageCache';
 import type { RootStackParamList } from '../navigation/types';
 
 const THUMB = 88;
@@ -107,7 +108,7 @@ function Thumb({ photo, surface, onPress, dimmed }: {
   return (
     <Pressable onPress={onPress} disabled={dimmed} style={dimmed ? styles.dimmed : undefined}>
       {photo.thumbUrl ? (
-        <Image source={{ uri: photo.thumbUrl }} style={styles.thumb} contentFit="cover" recyclingKey={photo.id} />
+        <Image source={{ uri: photo.thumbUrl, cacheKey: thumbCacheKey(photo.id) }} style={styles.thumb} contentFit="cover" recyclingKey={photo.id} />
       ) : (
         <View style={[styles.thumb, { backgroundColor: surface }]} />
       )}

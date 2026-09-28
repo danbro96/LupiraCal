@@ -12,16 +12,17 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useGetItem } from '@lupira/cal-api/query/cal';
-import { useDeletePhoto } from '@lupira/cal-api/query/photo';
-import { fmtDuration } from '@lupira/cal-domain/photoFormat';
+import { daysLeft, fmtDuration } from '@lupira/cal-domain/photoFormat';
 import { fmtPhotoRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
-import { useInvalidatePhotos } from '../../state/useInvalidate';
+import { usePhotoActions } from '../../state/usePhotoActions';
 import { errText } from '../errText';
-import { CalendarIcon, CheckboxBlankIcon, CheckboxIcon, CloseIcon } from '../icons';
+import { CalendarIcon, CheckboxBlankIcon, CheckboxIcon, CloseIcon, DeleteIcon, PlaceIcon } from '../icons';
 import { useSnackbar } from '../components/SnackbarHost';
 import { WrapRow } from '../components/WrapRow';
+import { DayHeader } from '../components/photos/DayHeader';
 import { LinkEventDialog } from '../components/photos/LinkEventDialog';
+import { PhotoSearch } from '../components/photos/PhotoSearch';
 import { PhotoTimelineRail, PhotoWhenSelect } from '../components/photos/PhotoTimeline';
 import { PhotoViewer } from '../components/photos/PhotoViewer';
 import {
@@ -71,10 +72,10 @@ export default function PhotosScreen() {
 
   const anchor = useRef<string | null>(null);
   const [linking, setLinking] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const del = useDeletePhoto();
-  const invalidate = useInvalidatePhotos();
+  const [confirming, setConfirming] = useState<'purge' | 'empty' | null>(null);
+  const actions = usePhotoActions();
   const showSnack = useSnackbar();
+  const inTrash = filters.trashed === 'true';
 
   const toggle = useCallback((id: string, range: boolean) => {
     setSelected((prev) => {
@@ -107,17 +108,43 @@ export default function PhotosScreen() {
   const selecting = selected.size > 0;
   const selectedPhotos = useMemo(() => items.filter((i) => selected.has(i.id)), [items, selected]);
 
-  const onDeleteSelected = async () => {
-    setConfirmingDelete(false);
-    let failures = 0;
-    for (const photo of selectedPhotos) {
-      await del.mutateAsync({ id: photo.id }).catch(() => { failures++; });
-    }
-    void invalidate();
+  const plural = (n: number) => (n === 1 ? '1 photo' : `${n} photos`);
+  const report = (verb: string, { done, failed }: { done: number; failed: number }, undo?: () => void) => {
+    if (failed > 0) showSnack(`${verb} ${done}, ${failed} failed`);
+    else showSnack(`${verb} ${plural(done)}`, 'success', undo && { label: 'Undo', onPress: undo });
+  };
+
+  const onTrashSelected = async () => {
+    const ids = selectedPhotos.map((p) => p.id);
     setSelected(new Set());
-    const deleted = selectedPhotos.length - failures;
-    if (failures > 0) showSnack(`Deleted ${deleted}, ${failures} failed`);
-    else showSnack(deleted === 1 ? 'Photo deleted' : `Deleted ${deleted} photos`, 'success');
+    const outcome = await actions.trash(ids);
+    report('Moved to trash:', outcome, () => void actions.restore(ids));
+  };
+
+  const onRestoreSelected = async () => {
+    const ids = selectedPhotos.map((p) => p.id);
+    setSelected(new Set());
+    report('Restored', await actions.restore(ids));
+  };
+
+  const onUnlinkSelected = async () => {
+    const ids = selectedPhotos.map((p) => p.id);
+    setSelected(new Set());
+    const outcome = await actions.unlink(filters.event, ids);
+    report('Removed from the event:', outcome, () => void actions.link(filters.event, ids));
+  };
+
+  const onConfirmed = async () => {
+    const what = confirming;
+    setConfirming(null);
+    if (what === 'purge') {
+      const ids = selectedPhotos.map((p) => p.id);
+      setSelected(new Set());
+      report('Deleted for good:', await actions.purge(ids));
+    } else if (what === 'empty') {
+      const { failed } = await actions.emptyTrash();
+      showSnack(failed > 0 ? 'Could not empty the trash' : 'Trash emptied', failed > 0 ? 'error' : 'success');
+    }
   };
 
   const openPhoto = params.get('photo');
@@ -136,7 +163,9 @@ export default function PhotosScreen() {
     return () => observer.disconnect();
   }, [hasNextPage, loadMore]);
 
-  const emptyText = filters.event && !isFetching && items.length === 0
+  const emptyText = inTrash
+    ? 'Trash is empty.'
+    : filters.event && !isFetching && items.length === 0
     ? 'No photos linked to this event yet.'
     : filters.event || filters.from || filters.kind || filters.located || filters.place || filters.status
       ? 'No photos match these filters.'
@@ -150,10 +179,37 @@ export default function PhotosScreen() {
             <CloseIcon />
           </IconButton>
           <Typography component="h2" variant="h6" sx={{ mr: 1 }}>{selected.size} selected</Typography>
-          <Button variant="outlined" size="small" onClick={() => setLinking(true)}>Link to event…</Button>
-          <Button variant="outlined" size="small" color="error" onClick={() => setConfirmingDelete(true)} disabled={del.isPending}>
-            Delete
-          </Button>
+          {inTrash ? (
+            <>
+              <Button variant="outlined" size="small" onClick={() => void onRestoreSelected()} disabled={actions.busy}>Restore</Button>
+              <Button variant="outlined" size="small" color="error" onClick={() => setConfirming('purge')} disabled={actions.busy}>
+                Delete for good
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outlined" size="small" onClick={() => setLinking(true)}>Link to event…</Button>
+              {filters.event && (
+                <Button variant="outlined" size="small" onClick={() => void onUnlinkSelected()} disabled={actions.busy}>
+                  Remove from event
+                </Button>
+              )}
+              <Button variant="outlined" size="small" color="error" onClick={() => void onTrashSelected()} disabled={actions.busy}>
+                Move to trash
+              </Button>
+            </>
+          )}
+        </WrapRow>
+      ) : inTrash ? (
+        <WrapRow>
+          <Typography component="h2" variant="h6" sx={{ mr: 1 }}>Trash</Typography>
+          <Button size="small" onClick={() => setParam('trashed', undefined)}>Back to photos</Button>
+          {items.length > 0 && (
+            <Button size="small" color="error" onClick={() => setConfirming('empty')} disabled={actions.busy}>Empty trash</Button>
+          )}
+          <Typography variant="caption" sx={{ color: 'text.subtle' }}>
+            Each photo is deleted for good when its days run out.
+          </Typography>
         </WrapRow>
       ) : (
         <WrapRow>
@@ -187,12 +243,12 @@ export default function PhotosScreen() {
             <MenuItem value="true">Has a place</MenuItem>
             <MenuItem value="false">No location</MenuItem>
           </TextField>
-          <TextField
-            key={filters.place}
-            size="small" label="Place" defaultValue={filters.place}
-            onBlur={(e) => setParam('place', e.target.value.trim() || undefined)}
-            onKeyDown={(e) => { if (e.key === 'Enter') setParam('place', (e.target as HTMLInputElement).value.trim() || undefined); }}
-            sx={{ minWidth: 160 }}
+          <PhotoSearch
+            stats={stats}
+            newestFirst={filters.sort !== 'TakenAtAsc'}
+            onDate={setRange}
+            onEvent={(id) => setParam('event', id)}
+            onPlace={(label) => setParam('place', label)}
           />
           <TextField
             select size="small" label="Status" value={filters.status}
@@ -207,12 +263,18 @@ export default function PhotosScreen() {
           {filters.from && (
             <Chip label={fmtPhotoRange(filters.from, filters.to)} onDelete={() => setRange(null)} />
           )}
+          {filters.place && (
+            <Chip icon={<PlaceIcon />} label={filters.place} onDelete={() => setParam('place', undefined)} />
+          )}
           {filters.event && (
             <Chip
               icon={<CalendarIcon />}
               label={event?.title ?? 'One event'}
               onDelete={() => setParam('event', undefined)}
             />
+          )}
+          {(stats?.trashedAssets ?? 0) > 0 && (
+            <Chip icon={<DeleteIcon />} variant="outlined" label={`Trash · ${stats!.trashedAssets}`} onClick={() => setParam('trashed', 'true')} />
           )}
           {failed > 0 && filters.status !== 'Failed' && (
             <Chip color="warning" variant="outlined" label={`${failed} failed`} onClick={() => setParam('status', 'Failed')} />
@@ -241,22 +303,15 @@ export default function PhotosScreen() {
                 component="section"
                 sx={{ '&:hover [data-reveal]': { opacity: 1 } }}
               >
-                <Box
-                  sx={{
-                    position: 'sticky', top: 0, zIndex: 2, display: 'flex', alignItems: 'center', gap: 1,
-                    bgcolor: 'background.default', py: 0.5,
-                  }}
-                >
-                  <Typography variant="overline" sx={{ color: 'text.subtle' }}>{day.label}</Typography>
-                  <Button
-                    size="small"
-                    data-reveal
-                    onClick={() => toggleDay(day.items)}
-                    sx={{ opacity: selecting ? 1 : 0, '&:focus-visible': { opacity: 1 }, '@media (hover: none)': { opacity: 1 } }}
-                  >
-                    {allSelected ? 'Deselect day' : 'Select day'}
-                  </Button>
-                </Box>
+                <DayHeader
+                  day={day}
+                  links={links}
+                  selecting={selecting}
+                  allSelected={allSelected}
+                  onToggleDay={() => toggleDay(day.items)}
+                  onPlace={(label) => setParam('place', label)}
+                  onEvent={(id) => setParam('event', id)}
+                />
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 1, mb: 2 }}>
                   {day.items.map((item) => (
                     <PhotoTile
@@ -303,14 +358,16 @@ export default function PhotosScreen() {
         <LinkEventDialog photos={selectedPhotos} onClose={() => setLinking(false)} onLinked={() => setSelected(new Set())} />
       )}
 
-      <Dialog open={confirmingDelete} onClose={() => setConfirmingDelete(false)}>
-        <DialogTitle>Delete {selected.size} photo{selected.size === 1 ? '' : 's'}?</DialogTitle>
+      <Dialog open={confirming !== null} onClose={() => setConfirming(null)}>
+        <DialogTitle>
+          {confirming === 'empty' ? 'Empty the trash?' : `Delete ${plural(selected.size)} for good?`}
+        </DialogTitle>
         <DialogContent>
           <Typography variant="body2">This removes the originals and their thumbnails from storage. It cannot be undone.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmingDelete(false)}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={() => void onDeleteSelected()}>Delete</Button>
+          <Button onClick={() => setConfirming(null)}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={() => void onConfirmed()}>Delete for good</Button>
         </DialogActions>
       </Dialog>
     </Box>
@@ -356,6 +413,11 @@ function PhotoTile({ item, eventId, selected, selecting, onOpen, onToggle, onSho
       {item.durationSeconds != null && (
         <Typography variant="caption" sx={{ ...OVERLAY, right: 4, bottom: 4 }}>
           {fmtDuration(item.durationSeconds)}
+        </Typography>
+      )}
+      {item.purgesAt && (
+        <Typography variant="caption" sx={{ ...OVERLAY, left: 4, bottom: 4 }}>
+          {daysLeft(item.purgesAt, new Date())} days left
         </Typography>
       )}
       {eventId && (

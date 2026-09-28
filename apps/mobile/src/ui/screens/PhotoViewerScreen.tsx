@@ -9,14 +9,17 @@ import { Button, IconButton, List, Menu, Text } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
-import { deletePhoto, reprocessPhoto } from '@lupira/cal-api/fetch/photo';
+import { reprocessPhoto } from '@lupira/cal-api/fetch/photo';
+import { daysLeft } from '@lupira/cal-domain/photoFormat';
 import { toast, toastError } from '../../feedback/toast';
+import { purgePhotos, restorePhotos, trashPhotos } from '../../state/photoActions';
 import { DEFAULT_PHOTO_FILTERS, usePhoto, usePhotoLibrary } from '../../state/usePhotoLibrary';
-import { restorePhoto } from '../../sync/photoUploader';
+import { saveOriginalToPhone } from '../../sync/photoUploader';
 import { invalidatePhotos } from '../../sync/reactivity';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
 import { LinkEventSheet } from '../photos/LinkEventSheet';
+import { originalCacheKey, thumbCacheKey } from '../photos/imageCache';
 import { PhotoEventLinks } from '../photos/PhotoEventLinks';
 import { useColors } from '../theme';
 import type { RootStackParamList } from '../navigation/types';
@@ -54,25 +57,50 @@ export function PhotoViewerScreen() {
   const index = Math.max(0, found);
   const current = detail ?? pages[index] ?? pages[0];
 
-  const onDelete = async () => {
+  const onTrash = async () => {
+    setMenuOpen(false);
+    const id = currentId;
+    setBusy(true);
+    const { failed } = await trashPhotos([id]);
+    setBusy(false);
+    if (failed > 0) {
+      toastError('Could not move the photo to trash.');
+      return;
+    }
+    toast('Moved to trash', { action: { label: 'Undo', onPress: () => void restorePhotos([id]) } });
+    navigation.goBack();
+  };
+
+  const onRestore = async () => {
+    setBusy(true);
+    const { failed } = await restorePhotos([currentId]);
+    setBusy(false);
+    if (failed > 0) {
+      toastError('Could not restore the photo.');
+      return;
+    }
+    toast('Restored');
+    navigation.goBack();
+  };
+
+  const onPurge = async () => {
     setMenuOpen(false);
     const ok = await confirm({
-      title: 'Delete photo',
+      title: 'Delete for good',
       message: 'This removes the original and its thumbnail from storage. It cannot be undone.',
       confirmLabel: 'Delete',
       destructive: true,
     });
     if (!ok) return;
     setBusy(true);
-    const r = await deletePhoto(currentId).catch(() => null);
+    const { failed } = await purgePhotos([currentId]);
     setBusy(false);
-    if (r?.status === 204) {
-      toast('Photo deleted');
-      invalidatePhotos();
-      navigation.goBack();
-    } else {
+    if (failed > 0) {
       toastError('Could not delete the photo.');
+      return;
     }
+    toast('Deleted for good');
+    navigation.goBack();
   };
 
   const onReprocess = async () => {
@@ -91,7 +119,7 @@ export function PhotoViewerScreen() {
   const onSave = async () => {
     if (!detail?.originalUrl) return;
     setBusy(true);
-    const saved = await restorePhoto({ ...detail, originalUrl: detail.originalUrl }).catch(() => null);
+    const saved = await saveOriginalToPhone({ ...detail, originalUrl: detail.originalUrl }).catch(() => null);
     setBusy(false);
     if (saved) toast('Saved to this phone');
     else toastError(saved === false ? 'Saving needs access to your photos.' : 'Could not save the photo.');
@@ -183,7 +211,11 @@ export function PhotoViewerScreen() {
           })}
           accessibilityLabel="Show on the map"
         />
-        <IconButton icon={ICONS.link} onPress={() => setLinking(true)} accessibilityLabel="Link to event" />
+        {current.trashedAt ? (
+          <IconButton icon={ICONS.restore} disabled={busy} onPress={() => void onRestore()} accessibilityLabel="Restore" />
+        ) : (
+          <IconButton icon={ICONS.link} onPress={() => setLinking(true)} accessibilityLabel="Link to event" />
+        )}
         <Menu
           visible={menuOpen}
           onDismiss={() => setMenuOpen(false)}
@@ -192,7 +224,11 @@ export function PhotoViewerScreen() {
           {current.status === 'Failed' && (
             <Menu.Item leadingIcon={ICONS.schedule} title="Retry processing" disabled={busy} onPress={() => void onReprocess()} />
           )}
-          <Menu.Item leadingIcon={ICONS.delete} title="Delete" titleStyle={{ color: c.danger }} disabled={busy} onPress={() => void onDelete()} />
+          {current.trashedAt ? (
+            <Menu.Item leadingIcon={ICONS.deleteForever} title="Delete for good" titleStyle={{ color: c.danger }} disabled={busy} onPress={() => void onPurge()} />
+          ) : (
+            <Menu.Item leadingIcon={ICONS.delete} title="Move to trash" disabled={busy} onPress={() => void onTrash()} />
+          )}
         </Menu>
       </View>
 
@@ -301,14 +337,16 @@ const PhotoPage = memo(function PhotoPage({ photo, width, active, originalUrl, o
   // HEIC originals are stored untranscoded and the decoder can't read them — the WebP thumbnail is the
   // only viewable rendition.
   const heic = photo.contentType === 'image/heic' || photo.contentType === 'image/heif';
-  const uri = heic ? photo.thumbUrl : (originalUrl ?? photo.thumbUrl);
+  const original = !heic && originalUrl ? originalUrl : null;
+  const uri = original ?? photo.thumbUrl;
+  const cacheKey = original ? originalCacheKey(photo.id) : thumbCacheKey(photo.id);
 
   return (
     <GestureDetector gesture={gesture}>
       <View style={[styles.page, { width }]} onLayout={(e) => { height.value = e.nativeEvent.layout.height; }}>
         {uri ? (
           <Animated.View style={[styles.fill, zoom]}>
-            <Image source={{ uri }} style={styles.fill} contentFit="contain" transition={150} recyclingKey={photo.id} />
+            <Image source={{ uri, cacheKey }} style={styles.fill} contentFit="contain" transition={150} recyclingKey={photo.id} />
           </Animated.View>
         ) : (
           <Text style={{ color: c.textMuted }}>
@@ -329,6 +367,11 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
     <>
       <Text style={[styles.title, { color: c.text }]}>{photo.placeLabel ?? 'Unknown place'}</Text>
       <Text style={[styles.detail, { color: c.textMuted }]}>{new Date(photo.takenAt).toLocaleString()}</Text>
+      {photo.purgesAt && (
+        <Text style={[styles.detail, { color: c.warning }]}>
+          {`In trash · deleted for good in ${daysLeft(photo.purgesAt, new Date())} days`}
+        </Text>
+      )}
 
       <List.Subheader>File</List.Subheader>
       <Text style={[styles.detail, { color: c.textMuted }]}>

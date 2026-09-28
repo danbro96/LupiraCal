@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { getPhoto, getPhotoStats, listPhotos } from '@lupira/cal-api/fetch/photo';
+import { getPhoto, getPhotoStats, listPhotoPlaces, listPhotos } from '@lupira/cal-api/fetch/photo';
 import type { AssetKind, AssetStatus, ListPhotosParams, PhotoListItemDto, PhotoSort } from '@lupira/cal-api/models';
 import { filterPhotos } from '@lupira/cal-domain/photoFilter';
 import { groupByDay as groupDays, THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
 import { addDays, parseYmd, startOfDay } from '@lupira/cal-domain/time';
+import { getDb } from '../data/db/expoDb';
+import { loadPhotoSnapshot, savePhotoSnapshot } from '../data/photoSnapshot';
 import { useSyncStatus } from '../sync/syncStatus';
 import { useEventPhotoQuery } from './usePhotoEventLinks';
 
@@ -26,6 +28,8 @@ export type PhotoQueryFilters = {
   to?: string;
   /** A calendar item id — its linked photos, which the photo API itself knows nothing about. */
   event?: string;
+  /** The trash instead of the library. */
+  trashed?: boolean;
 };
 
 export const DEFAULT_PHOTO_FILTERS: PhotoQueryFilters = { sort: 'TakenAtDesc' };
@@ -39,8 +43,12 @@ function listParams({ from, to, event: _event, ...rest }: PhotoQueryFilters): Li
   };
 }
 
+const isUnfiltered = (f: PhotoQueryFilters) =>
+  Object.entries(f).every(([key, value]) => (key === 'sort' ? value === 'TakenAtDesc' : value === undefined));
+
 export function usePhotoLibrary(filters: PhotoQueryFilters) {
   const reachable = useSyncStatus((s) => s.serverReachable);
+  const unfiltered = isUnfiltered(filters);
 
   const query = useInfiniteQuery({
     queryKey: ['photos', 'list', filters],
@@ -51,9 +59,18 @@ export function usePhotoLibrary(filters: PhotoQueryFilters) {
     queryFn: async ({ pageParam }) => {
       const r = await listPhotos({ ...listParams(filters), limit: PHOTO_PAGE_SIZE, cursor: pageParam });
       if (r.status !== 200) throw new Error(`photos ${r.status}`);
+      if (unfiltered && pageParam === undefined) await savePhotoSnapshot(await getDb(), r.data.items);
       return r.data;
     },
     getNextPageParam: (last) => last.nextCursor ?? undefined,
+  });
+
+  const offline = !reachable || query.isError;
+  const snapshot = useQuery({
+    queryKey: ['photos', 'snapshot'],
+    enabled: unfiltered && offline && !query.data,
+    staleTime: 0,
+    queryFn: async () => loadPhotoSnapshot(await getDb()),
   });
 
   const event = useEventPhotoQuery(filters.event ?? '');
@@ -66,6 +83,7 @@ export function usePhotoLibrary(filters: PhotoQueryFilters) {
   if (filters.event) {
     return {
       items: eventItems,
+      offline: !reachable,
       isLoading: event.isLoading,
       isRefetching: event.isRefetching,
       error: event.error,
@@ -76,8 +94,23 @@ export function usePhotoLibrary(filters: PhotoQueryFilters) {
     };
   }
 
+  if (offline && !query.data && unfiltered) {
+    return {
+      items: snapshot.data ?? [],
+      offline: true,
+      isLoading: snapshot.isLoading,
+      isRefetching: false,
+      error: null,
+      hasNextPage: false,
+      fetchNextPage: query.fetchNextPage,
+      isFetchingNextPage: false,
+      refetch: query.refetch,
+    };
+  }
+
   return {
     items,
+    offline,
     isLoading: query.isLoading,
     isRefetching: query.isRefetching,
     error: query.error,
@@ -125,4 +158,21 @@ export type PhotoDay = { key: string; label: string; data: PhotoListItemDto[] };
 export function groupByDay(items: PhotoListItemDto[]): PhotoDay[] {
   return groupDays(items, (date) => date.toLocaleDateString(undefined, { dateStyle: 'medium' }))
     .map(({ key, label, items: rows }) => ({ key, label, data: rows }));
+}
+
+/** Place names in the library matching a search, most photographed first. */
+export function usePlaceSuggestions(query: string) {
+  const reachable = useSyncStatus((s) => s.serverReachable);
+  const term = query.trim();
+  return useQuery({
+    queryKey: ['photos', 'places', term],
+    enabled: reachable && term.length >= 2,
+    staleTime: 5 * 60_000,
+    retry: 1,
+    queryFn: async () => {
+      const r = await listPhotoPlaces({ q: term, limit: 5 });
+      if (r.status !== 200) throw new Error(`photo places ${r.status}`);
+      return r.data;
+    },
+  });
 }

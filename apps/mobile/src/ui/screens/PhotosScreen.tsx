@@ -5,18 +5,17 @@ import { Image } from 'expo-image';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
-import { deletePhoto } from '@lupira/cal-api/fetch/photo';
-import { fmtDuration } from '@lupira/cal-domain/photoFormat';
+import { daysLeft, fmtDuration } from '@lupira/cal-domain/photoFormat';
 import { fmtPhotoRange, photoTimeline, yearRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { hapticSelection } from '../../feedback/haptics';
 import { toast, toastError } from '../../feedback/toast';
 import { usePhotoBackup } from '../../state/photo-backup-store';
-import { useLinkedEvents, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
-import { DEFAULT_PHOTO_FILTERS, groupByDay, usePhotoLibrary, usePhotoStats, type PhotoQueryFilters } from '../../state/usePhotoLibrary';
+import { emptyTrash, purgePhotos, restorePhotos, trashPhotos, type Outcome } from '../../state/photoActions';
+import { linkPhotosToEvent, unlinkPhotosFromEvent, useLinkedEvents, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
+import { DEFAULT_PHOTO_FILTERS, groupByDay, usePhotoLibrary, usePhotoStats, type PhotoDay, type PhotoQueryFilters } from '../../state/usePhotoLibrary';
 import { usePhotoBackupStatus } from '../../sync/photoBackupStatus';
 import { retryParkedPhotos } from '../../sync/photoUploader';
-import { invalidatePhotos } from '../../sync/reactivity';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
 import { IndeterminateBar } from '../components/IndeterminateBar';
@@ -24,10 +23,13 @@ import { LetterRail } from '../components/LetterRail';
 import { ScreenToolbar } from '../components/ScreenToolbar';
 import { SyncBanner } from '../components/SyncBanner';
 import { useColors } from '../theme';
+import { DayHeader } from '../photos/DayHeader';
 import { LinkEventSheet } from '../photos/LinkEventSheet';
 import { PhotoFiltersSheet } from '../photos/PhotoFiltersSheet';
+import { PhotoSearchSheet } from '../photos/PhotoSearchSheet';
 import type { RootStackParamList, TabParamList } from '../navigation/types';
 import { ICONS } from '../icons';
+import { thumbCacheKey } from '../photos/imageCache';
 
 const COLUMNS = 3;
 const GAP = 2;
@@ -45,6 +47,7 @@ export function PhotosScreen() {
   const confirm = useConfirm();
   const [filters, setFilters] = useState<PhotoQueryFilters>(DEFAULT_PHOTO_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [selected, setSelected] = useState<ReadonlySet<string>>(NO_SELECTION);
   const [linking, setLinking] = useState(false);
   const [gridWidth, setGridWidth] = useState(0);
@@ -65,7 +68,7 @@ export function PhotosScreen() {
     tabNavigation.setParams({ from: undefined, to: undefined, event: undefined });
   }, [from, to, event, applyFilters, tabNavigation]);
 
-  const { items, isLoading, error, hasNextPage, fetchNextPage, isFetchingNextPage, refetch, isRefetching } =
+  const { items, offline, isLoading, error, hasNextPage, fetchNextPage, isFetchingNextPage, refetch, isRefetching } =
     usePhotoLibrary(filters);
   const links = usePhotoEventLinks();
   const { data: stats } = usePhotoStats();
@@ -86,6 +89,7 @@ export function PhotosScreen() {
   }, [timeline, applyFilters]);
 
   const filterSummary = [
+    filters.trashed ? 'Trash' : null,
     filters.sort === 'TakenAtAsc' ? 'Oldest first' : null,
     filters.event ? (eventTitle ?? 'One event') : null,
     filters.kind,
@@ -102,10 +106,10 @@ export function PhotosScreen() {
     else next.add(photoId);
     return next;
   }), []);
-  const toggleDay = useCallback((day: PhotoListItemDto[]) => setSelected((prev) => {
+  const toggleDay = useCallback((day: PhotoDay) => setSelected((prev) => {
     const next = new Set(prev);
-    const all = day.every((p) => next.has(p.id));
-    for (const p of day) {
+    const all = day.data.every((p) => next.has(p.id));
+    for (const p of day.data) {
       if (all) next.delete(p.id);
       else next.add(p.id);
     }
@@ -113,24 +117,48 @@ export function PhotosScreen() {
   }), []);
   const selectedPhotos = useMemo(() => items.filter((p) => selected.has(p.id)), [items, selected]);
 
-  const onDeleteSelected = async () => {
-    const count = selectedPhotos.length;
+  const plural = (n: number) => (n === 1 ? '1 photo' : `${n} photos`);
+  const report = (verb: string, { done, failed: failures }: Outcome, undo?: () => void) => {
+    if (failures > 0) toastError(`${verb} ${done}, ${failures} failed.`);
+    else toast(`${verb} ${plural(done)}`, undo ? { action: { label: 'Undo', onPress: undo } } : undefined);
+  };
+  const takeSelection = () => {
+    const ids = selectedPhotos.map((p) => p.id);
+    setSelected(NO_SELECTION);
+    return ids;
+  };
+
+  const onTrashSelected = async () => {
+    const ids = takeSelection();
+    report('Moved to trash:', await trashPhotos(ids), () => void restorePhotos(ids));
+  };
+  const onRestoreSelected = async () => report('Restored', await restorePhotos(takeSelection()));
+  const onUnlinkSelected = async () => {
+    const eventId = filters.event!;
+    const ids = takeSelection();
+    const ok = await unlinkPhotosFromEvent(eventId, ids);
+    report('Removed from the event:', ok ? { done: ids.length, failed: 0 } : { done: 0, failed: ids.length },
+      () => void linkPhotosToEvent(eventId, ids, new Map()));
+  };
+  const onPurgeSelected = async () => {
     const ok = await confirm({
-      title: count === 1 ? 'Delete photo' : `Delete ${count} photos`,
+      title: `Delete ${plural(selectedPhotos.length)} for good`,
       message: 'This removes the originals and their thumbnails from storage. It cannot be undone.',
       confirmLabel: 'Delete',
       destructive: true,
     });
+    if (ok) report('Deleted for good:', await purgePhotos(takeSelection()));
+  };
+  const onEmptyTrash = async () => {
+    const ok = await confirm({
+      title: 'Empty the trash',
+      message: 'Every photo in the trash is deleted for good. It cannot be undone.',
+      confirmLabel: 'Empty',
+      destructive: true,
+    });
     if (!ok) return;
-    let failures = 0;
-    for (const photo of selectedPhotos) {
-      const r = await deletePhoto(photo.id).catch(() => null);
-      if (r?.status !== 204) failures++;
-    }
-    setSelected(NO_SELECTION);
-    invalidatePhotos();
-    if (failures > 0) toastError(`Deleted ${count - failures}, ${failures} failed.`);
-    else toast(count === 1 ? 'Photo deleted' : `Deleted ${count} photos`);
+    if (await emptyTrash()) toast('Trash emptied');
+    else toastError('Could not empty the trash.');
   };
 
   // Stable list props: a new renderItem re-renders every mounted day row and tile.
@@ -147,18 +175,21 @@ export function PhotosScreen() {
   const onEndReached = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const onPlace = useCallback((place: string) => applyFilters((f) => ({ ...f, place })), [applyFilters]);
+  const onDayMap = useCallback((at: { lon: number; lat: number }) =>
+    navigation.navigate('Tabs', { screen: 'Map', params: { at } }), [navigation]);
   const renderSectionHeader = useCallback(({ section }: { section: (typeof sections)[number] }) => (
-    <View style={[styles.dayHeader, { backgroundColor: c.bg }]}>
-      <Text style={[styles.dayLabel, { color: c.textMuted }]}>{section.label}</Text>
-      {selecting && (
-        <Pressable hitSlop={8} onPress={() => toggleDay(section.data)}>
-          <Text style={[styles.dayLabel, { color: c.primary }]}>
-            {section.data.every((p) => selected.has(p.id)) ? 'Deselect day' : 'Select day'}
-          </Text>
-        </Pressable>
-      )}
-    </View>
-  ), [c, selecting, selected, toggleDay]);
+    <DayHeader
+      day={section}
+      links={links}
+      selecting={selecting}
+      allSelected={section.data.every((p) => selected.has(p.id))}
+      onToggleDay={toggleDay}
+      onPlace={onPlace}
+      onEvent={onShowEvent}
+      onMap={onDayMap}
+    />
+  ), [links, selecting, selected, toggleDay, onPlace, onShowEvent, onDayMap]);
   // SectionList renders one row per item, so each "row" is a full day laid out as a wrapped grid.
   const renderItem = useCallback(({ index, section }: { index: number; section: (typeof sections)[number] }) => {
     if (index % COLUMNS !== 0) return null;
@@ -182,12 +213,14 @@ export function PhotosScreen() {
     );
   }, [tile, links, selecting, selected, onTilePress, onTileLongPress, onShowEvent]);
 
-  if (error) return <Centered text="Photos need a connection." />;
   if (isLoading) return <Centered text="Loading…" />;
+  if (items.length === 0 && (offline || error)) return <Centered text="Photos need a connection." />;
 
   const onlyEvent = filters.event && !filters.kind && filters.located === undefined && !filters.place
     && !filters.status && !filters.from;
-  const emptyText = onlyEvent
+  const emptyText = filters.trashed
+    ? 'Trash is empty.'
+    : onlyEvent
     ? 'No photos linked to this event yet.'
     : filterSummary ? 'No photos match these filters.' : 'No photos yet.';
 
@@ -199,15 +232,38 @@ export function PhotosScreen() {
           <>
             <IconButton icon={ICONS.close} size={20} onPress={() => setSelected(NO_SELECTION)} accessibilityLabel="Clear selection" />
             <Text style={[styles.selectedCount, { color: c.text }]}>{selected.size} selected</Text>
-            <IconButton icon={ICONS.link} onPress={() => setLinking(true)} accessibilityLabel="Link to event" />
-            <IconButton icon={ICONS.delete} iconColor={c.danger} onPress={() => void onDeleteSelected()} accessibilityLabel="Delete" />
+            {filters.trashed ? (
+              <>
+                <IconButton icon={ICONS.restore} onPress={() => void onRestoreSelected()} accessibilityLabel="Restore" />
+                <IconButton icon={ICONS.deleteForever} iconColor={c.danger} onPress={() => void onPurgeSelected()} accessibilityLabel="Delete for good" />
+              </>
+            ) : (
+              <>
+                <IconButton icon={ICONS.link} onPress={() => setLinking(true)} accessibilityLabel="Link to event" />
+                {filters.event && (
+                  <IconButton icon={ICONS.linkOff} onPress={() => void onUnlinkSelected()} accessibilityLabel="Remove from event" />
+                )}
+                <IconButton icon={ICONS.delete} iconColor={c.danger} onPress={() => void onTrashSelected()} accessibilityLabel="Move to trash" />
+              </>
+            )}
           </>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+            <Chip compact icon={ICONS.search} onPress={() => setSearchOpen(true)} accessibilityLabel="Search photos">
+              Search
+            </Chip>
             <Chip compact icon={ICONS.tune} onPress={() => setSheetOpen(true)}>
               {filterSummary || 'All photos'}
             </Chip>
+            {filters.trashed && items.length > 0 && (
+              <Chip compact icon={ICONS.deleteForever} onPress={() => void onEmptyTrash()}>Empty trash</Chip>
+            )}
             <BackupChips onOpenSettings={() => navigation.navigate('Settings')} />
+            {!filters.trashed && (stats?.trashedAssets ?? 0) > 0 && (
+              <Chip compact icon={ICONS.delete} onPress={() => applyFilters({ sort: filters.sort, trashed: true })}>
+                {`Trash · ${stats!.trashedAssets}`}
+              </Chip>
+            )}
             {failed > 0 && filters.status !== 'Failed' && (
               <Chip compact icon={ICONS.alert} onPress={() => applyFilters((f) => ({ ...f, status: 'Failed' }))}>
                 {failed} failed to process
@@ -249,6 +305,15 @@ export function PhotosScreen() {
           eventTitle={eventTitle}
           onChange={applyFilters}
           onDismiss={() => setSheetOpen(false)}
+        />
+      )}
+      {searchOpen && (
+        <PhotoSearchSheet
+          timeline={timeline}
+          onDate={(range) => applyFilters((f) => ({ ...f, ...range }))}
+          onEvent={onShowEvent}
+          onPlace={onPlace}
+          onDismiss={() => setSearchOpen(false)}
         />
       )}
       {linking && (
@@ -306,12 +371,12 @@ const PhotoTile = memo(function PhotoTile({ photo, size, eventId, selecting, sel
     >
       {photo.thumbUrl ? (
         <Image
-          source={{ uri: photo.thumbUrl }}
+          // Presigned URLs rotate their signature, so the default URL-derived cache key would miss on
+          // every refetch and re-download the whole grid.
+          source={{ uri: photo.thumbUrl, cacheKey: thumbCacheKey(photo.id) }}
           style={[styles.thumb, selected && styles.thumbSelected]}
           contentFit="cover"
           transition={120}
-          // Presigned URLs rotate their signature, so the default URL-derived cache key would miss on
-          // every refetch and re-download the whole grid.
           recyclingKey={photo.id}
         />
       ) : (
@@ -323,6 +388,9 @@ const PhotoTile = memo(function PhotoTile({ photo, size, eventId, selecting, sel
       )}
       {photo.durationSeconds != null && (
         <Text style={styles.badge}>{fmtDuration(photo.durationSeconds)}</Text>
+      )}
+      {photo.purgesAt && (
+        <Text style={[styles.badge, styles.badgeBottomLeft]}>{`${daysLeft(photo.purgesAt, new Date())} d`}</Text>
       )}
       {eventId && !selecting && (
         <Pressable
@@ -350,8 +418,6 @@ const styles = StyleSheet.create({
   body: { flex: 1, flexDirection: 'row' },
   listArea: { flex: 1 },
   row: { flexDirection: 'row', gap: GAP, paddingHorizontal: GAP, marginBottom: GAP },
-  dayHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 6 },
-  dayLabel: { fontSize: 13, fontWeight: '600' },
   thumb: { width: '100%', height: '100%', borderRadius: 2 },
   thumbSelected: { transform: [{ scale: 0.88 }], borderRadius: 6 },
   placeholder: { alignItems: 'center', justifyContent: 'center' },
@@ -360,6 +426,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0009', paddingHorizontal: 4, borderRadius: 3, overflow: 'hidden',
   },
   badgeLeft: { left: 4, right: undefined, top: 4, bottom: undefined, paddingVertical: 2 },
+  badgeBottomLeft: { left: 4, right: undefined },
   check: { position: 'absolute', top: 4, right: 4 },
   empty: { textAlign: 'center', marginTop: 48 },
 });
