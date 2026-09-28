@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const store = new Map<string, string>();
+vi.mock('expo-constants', () => ({ default: { expoConfig: { version: '0.0.0' } } }));
 vi.mock('expo-secure-store', () => ({
   getItemAsync: vi.fn((k: string) => Promise.resolve(store.get(k) ?? null)),
   setItemAsync: vi.fn((k: string, v: string) => {

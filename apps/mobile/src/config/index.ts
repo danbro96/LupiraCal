@@ -1,4 +1,6 @@
-export const APP_VERSION = '1.0.0';   // keep in lockstep with app.json expo.version
+import Constants from 'expo-constants';
+
+export const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
 /** 'dev' = this backend's bypass; here that means sending nothing (the BFF's DevAuthHandler). */
 export type AuthMode = 'oidc' | 'dev';
