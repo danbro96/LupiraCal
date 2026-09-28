@@ -117,7 +117,7 @@ internal static class UpstreamSpecMerger
         var document = new JsonObject
         {
             ["openapi"] = versions[0],
-            ["info"] = new JsonObject { ["title"] = "LupiraCalWeb BFF", ["version"] = "v1" },
+            ["info"] = new JsonObject { ["title"] = "LupiraCal BFF", ["version"] = "v1" },
             ["paths"] = mergedPaths,
             ["components"] = new JsonObject
             {

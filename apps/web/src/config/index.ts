@@ -1,7 +1,7 @@
 /**
  * The BFF serves every upstream same-origin under its own route prefix, and those prefixes now live
  * in the merged spec (`packages/api`), so the generated clients carry them in the path and nothing
- * here feeds a mutator any more. The BFF's route table in `src/LupiraCalWeb/appsettings.json` is the
+ * here feeds a mutator any more. The BFF's allowlist in `src/LupiraCalBff/exposed.json` is the
  * single source for them.
  *
  * What is left is the basemap, which is not part of any OpenAPI surface: geo-api serves the style,

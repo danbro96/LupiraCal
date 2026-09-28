@@ -1,9 +1,9 @@
 ---
 name: verify
-description: Launch the full LupiraCalWeb dev stack and drive the SPA in a headless browser to verify UI changes end-to-end.
+description: Launch the full LupiraCal dev stack and drive the SPA in a headless browser to verify UI changes end-to-end.
 ---
 
-# Verify LupiraCalWeb changes
+# Verify LupiraCal changes
 
 Surface = the SPA at http://localhost:5174 (Vite → BFF 5181 → APIs). Dev auth is automatic (BFF injects `X-Dev-User`); no login flow.
 
@@ -25,7 +25,7 @@ cd ~/git/LupiraContactApi/src/LupiraContactApi && ASPNETCORE_ENVIRONMENT=Develop
   dotnet run --no-launch-profile
 
 # SPA
-cd ~/git/LupiraCalWeb && npm run dev
+cd ~/git/LupiraCal && npm run dev
 ```
 
 Smoke: `curl http://localhost:5174/contact-api/address-books` → 200 proves the whole chain.

@@ -1,4 +1,4 @@
-# LupiraCalWeb
+# LupiraCal
 
 Web frontend for [LupiraCalApi](https://github.com/danbro96/LupiraCalApi), consuming its REST surface only. Its purpose is visualizing the temporal-backbone data generic calendar clients can't see: calendar classes and kinds, typed item details, event-bound LLM prompt/action payloads, completeness scores, availability segments, inbox curation, tags, metadata, and cross-API relations.
 

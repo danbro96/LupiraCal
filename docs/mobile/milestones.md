@@ -9,17 +9,17 @@ criteria are verifiable commands/observations.
 
 | M  | Title | Repos | Status |
 |----|-------|-------|--------|
-| M0 | Monorepo restructure | LupiraCalWeb | done |
+| M0 | Monorepo restructure | LupiraCal | done |
 | M1 | cal-api sync surface | LupiraCalApi | done |
-| M2 | contact-api sync surface + BFF bearer + Authentik | LupiraContactApi, LupiraCalWeb | done |
-| M3 | App skeleton + auth | LupiraCalWeb | done |
-| M4 | Sync engine | LupiraCalWeb | done |
-| M5 | Calendar + contacts UI | LupiraCalWeb | done |
-| M6 | Bridge spike (throwaway) | LupiraCalWeb | done |
-| M7 | Bridges full two-way | LupiraCalWeb | in-progress |
-| M8 | Hardening + release | LupiraCalWeb | in-progress |
-| M9 | Task deadlines on the calendar | LupiraCalWeb | in-progress |
-| M10 | Material re-skin (Paper + shared tokens) | LupiraCalWeb | in-progress |
+| M2 | contact-api sync surface + BFF bearer + Authentik | LupiraContactApi, LupiraCal | done |
+| M3 | App skeleton + auth | LupiraCal | done |
+| M4 | Sync engine | LupiraCal | done |
+| M5 | Calendar + contacts UI | LupiraCal | done |
+| M6 | Bridge spike (throwaway) | LupiraCal | done |
+| M7 | Bridges full two-way | LupiraCal | in-progress |
+| M8 | Hardening + release | LupiraCal | in-progress |
+| M9 | Task deadlines on the calendar | LupiraCal | in-progress |
+| M10 | Material re-skin (Paper + shared tokens) | LupiraCal | in-progress |
 
 Fixed identity: Android package `com.lupira.calendar`, scheme `lupiracalendar`
 (redirect `lupiracalendar://oauthredirect`), Authentik public client `lupira-cal-mobile`,
@@ -32,7 +32,7 @@ npm workspaces; extract `@lupira/cal-domain` (packages/domain, consumed as sourc
 
 ### Scope
 - [x] Client toolchain bumps in place: eslint-plugin-boundaries ^7.1.0 (config migrated to v7 policies/entity selectors; config.ts → config/ so the element still classifies), typescript-eslint ^8.65.0, vitest ^4.1.10, orval ^8.23.0. TS stays 6.0.3 — typescript-eslint peers `<6.1.0` and TS 7 crashes its parser; revisit when support lands
-- [x] Root package.json (workspaces: packages/*, src/LupiraCalWeb.Client, apps/*), root lock, `.npmrc` moved to root, toolchain devDeps hoisted
+- [x] Root package.json (workspaces: packages/*, apps/web, apps/*), root lock, `.npmrc` moved to root, toolchain devDeps hoisted
 - [x] Dockerfile client stage rebuilt for workspace install; tests.yml uses root scripts + root lock cache path
 - [x] Move 13 domain modules + tests → packages/domain/src; move partialDate.ts with structural PartialDate type (no generated import)
 - [x] Import codemod to `@lupira/cal-domain/*`; web eslint drops `domain` element; domain package gets purity-enforcing eslint (`boundaries/external` disallow)
@@ -41,7 +41,7 @@ npm workspaces; extract `@lupira/cal-domain` (packages/domain, consumed as sourc
 ### Exit criteria
 - [x] Root `npm ci` clean; `node_modules/@lupira/cal-domain` is a workspace symlink
 - [x] Root `npm run lint && npm run typecheck && npm test` green (domain: 13 suites / 87 tests; web: passWithNoTests)
-- [x] Root `npm run build` emits to src/LupiraCalWeb/wwwroot; `docker build .` succeeds
+- [x] Root `npm run build` emits to src/LupiraCalBff/wwwroot; `docker build .` succeeds
 - [x] `npm run gen:api` still resolves sibling repo specs (client cwd unchanged)
 - [x] Vite dev serves workspace domain source (smoke: `/@fs/**/packages/domain/src/time.ts` transpiled)
 - [x] CI green on main (release run 2026-07-28 on sha-c4c4de0)
@@ -86,7 +86,7 @@ Additive only — existing routes and the legacy feed untouched; web unaffected.
 ### Exit criteria
 - [x] PKCE token minted from `lupira-cal-mobile` → BFF succeeds. Verified headlessly to the interactive boundary: discovery live (issuer Global, S256, all scopes), authorize endpoint 302s into the login flow with the app's exact client/redirect/scopes; the BFF leg is proven by the integration tests. The full mint needs a human login — exercised at M3's device sign-in exit
 - [x] Browser cookie flow unchanged (OIDC/cookie wiring untouched apart from the challenge guard; non-API challenge still redirects — covered by test)
-- [x] BFF integration tests cover both auth paths (tests/LupiraCalWeb.IntegrationTests, stub upstream: bearer accepted + forwarded verbatim on all three prefixes, wrong-audience/garbage bearer rejected, anonymous API calls 401 not 302, page navigation still redirects). contact-api: 168 unit / 96 integration green
+- [x] BFF integration tests cover both auth paths (tests/LupiraCalBff.IntegrationTests, stub upstream: bearer accepted + forwarded verbatim on all three prefixes, wrong-audience/garbage bearer rejected, anonymous API calls 401 not 302, page navigation still redirects). contact-api: 168 unit / 96 integration green
 
 ### Manual steps (all Authentik)
 - [x] Public client `lupira-cal-mobile`: PKCE, blank secret, subject mode email, issuer Global (verified via discovery)

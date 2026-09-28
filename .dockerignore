@@ -6,4 +6,4 @@
 .github
 **/*.local
 npm-debug.log*
-src/LupiraCalWeb/wwwroot
+src/LupiraCalBff/wwwroot
