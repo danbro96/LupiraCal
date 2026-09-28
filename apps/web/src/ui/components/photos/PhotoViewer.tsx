@@ -22,6 +22,10 @@ import { useSnackbar } from '../SnackbarHost';
 import { DrawerSection } from '../DrawerSection';
 import { LinkToEvent } from './LinkToEvent';
 
+// Pinned to the stage's box: a percentage max-height on a grid child doesn't resolve, so a tall
+// screenshot would otherwise grow past the viewport.
+const FIT = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' } as const;
+
 /** Paging ahead this close to the end keeps "next" from vanishing at a page boundary. */
 const PREFETCH_WITHIN = 3;
 
@@ -112,7 +116,7 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
   return (
     <Dialog open fullScreen onClose={onClose}>
       <Box ref={rootRef} sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, height: '100%', bgcolor: 'background.default' }}>
-        <Box sx={{ position: 'relative', flex: 1, minHeight: 0, display: 'grid', placeItems: 'center', bgcolor: '#000' }}>
+        <Box sx={{ position: 'relative', flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden', display: 'grid', placeItems: 'center', bgcolor: '#000' }}>
           <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
             <Button size="small" onClick={() => setInfoOpen((v) => !v)} sx={onImage}>
               {infoOpen ? 'Hide info' : 'Info'}
@@ -159,9 +163,9 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
             </IconButton>
           )}
           {photo?.kind === 'Video' && photo.originalUrl ? (
-            <Box component="video" src={photo.originalUrl} controls sx={{ maxWidth: '100%', maxHeight: '100%' }} />
+            <Box component="video" src={photo.originalUrl} controls sx={FIT} />
           ) : src ? (
-            <Box component="img" src={src} alt="" sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            <Box component="img" src={src} alt="" sx={FIT} />
           ) : (
             <Typography sx={{ color: '#fff' }}>{isLoading ? 'Loading…' : 'No preview available'}</Typography>
           )}

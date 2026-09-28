@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -33,6 +33,8 @@ import {
  *  viewer behind `?photo=`. */
 export default function PhotosScreen() {
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const filters = usePhotoFilters();
   const links = usePhotoEventLinks();
   const { data: stats } = usePhotoStats();
@@ -66,6 +68,25 @@ export default function PhotosScreen() {
       return next;
     }, { replace: true });
   }, [setParams]);
+
+  // Opening pushes a history entry and paging replaces it, so Back closes the viewer onto the grid
+  // instead of leaving the page. A deep-linked photo has no grid entry behind it to pop back to.
+  const openViewer = (id: string) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('photo', id);
+      return next;
+    }, { state: { viewer: true } });
+  const pageViewer = (id: string) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('photo', id);
+      return next;
+    }, { replace: true, state: location.state });
+  const closeViewer = () => {
+    if ((location.state as { viewer?: boolean } | null)?.viewer) navigate(-1);
+    else setParam('photo', undefined);
+  };
 
   const days = useMemo(() => groupByDay(items), [items]);
   const failed = stats?.byStatus?.Failed ?? 0;
@@ -320,7 +341,7 @@ export default function PhotosScreen() {
                       eventId={links.get(item.id)?.[0]}
                       selected={selected.has(item.id)}
                       selecting={selecting}
-                      onOpen={() => setParam('photo', item.id)}
+                      onOpen={() => openViewer(item.id)}
                       onToggle={(range) => toggle(item.id, range)}
                       onShowEvent={(id) => setParam('event', id)}
                     />
@@ -349,8 +370,8 @@ export default function PhotosScreen() {
           siblings={items}
           hasMore={!!hasNextPage}
           onLoadMore={loadMore}
-          onClose={() => setParam('photo', undefined)}
-          onNavigate={(id) => setParam('photo', id)}
+          onClose={closeViewer}
+          onNavigate={pageViewer}
         />
       )}
 
