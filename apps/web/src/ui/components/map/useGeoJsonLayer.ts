@@ -6,6 +6,8 @@ export type LayerSpecSansSource = Omit<LayerSpecification, 'source'>;
 
 interface GeoJsonLayerOptions {
   cluster?: boolean;
+  /** Insert under the other GeoJSON layers, so area marks never cover the pins. */
+  beneathData?: boolean;
   /** layerId → click handler. Bound layers also get a pointer cursor. */
   onClick?: Record<string, (feature: MapGeoJSONFeature, e: MapMouseEvent) => void>;
 }
@@ -35,8 +37,9 @@ export function useGeoJsonLayer(
             ...(options?.cluster ? { cluster: true, clusterMaxZoom: 14, clusterRadius: 48 } : {}),
           });
         }
+        const beforeId = options?.beneathData ? firstDataLayerId(map, sourceId) : undefined;
         for (const spec of layers) {
-          if (!map.getLayer(spec.id)) map.addLayer({ ...spec, source: sourceId } as LayerSpecification);
+          if (!map.getLayer(spec.id)) map.addLayer({ ...spec, source: sourceId } as LayerSpecification, beforeId);
         }
       } catch {
         // Style mid-transition — the next styledata tick retries.
@@ -87,6 +90,11 @@ export function useGeoJsonLayer(
       }
     };
   }, [map, clicks]);
+}
+
+function firstDataLayerId(map: MapLibreMap, ownSourceId: string): string | undefined {
+  return map.getStyle().layers.find((l) =>
+    'source' in l && l.source !== ownSourceId && map.getSource(l.source as string)?.type === 'geojson')?.id;
 }
 
 /** Feature properties round-trip through MapLibre as JSON strings when nested — parse them back. */

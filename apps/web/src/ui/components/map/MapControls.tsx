@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import { addDays, startOfDay, ymd } from '@lupira/cal-domain/time';
 import { ACTIVITY_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 
-export type LayerKey = 'events' | 'movement' | 'contacts' | 'saved' | 'photos';
+export type LayerKey = 'events' | 'movement' | 'contacts' | 'saved' | 'photos' | 'hotspots';
 export const DEFAULT_LAYERS: LayerKey[] = ['events', 'movement', 'contacts'];
 
 const PRESETS = [
@@ -91,6 +91,7 @@ export function LayerToggles({ active, onToggle, theme, unmappableCount, showHis
     { key: 'contacts', label: 'Contacts' },
     { key: 'saved', label: 'Saved' },
     { key: 'photos', label: 'Photos' },
+    { key: 'hotspots', label: 'Hotspots' },
   ];
   const activities = ACTIVITY_COLORS[theme];
 

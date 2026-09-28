@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import Autocomplete from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
@@ -9,6 +9,8 @@ import Box from '@mui/material/Box';
 import CloseIcon from '@mui/icons-material/Close';
 import { forwardGeocode, useSuggestPlaces } from '@lupira/cal-api/query/geo';
 import { SuggestionType, type PlaceSuggestionDto } from '@lupira/cal-api/models';
+import { hotspotStats } from '@lupira/cal-domain/mapFeatures';
+import { useHotspots } from '../../../state/useHotspots';
 import { useCreatePlaceAtPin, useCreatePlaceFromHit } from '../../../state/usePlaces';
 import { errText } from '../../errText';
 import { GeocodePreview } from './GeocodePreview';
@@ -24,9 +26,11 @@ import { PlaceIcon } from '../../icons';
 
 const MapPinDialog = lazy(() => import('../map/MapPinDialog'));
 
-/** Turn user input into a LupiraGeoApi placeId: typeahead over existing places; committing
- *  unmatched free text runs the picker machine — forward geocode → hit preview → pick, or drop a
- *  pin on the map. Nothing is ever created on cancel/dismiss. */
+const FREQUENT_LIMIT = 8;
+
+/** Turn user input into a LupiraGeoApi placeId: typeahead over existing places (an empty field
+ *  offers the places the caller frequents); committing unmatched free text runs the picker machine —
+ *  forward geocode → hit preview → pick, or drop a pin on the map. Nothing is ever created on cancel/dismiss. */
 export function PlacePicker({ placeId, onChange, placeholder, initialText, autoFocus }: {
   placeId: string | null;
   onChange: (placeId: string | null) => void;
@@ -45,7 +49,15 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
     return () => clearTimeout(t);
   }, [state.text]);
   const { data: suggestions, isLoading } = useSuggestPlaces({ q, limit: 8 }, { query: { enabled: q.length >= 2 } });
-  const options = q.length >= 2 ? (suggestions ?? []) : [];
+  const [opened, setOpened] = useState(false);
+  const { data: hotspots } = useHotspots(opened);
+  const frequent = useMemo<PlaceSuggestionDto[]>(() => (hotspots ?? [])
+    .filter((h) => h.placeId && h.label)
+    .slice(0, FREQUENT_LIMIT)
+    .map((h) => ({ id: h.placeId!, type: SuggestionType.Place, name: h.label!, latitude: h.latitude, longitude: h.longitude, context: hotspotStats(h) })),
+  [hotspots]);
+  const typing = q.length >= 2;
+  const options = typing ? (suggestions ?? []) : frequent;
 
   const dispatch = (event: PickerEvent) => {
     const { state: next, commands } = transition(stateRef.current, event);
@@ -106,7 +118,10 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
         freeSolo
         options={options}
         filterOptions={(x) => x}
-        loading={(q.length >= 2 && isLoading) || phase.kind === 'geocoding'}
+        loading={(typing && isLoading) || phase.kind === 'geocoding'}
+        openOnFocus
+        onOpen={() => setOpened(true)}
+        groupBy={typing ? undefined : () => 'Frequent'}
         getOptionDisabled={(o) => o.type === SuggestionType.Locality}
         value={null}
         inputValue={state.text}

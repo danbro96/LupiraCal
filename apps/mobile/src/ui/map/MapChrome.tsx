@@ -7,7 +7,7 @@ import { ICONS } from '../icons';
 /** Map chrome: the layer sheet and the locate button. Six layers don't fit a chip row on a phone, so
  *  toggles live in a sheet and the map itself stays unobstructed. */
 
-export type LayerKey = 'events' | 'saved' | 'photos' | 'movement' | 'contacts';
+export type LayerKey = 'events' | 'saved' | 'photos' | 'movement' | 'contacts' | 'hotspots';
 
 export const LAYER_LABELS: Record<LayerKey, string> = {
   events: 'Events',
@@ -15,6 +15,7 @@ export const LAYER_LABELS: Record<LayerKey, string> = {
   photos: 'Photos',
   movement: 'Where I’ve been',
   contacts: 'Contacts',
+  hotspots: 'Hotspots',
 };
 
 export const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
@@ -23,6 +24,7 @@ export const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
   photos: true,
   movement: true,
   contacts: false,
+  hotspots: false,
 };
 
 /** Follow-mode cycles off → centred → centred+rotated, the standard phone-map progression. */

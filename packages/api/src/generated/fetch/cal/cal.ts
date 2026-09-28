@@ -18,8 +18,10 @@ import type {
   DeleteRelationsBatchRequest,
   FileItemToCalendarParams,
   GetChangesParams,
+  GetHotspotsParams,
   GetParticipationSummaryParams,
   GrantOwnerRequest,
+  HotspotDto,
   InviteParticipantParams,
   JsonNode,
   ListRelationEdgesParams,
@@ -1395,6 +1397,70 @@ export const getListRelationEdgesUrl = (params: ListRelationEdgesParams,) => {
 export const listRelationEdges = async (params: ListRelationEdgesParams, options?: Parameters<typeof apiRequest>[1]): Promise<listRelationEdgesResponse> => {
 
   return apiRequest<listRelationEdgesResponse>(getListRelationEdgesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type getHotspotsResponse200 = {
+  data: HotspotDto[]
+  status: 200
+}
+
+export type getHotspotsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getHotspotsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getHotspotsResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type getHotspotsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getHotspotsResponseSuccess = (getHotspotsResponse200) & {
+  headers: Headers;
+};
+export type getHotspotsResponseError = (getHotspotsResponse400 | getHotspotsResponse401 | getHotspotsResponse403 | getHotspotsResponse500) & {
+  headers: Headers;
+};
+
+export type getHotspotsResponse = (getHotspotsResponseSuccess | getHotspotsResponseError)
+
+export const getGetHotspotsUrl = (params?: GetHotspotsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/hotspots?${stringifiedParams}` : `/api/hotspots`
+}
+
+/**
+ * @summary Places where your events and photos concentrate, derived at read time and ranked by active days (distinct UTC days with an event occurrence or a photo). Events come from calendars you can read (or calendarId), photos are your own. Defaults: all-time up to now, minDays 3, limit 100. A hotspot carries the LupiraGeoApi PlaceId it anchors to, else a reverse-geocoded label.
+ */
+export const getHotspots = async (params?: GetHotspotsParams, options?: Parameters<typeof apiRequest>[1]): Promise<getHotspotsResponse> => {
+
+  return apiRequest<getHotspotsResponse>(getGetHotspotsUrl(params),
   {
     ...options,
     method: 'GET'

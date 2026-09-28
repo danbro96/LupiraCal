@@ -218,6 +218,44 @@ export function savedPlaceFeatures(saved: readonly SavedPlacePin[]): FeatureColl
     })));
 }
 
+export interface HotspotPin {
+  id: string;
+  latitude: number;
+  longitude: number;
+  placeId?: string | null;
+  label?: string | null;
+  activeDays: number;
+  eventCount: number;
+  photoCount: number;
+  firstDay: string;
+  lastDay: string;
+}
+
+export function hotspotFeatures(hotspots: readonly HotspotPin[]): FeatureCollection {
+  return collect(hotspots.map((h) => point(h.longitude, h.latitude, {
+    layer: 'hotspot',
+    hotspotId: h.id,
+    placeId: h.placeId ?? null,
+    label: h.label ?? null,
+    activeDays: h.activeDays,
+    eventCount: h.eventCount,
+    photoCount: h.photoCount,
+    firstDay: h.firstDay,
+    lastDay: h.lastDay,
+  })));
+}
+
+const counted = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+
+/** "12 days · 3 events · 80 photos" — a zero count is left out, the day count never is. */
+export function hotspotStats(h: Pick<HotspotPin, 'activeDays' | 'eventCount' | 'photoCount'>): string {
+  return [
+    counted(h.activeDays, 'day'),
+    h.eventCount > 0 ? counted(h.eventCount, 'event') : null,
+    h.photoCount > 0 ? counted(h.photoCount, 'photo') : null,
+  ].filter(Boolean).join(' · ');
+}
+
 /** The photo endpoint already answers GeoJSON; this re-keys its properties onto the layer contract. */
 export interface PhotoMapFeature {
   geometry: { coordinates: number[] };

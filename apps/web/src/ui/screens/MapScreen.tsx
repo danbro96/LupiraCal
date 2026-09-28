@@ -2,10 +2,12 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ViewListIcon from '@mui/icons-material/ViewList';
-import { addDays, fmtTime, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { hotspotStats } from '@lupira/cal-domain/mapFeatures';
+import { addDays, fmtDate, fmtTime, parseYmd, ymd } from '@lupira/cal-domain/time';
 import {
   useContactFeatures,
   useEventFeatures,
+  useHotspotFeatures,
   useMovementFeatures,
   usePhotoFeatures,
   useSavedPlaceFeatures,
@@ -23,7 +25,16 @@ import { MapIndexPanel, type IndexGroup } from '../components/map/MapIndexPanel'
 import { MapPopover } from '../components/map/MapPopover';
 import { MapSearch, type SearchTarget } from '../components/map/MapSearch';
 import { PlaceDetailPanel } from '../components/map/PlaceDetailPanel';
-import { ContactsLayer, EventsLayer, FormerContactsLayer, MovementLayer, PhotosLayer, SavedPlacesLayer, type PinSelection } from '../components/map/layers';
+import {
+  ContactsLayer,
+  EventsLayer,
+  FormerContactsLayer,
+  HotspotsLayer,
+  MovementLayer,
+  PhotosLayer,
+  SavedPlacesLayer,
+  type PinSelection,
+} from '../components/map/layers';
 import { FitToData, FlyToPlace, ViewportReporter } from '../components/map/mapEffects';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
@@ -31,6 +42,10 @@ import Chip from '@mui/material/Chip';
 import { Row, RowName } from '../components/Rows';
 import { WrapRow } from '../components/WrapRow';
 import Button from '@mui/material/Button';
+import { useInvalidatePlaces } from '../../state/useInvalidate';
+import { useCreatePlaceAtPin } from '../../state/usePlaces';
+import { useSnackbar } from '../components/SnackbarHost';
+import { errText } from '../errText';
 
 const SELECTION_KEYS = ['place', 'item', 'at'];
 
@@ -95,6 +110,7 @@ export default function MapScreen() {
   // bbox is what keeps a large library usable.
   const [bbox, setBbox] = useState<string | null>(null);
   const photos = usePhotoFeatures(bbox, activeLayers.includes('photos'));
+  const hotspots = useHotspotFeatures(activeLayers.includes('hotspots'));
 
   const [popover, setPopover] = useState<PinSelection>();
   const onSelect = useCallback((selection: PinSelection) => setPopover(selection), []);
@@ -121,7 +137,8 @@ export default function MapScreen() {
     () => [events.features, movement.visits, contacts.features, saved.features],
     [events.features, movement.visits, contacts.features, saved.features],
   );
-  const anyLoading = events.isLoading || movement.isLoading || contacts.isLoading || saved.isLoading || photos.isLoading;
+  const anyLoading = events.isLoading || movement.isLoading || contacts.isLoading || saved.isLoading || photos.isLoading
+    || hotspots.isLoading;
 
   const showIndex = params.get('index') === '1';
   const showHistory = params.get('history') === '1';
@@ -198,6 +215,9 @@ export default function MapScreen() {
   return (
     <Box sx={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex' }}>
       <MapCanvas>
+        {activeLayers.includes('hotspots') && (
+          <HotspotsLayer theme={theme} features={hotspots.features} onSelect={onSelect} onOpenPlace={openPlace} />
+        )}
         {activeLayers.includes('movement') && (
           <MovementLayer theme={theme} visits={movement.visits} track={movement.track} current={movement.current} onSelect={onSelect} />
         )}
@@ -222,7 +242,7 @@ export default function MapScreen() {
         <FitToData collections={fitCollections} skip={!!selectedPlaceId} />
         {popover && (
           <MapPopover anchor={{ lngLat: popover.lngLat }} onClose={() => setPopover(undefined)}>
-            <PopoverBody selection={popover} />
+            <PopoverBody selection={popover} onOpenPlace={openPlace} />
           </MapPopover>
         )}
       </MapCanvas>
@@ -271,8 +291,9 @@ export default function MapScreen() {
   );
 }
 
-function PopoverBody({ selection }: { selection: PinSelection }) {
+function PopoverBody({ selection, onOpenPlace }: { selection: PinSelection; onOpenPlace: (placeId: string) => void }) {
   const { kind, props } = selection;
+  if (kind === 'hotspot') return <HotspotSummary props={props} onSaved={onOpenPlace} />;
   if (kind === 'contact' || kind === 'contact-former') {
     const names = (props.names as string[]) ?? [];
     const ids = (props.contactIds as string[]) ?? [];
@@ -343,6 +364,36 @@ function PopoverBody({ selection }: { selection: PinSelection }) {
     );
   }
   return <h4>{props.icon ? `${String(props.icon)} ` : ''}{String(props.label ?? 'Saved place')}</h4>;
+}
+
+/** An unanchored hotspot: its weight, span, and a way to promote it to a gazetteer place. */
+function HotspotSummary({ props, onSaved }: { props: Record<string, unknown>; onSaved: (placeId: string) => void }) {
+  const create = useCreatePlaceAtPin();
+  const invalidatePlaces = useInvalidatePlaces();
+  const showSnack = useSnackbar();
+  const [lon, lat] = props.center as [number, number];
+  const label = props.label == null ? 'Unnamed spot' : String(props.label);
+  const save = () => create.mutate({ name: label, lat, lon }, {
+    onSuccess: (place) => {
+      invalidatePlaces();
+      onSaved(place.id);
+    },
+    onError: (e) => showSnack(errText(e) ?? 'Request failed.'),
+  });
+  return (
+    <>
+      <h4>{label}</h4>
+      <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">
+        {hotspotStats({ activeDays: props.activeDays as number, eventCount: props.eventCount as number, photoCount: props.photoCount as number })}
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">
+        {fmtDate(parseYmd(String(props.firstDay)))} – {fmtDate(parseYmd(String(props.lastDay)))}
+      </Typography>
+      <WrapRow>
+        <Button size="small" onClick={save} disabled={create.isPending}>Save as place</Button>
+      </WrapRow>
+    </>
+  );
 }
 
 function parseAt(raw: string | null): [number, number] | undefined {

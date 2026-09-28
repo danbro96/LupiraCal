@@ -4,6 +4,7 @@ import {
   contactFeatures,
   currentFixFeatures,
   eventFeatures,
+  hotspotFeatures,
   photoFeatures,
   savedPlaceFeatures,
   trackFeatures,
@@ -14,6 +15,7 @@ import { useListSavedPlaces } from '@lupira/cal-api/query/geo';
 import { useGetPhotoMap } from '@lupira/cal-api/query/photo';
 import type { LocationTripDto } from '@lupira/cal-api/models';
 import { useContainers } from './useContainers';
+import { useHotspots } from './useHotspots';
 import { useCurrentFixes, useThinnedTrack, useTrips, useVisits } from './useMovement';
 import { usePlaceCoords } from './usePlaceLookup';
 import { useRangeOccurrences } from './useRangeOccurrences';
@@ -140,3 +142,12 @@ export function usePhotoFeatures(bbox: string | null, enabled: boolean): { featu
   }), [photosQ.data, photosQ.isLoading, enabled]);
 }
 
+/** Where events and photos concentrate, all-time. The server clusters and ranks, so one fetch serves every viewport. */
+export function useHotspotFeatures(enabled: boolean): { features: FeatureCollection; isLoading: boolean } {
+  const hotspotsQ = useHotspots(enabled);
+
+  return useMemo(() => ({
+    features: hotspotFeatures(hotspotsQ.data ?? []),
+    isLoading: enabled && hotspotsQ.isLoading,
+  }), [hotspotsQ.data, hotspotsQ.isLoading, enabled]);
+}

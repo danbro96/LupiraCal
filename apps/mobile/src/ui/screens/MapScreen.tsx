@@ -16,19 +16,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NativeSyntheticEvent } from 'react-native';
 import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 import { ActivityIndicator, Banner, Portal, Text, useTheme } from 'react-native-paper';
+import { hotspotStats } from '@lupira/cal-domain/mapFeatures';
+import { fmtDate, parseYmd } from '@lupira/cal-domain/time';
 import type { MapTheme } from '@lupira/cal-tokens/map';
 import { fallbackStyle } from '../../data/mapStyle';
 import { toastError } from '../../feedback/toast';
 import { useAuth } from '../../state/auth-store';
 import { useLocationTracking } from '../../state/location-tracking-store';
-import { useContactFeatures, useEventFeatures, useMovementFeatures, usePhotoFeatures, useSavedPlaceFeatures } from '../../state/useMapData';
+import {
+  useContactFeatures, useEventFeatures, useHotspotFeatures, useMovementFeatures, usePhotoFeatures, useSavedPlaceFeatures,
+} from '../../state/useMapData';
 import { useMapStyle } from '../../state/useMapStyle';
 import { useLivePosition } from '../../sync/livePosition';
 import {
   DEFAULT_LAYERS, LayersFab, LayersSheet, LocateFab, type FollowMode, type LayerKey,
 } from '../map/MapChrome';
 import {
-  ContactsLayer, EventsLayer, LivePuck, MovementLayer, PhotosLayer, SavedPlacesLayer,
+  ContactsLayer, EventsLayer, HotspotsLayer, LivePuck, MovementLayer, PhotosLayer, SavedPlacesLayer,
 } from '../map/layers';
 import type { RootStackParamList, TabParamList } from '../navigation/types';
 import { ICONS } from '../icons';
@@ -79,6 +83,9 @@ function bboxOf(bounds: LngLatBounds): string {
 
 type PhotoPin = { id: string; takenAt: string; placeLabel: string | null; thumbUrl: string | null };
 type VisitPin = { placeLabel: string | null; arriveTs: string; departTs: string; durationMin: number };
+type HotspotPin = {
+  label: string | null; activeDays: number; eventCount: number; photoCount: number; firstDay: string; lastDay: string;
+};
 
 export function MapScreen() {
   const paper = useTheme();
@@ -96,6 +103,7 @@ export function MapScreen() {
   const [follow, setFollow] = useState<FollowMode>('off');
   const [openPhoto, setOpenPhoto] = useState<PhotoPin | null>(null);
   const [openVisit, setOpenVisit] = useState<VisitPin | null>(null);
+  const [openHotspot, setOpenHotspot] = useState<HotspotPin | null>(null);
 
   const { fromDay, toDay, movementFrom, movementTo } = useMemo(() => {
     const now = Date.now();
@@ -111,6 +119,7 @@ export function MapScreen() {
   const saved = useSavedPlaceFeatures(enabled.saved);
   const photos = usePhotoFeatures(bbox, enabled.photos);
   const contacts = useContactFeatures(enabled.contacts);
+  const hotspots = useHotspotFeatures(enabled.hotspots);
   const isFocused = useIsFocused();
   const movement = useMovementFeatures(movementFrom, movementTo, enabled.movement, isFocused);
   const livePosition = useLivePosition((s) => s.position);
@@ -203,6 +212,19 @@ export function MapScreen() {
     });
   };
 
+  const onHotspotPress = (e: NativeSyntheticEvent<PressEventWithFeatures>) => {
+    const props = e.nativeEvent.features[0]?.properties;
+    if (!props) return;
+    setOpenHotspot({
+      label: (props.label as string | null) ?? null,
+      activeDays: Number(props.activeDays),
+      eventCount: Number(props.eventCount),
+      photoCount: Number(props.photoCount),
+      firstDay: String(props.firstDay),
+      lastDay: String(props.lastDay),
+    });
+  };
+
   const onLocatePress = async () => {
     const started = await useLivePosition.getState().start();
     if (!started) {
@@ -236,6 +258,8 @@ export function MapScreen() {
             onRegionDidChange={onRegionDidChange}
           >
             <Camera ref={cameraRef} initialViewState={{ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }} />
+            {/* Always mounted: a layer mounted later is appended above the pins and would steal their taps. */}
+            <HotspotsLayer theme={theme} features={hotspots} onPress={onHotspotPress} />
             {enabled.movement && (
               <MovementLayer
                 theme={theme}
@@ -319,6 +343,24 @@ export function MapScreen() {
               <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
                 {new Date(openVisit.arriveTs).toLocaleTimeString()}–{new Date(openVisit.departTs).toLocaleTimeString()}
                 {' · '}{openVisit.durationMin} min
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Portal>
+      )}
+
+      {openHotspot && (
+        <Portal>
+          <Pressable style={styles.sheetBackdrop} onPress={() => setOpenHotspot(null)}>
+            <Pressable style={[styles.sheet, { backgroundColor: paper.colors.elevation.level2 }]}>
+              <Text style={[styles.sheetTitle, { color: paper.colors.onSurface }]}>
+                {openHotspot.label ?? 'Unnamed spot'}
+              </Text>
+              <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
+                {hotspotStats(openHotspot)}
+              </Text>
+              <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
+                {fmtDate(parseYmd(openHotspot.firstDay))} – {fmtDate(parseYmd(openHotspot.lastDay))}
               </Text>
             </Pressable>
           </Pressable>

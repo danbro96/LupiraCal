@@ -45,14 +45,15 @@ export function useInvalidateAddressBooks() {
   return () => queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0] ?? '').startsWith('/contact-api/address-books') });
 }
 
-/** Geo place mutations: the place queries themselves plus the `/curation` lists that mirror place state. */
+/** Geo place mutations: the place queries themselves plus the `/curation` lists and hotspots that mirror place state. */
 export function useInvalidatePlaces() {
   const queryClient = useQueryClient();
   return () =>
     queryClient.invalidateQueries({
       predicate: (q) => {
         const key = String(q.queryKey[0] ?? '');
-        return key.startsWith('/geo-api/places') || key.startsWith('/geo-api/me/places') || key.startsWith('/geo-api/curation');
+        return key.startsWith('/geo-api/places') || key.startsWith('/geo-api/me/places') || key.startsWith('/geo-api/curation')
+          || key.startsWith('/api/hotspots');
       },
     });
 }

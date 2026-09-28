@@ -192,6 +192,42 @@ export function SavedPlacesLayer({ theme, features }: { theme: MapTheme; feature
   );
 }
 
+export function HotspotsLayer({ theme, features, onPress }: {
+  theme: MapTheme; features: FeatureCollection; onPress: PressHandler;
+}) {
+  const colors = MAP_COLORS[theme];
+  return (
+    <GeoJSONSource id="hotspots" data={features} onPress={onPress}>
+      <Layer
+        id="hotspot-halos"
+        type="circle"
+        paint={{
+          // sqrt so the halo's area, not its radius, tracks active days.
+          'circle-radius': ['interpolate', ['linear'], ['sqrt', ['get', 'activeDays']], 1.7, 10, 10, 28],
+          'circle-color': colors.hotspot,
+          'circle-opacity': 0.22,
+          'circle-stroke-color': colors.hotspot,
+          'circle-stroke-width': 2,
+        }}
+      />
+      <Layer
+        id="hotspot-labels"
+        type="symbol"
+        minzoom={12}
+        layout={{
+          'text-field': ['get', 'label'],
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 11,
+          'text-offset': [0, 1.2],
+          'text-anchor': 'top',
+          'text-optional': true,
+        }}
+        paint={{ 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': 1 }}
+      />
+    </GeoJSONSource>
+  );
+}
+
 /** Where you've been: the track underneath, dwell circles on top, then each device's last known fix. */
 export function MovementLayer({ theme, visits, track, current, onVisitPress }: {
   theme: MapTheme;

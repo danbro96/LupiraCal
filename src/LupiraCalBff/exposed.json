@@ -9,6 +9,7 @@
       "DELETE /items/{itemId}/calendars/{calendarId}",
       "GET /calendars",
       "GET /calendars/{calendarId}/proposed",
+      "GET /hotspots",
       "GET /items",
       "GET /items/by-place/{placeId}",
       "GET /items/{id}",

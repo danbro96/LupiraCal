@@ -9,7 +9,7 @@ import { featureProp, useGeoJsonLayer, type LayerSpecSansSource } from './useGeo
 /** What a pin click surfaces — MapScreen renders the popover / navigates. */
 export interface PinSelection {
   lngLat: [number, number];
-  kind: 'contact' | 'contact-former' | 'visit' | 'saved' | 'current' | 'photo';
+  kind: 'contact' | 'contact-former' | 'visit' | 'saved' | 'current' | 'photo' | 'hotspot';
   props: Record<string, unknown>;
 }
 
@@ -315,6 +315,65 @@ export function SavedPlacesLayer({ theme, features, onSelect, onOpenPlace }: Com
         });
       },
     }), [onSelect, onOpenPlace]),
+  });
+  return null;
+}
+
+/** Hotspot halos sized by active days, drawn beneath the pins; an anchored one opens the place panel. */
+export function HotspotsLayer({ theme, features, onSelect, onOpenPlace }: CommonLayerProps & {
+  features: FeatureCollection;
+  onOpenPlace: (placeId: string) => void;
+}) {
+  const map = useMap();
+  const colors = MAP_COLORS[theme];
+
+  const layers = useMemo<LayerSpecSansSource[]>(() => [
+    {
+      id: 'hotspots-halo', type: 'circle',
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['sqrt', ['get', 'activeDays']], 1.7, 12, 10, 34],
+        'circle-color': colors.hotspot,
+        'circle-opacity': 0.22,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': colors.hotspot,
+      },
+    },
+    {
+      id: 'hotspots-labels', type: 'symbol', minzoom: 12,
+      layout: {
+        'text-field': ['coalesce', ['get', 'label'], ''],
+        'text-font': ['Noto Sans Regular'],
+        'text-size': 11.5,
+        'text-max-width': 14,
+        'text-optional': true,
+      },
+      paint: { 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': 1.2 },
+    },
+  ], [colors]);
+
+  useGeoJsonLayer(map, 'hotspots', features, layers, {
+    beneathData: true,
+    onClick: useMemo(() => ({
+      'hotspots-halo': (f: MapGeoJSONFeature, e) => {
+        // Every layer under the pointer fires; a click on a pin inside the halo belongs to the pin.
+        if (!map.queryRenderedFeatures(e.point)[0]?.layer.id.startsWith('hotspots-')) return;
+        const placeId = featureProp<string>(f, 'placeId');
+        if (placeId) onOpenPlace(placeId);
+        else onSelect({
+          lngLat: [e.lngLat.lng, e.lngLat.lat],
+          kind: 'hotspot',
+          props: {
+            center: (f.geometry as GeoJSON.Point).coordinates,
+            label: featureProp<string>(f, 'label'),
+            activeDays: featureProp<number>(f, 'activeDays'),
+            eventCount: featureProp<number>(f, 'eventCount'),
+            photoCount: featureProp<number>(f, 'photoCount'),
+            firstDay: featureProp<string>(f, 'firstDay'),
+            lastDay: featureProp<string>(f, 'lastDay'),
+          },
+        });
+      },
+    }), [map, onSelect, onOpenPlace]),
   });
   return null;
 }

@@ -258,6 +258,7 @@ the Lupira Photos program: the photos layer lands here once lupira-photo-api exi
 - [x] Bearer on native tile requests: `TransformRequestManager.addHeader` with stable id (in-place token rotation) and `match` scoped to the BFF origin — presigned/third-party URLs never see the header
 - [x] Palette copied web-canonical into `ui/map/mapTokens.ts` (saved/eventFallback/ring/ink only)
 - [x] Mobile orval regen (picked up `lookupPlaces`)
+- [x] Hotspots layer (off by default; all-time `GET /hotspots` halos beneath the pins, tap → stats sheet)
 
 ### Exit criteria
 - [x] Root `npm run typecheck` / `lint` / `test` green

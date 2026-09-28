@@ -37,8 +37,10 @@ import type {
   DeleteRelationsBatchRequest,
   FileItemToCalendarParams,
   GetChangesParams,
+  GetHotspotsParams,
   GetParticipationSummaryParams,
   GrantOwnerRequest,
+  HotspotDto,
   InviteParticipantParams,
   JsonNode,
   ListRelationEdgesParams,
@@ -2072,6 +2074,113 @@ export function useListRelationEdges<TData = Awaited<ReturnType<typeof listRelat
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListRelationEdgesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetHotspotsUrl = (params?: GetHotspotsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/hotspots?${stringifiedParams}` : `/api/hotspots`
+}
+
+/**
+ * @summary Places where your events and photos concentrate, derived at read time and ranked by active days (distinct UTC days with an event occurrence or a photo). Events come from calendars you can read (or calendarId), photos are your own. Defaults: all-time up to now, minDays 3, limit 100. A hotspot carries the LupiraGeoApi PlaceId it anchors to, else a reverse-geocoded label.
+ */
+export const getHotspots = async (params?: GetHotspotsParams, options?: Parameters<typeof apiRequest>[1]): Promise<HotspotDto[]> => {
+
+  return apiRequest<HotspotDto[]>(getGetHotspotsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHotspotsQueryKey = (params?: GetHotspotsParams,) => {
+    return [
+    `/api/hotspots`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetHotspotsQueryOptions = <TData = Awaited<ReturnType<typeof getHotspots>>, TError = ProblemDetails>(params?: GetHotspotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHotspotsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHotspots>>> = ({ signal }) => getHotspots(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetHotspotsQueryResult = NonNullable<Awaited<ReturnType<typeof getHotspots>>>
+export type GetHotspotsQueryError = ProblemDetails
+
+
+export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, TError = ProblemDetails>(
+ params: undefined |  GetHotspotsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHotspots>>,
+          TError,
+          Awaited<ReturnType<typeof getHotspots>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, TError = ProblemDetails>(
+ params?: GetHotspotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getHotspots>>,
+          TError,
+          Awaited<ReturnType<typeof getHotspots>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, TError = ProblemDetails>(
+ params?: GetHotspotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Places where your events and photos concentrate, derived at read time and ranked by active days (distinct UTC days with an event occurrence or a photo). Events come from calendars you can read (or calendarId), photos are your own. Defaults: all-time up to now, minDays 3, limit 100. A hotspot carries the LupiraGeoApi PlaceId it anchors to, else a reverse-geocoded label.
+ */
+
+export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, TError = ProblemDetails>(
+ params?: GetHotspotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetHotspotsQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

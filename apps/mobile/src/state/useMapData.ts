@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { FeatureCollection } from 'geojson';
+import { getHotspots } from '@lupira/cal-api/fetch/cal';
 import { listSavedPlaces } from '@lupira/cal-api/fetch/geo';
 import { getPhotoMap } from '@lupira/cal-api/fetch/photo';
 import type { FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
@@ -9,6 +10,7 @@ import {
   contactFeatures,
   currentFixFeatures,
   eventFeatures,
+  hotspotFeatures,
   photoFeatures,
   savedPlaceFeatures,
   trackFeatures,
@@ -145,6 +147,27 @@ export function useSavedPlaceFeatures(enabled: boolean): FeatureCollection {
 
   return useMemo(
     () => (enabled ? savedPlaceFeatures(q.data ?? []) : EMPTY_FEATURES),
+    [enabled, q.data],
+  );
+}
+
+/** All-time hotspots up to now, ranked by active days — the server's defaults, so no params. */
+export function useHotspotFeatures(enabled: boolean): FeatureCollection {
+  const reachable = useSyncStatus((s) => s.serverReachable);
+  const q = useQuery({
+    queryKey: ['map', 'hotspots'],
+    enabled: enabled && reachable,
+    staleTime: 600_000,
+    retry: 1,
+    queryFn: async () => {
+      const r = await getHotspots();
+      if (r.status !== 200) throw new Error(`hotspots ${r.status}`);
+      return r.data;
+    },
+  });
+
+  return useMemo(
+    () => (enabled ? hotspotFeatures(q.data ?? []) : EMPTY_FEATURES),
     [enabled, q.data],
   );
 }

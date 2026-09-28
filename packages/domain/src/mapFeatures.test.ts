@@ -3,6 +3,8 @@ import {
   contactFeatures,
   contactPinLabel,
   eventFeatures,
+  hotspotFeatures,
+  hotspotStats,
   savedPlaceFeatures,
   trackFeatures,
   visitFeatures,
@@ -129,6 +131,23 @@ describe('trackFeatures', () => {
     );
     expect(fc.features).toHaveLength(1);
     expect(props(fc).activity).toBe('Walking');
+  });
+});
+
+describe('hotspotFeatures', () => {
+  it('keeps the anchor and weight the layer sizes and labels by', () => {
+    const fc = hotspotFeatures([
+      { id: 'cell:58.000,14.000', latitude: 58, longitude: 14, activeDays: 12, eventCount: 0, photoCount: 80, firstDay: '2025-06-01', lastDay: '2026-07-04' },
+    ]);
+    expect(fc.features[0].geometry).toEqual({ type: 'Point', coordinates: [14, 58] });
+    expect(props(fc)).toMatchObject({ layer: 'hotspot', hotspotId: 'cell:58.000,14.000', placeId: null, label: null, activeDays: 12 });
+  });
+});
+
+describe('hotspotStats', () => {
+  it('always states the days and leaves out zero counts', () => {
+    expect(hotspotStats({ activeDays: 1, eventCount: 1, photoCount: 0 })).toBe('1 day · 1 event');
+    expect(hotspotStats({ activeDays: 12, eventCount: 0, photoCount: 80 })).toBe('12 days · 80 photos');
   });
 });
 
