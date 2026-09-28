@@ -32,6 +32,8 @@ import { Row, RowName } from '../components/Rows';
 import { WrapRow } from '../components/WrapRow';
 import Button from '@mui/material/Button';
 
+const SELECTION_KEYS = ['place', 'item', 'at'];
+
 /** The map over everything located: events, GPS movement, contacts, saved places. Route stays
  * /locations so ?place=/?q= deep links keep working; state rides the URL (?from ?to ?layers). */
 export default function MapScreen() {
@@ -44,6 +46,16 @@ export default function MapScreen() {
       const next = new URLSearchParams(prev);
       if (value) next.set(key, value);
       else next.delete(key);
+      return next;
+    }, { replace: true }), [setParams]);
+
+  // One selection at a time: each flies the map on load, so leaving an older one in the URL makes a
+  // reload return to it instead of to what was picked last.
+  const select = useCallback((key: 'place' | 'item', value: string | undefined) =>
+    setParams((prev) => {
+      const next = new URLSearchParams(prev);
+      for (const k of SELECTION_KEYS) next.delete(k);
+      if (value) next.set(key, value);
       return next;
     }, { replace: true }), [setParams]);
 
@@ -86,15 +98,14 @@ export default function MapScreen() {
 
   const [popover, setPopover] = useState<PinSelection>();
   const onSelect = useCallback((selection: PinSelection) => setPopover(selection), []);
-  const openItem = useCallback((itemId: string) => setParam('item', itemId), [setParam]);
+  const openItem = useCallback((itemId: string) => select('item', itemId), [select]);
   const openPlace = useCallback((placeId: string) => {
     setPopover(undefined);
-    setParam('place', placeId);
-  }, [setParam]);
+    select('place', placeId);
+  }, [select]);
 
   const onSearchPick = (target: SearchTarget) => {
-    if (target.placeId) setParam('place', target.placeId);
-    else setParam('place', undefined);
+    select('place', target.placeId);
     setFlyTarget([target.lon, target.lat]);
   };
   const [flyTarget, setFlyTarget] = useState<[number, number]>();
@@ -118,7 +129,7 @@ export default function MapScreen() {
     const flyTo = (feature: GeoJSON.Feature, placeId?: unknown) => () => {
       const [lon, lat] = (feature.geometry as GeoJSON.Point).coordinates;
       setFlyTarget([lon, lat]);
-      if (typeof placeId === 'string' && placeId) setParam('place', placeId);
+      if (typeof placeId === 'string' && placeId) select('place', placeId);
     };
 
     // Contacts grouped per (deduped) address kind — mixed-kind households land under the joined kind.
@@ -157,7 +168,7 @@ export default function MapScreen() {
         onClick: () => {
           const [lon, lat] = (f.geometry as GeoJSON.Point).coordinates;
           setFlyTarget([lon, lat]);
-          setParam('item', p.itemId as string);
+          select('item', p.itemId as string);
         },
       };
     });
@@ -182,7 +193,7 @@ export default function MapScreen() {
       { title: 'Saved places', rows: savedRows },
       { title: 'Events in range', rows: eventRows },
     ];
-  }, [contacts.features, contacts.former, showHistory, saved.features, events.features, setParam]);
+  }, [contacts.features, contacts.former, showHistory, saved.features, events.features, select]);
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex' }}>
