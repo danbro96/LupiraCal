@@ -2,18 +2,23 @@ import { useMemo, useState } from 'react';
 import { NamedIcon } from './KindIcon';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
+import IconButton from '@mui/material/IconButton';
 import type { AvailabilitySegment } from '../../state/useAvailability';
-import { clampToDay, layoutColumns } from '@lupira/cal-domain/occurrences';
+import { clampToDay, foldLanes, hiddenPerColumn, isDayLong, layoutColumns, packLanes } from '@lupira/cal-domain/occurrences';
 import { type DayRail, familyKey, railsForDay } from '@lupira/cal-domain/family';
-import { fmtDayShort, fmtTime, isToday, minutesOfDay, sameDay, ymd } from '@lupira/cal-domain/time';
+import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, sameDay, ymd } from '@lupira/cal-domain/time';
+import { textOn } from '@lupira/cal-tokens/contrast';
 import { AVAILABILITY_COLORS, familyAccent } from '../theme/kinds';
-import type { GridEntry } from '../entries';
+import { coversDay, type GridEntry } from '../entries';
+import { ExpandIcon, ExpandLessIcon } from '../icons';
 
 const HOUR_PX = 48;
 const RAIL_SLOT_PX = 5; // 3px rail + 2px gap
 const MIN_BLOCK_PX = 18; // min block height; drives column packing so short neighbours don't overlap
 const MIN_BLOCK_MINUTES = (MIN_BLOCK_PX / HOUR_PX) * 60;
 const HEADER_PX = 18; // timed-parent header height; children starting under it drop below
+const LANE_PX = 20;
+const MAX_ALL_DAY_ROWS = 3; // the strip's cap; past it, its last row counts per day what is hidden
 
 const MOTION = {
   '@media (prefers-reduced-motion: no-preference)': {
@@ -45,10 +50,14 @@ interface Props {
 
 type FamOf = (key: string | undefined) => Fam;
 
+/** A timed item of a day or more is a span, so it joins the all-day strip — unless it is a parent,
+ *  which keeps its rail and header in the lanes. */
+const inStrip = (e: GridEntry) => e.isAllDay || (e.childCount === 0 && isDayLong(e.start, e.end));
+
 /** Timed week/day lanes: hour rows, an all-day strip, availability tint, and column-packed events. */
 export function WeekGrid({ days, entries, segments, onOpenItem, selectedFamilyKey }: Props) {
-  const allDay = useMemo(() => entries.filter((e) => e.isAllDay), [entries]);
-  const timed = useMemo(() => entries.filter((e) => !e.isAllDay), [entries]);
+  const allDay = useMemo(() => entries.filter(inStrip), [entries]);
+  const timed = useMemo(() => entries.filter((e) => !inStrip(e)), [entries]);
   const nowMin = minutesOfDay(new Date());
 
   const [hoverFamily, setHoverFamily] = useState<string | null>(null);
@@ -83,62 +92,14 @@ export function WeekGrid({ days, entries, segments, onOpenItem, selectedFamilyKe
           </Box>
         ))}
       </Box>
-      <Box sx={{ ...cols, flex: 'none', borderTop: 1, borderBottom: 1, borderColor: 'divider', minHeight: 28 }}>
-        <Box sx={{ fontSize: 12, color: 'text.secondary' }}>all-day</Box>
-        {days.map((d) => (
-          <Box
-            key={d.toISOString()}
-            sx={{ borderLeft: 1, borderColor: 'divider', p: '2px', display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}
-          >
-            {allDay
-              .filter((e) => sameDay(e.start, d) || (e.end && e.start <= d && e.end >= d))
-              .map((e) => {
-                const fk = familyKey(e);
-                const accent = fk ? familyAccent(fk) : undefined;
-                const fam = famOf(fk);
-                const role: Role = e.childCount > 0 ? 'parent' : e.parentItemId ? 'child' : null;
-                return (
-                  <ButtonBase
-                    key={e.key}
-                    onClick={() => onOpenItem(e.itemId)}
-                    onMouseEnter={fk ? () => setHoverFamily(fk) : undefined}
-                    onMouseLeave={fk ? () => setHoverFamily(null) : undefined}
-                    sx={{
-                      border: 0,
-                      borderRadius: '3px',
-                      color: '#fff',
-                      fontSize: 12,
-                      p: '1px 6px',
-                      justifyContent: 'flex-start',
-                      textAlign: 'left',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      display: 'block',
-                      // A deadline is an outlined pill, not a filled chip — it drops the entry colour.
-                      ...(e.task && {
-                        bgcolor: 'background.paper',
-                        color: e.task.overdue ? 'error.main' : 'text.primary',
-                        border: 1,
-                        borderColor: e.task.overdue ? 'error.main' : 'text.secondary',
-                      }),
-                      ...(e.ghost && { opacity: 0.55, borderStyle: 'dashed' }),
-                      ...(role === 'parent' && { pl: '9px' }),
-                      boxShadow: famShadow(role, fam, accent),
-                      ...(fam === 'dim' && { opacity: 0.35 }),
-                      ...MOTION,
-                    }}
-                    style={{ background: e.task ? undefined : e.color }}
-                  >
-                    {e.icon && <NamedIcon name={e.icon} sx={{ verticalAlign: -2, mr: 0.25 }} />}
-                    {e.title}
-                    {e.childCount > 0 ? ` · ${e.childCount}` : ''}
-                  </ButtonBase>
-                );
-              })}
-          </Box>
-        ))}
-      </Box>
+      <AllDayStrip
+        days={days}
+        entries={allDay}
+        cols={cols}
+        famOf={famOf}
+        onHoverFamily={setHoverFamily}
+        onOpenItem={onOpenItem}
+      />
       <Box sx={{ ...cols, flex: 1, overflowY: 'auto' }}>
         <Box sx={{ position: 'relative', height: 24 * HOUR_PX }}>
           {Array.from({ length: 24 }, (_, h) => (
@@ -165,6 +126,145 @@ export function WeekGrid({ days, entries, segments, onOpenItem, selectedFamilyKe
           />
         ))}
       </Box>
+    </Box>
+  );
+}
+
+type StripBar = { entry: GridEntry; startCol: number; endCol: number; before: boolean; after: boolean };
+
+/** All-day items (and day-long timed ones) as bars spanning the days they cover, packed into lanes. Past
+ *  MAX_ALL_DAY_ROWS the last row counts per day what is hidden; a count or the chevron shows every lane. */
+function AllDayStrip({
+  days,
+  entries,
+  cols,
+  famOf,
+  onHoverFamily,
+  onOpenItem,
+}: {
+  days: Date[];
+  entries: GridEntry[];
+  cols: Record<string, string>;
+  famOf: FamOf;
+  onHoverFamily: (key: string | null) => void;
+  onOpenItem: (id: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const bars = useMemo(() => {
+    const first = days[0];
+    const last = days[days.length - 1];
+    return packLanes(entries.flatMap((entry): StripBar[] => {
+      const covered = days.flatMap((d, i) => (coversDay(entry, d) ? [i] : []));
+      if (covered.length === 0) return [];
+      return [{
+        entry,
+        startCol: covered[0],
+        endCol: covered[covered.length - 1],
+        before: coversDay(entry, addDays(first, -1)),
+        after: coversDay(entry, addDays(last, 1)),
+      }];
+    }));
+  }, [entries, days]);
+  const laneCount = bars.reduce((n, b) => Math.max(n, b.lane + 1), 0);
+  const { drawn, rows, folded } = foldLanes(laneCount, expanded ? Infinity : MAX_ALL_DAY_ROWS);
+  const hidden = folded ? hiddenPerColumn(bars, drawn, days.length) : [];
+  const allRows = `1 / span ${Math.max(rows, 1)}`;
+
+  return (
+    <Box
+      sx={{
+        ...cols,
+        flex: 'none',
+        gridAutoRows: `${LANE_PX}px`,
+        rowGap: '2px',
+        py: '2px',
+        borderTop: 1,
+        borderBottom: 1,
+        borderColor: 'divider',
+        minHeight: 28,
+      }}
+    >
+      <Box sx={{ gridColumn: 1, gridRow: allRows, display: 'flex', alignItems: 'flex-start', fontSize: 12, color: 'text.secondary' }}>
+        all-day
+        {laneCount > MAX_ALL_DAY_ROWS && (
+          <IconButton
+            size="small"
+            sx={{ p: 0, ml: 0.5 }}
+            onClick={() => setExpanded((v) => !v)}
+            aria-label={expanded ? 'Collapse all-day events' : 'Show all all-day events'}
+          >
+            {expanded ? <ExpandLessIcon fontSize="inherit" /> : <ExpandIcon fontSize="inherit" />}
+          </IconButton>
+        )}
+      </Box>
+      {days.map((d, i) => (
+        <Box key={d.toISOString()} sx={{ gridColumn: i + 2, gridRow: allRows, borderLeft: 1, borderColor: 'divider' }} />
+      ))}
+      {bars.filter((b) => b.lane < drawn).map((b) => {
+        const e = b.entry;
+        const fk = familyKey(e);
+        const accent = fk ? familyAccent(fk) : undefined;
+        const fam = famOf(fk);
+        const role: Role = e.childCount > 0 ? 'parent' : e.parentItemId ? 'child' : null;
+        return (
+          <ButtonBase
+            key={e.key}
+            onClick={() => onOpenItem(e.itemId)}
+            onMouseEnter={fk ? () => onHoverFamily(fk) : undefined}
+            onMouseLeave={fk ? () => onHoverFamily(null) : undefined}
+            sx={{
+              gridColumn: `${b.startCol + 2} / ${b.endCol + 3}`,
+              gridRow: b.lane + 1,
+              mx: '2px',
+              border: 0,
+              borderRadius: '3px',
+              color: textOn(e.color),
+              fontSize: 12,
+              lineHeight: `${LANE_PX}px`,
+              p: '0 6px',
+              justifyContent: 'flex-start',
+              textAlign: 'left',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              display: 'block',
+              // A span continuing past the visible days runs flush to that edge.
+              ...(b.before && { ml: 0, borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }),
+              ...(b.after && { mr: 0, borderTopRightRadius: 0, borderBottomRightRadius: 0 }),
+              // A deadline is an outlined pill, not a filled chip — it drops the entry colour.
+              ...(e.task && {
+                bgcolor: 'background.paper',
+                color: e.task.overdue ? 'error.main' : 'text.primary',
+                border: 1,
+                borderColor: e.task.overdue ? 'error.main' : 'text.secondary',
+              }),
+              ...(e.status === 'Cancelled' && { opacity: 0.5, textDecoration: 'line-through' }),
+              ...(e.ghost && { opacity: 0.55, borderStyle: 'dashed' }),
+              ...(role === 'parent' && { pl: '9px' }),
+              boxShadow: famShadow(role, fam, accent),
+              ...(fam === 'dim' && { opacity: 0.35 }),
+              ...MOTION,
+            }}
+            style={{ background: e.task ? undefined : e.color }}
+          >
+            {e.icon && <NamedIcon name={e.icon} sx={{ verticalAlign: -2, mr: 0.25 }} />}
+            {e.title}
+            {e.childCount > 0 ? ` · ${e.childCount}` : ''}
+          </ButtonBase>
+        );
+      })}
+      {hidden.map((n, i) =>
+        n > 0 ? (
+          <ButtonBase
+            key={`more-${i}`}
+            onClick={() => setExpanded(true)}
+            sx={{ gridColumn: i + 2, gridRow: rows, fontSize: 11, fontWeight: 600, color: 'text.secondary' }}
+            aria-label={`${n} more`}
+          >
+            +{n}
+          </ButtonBase>
+        ) : null,
+      )}
     </Box>
   );
 }
@@ -325,7 +425,7 @@ function DayColumn({
               position: 'absolute',
               right: '2px',
               zIndex: 2,
-              color: '#fff',
+              color: textOn(accent),
               border: 0,
               borderRadius: '3px',
               fontSize: 11,
@@ -369,7 +469,7 @@ function DayColumn({
               position: 'absolute',
               border: 0,
               borderRadius: 1,
-              color: '#fff',
+              color: textOn(p.item.color),
               p: '2px 6px',
               textAlign: 'left',
               overflow: 'hidden',
@@ -377,6 +477,7 @@ function DayColumn({
               flexDirection: 'column',
               alignItems: 'flex-start',
               zIndex: 1,
+              ...(p.item.status === 'Cancelled' && { opacity: 0.5 }),
               ...(p.item.ghost && { opacity: 0.55 }),
               ...(role === 'child' && { pt: '5px' }),
               boxShadow: famShadow(role, fam, accent),
@@ -397,15 +498,28 @@ function DayColumn({
           >
             <Box
               component="span"
-              sx={{ fontSize: 12, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}
+              sx={{
+                fontSize: 12,
+                fontWeight: 600,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100%',
+                ...(p.item.status === 'Cancelled' && { textDecoration: 'line-through' }),
+              }}
             >
               {p.item.icon && <NamedIcon name={p.item.icon} sx={{ verticalAlign: -2, mr: 0.25 }} />}
               {p.item.title}
             </Box>
             <Box component="span" sx={{ fontSize: 11, opacity: 0.85 }}>
-              {fmtTime(p.item.start)}
+              {fmtBlockTime(p.item.start, p.item.end ?? new Date(p.item.start.getTime() + 30 * 60000), day)}
               {p.item.ghost ? ' · proposed' : ''}
             </Box>
+            {p.item.place && (
+              <Box component="span" sx={{ fontSize: 11, opacity: 0.85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                {p.item.place}
+              </Box>
+            )}
           </ButtonBase>
         );
       })}

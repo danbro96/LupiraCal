@@ -32,6 +32,7 @@ export { default as EmailIcon } from '@mui/icons-material/EmailOutlined';
 export { default as EventAvailableIcon } from '@mui/icons-material/EventAvailableOutlined';
 export { default as ExpandFullIcon } from '@mui/icons-material/OpenInFullOutlined';
 export { default as ExpandIcon } from '@mui/icons-material/ExpandMoreOutlined';
+export { default as ExpandLessIcon } from '@mui/icons-material/ExpandLessOutlined';
 export { default as FilterIcon } from '@mui/icons-material/FilterListOutlined';
 export { default as FolderIcon } from '@mui/icons-material/FolderOpenOutlined';
 export { default as GroupIcon } from '@mui/icons-material/GroupOutlined';

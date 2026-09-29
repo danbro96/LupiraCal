@@ -6,9 +6,9 @@ import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import type { AvailabilitySegment } from '../../state/useAvailability';
 import { familyKey } from '@lupira/cal-domain/family';
-import { fmtTime, isToday, sameDay } from '@lupira/cal-domain/time';
+import { fmtTime, isToday } from '@lupira/cal-domain/time';
 import { AVAILABILITY_COLORS, familyAccent } from '../theme/kinds';
-import type { GridEntry } from '../entries';
+import { coversDay, type GridEntry } from '../entries';
 
 const MAX_PER_CELL = 4;
 
@@ -33,6 +33,7 @@ function chipSx(e: GridEntry, accent: string | undefined, fam: 'hi' | 'dim' | nu
     minWidth: 0,
     justifyContent: 'flex-start',
     ...(e.task && { borderWidth: 1, borderStyle: 'solid', borderLeftWidth: 3 }),
+    ...(e.status === 'Cancelled' && { opacity: 0.6 }),
     ...(e.ghost && { opacity: 0.55, borderStyle: 'dashed' }),
     ...(fam === 'hi' && accent && { boxShadow: `0 0 0 2px ${accent}` }),
     ...(fam === 'dim' && { opacity: 0.35 }),
@@ -99,10 +100,10 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
       ))}
       {weeks.flat().map((day) => {
         const dayEntries = entries
-          .filter((e) => spansDay(e, day))
+          .filter((e) => coversDay(e, day))
           .sort((a, b) => Number(b.isAllDay) - Number(a.isAllDay) || a.start.getTime() - b.start.getTime());
         const shown = dayEntries.slice(0, MAX_PER_CELL);
-        const daySegments = segments.filter((s) => spansDay({ start: new Date(s.start), end: s.end ? new Date(s.end) : null, isAllDay: s.isAllDay }, day));
+        const daySegments = segments.filter((s) => coversDay({ start: new Date(s.start), end: s.end ? new Date(s.end) : null }, day));
         const otherMonth = day.getMonth() !== date.getMonth();
         const cellSx = {
           borderRight: 1,
@@ -179,6 +180,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                       ...(e.task?.overdue && { color: 'error.main' }),
+                      ...(e.status === 'Cancelled' && { textDecoration: 'line-through' }),
                     }}
                   >
                     {e.icon && <NamedIcon name={e.icon} sx={{ verticalAlign: -2, mr: 0.25 }} />}
@@ -257,13 +259,4 @@ function AvailDots({ segments, titled }: { segments: AvailabilitySegment[]; titl
       ))}
     </Box>
   );
-}
-
-function spansDay(e: { start: Date; end: Date | null; isAllDay: boolean }, day: Date): boolean {
-  if (e.end && e.end > e.start) {
-    const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
-    const dayEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
-    return e.start < dayEnd && e.end > dayStart;
-  }
-  return sameDay(e.start, day);
 }

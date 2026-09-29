@@ -1,5 +1,5 @@
-import { clampToDay, layoutColumns, packLanes, type Positioned } from '@lupira/cal-domain/occurrences';
-import { addDays, daysFrom, fmtTime, isToday, minutesOfDay, parseYmd, startOfDay, ymd } from '@lupira/cal-domain/time';
+import { clampToDay, foldLanes, hiddenPerColumn, layoutColumns, packLanes, type Positioned } from '@lupira/cal-domain/occurrences';
+import { addDays, daysFrom, fmtBlockTime, isToday, minutesOfDay, parseYmd, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
@@ -229,14 +229,11 @@ const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, sl
   const c = useColors();
   const colorOf = useCalendarColors();
   const day = parseYmd(dayKey);
-  const dayStart = startOfDay(day);
   const spans = rows.flatMap((r) => {
     const start = new Date(r.start_utc);
     const end = r.end_utc ? new Date(r.end_utc) : new Date(start.getTime() + DEFAULT_END_MIN * 60_000);
     const span = clampToDay(start, end, day);
-    // A block carried over from the day before reads by when it ends; its start isn't on this column.
-    const when = start < dayStart ? `until ${fmtTime(end)}` : fmtTime(start);
-    return span ? [{ ...span, item: { row: r, when } }] : [];
+    return span ? [{ ...span, item: { row: r, when: fmtBlockTime(start, end, day) } }] : [];
   });
   return (
     <Pressable
@@ -315,11 +312,11 @@ function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
   const laneCount = (w: number) => laned[w].reduce((n, b) => Math.max(n, b.lane + 1), 0);
   const rowsPref = usePrefs((p) => p.allDayRows);
   const limit = rowsPref === 'all' ? Infinity : Number(rowsPref);
-  const folds = (count: number) => count > limit && !expanded;
+  const fold = (count: number) => (expanded ? foldLanes(count, Infinity) : foldLanes(count, limit));
   const current = laneCount(1);
   if (current === 0) return null;
   const overflows = current > limit;
-  const height = (folds(current) ? limit : current) * LANE_H + 2;
+  const height = fold(current).rows * LANE_H + 2;
 
   return (
     <View style={[styles.allDayRow, { borderColor: c.divider, height }]}>
@@ -338,14 +335,9 @@ function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
         )}
       >
         {laned.flatMap((weekBars, w) => {
-          const count = laneCount(w);
-          const collapsed = folds(count);
-          const shown = collapsed ? limit - 1 : count;
+          const { drawn: shown, folded } = fold(laneCount(w));
           const weekCol = firstCol + w * 7;
-          const hidden = Array.from({ length: 7 }, () => 0);
-          if (collapsed) {
-            for (const b of weekBars) if (b.lane >= shown) for (let col = b.startCol; col <= b.endCol; col++) hidden[col]++;
-          }
+          const hidden = folded ? hiddenPerColumn(weekBars, shown, 7) : [];
           return [
             ...weekBars.filter((b) => b.lane < shown).map((b) => (
               <StripBar key={`${w}-${b.row.source}-${b.row.source_id}-${b.row.start_utc}`} bar={b} left={weekCol + b.startCol} rowColor={rowColor} onPress={onPress} />

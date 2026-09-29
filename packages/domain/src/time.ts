@@ -67,6 +67,12 @@ export function fmtTime(d: Date): string {
   return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+/** A timed block's label on one day's column: its start — or, carried over from an earlier day, its end,
+ *  since the start isn't on that column. */
+export function fmtBlockTime(start: Date, end: Date, day: Date): string {
+  return start < startOfDay(day) ? `until ${fmtTime(end)}` : fmtTime(start);
+}
+
 export function fmtMonthTitle(d: Date): string {
   return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }

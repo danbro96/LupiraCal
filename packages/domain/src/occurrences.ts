@@ -76,3 +76,28 @@ export function packLanes<T extends ColumnRange>(bars: T[]): Array<T & { lane: n
     return { ...bar, lane };
   });
 }
+
+const DAY_MS = 86_400_000;
+
+/** A timed item of a day or more reads as a span across days, so the grids draw it in the all-day strip
+ *  rather than as a full-height block on every day. */
+export function isDayLong(start: Date, end: Date | null): boolean {
+  return end !== null && end.getTime() - start.getTime() >= DAY_MS;
+}
+
+/** An all-day strip under a row cap: every lane when they fit, otherwise `maxRows - 1` lanes of bars and a
+ *  last row of per-day "+N" counts — so the strip is never taller than the cap. */
+export function foldLanes(laneCount: number, maxRows: number): { drawn: number; rows: number; folded: boolean } {
+  if (laneCount <= maxRows) return { drawn: laneCount, rows: laneCount, folded: false };
+  return { drawn: maxRows - 1, rows: maxRows, folded: true };
+}
+
+/** Per column, how many bars sit in lanes at or past `drawn` — the counts a folded strip shows. */
+export function hiddenPerColumn(bars: Array<ColumnRange & { lane: number }>, drawn: number, columns: number): number[] {
+  const hidden = Array.from({ length: columns }, () => 0);
+  for (const b of bars) {
+    if (b.lane < drawn) continue;
+    for (let col = b.startCol; col <= b.endCol; col++) hidden[col]++;
+  }
+  return hidden;
+}

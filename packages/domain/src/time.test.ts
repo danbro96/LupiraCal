@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, daysFrom, monthMatrix, parseYmd, sameDay, startOfWeek, ymd } from './time';
+import { addDays, daysFrom, fmtBlockTime, fmtTime, monthMatrix, parseYmd, sameDay, startOfWeek, ymd } from './time';
 
 describe('ymd round-trip', () => {
   it('formats and parses local dates', () => {
@@ -47,5 +47,18 @@ describe('monthMatrix', () => {
     // June 2026 starts on a Monday.
     const weeks = monthMatrix(new Date(2026, 5, 1));
     expect(ymd(weeks[0][0])).toBe('2026-06-01');
+  });
+});
+
+describe('fmtBlockTime', () => {
+  const start = new Date(2026, 7, 12, 15, 0);
+  const end = new Date(2026, 7, 13, 11, 0);
+
+  it('labels a block by its start on the day it starts', () => {
+    expect(fmtBlockTime(start, end, new Date(2026, 7, 12))).toBe(fmtTime(start));
+  });
+
+  it('labels the carried-over part by when it ends', () => {
+    expect(fmtBlockTime(start, end, new Date(2026, 7, 13))).toBe(`until ${fmtTime(end)}`);
   });
 });

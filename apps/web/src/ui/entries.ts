@@ -1,6 +1,6 @@
-import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto, OccurrenceOrigin } from '@lupira/cal-api/models';
+import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto, ItemStatus, OccurrenceOrigin } from '@lupira/cal-api/models';
 import { isOverdue } from '@lupira/cal-domain/tasks';
-import { parseYmd } from '@lupira/cal-domain/time';
+import { parseYmd, sameDay } from '@lupira/cal-domain/time';
 import type { OpenTask } from '../state/useTaskDeadlines';
 import type { IconName } from '@lupira/cal-tokens/icons';
 import { CALENDAR_KIND_ICONS, calendarColor } from './theme/kinds';
@@ -16,6 +16,9 @@ export interface GridEntry {
   color: string;
   icon?: IconName;
   ghost?: boolean;
+  status?: ItemStatus | null;
+  /** The occurrence's place, as the server labels it. */
+  place?: string | null;
   completeness?: number | null;
   parentItemId: string | null;
   parentTitle?: string | null;
@@ -36,6 +39,8 @@ export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: Container
     isAllDay: o.isAllDay,
     color: calendarColor(calendar),
     icon: calendar.class === 'System' && calendar.kind ? CALENDAR_KIND_ICONS[calendar.kind] : undefined,
+    status: o.status,
+    place: o.locationLabel,
     completeness: o.completeness ? o.completeness.score : null,
     parentItemId: o.parentItemId ?? null,
     parentTitle: o.parentTitle,
@@ -81,4 +86,15 @@ export function fromProposed(item: CalendarItemDto, calendar: ContainerDto): Gri
     parentItemId: item.parentItemId ?? null,
     childCount: 0,
   };
+}
+
+/** Whether an entry covers a day: overlap when it has an end (all-day ends are inclusive dates, so they
+ *  land inside their last day), else just its start day. */
+export function coversDay(e: { start: Date; end: Date | null }, day: Date): boolean {
+  if (e.end && e.end > e.start) {
+    const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+    const dayEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+    return e.start < dayEnd && e.end > dayStart;
+  }
+  return sameDay(e.start, day);
 }

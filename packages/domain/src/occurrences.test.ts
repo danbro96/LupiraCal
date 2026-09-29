@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampToDay, layoutColumns, packLanes } from './occurrences';
+import { clampToDay, foldLanes, hiddenPerColumn, isDayLong, layoutColumns, packLanes } from './occurrences';
 
 const day = new Date(2026, 6, 7);
 
@@ -97,5 +97,35 @@ describe('packLanes', () => {
       { id: 'tue', startCol: 1, endCol: 1 },
       { id: 'sat', startCol: 5, endCol: 5 },
     ])).toEqual({ 'mon-fri': 0, mon: 1, tue: 1, sat: 0 });
+  });
+});
+
+describe('isDayLong', () => {
+  it('is true from 24 hours up, and never without an end', () => {
+    expect(isDayLong(new Date(2026, 8, 28, 9), new Date(2026, 8, 29, 9))).toBe(true);
+    expect(isDayLong(new Date(2026, 8, 28, 22), new Date(2026, 8, 29, 2))).toBe(false);
+    expect(isDayLong(new Date(2026, 8, 28, 9), null)).toBe(false);
+  });
+});
+
+describe('foldLanes', () => {
+  it('draws every lane that fits under the cap', () => {
+    expect(foldLanes(3, 3)).toEqual({ drawn: 3, rows: 3, folded: false });
+  });
+
+  it('keeps a folded strip at the cap, its last row for the counts', () => {
+    expect(foldLanes(5, 3)).toEqual({ drawn: 2, rows: 3, folded: true });
+    expect(foldLanes(2, 1)).toEqual({ drawn: 0, rows: 1, folded: true });
+  });
+});
+
+describe('hiddenPerColumn', () => {
+  it('counts, per column, the bars in lanes that are not drawn', () => {
+    const bars = [
+      { startCol: 0, endCol: 6, lane: 0 },
+      { startCol: 1, endCol: 2, lane: 1 },
+      { startCol: 2, endCol: 2, lane: 2 },
+    ];
+    expect(hiddenPerColumn(bars, 1, 7)).toEqual([0, 1, 2, 0, 0, 0, 0]);
   });
 });

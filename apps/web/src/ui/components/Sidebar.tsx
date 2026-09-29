@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import type { ContainerDto } from '@lupira/cal-api/models';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { calendarColor } from '../theme/kinds';
-import { KindIcon } from './KindIcon';
+import { KindIcon, NamedIcon } from './KindIcon';
 import { useCalendarVisibility } from './CalendarVisibility';
 
 /** Calendar toggles grouped by class — System calendars are the agent-facing set no DAV client sees. */
@@ -36,7 +36,10 @@ export function Sidebar() {
         <ListItemButton component="label" sx={{ gap: 1, px: 2, py: '5px' }} title="Deadlines from Lupira Tasks">
           <Checkbox size="small" sx={{ p: 0 }} checked={tasksVisible} onChange={toggleTasks} />
           <Box component="span" sx={{ width: 13, height: 13, borderRadius: '999px', border: 1, borderColor: 'border', flex: 'none', display: 'inline-block' }} style={{ background: 'var(--mui-palette-text-secondary)' }} />
-          <Typography noWrap variant="body2">⏰ Deadlines</Typography>
+          <Typography noWrap variant="body2">
+            <NamedIcon name="schedule" sx={{ fontSize: 15, verticalAlign: -2, mr: 0.5 }} />
+            Deadlines
+          </Typography>
         </ListItemButton>
       </List>
     </Box>
