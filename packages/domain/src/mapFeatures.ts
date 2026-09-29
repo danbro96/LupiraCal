@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 import { type FuzzyDate, fmtFuzzyDate, fmtResidencyPeriod, residencyStatus } from './fuzzyDate';
-import { splitTrack, type TrackPointLike } from './geo';
+import { splitTrack, type Bbox, type TrackPointLike } from './geo';
 
 // Row-to-GeoJSON projection for the map, shared by web and mobile. Both read the same layers from
 // different sources — web from the API, mobile from the SQLite mirror — so only the source is
@@ -256,25 +256,53 @@ export function hotspotStats(h: Pick<HotspotPin, 'activeDays' | 'eventCount' | '
   ].filter(Boolean).join(' · ');
 }
 
-/** The photo endpoint already answers GeoJSON; this re-keys its properties onto the layer contract. */
+/** The photo endpoint already answers GeoJSON, clustered server-side: a count above 1 is a grid cell, not a
+ *  photo. This re-keys its properties onto the layer contract. */
 export interface PhotoMapFeature {
   geometry: { coordinates: number[] };
   properties: {
-    id: string;
-    kind: string;
+    count: number;
+    id?: string | null;
+    kind?: string | null;
     takenAt?: string | null;
     placeLabel?: string | null;
     thumbUrl?: string | null;
+    bounds?: number[] | null;
   };
 }
 
 export function photoFeatures(features: readonly PhotoMapFeature[]): FeatureCollection {
   return collect(features.map((f) => point(f.geometry.coordinates[0], f.geometry.coordinates[1], {
     layer: 'photo',
-    photoId: f.properties.id,
-    kind: f.properties.kind,
+    count: f.properties.count,
+    countLabel: abbreviateCount(f.properties.count),
+    photoId: f.properties.id ?? null,
+    kind: f.properties.kind ?? null,
     takenAt: f.properties.takenAt ?? null,
     placeLabel: f.properties.placeLabel ?? null,
     thumbUrl: f.properties.thumbUrl ?? null,
+    bounds: f.properties.bounds ?? null,
   })));
+}
+
+/** MapLibre's `point_count_abbreviated`, so server-side bubbles read like the client-clustered ones. */
+export function abbreviateCount(n: number): string {
+  if (n >= 10_000) return `${Math.round(n / 1000)}k`;
+  if (n >= 1000) return `${Math.round(n / 100) / 10}k`;
+  return String(n);
+}
+
+/** Smallest span a photo cell opens to: fitting it lands past photo-api's pin zoom (17), so a cell whose photos
+ *  share one spot — a folder geotag — splits into pins instead of diving to the map's max zoom. */
+const PHOTO_CELL_MIN_SPAN_DEG = 0.001;
+
+/** Where tapping a photo cell zooms to: its photos' extent, grown around its centre to the minimum span. */
+export function photoCellBounds([minLon, minLat, maxLon, maxLat]: Bbox): Bbox {
+  const grow = (min: number, max: number) => {
+    const pad = Math.max(0, PHOTO_CELL_MIN_SPAN_DEG - (max - min)) / 2;
+    return [min - pad, max + pad];
+  };
+  const [west, east] = grow(minLon, maxLon);
+  const [south, north] = grow(minLat, maxLat);
+  return [west, south, east, north];
 }

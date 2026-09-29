@@ -87,25 +87,36 @@ export function EventsLayer({ theme, features, sourceRef, onPress }: {
   );
 }
 
-export function PhotosLayer({ theme, features, sourceRef, onPress }: {
-  theme: MapTheme; features: FeatureCollection; sourceRef: Ref<GeoJSONSourceRef>; onPress: PressHandler;
+/** The server clusters photos, so a feature with a count above 1 is one of its grid cells, not a MapLibre cluster. */
+export function PhotosLayer({ theme, features, onPress }: {
+  theme: MapTheme; features: FeatureCollection; onPress: PressHandler;
 }) {
   const colors = MAP_COLORS[theme];
   return (
-    <GeoJSONSource
-      ref={sourceRef}
-      id="photos"
-      data={features}
-      cluster
-      clusterRadius={CLUSTER_RADIUS}
-      clusterMaxZoom={CLUSTER_MAX_ZOOM}
-      onPress={onPress}
-    >
-      <ClusterLayers id="photo" color={colors.photo} ring={colors.ring} />
+    <GeoJSONSource id="photos" data={features} onPress={onPress}>
+      <Layer
+        id="photo-clusters"
+        type="circle"
+        filter={['>', ['get', 'count'], 1]}
+        paint={{
+          'circle-color': colors.photo,
+          'circle-opacity': 0.85,
+          'circle-radius': ['step', ['get', 'count'], 14, 10, 18, 50, 24],
+          'circle-stroke-color': colors.ring,
+          'circle-stroke-width': 2,
+        }}
+      />
+      <Layer
+        id="photo-cluster-counts"
+        type="symbol"
+        filter={['>', ['get', 'count'], 1]}
+        layout={{ ...CLUSTER_TEXT, 'text-field': ['get', 'countLabel'] }}
+        paint={{ 'text-color': colors.ring }}
+      />
       <Layer
         id="photo-pins"
         type="circle"
-        filter={['!', ['has', 'point_count']]}
+        filter={['==', ['get', 'count'], 1]}
         paint={{
           'circle-color': colors.photo,
           'circle-radius': 6,

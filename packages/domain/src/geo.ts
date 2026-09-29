@@ -42,6 +42,21 @@ export function padBbox([minLon, minLat, maxLon, maxLat]: Bbox, factor: number):
   return [minLon - lonPad, minLat - latPad, maxLon + lonPad, maxLat + latPad];
 }
 
+export interface MapViewport {
+  bbox: string;
+  zoom: number;
+}
+
+/** A viewport as the APIs' `minLon,minLat,maxLon,maxLat` string plus its zoom. Clamped, since a world-wrapped view
+ *  reports longitudes past ±180 that the bbox parsers reject; rounded (~11 m) so camera drift doesn't churn query keys. */
+export function mapViewport([west, south, east, north]: Bbox, zoom: number): MapViewport {
+  const clamp = (n: number, limit: number) => Math.min(limit, Math.max(-limit, n)).toFixed(4);
+  return {
+    bbox: [clamp(west, 180), clamp(south, 90), clamp(east, 180), clamp(north, 90)].join(','),
+    zoom: Math.round(zoom * 100) / 100,
+  };
+}
+
 /** The repeated-param form LupiraGeoApi expects: bbox=minLon&bbox=minLat&bbox=maxLon&bbox=maxLat. */
 export function bboxToParam(bbox: Bbox): number[] {
   return [...bbox];

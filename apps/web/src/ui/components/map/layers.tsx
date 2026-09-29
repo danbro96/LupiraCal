@@ -3,6 +3,8 @@ import type { GeoJSONSource, MapGeoJSONFeature } from 'maplibre-gl';
 import { useMemo } from 'react';
 import type { LocationTripDto } from '@lupira/cal-api/models';
 import { useMap } from './MapCanvas';
+import type { Bbox } from '@lupira/cal-domain/geo';
+import { photoCellBounds } from '@lupira/cal-domain/mapFeatures';
 import { ACTIVITY_COLORS, activityColorExpression, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 import { featureProp, useGeoJsonLayer, type LayerSpecSansSource } from './useGeoJsonLayer';
 
@@ -378,16 +380,17 @@ export function HotspotsLayer({ theme, features, onSelect, onOpenPlace }: Common
   return null;
 }
 
-/** Geotagged photo/video pins; click surfaces the thumbnail in the popover. */
+/** Photo pins and the server's cell bubbles (not client clusters); a pin surfaces its thumbnail in the
+ *  popover, a bubble zooms to its photos. */
 export function PhotosLayer({ theme, features, onSelect }: CommonLayerProps & { features: FeatureCollection }) {
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
   const layers = useMemo<LayerSpecSansSource[]>(() => [
     {
-      id: 'photos-clusters', type: 'circle', filter: ['has', 'point_count'],
+      id: 'photos-clusters', type: 'circle', filter: ['>', ['get', 'count'], 1],
       paint: {
-        'circle-radius': ['step', ['get', 'point_count'], 12, 10, 16, 50, 22],
+        'circle-radius': ['step', ['get', 'count'], 12, 10, 16, 50, 22],
         'circle-color': colors.photo,
         'circle-opacity': 0.85,
         'circle-stroke-width': 2,
@@ -395,12 +398,12 @@ export function PhotosLayer({ theme, features, onSelect }: CommonLayerProps & { 
       },
     },
     {
-      id: 'photos-cluster-count', type: 'symbol', filter: ['has', 'point_count'],
-      layout: CLUSTER_TEXT,
+      id: 'photos-cluster-count', type: 'symbol', filter: ['>', ['get', 'count'], 1],
+      layout: { ...CLUSTER_TEXT, 'text-field': ['get', 'countLabel'] },
       paint: { 'text-color': colors.ring },
     },
     {
-      id: 'photos-pins', type: 'circle', filter: ['!', ['has', 'point_count']],
+      id: 'photos-pins', type: 'circle', filter: ['==', ['get', 'count'], 1],
       paint: {
         'circle-radius': 6,
         'circle-color': colors.photo,
@@ -411,7 +414,6 @@ export function PhotosLayer({ theme, features, onSelect }: CommonLayerProps & { 
   ], [colors]);
 
   useGeoJsonLayer(map, 'photos', features, layers, {
-    cluster: true,
     onClick: useMemo(() => ({
       'photos-pins': (f: MapGeoJSONFeature, e) => onSelect({
         lngLat: [e.lngLat.lng, e.lngLat.lat],
@@ -424,7 +426,10 @@ export function PhotosLayer({ theme, features, onSelect }: CommonLayerProps & { 
           thumbUrl: featureProp<string>(f, 'thumbUrl'),
         },
       }),
-      'photos-clusters': expandCluster(map, 'photos'),
+      'photos-clusters': (f: MapGeoJSONFeature) => {
+        const bounds = featureProp<Bbox>(f, 'bounds');
+        if (bounds) map.fitBounds(photoCellBounds(bounds), { padding: 48, duration: 400 });
+      },
     }), [map, onSelect]),
   });
   return null;

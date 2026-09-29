@@ -962,7 +962,7 @@ export const getGetPhotoMapUrl = (params: GetPhotoMapParams,) => {
 }
 
 /**
- * @summary Geotagged Ready assets in a viewport as a GeoJSON FeatureCollection.
+ * @summary Geotagged Ready assets in a viewport as GeoJSON: a point per photo when at most 200 are in view or zoom >= 17, else a point per grid cell with its count.
  */
 export const getPhotoMap = async (params: GetPhotoMapParams, options?: Parameters<typeof apiRequest>[1]): Promise<PhotoMapResponse> => {
 
@@ -1033,7 +1033,7 @@ export function useGetPhotoMap<TData = Awaited<ReturnType<typeof getPhotoMap>>, 
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Geotagged Ready assets in a viewport as a GeoJSON FeatureCollection.
+ * @summary Geotagged Ready assets in a viewport as GeoJSON: a point per photo when at most 200 are in view or zoom >= 17, else a point per grid cell with its count.
  */
 
 export function useGetPhotoMap<TData = Awaited<ReturnType<typeof getPhotoMap>>, TError = ProblemDetails>(

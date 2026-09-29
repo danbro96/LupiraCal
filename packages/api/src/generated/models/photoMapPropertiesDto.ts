@@ -6,12 +6,26 @@
  */
 import type { AssetKind } from './assetKind';
 
+/**
+ * One photo when the count is 1, else a grid cell drawn as a count bubble.
+ */
 export interface PhotoMapPropertiesDto {
-  id: string;
-  kind: AssetKind;
-  takenAt: string;
+  count: number;
+  /** @nullable */
+  id?: string | null;
+  kind?: null | AssetKind;
+  /** @nullable */
+  takenAt?: string | null;
   /** @nullable */
   placeLabel?: string | null;
-  /** @nullable */
+  /**
+     * The photo's, or a cell's newest photo's.
+     * @nullable
+     */
   thumbUrl?: string | null;
+  /**
+     * A cell's photo extent, [minLon, minLat, maxLon, maxLat] — where tapping it zooms to.
+     * @nullable
+     */
+  bounds?: number[] | null;
 }

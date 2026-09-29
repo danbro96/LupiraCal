@@ -5,6 +5,7 @@ import { getHotspots } from '@lupira/cal-api/fetch/cal';
 import { listSavedPlaces } from '@lupira/cal-api/fetch/geo';
 import { getPhotoMap } from '@lupira/cal-api/fetch/photo';
 import type { FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
+import type { MapViewport } from '@lupira/cal-domain/geo';
 import {
   EMPTY_FEATURES,
   contactFeatures,
@@ -57,17 +58,17 @@ export function useEventFeatures(fromDay: string, toDay: string, enabled: boolea
   }, [enabled, rows, places, calendarsQ.data]);
 }
 
-/** Geotagged photo pins in the viewport. Bbox-scoped and server-capped, so panning refetches rather
+/** Geotagged photos in the viewport, clustered by the server for its zoom, so panning refetches rather
  *  than holding the whole library; thumbnails are presigned URLs valid for hours. */
-export function usePhotoFeatures(bbox: string | null, enabled: boolean): FeatureCollection {
+export function usePhotoFeatures(viewport: MapViewport | null, enabled: boolean): FeatureCollection {
   const reachable = useSyncStatus((s) => s.serverReachable);
   const q = useQuery({
-    queryKey: ['map', 'photos', bbox],
-    enabled: enabled && reachable && bbox !== null,
+    queryKey: ['map', 'photos', viewport?.bbox, viewport?.zoom],
+    enabled: enabled && reachable && viewport !== null,
     staleTime: 60_000,
     retry: 1,
     queryFn: async () => {
-      const r = await getPhotoMap({ bbox: bbox! });
+      const r = await getPhotoMap(viewport!);
       if (r.status !== 200) throw new Error(`photos map ${r.status}`);
       return r.data;
     },

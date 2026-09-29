@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  abbreviateCount,
   contactFeatures,
   contactPinLabel,
   eventFeatures,
   hotspotFeatures,
   hotspotStats,
+  photoCellBounds,
+  photoFeatures,
   savedPlaceFeatures,
   trackFeatures,
   visitFeatures,
@@ -159,5 +162,36 @@ describe('savedPlaceFeatures', () => {
     ]);
     expect(fc.features).toHaveLength(1);
     expect(props(fc).label).toBe('Cabin');
+  });
+});
+
+describe('photoFeatures', () => {
+  it('keeps a cell\'s count and extent, and a photo\'s id', () => {
+    const fc = photoFeatures([
+      { geometry: { coordinates: [16.41, 59.0] }, properties: { count: 1234, thumbUrl: 't', bounds: [16.4, 58.9, 16.5, 59.1] } },
+      { geometry: { coordinates: [18.07, 59.33] }, properties: { count: 1, id: 'p1', kind: 'Photo', takenAt: '2016-06-01T12:00:00Z' } },
+    ]);
+    expect(props(fc, 0)).toMatchObject({ layer: 'photo', count: 1234, countLabel: '1.2k', photoId: null, bounds: [16.4, 58.9, 16.5, 59.1] });
+    expect(props(fc, 1)).toMatchObject({ count: 1, countLabel: '1', photoId: 'p1', kind: 'Photo', bounds: null });
+  });
+});
+
+describe('abbreviateCount', () => {
+  it('matches MapLibre\'s point_count_abbreviated', () => {
+    expect([31, 999, 1000, 1250, 9_960, 10_000, 24_400].map(abbreviateCount))
+      .toEqual(['31', '999', '1k', '1.3k', '10k', '10k', '24k']);
+  });
+});
+
+describe('photoCellBounds', () => {
+  it('grows a single spot to the minimum span around it', () => {
+    const [w, s, e, n] = photoCellBounds([16.4106, 58.9964, 16.4106, 58.9964]);
+    expect(e - w).toBeCloseTo(0.001, 9);
+    expect(n - s).toBeCloseTo(0.001, 9);
+    expect((w + e) / 2).toBeCloseTo(16.4106, 9);
+  });
+
+  it('leaves an extent that is already wide enough alone', () => {
+    expect(photoCellBounds([16, 58, 17, 59])).toEqual([16, 58, 17, 59]);
   });
 });

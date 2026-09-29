@@ -1,6 +1,6 @@
 import type { FeatureCollection, Point } from 'geojson';
 import { useEffect, useRef } from 'react';
-import { bboxOf, padBbox, type GeoPoint } from '@lupira/cal-domain/geo';
+import { bboxOf, mapViewport, padBbox, type GeoPoint, type MapViewport } from '@lupira/cal-domain/geo';
 import { useGeoPlace } from '../../../state/usePlaces';
 import { useMap } from './MapCanvas';
 
@@ -19,15 +19,13 @@ export function FlyToPlace({ placeId }: { placeId: string | undefined }) {
   return null;
 }
 
-/** One-time fit to the first non-empty data, unless a deep link already aimed the camera. */
-/** Reports the viewport as the APIs' `minLon,minLat,maxLon,maxLat` bbox on every settled move.
- *  Rounded to ~11 m so a pixel of drift doesn't invalidate viewport-scoped query keys. */
-export function ViewportReporter({ onChange }: { onChange: (bbox: string) => void }) {
+/** Reports the viewport (bbox + zoom) on every settled move. */
+export function ViewportReporter({ onChange }: { onChange: (viewport: MapViewport) => void }) {
   const map = useMap();
   useEffect(() => {
     const report = () => {
       const b = map.getBounds();
-      onChange([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].map((n) => n.toFixed(4)).join(','));
+      onChange(mapViewport([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], map.getZoom()));
     };
     report();
     map.on('moveend', report);
@@ -38,6 +36,7 @@ export function ViewportReporter({ onChange }: { onChange: (bbox: string) => voi
   return null;
 }
 
+/** One-time fit to the first non-empty data, unless a deep link already aimed the camera. */
 export function FitToData({ collections, skip }: { collections: FeatureCollection[]; skip: boolean }) {
   const map = useMap();
   const done = useRef(false);

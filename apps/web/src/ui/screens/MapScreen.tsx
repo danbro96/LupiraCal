@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import { hotspotStats } from '@lupira/cal-domain/mapFeatures';
+import type { MapViewport } from '@lupira/cal-domain/geo';
 import { addDays, fmtDate, fmtTime, parseYmd, ymd } from '@lupira/cal-domain/time';
 import {
   useContactFeatures,
@@ -106,10 +107,9 @@ export default function MapScreen() {
   const movement = useMovementFeatures(fromIso, toIso, activeLayers.includes('movement'));
   const contacts = useContactFeatures(activeLayers.includes('contacts'));
   const saved = useSavedPlaceFeatures(activeLayers.includes('saved'));
-  // Photos are viewport-scoped rather than range-scoped: the endpoint caps its result set, so the
-  // bbox is what keeps a large library usable.
-  const [bbox, setBbox] = useState<string | null>(null);
-  const photos = usePhotoFeatures(bbox, activeLayers.includes('photos'));
+  // Photos are viewport-scoped rather than range-scoped: the server clusters them for the bbox and zoom.
+  const [viewport, setViewport] = useState<MapViewport | null>(null);
+  const photos = usePhotoFeatures(viewport, activeLayers.includes('photos'));
   const hotspots = useHotspotFeatures(activeLayers.includes('hotspots'));
 
   const [popover, setPopover] = useState<PinSelection>();
@@ -236,7 +236,7 @@ export default function MapScreen() {
         {activeLayers.includes('photos') && (
           <PhotosLayer theme={theme} features={photos.features} onSelect={onSelect} />
         )}
-        {activeLayers.includes('photos') && <ViewportReporter onChange={setBbox} />}
+        {activeLayers.includes('photos') && <ViewportReporter onChange={setViewport} />}
         <FlyToPlace placeId={selectedPlaceId} />
         <FlyTo target={flyTarget} />
         <FitToData collections={fitCollections} skip={!!selectedPlaceId} />

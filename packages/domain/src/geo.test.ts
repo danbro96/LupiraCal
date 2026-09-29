@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bboxOf, bboxToParam, durationMin, haversineM, padBbox, splitTrack, trackWindowFrozen } from './geo';
+import { bboxOf, bboxToParam, durationMin, haversineM, mapViewport, padBbox, splitTrack, trackWindowFrozen } from './geo';
 
 describe('haversineM', () => {
   it('is zero for identical points', () => {
@@ -107,5 +107,15 @@ describe('trackWindowFrozen', () => {
 
     expect(trackWindowFrozen(new Date(startOfYesterday.getTime() - 1).toISOString(), dayAfterSpringForward)).toBe(true);
     expect(trackWindowFrozen(startOfYesterday.toISOString(), dayAfterSpringForward)).toBe(false);
+  });
+});
+
+describe('mapViewport', () => {
+  it('rounds the bbox and zoom', () => {
+    expect(mapViewport([18.123456, 59.2, 18.5, 59.45678], 11.23456)).toEqual({ bbox: '18.1235,59.2000,18.5000,59.4568', zoom: 11.23 });
+  });
+
+  it('clamps a world-wrapped view to what the bbox parsers accept', () => {
+    expect(mapViewport([-250.5, -91, 250.5, 91], 0.4).bbox).toBe('-180.0000,-90.0000,180.0000,90.0000');
   });
 });

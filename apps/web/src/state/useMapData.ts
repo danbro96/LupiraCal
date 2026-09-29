@@ -10,6 +10,7 @@ import {
   trackFeatures,
   visitFeatures,
 } from '@lupira/cal-domain/mapFeatures';
+import type { MapViewport } from '@lupira/cal-domain/geo';
 import { useSearchContacts } from '@lupira/cal-api/query/contact';
 import { useListSavedPlaces } from '@lupira/cal-api/query/geo';
 import { useGetPhotoMap } from '@lupira/cal-api/query/photo';
@@ -131,10 +132,10 @@ export function useSavedPlaceFeatures(enabled: boolean): { features: FeatureColl
   }), [savedQ.data, savedQ.isLoading, enabled]);
 }
 
-/** Geotagged photo/video pins in the current viewport. Bbox-scoped (the endpoint caps its result set),
- *  so panning refetches instead of holding the whole library; thumbnail URLs are presigned. */
-export function usePhotoFeatures(bbox: string | null, enabled: boolean): { features: FeatureCollection; isLoading: boolean } {
-  const photosQ = useGetPhotoMap({ bbox: bbox ?? '' }, { query: { enabled: enabled && bbox !== null } });
+/** Geotagged photos in the current viewport, clustered by the server for its zoom, so panning refetches
+ *  instead of holding the whole library; thumbnail URLs are presigned. */
+export function usePhotoFeatures(viewport: MapViewport | null, enabled: boolean): { features: FeatureCollection; isLoading: boolean } {
+  const photosQ = useGetPhotoMap(viewport ?? { bbox: '' }, { query: { enabled: enabled && viewport !== null } });
 
   return useMemo(() => ({
     features: photoFeatures(photosQ.data?.features ?? []),

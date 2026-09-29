@@ -7,6 +7,7 @@
 
 export type GetPhotoMapParams = {
 bbox: string;
+zoom?: number;
 from?: string;
 to?: string;
 };

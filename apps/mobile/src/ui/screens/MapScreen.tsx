@@ -4,7 +4,6 @@ import {
   TransformRequestManager,
   type CameraRef,
   type GeoJSONSourceRef,
-  type LngLatBounds,
   type PressEventWithFeatures,
   type StyleSpecification,
   type ViewStateChangeEvent,
@@ -16,7 +15,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NativeSyntheticEvent } from 'react-native';
 import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 import { ActivityIndicator, Banner, Portal, Text, useTheme } from 'react-native-paper';
-import { hotspotStats } from '@lupira/cal-domain/mapFeatures';
+import { mapViewport, type Bbox, type MapViewport } from '@lupira/cal-domain/geo';
+import { hotspotStats, photoCellBounds } from '@lupira/cal-domain/mapFeatures';
 import { fmtDate, parseYmd } from '@lupira/cal-domain/time';
 import type { MapTheme } from '@lupira/cal-tokens/map';
 import { fallbackStyle } from '../../data/mapStyle';
@@ -47,6 +47,7 @@ const FUTURE_DAYS = 180;
 const MOVEMENT_DAYS = 7;
 
 const AUTH_HEADER_ID = 'lupira-auth';
+const CELL_PADDING = { top: 48, right: 48, bottom: 48, left: 48 };
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -75,12 +76,6 @@ function dayKey(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-/** MapLibre's bounds are already [west, south, east, north] — the same order the API's bbox takes.
- *  Rounded to ~11 m so a pixel of camera drift doesn't invalidate the query key on every idle event. */
-function bboxOf(bounds: LngLatBounds): string {
-  return bounds.map((n) => n.toFixed(4)).join(',');
-}
-
 type PhotoPin = { id: string; takenAt: string; placeLabel: string | null; thumbUrl: string | null };
 type VisitPin = { placeLabel: string | null; arriveTs: string; departTs: string; durationMin: number };
 type HotspotPin = {
@@ -99,7 +94,7 @@ export function MapScreen() {
   const { style, degraded } = useMapStyle(theme);
   const [enabled, setEnabled] = useState<Record<LayerKey, boolean>>(DEFAULT_LAYERS);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [bbox, setBbox] = useState<string | null>(null);
+  const [viewport, setViewport] = useState<MapViewport | null>(null);
   const [follow, setFollow] = useState<FollowMode>('off');
   const [openPhoto, setOpenPhoto] = useState<PhotoPin | null>(null);
   const [openVisit, setOpenVisit] = useState<VisitPin | null>(null);
@@ -117,7 +112,7 @@ export function MapScreen() {
 
   const events = useEventFeatures(fromDay, toDay, enabled.events);
   const saved = useSavedPlaceFeatures(enabled.saved);
-  const photos = usePhotoFeatures(bbox, enabled.photos);
+  const photos = usePhotoFeatures(viewport, enabled.photos);
   const contacts = useContactFeatures(enabled.contacts);
   const hotspots = useHotspotFeatures(enabled.hotspots);
   const isFocused = useIsFocused();
@@ -126,7 +121,6 @@ export function MapScreen() {
 
   const cameraRef = useRef<CameraRef>(null);
   const eventSourceRef = useRef<GeoJSONSourceRef>(null);
-  const photoSourceRef = useRef<GeoJSONSourceRef>(null);
   const contactSourceRef = useRef<GeoJSONSourceRef>(null);
 
   // Handed a photo's coordinates by the gallery: fly there and turn the layer on so it is visible.
@@ -155,7 +149,8 @@ export function MapScreen() {
   }, [follow, livePosition]);
 
   const onRegionDidChange = useCallback((e: NativeSyntheticEvent<ViewStateChangeEvent>) => {
-    setBbox(bboxOf(e.nativeEvent.bounds));
+    // MapLibre's bounds are already [west, south, east, north] — the order the API's bbox takes.
+    setViewport(mapViewport(e.nativeEvent.bounds, e.nativeEvent.zoom));
     // A deliberate pan means the user took the wheel — drop follow-mode rather than fighting them.
     if (e.nativeEvent.userInteraction) setFollow('off');
   }, []);
@@ -181,8 +176,14 @@ export function MapScreen() {
   const onPhotoPress = async (e: NativeSyntheticEvent<PressEventWithFeatures>) => {
     const feature = e.nativeEvent.features[0];
     if (!feature) return;
-    if (feature.properties?.cluster) return expandCluster(photoSourceRef, feature);
     const props = feature.properties ?? {};
+    if (Number(props.count) > 1) {
+      // MapLibre stringifies nested properties, so the bounds may come back as JSON.
+      const raw = props.bounds;
+      const bounds = typeof raw === 'string' ? (JSON.parse(raw) as Bbox) : (raw as Bbox | null);
+      if (bounds) cameraRef.current?.fitBounds(photoCellBounds(bounds), { padding: CELL_PADDING, duration: 400 });
+      return;
+    }
     setOpenPhoto({
       id: String(props.photoId),
       takenAt: String(props.takenAt),
@@ -277,7 +278,7 @@ export function MapScreen() {
               <EventsLayer theme={theme} features={events} sourceRef={eventSourceRef} onPress={onEventPress} />
             )}
             {enabled.photos && (
-              <PhotosLayer theme={theme} features={photos} sourceRef={photoSourceRef} onPress={onPhotoPress} />
+              <PhotosLayer theme={theme} features={photos} onPress={onPhotoPress} />
             )}
             {livePosition && <LivePuck theme={theme} position={livePosition} />}
           </MapView>
