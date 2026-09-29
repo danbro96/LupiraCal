@@ -20,8 +20,11 @@ export interface ToastState {
   action: ToastAction | null;
   durationMs: number;
   nonce: number; // re-arms the auto-dismiss timer even for identical text
+  /** Height of the focused screen's pinned bottom bar, 0 when it has none; the host lifts toasts above it. */
+  clearance: number;
   show: (message: string, opts?: ToastOptions) => void;
   hide: () => void;
+  setClearance: (px: number) => void;
 }
 
 export const DEFAULT_DISMISS_MS = 3500;
@@ -31,6 +34,7 @@ export const useToast = create<ToastState>(set => ({
   action: null,
   durationMs: DEFAULT_DISMISS_MS,
   nonce: 0,
+  clearance: 0,
   show: (message, opts) =>
     set(s => ({
       message,
@@ -39,6 +43,7 @@ export const useToast = create<ToastState>(set => ({
       nonce: s.nonce + 1,
     })),
   hide: () => set({ message: null, action: null }),
+  setClearance: px => set({ clearance: px }),
 }));
 
 /** Safe to call outside React components. `action` renders an inline button (e.g. Undo). */
