@@ -15,10 +15,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useCreateItem } from '@lupira/cal-api/query/cal';
 import { AvailabilityStatus, type CreateCalendarItemRequest } from '@lupira/cal-api/models';
 import { RRULE_PRESETS } from '@lupira/cal-domain/rrule';
-import { ymd } from '@lupira/cal-domain/time';
+import { addDays, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
 import { localInputToIso } from './drawer/inputs';
+import { PlacePicker } from './places/PlacePicker';
 import { errText } from '../errText';
 import { useSnackbar } from './SnackbarHost';
 import { useIsPhone } from '../hooks/useIsPhone';
@@ -32,14 +34,14 @@ type FormValues = {
   end: string;
   startDate: string;
   endDate: string;
-  location: string;
+  placeId: string;
   rrule: string;
   availability: '' | AvailabilityStatus;
   tags: string;
   description: string;
 };
 
-/** Quick-create: title, calendar, when (timed or all-day), location, recurrence, kind/availability, tags. */
+/** Quick-create: title, calendar, when (timed or all-day), place, recurrence, kind/availability, tags. */
 export function NewItemModal({ onClose }: { onClose: () => void }) {
   const isPhone = useIsPhone();
   const { calendars } = useContainers();
@@ -71,7 +73,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       end: '',
       startDate: ymd(new Date()),
       endDate: '',
-      location: '',
+      placeId: '',
       rrule: '',
       availability: '',
       tags: '',
@@ -79,6 +81,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
     },
   });
   const isAllDay = watch('isAllDay');
+  const startDate = watch('startDate');
   const calendarId = watch('calendarId');
   const availability = watch('availability');
 
@@ -90,12 +93,15 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       calendarId: v.calendarId || null,
       title: v.title || null,
       description: v.description || null,
-      location: v.location || null,
+      placeId: v.placeId || null,
       isAllDay: v.isAllDay,
       startsAt: v.isAllDay ? null : localInputToIso(v.start),
       endsAt: v.isAllDay ? null : localInputToIso(v.end),
+      // Typed in the browser's zone, so a repeating event keeps that local time across DST.
+      startTimezone: v.isAllDay ? null : deviceTimeZone(),
       startDate: v.isAllDay ? v.startDate || null : null,
-      endDate: v.isAllDay ? v.endDate || null : null,
+      // The picked day is the last one; storage is exclusive.
+      endDate: v.isAllDay && v.endDate ? ymd(addDays(parseYmd(v.endDate), 1)) : null,
       recurrenceRule: v.rrule || null,
       availability: v.availability || null,
       tags: v.tags
@@ -171,7 +177,11 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
               render={({ field }) => <TextField type="date" {...field} required />}
             />
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>→</Typography>
-            <Controller name="endDate" control={control} render={({ field }) => <TextField type="date" {...field} />} />
+            <Controller
+              name="endDate"
+              control={control}
+              render={({ field }) => <TextField type="date" {...field} slotProps={{ htmlInput: { min: startDate } }} />}
+            />
           </WrapRow>
         ) : (
           <WrapRow>
@@ -227,9 +237,11 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
           )}
         </WrapRow>
         <Controller
-          name="location"
+          name="placeId"
           control={control}
-          render={({ field }) => <TextField placeholder="Location (free text — becomes a Place)" {...field} />}
+          render={({ field }) => (
+            <PlacePicker placeId={field.value || null} placeholder="Place" onChange={(id) => field.onChange(id ?? '')} />
+          )}
         />
         <Controller
           name="tags"

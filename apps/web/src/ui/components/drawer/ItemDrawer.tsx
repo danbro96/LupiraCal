@@ -13,7 +13,8 @@ import {
   type UpdateCalendarItemRequest,
 } from '@lupira/cal-api/models';
 import { describeRrule, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
-import { fmtDate, parseYmd } from '@lupira/cal-domain/time';
+import { addDays, fmtDate, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { COMMON_TIME_ZONES, deviceTimeZone, fmtZoneOffset, isValidTimeZone, zoneCity } from '@lupira/cal-domain/zonedTime';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { CategoryIcon } from '../KindIcon';
 import { AttendeesPanel } from './AttendeesPanel';
@@ -21,7 +22,7 @@ import { CalendarsPanel } from './CalendarsPanel';
 import { DetailDrawer } from './DetailDrawer';
 import { CompletenessBadge } from './CompletenessBadge';
 import { HierarchyPanel } from './HierarchyPanel';
-import { isoToLocalInput, localInputToIso } from './inputs';
+import { eventZone, isoToLocalInput, localInputToIso } from './inputs';
 import { KindDetailsCard } from './KindDetailsCard';
 import { MetadataPanel } from './MetadataPanel';
 import { PayloadPanel } from './PayloadPanel';
@@ -61,6 +62,37 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
     },
   });
   const patch = (data: UpdateCalendarItemRequest) => update.mutate({ id: item.id, data });
+
+  const zone = eventZone(item.startTimezone);
+  const browserZone = deviceTimeZone();
+  const zoneOptions = [...new Set([browserZone, zone, ...COMMON_TIME_ZONES])].filter(isValidTimeZone);
+  const zonePatch = (z: string): UpdateCalendarItemRequest => ({
+    startTimezone: z, startTimezoneProvided: true, endTimezone: z, endTimezoneProvided: true,
+  });
+  // A zoneless item takes the zone its times were just edited in, as the mobile editor does on save.
+  const stampZone: UpdateCalendarItemRequest = item.startTimezone || !zone ? {} : zonePatch(zone);
+
+  // Moving the start carries the end along, keeping the duration.
+  const moveStart = (value: string) => {
+    const startsAt = localInputToIso(value, zone);
+    if (!startsAt || startsAt === item.startsAt) return;
+    const endsAt = item.startsAt && item.endsAt
+      ? new Date(Date.parse(item.endsAt) + Date.parse(startsAt) - Date.parse(item.startsAt)).toISOString()
+      : undefined;
+    patch({ startsAt, ...(endsAt ? { endsAt } : {}), ...stampZone });
+  };
+  const moveEnd = (value: string) => {
+    const endsAt = localInputToIso(value, zone);
+    if (endsAt && endsAt !== item.endsAt) patch({ endsAt, ...stampZone });
+  };
+  // A new zone keeps the wall clock: "09:00" now means 09:00 there.
+  const changeZone = (z: string) => {
+    if (!z || z === zone) return;
+    const reread = (iso?: string | null) => (iso ? localInputToIso(isoToLocalInput(iso, zone), z) : null);
+    patch({ ...zonePatch(z), startsAt: reread(item.startsAt), endsAt: reread(item.endsAt) });
+  };
+  // All-day ends are stored exclusive; people read the last day.
+  const lastDay = item.endDate ? ymd(addDays(parseYmd(item.endDate), -1)) : null;
 
   const [title, setTitle] = useState(item.title ?? '');
   const [description, setDescription] = useState(item.description ?? '');
@@ -125,27 +157,28 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
         {item.isAllDay ? (
           <Typography component="p" sx={{ mb: 1, color: 'text.secondary' }}>
             All day · {item.startDate ? fmtDate(parseYmd(item.startDate)) : '?'}
-            {item.endDate && item.endDate !== item.startDate ? ` – ${fmtDate(parseYmd(item.endDate))}` : ''}
+            {lastDay && lastDay > (item.startDate ?? '') ? ` – ${fmtDate(parseYmd(lastDay))}` : ''}
           </Typography>
         ) : (
           <WrapRow>
-            <TextField
-              type="datetime-local"
-              defaultValue={isoToLocalInput(item.startsAt)}
-              onBlur={(e) => {
-                const iso = localInputToIso(e.target.value);
-                if (iso && iso !== item.startsAt) patch({ startsAt: iso });
-              }}
-            />
+            <TextField type="datetime-local" defaultValue={isoToLocalInput(item.startsAt, zone)} onBlur={(e) => moveStart(e.target.value)} />
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>→</Typography>
-            <TextField
-              type="datetime-local"
-              defaultValue={isoToLocalInput(item.endsAt)}
-              onBlur={(e) => {
-                const iso = localInputToIso(e.target.value);
-                if (iso && iso !== item.endsAt) patch({ endsAt: iso });
-              }}
-            />
+            <TextField type="datetime-local" defaultValue={isoToLocalInput(item.endsAt, zone)} onBlur={(e) => moveEnd(e.target.value)} />
+            {zone && (
+              <TextField
+                select
+                label="Time zone"
+                value={zone}
+                onChange={(e) => changeZone(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+              >
+                {zoneOptions.map((z) => (
+                  <MenuItem key={z} value={z}>
+                    {`${zoneCity(z)} · ${fmtZoneOffset(z)}${z === browserZone ? ' · this browser' : ''}`}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
           </WrapRow>
         )}
         <WrapRow>
