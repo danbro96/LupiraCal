@@ -449,7 +449,7 @@ export const getSearchItemsUrl = (params?: SearchItemsParams,) => {
 }
 
 /**
- * @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.
+ * @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.
  */
 export const searchItems = async (params?: SearchItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<searchItemsResponse> => {
 
@@ -1716,6 +1716,11 @@ export type inviteParticipantResponse200 = {
   status: 200
 }
 
+export type inviteParticipantResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
 export type inviteParticipantResponse401 = {
   data: ProblemDetails
   status: 401
@@ -1734,7 +1739,7 @@ export type inviteParticipantResponse500 = {
 export type inviteParticipantResponseSuccess = (inviteParticipantResponse200) & {
   headers: Headers;
 };
-export type inviteParticipantResponseError = (inviteParticipantResponse401 | inviteParticipantResponse404 | inviteParticipantResponse500) & {
+export type inviteParticipantResponseError = (inviteParticipantResponse400 | inviteParticipantResponse401 | inviteParticipantResponse404 | inviteParticipantResponse500) & {
   headers: Headers;
 };
 
@@ -1757,7 +1762,7 @@ export const getInviteParticipantUrl = (id: string,
 }
 
 /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant.
+ * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s.
  */
 export const inviteParticipant = async (id: string,
     params: InviteParticipantParams, options?: Parameters<typeof apiRequest>[1]): Promise<inviteParticipantResponse> => {
@@ -1775,6 +1780,11 @@ export const inviteParticipant = async (id: string,
 export type respondToInvitationResponse200 = {
   data: CalendarItemDto
   status: 200
+}
+
+export type respondToInvitationResponse400 = {
+  data: ProblemDetails
+  status: 400
 }
 
 export type respondToInvitationResponse401 = {
@@ -1795,7 +1805,7 @@ export type respondToInvitationResponse500 = {
 export type respondToInvitationResponseSuccess = (respondToInvitationResponse200) & {
   headers: Headers;
 };
-export type respondToInvitationResponseError = (respondToInvitationResponse401 | respondToInvitationResponse404 | respondToInvitationResponse500) & {
+export type respondToInvitationResponseError = (respondToInvitationResponse400 | respondToInvitationResponse401 | respondToInvitationResponse404 | respondToInvitationResponse500) & {
   headers: Headers;
 };
 
@@ -1819,7 +1829,7 @@ export const getRespondToInvitationUrl = (id: string,
 }
 
 /**
- * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated.
+ * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s.
  */
 export const respondToInvitation = async (id: string,
     participationId: string,

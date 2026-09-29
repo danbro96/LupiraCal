@@ -183,6 +183,7 @@ export * from './motionActivity';
 export * from './moveItemRequest';
 export * from './nameMatchOutcome';
 export * from './occurrenceOrigin';
+export * from './occurrenceOverride';
 export * from './originKind';
 export * from './orphanCandidateDto';
 export * from './outputKind';

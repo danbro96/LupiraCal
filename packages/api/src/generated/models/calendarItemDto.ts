@@ -14,6 +14,7 @@ import type { ItemDetails } from './itemDetails';
 import type { ItemPrompt } from './itemPrompt';
 import type { ItemStatus } from './itemStatus';
 import type { JsonNode } from './jsonNode';
+import type { OccurrenceOverride } from './occurrenceOverride';
 
 export interface CalendarItemDto {
   id: string;
@@ -35,7 +36,24 @@ export interface CalendarItemDto {
   startPrecision?: null | DatePrecision;
   endPrecision?: null | DatePrecision;
   /** @nullable */
+  startTimezone?: string | null;
+  /** @nullable */
   recurrenceRule?: string | null;
+  /**
+     * Recurring items: unmodified starts removed from the series.
+     * @nullable
+     */
+  excludedOccurrences?: unknown[] | null;
+  /**
+     * Recurring items: one-off starts added to the series.
+     * @nullable
+     */
+  extraOccurrences?: unknown[] | null;
+  /**
+     * Recurring items: occurrences that deviate from the series (null members inherit).
+     * @nullable
+     */
+  occurrenceOverrides?: OccurrenceOverride[] | null;
   category?: null | ItemCategory;
   details?: null | ItemDetails;
   /** @nullable */

@@ -638,7 +638,7 @@ export const useRevokeCalendarOwner = <TError = ProblemDetails,
 }
 
 /**
- * @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.
+ * @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.
  */
 export const searchItems = async (params?: SearchItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemOccurrenceDto[]> => {
 
@@ -709,7 +709,7 @@ export function useSearchItems<TData = Awaited<ReturnType<typeof searchItems>>, 
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.
+ * @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.
  */
 
 export function useSearchItems<TData = Awaited<ReturnType<typeof searchItems>>, TError = ProblemDetails>(
@@ -2561,7 +2561,7 @@ export const useRemoveItemFromCalendar = <TError = ProblemDetails,
 }
 
 /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant.
+ * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s.
  */
 export const inviteParticipant = async (id: string,
     params: InviteParticipantParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
@@ -2614,7 +2614,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type InviteParticipantMutationVariables = {id: string;params: InviteParticipantParams}
 
     /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant.
+ * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s.
  */
 export const useInviteParticipant = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,InviteParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -2644,7 +2644,7 @@ export const useInviteParticipant = <TError = ProblemDetails,
 }
 
 /**
- * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated.
+ * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s.
  */
 export const respondToInvitation = async (id: string,
     participationId: string,
@@ -2698,7 +2698,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RespondToInvitationMutationVariables = {id: string;participationId: string;params?: RespondToInvitationParams}
 
     /**
- * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated.
+ * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s.
  */
 export const useRespondToInvitation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToInvitation>>, TError,RespondToInvitationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}

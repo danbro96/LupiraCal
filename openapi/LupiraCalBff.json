@@ -490,7 +490,7 @@
         "tags": [
           "cal"
         ],
-        "summary": "Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.",
+        "summary": "Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.",
         "operationId": "SearchItems",
         "parameters": [
           {
@@ -2353,7 +2353,7 @@
         "tags": [
           "cal"
         ],
-        "summary": "Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant.",
+        "summary": "Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s.",
         "operationId": "InviteParticipant",
         "parameters": [
           {
@@ -2403,6 +2403,16 @@
               }
             }
           },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Unauthorized",
             "content": {
@@ -2439,7 +2449,7 @@
         "tags": [
           "cal"
         ],
-        "summary": "Record an RSVP. status = needs-action|accepted|declined|tentative|delegated.",
+        "summary": "Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s.",
         "operationId": "RespondToInvitation",
         "parameters": [
           {
@@ -2481,6 +2491,16 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9527,11 +9547,41 @@
               }
             ]
           },
+          "startTimezone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "recurrenceRule": {
             "type": [
               "null",
               "string"
             ]
+          },
+          "excludedOccurrences": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "description": "Recurring items: unmodified starts removed from the series."
+          },
+          "extraOccurrences": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "description": "Recurring items: one-off starts added to the series."
+          },
+          "occurrenceOverrides": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/OccurrenceOverride"
+            },
+            "description": "Recurring items: occurrences that deviate from the series (null members inherit)."
           },
           "category": {
             "oneOf": [
@@ -12625,6 +12675,67 @@
           }
         },
         "description": "Ties a projected occurrence back to the entity it was derived from — the birthday occurrence's\n            Guid OccurrenceOrigin.SourceId is the contact whose birthday it is."
+      },
+      "OccurrenceOverride": {
+        "required": [
+          "originalStart",
+          "startsAt",
+          "endsAt",
+          "title",
+          "description",
+          "status",
+          "locationLabel"
+        ],
+        "type": "object",
+        "properties": {
+          "originalStart": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ItemStatus"
+              }
+            ]
+          },
+          "locationLabel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A change to one occurrence of a recurring item, identified by the start it would have had unchanged\n            (DateTimeOffset OccurrenceOverride.OriginalStart, UTC; an all-day series uses the date at 00:00Z). Null members inherit from the series;\n            ItemStatus.Cancelled drops the occurrence."
       },
       "OriginKind": {
         "enum": [
