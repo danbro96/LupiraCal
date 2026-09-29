@@ -13,7 +13,7 @@ import {
   type UpdateCalendarItemRequest,
 } from '@lupira/cal-api/models';
 import { describeRrule, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
-import { addDays, fmtDate, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { fmtDate, parseYmd } from '@lupira/cal-domain/time';
 import { COMMON_TIME_ZONES, deviceTimeZone, fmtZoneOffset, isValidTimeZone, zoneCity } from '@lupira/cal-domain/zonedTime';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { CategoryIcon } from '../KindIcon';
@@ -91,8 +91,6 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
     const reread = (iso?: string | null) => (iso ? localInputToIso(isoToLocalInput(iso, zone), z) : null);
     patch({ ...zonePatch(z), startsAt: reread(item.startsAt), endsAt: reread(item.endsAt) });
   };
-  // All-day ends are stored exclusive; people read the last day.
-  const lastDay = item.endDate ? ymd(addDays(parseYmd(item.endDate), -1)) : null;
 
   const [title, setTitle] = useState(item.title ?? '');
   const [description, setDescription] = useState(item.description ?? '');
@@ -157,7 +155,7 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
         {item.isAllDay ? (
           <Typography component="p" sx={{ mb: 1, color: 'text.secondary' }}>
             All day · {item.startDate ? fmtDate(parseYmd(item.startDate)) : '?'}
-            {lastDay && lastDay > (item.startDate ?? '') ? ` – ${fmtDate(parseYmd(lastDay))}` : ''}
+            {item.endDate && item.endDate > (item.startDate ?? '') ? ` – ${fmtDate(parseYmd(item.endDate))}` : ''}
           </Typography>
         ) : (
           <WrapRow>

@@ -216,20 +216,19 @@ describe('withAllDay', () => {
   });
 });
 
-describe('all-day end is inclusive in the form', () => {
-  it('shows the last day and stores the day after', () => {
-    const doc: ItemDoc = { ...timedDoc, isAllDay: true, startsAt: null, endsAt: null, startDate: '2026-08-10', endDate: '2026-08-13' };
+describe('all-day end is the inclusive last day', () => {
+  it('reads and writes the stored last day unchanged', () => {
+    const doc: ItemDoc = { ...timedDoc, isAllDay: true, startsAt: null, endsAt: null, startDate: '2026-08-10', endDate: '2026-08-12' };
     const form = itemFormFromDoc(doc);
     expect(form.endDay).toBe('2026-08-12');
     const r = itemCoreFromForm({ ...form, endDay: '2026-08-10' }, doc);
     if (!r.ok) throw new Error(r.error);
-    expect(r.value.endDate).toBe('2026-08-11');
+    expect(r.value.endDate).toBe('2026-08-10');
   });
 
-  it('crosses month ends', () => {
-    const r = itemCoreFromForm({ ...emptyItemForm(), isAllDay: true, startDay: '2026-08-30', endDay: '2026-08-31' });
-    if (!r.ok) throw new Error(r.error);
-    expect(r.value.endDate).toBe('2026-09-01');
+  it('an end before the start opens as a single day', () => {
+    const doc: ItemDoc = { ...timedDoc, isAllDay: true, startsAt: null, endsAt: null, startDate: '2026-08-10', endDate: '2026-08-09' };
+    expect(itemFormFromDoc(doc).endDay).toBe('');
   });
 });
 

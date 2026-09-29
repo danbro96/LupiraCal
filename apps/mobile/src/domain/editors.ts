@@ -19,7 +19,7 @@ export type ItemForm = {
   isAllDay: boolean;
   startDay: string;        // 'yyyy-MM-dd', '' = none
   startTime: string;       // 'HH:MM' (timed only)
-  /** Timed: the end's day. All-day: the LAST day, inclusive — storage is exclusive. */
+  /** Timed: the end's day. All-day: the last day, inclusive — as cal-api stores it. */
   endDay: string;
   endTime: string;
   recurrenceRule: string;  // '' = none
@@ -111,7 +111,6 @@ export function itemFormFromDoc(doc: ItemDoc): ItemForm {
   const wall = (iso: string | null | undefined) => (!allDay && iso ? wallOf(iso, timeZone) : { day: '', time: '' });
   const start = wall(doc.startsAt);
   const end = wall(doc.endsAt);
-  const lastDay = allDay && doc.endDate ? addDaysYmd(doc.endDate, -1) : '';
   return {
     title: doc.title ?? '',
     description: doc.description ?? '',
@@ -121,7 +120,7 @@ export function itemFormFromDoc(doc: ItemDoc): ItemForm {
     isAllDay: allDay,
     startDay: allDay ? (doc.startDate ?? '') : start.day,
     startTime: start.time,
-    endDay: allDay ? (lastDay && lastDay >= (doc.startDate ?? '') ? lastDay : '') : end.day,
+    endDay: allDay ? (doc.endDate && doc.endDate >= (doc.startDate ?? '') ? doc.endDate : '') : end.day,
     endTime: end.time,
     recurrenceRule: doc.recurrenceRule ?? '',
     timeZone,
@@ -155,7 +154,7 @@ export function itemCoreFromForm(form: ItemForm, base?: ItemDoc): EditResult<Ite
       return { ok: false, error: 'End date is before the start date' };
     if (form.endDay && !form.startDay) return { ok: false, error: 'End date needs a start date' };
     core.startDate = form.startDay || null;
-    core.endDate = form.endDay ? addDaysYmd(form.endDay, 1) : null;
+    core.endDate = form.endDay || null;
   } else {
     if (form.startDay && !form.startTime) return { ok: false, error: 'Start needs a time' };
     if (form.startTime && !form.startDay) return { ok: false, error: 'Start needs a date' };

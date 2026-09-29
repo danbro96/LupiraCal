@@ -4,7 +4,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import { addDaysYmd } from '../../domain/editors';
 import { createItem } from '../../state/actions';
 import { useCalendars } from '../../state/useContainers';
 import { Button } from '../components/Button';
@@ -44,8 +43,7 @@ export function AvailabilityEditScreen() {
       isAllDay: true,
       startsAt: null, endsAt: null,
       startDate: startDay,
-      // The picked day is the last one; storage is exclusive.
-      endDate: endDay ? addDaysYmd(endDay, 1) : null,
+      endDate: endDay || null,
       startTimezone: null, endTimezone: null, recurrenceRule: null,
       availability: status,
     }).then(() => navigation.goBack());

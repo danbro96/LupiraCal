@@ -11,7 +11,7 @@ import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCreateItem } from '@lupira/cal-api/query/cal';
 import { AvailabilityStatus, type CreateCalendarItemRequest } from '@lupira/cal-api/models';
-import { addDays, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { ymd } from '@lupira/cal-domain/time';
 import { useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
 import { errText } from '../errText';
@@ -56,8 +56,7 @@ export function AvailabilityModal({ onClose }: { onClose: () => void }) {
       title: values.status,
       isAllDay: true,
       startDate: values.startDate,
-      // The picked day is the last one; storage is exclusive.
-      endDate: values.endDate ? ymd(addDays(parseYmd(values.endDate), 1)) : null,
+      endDate: values.endDate || null,
       availability: values.status,
     };
     create.mutate({ data: body });

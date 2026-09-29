@@ -15,7 +15,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useCreateItem } from '@lupira/cal-api/query/cal';
 import { AvailabilityStatus, type CreateCalendarItemRequest } from '@lupira/cal-api/models';
 import { RRULE_PRESETS } from '@lupira/cal-domain/rrule';
-import { addDays, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { ymd } from '@lupira/cal-domain/time';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
@@ -100,8 +100,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       // Typed in the browser's zone, so a repeating event keeps that local time across DST.
       startTimezone: v.isAllDay ? null : deviceTimeZone(),
       startDate: v.isAllDay ? v.startDate || null : null,
-      // The picked day is the last one; storage is exclusive.
-      endDate: v.isAllDay && v.endDate ? ymd(addDays(parseYmd(v.endDate), 1)) : null,
+      endDate: v.isAllDay ? v.endDate || null : null,
       recurrenceRule: v.rrule || null,
       availability: v.availability || null,
       tags: v.tags
