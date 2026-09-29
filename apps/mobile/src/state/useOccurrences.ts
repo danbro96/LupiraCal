@@ -1,5 +1,5 @@
 import { addDays, addMonths, parseYmd, startOfMonth, ymd } from '@lupira/cal-domain/time';
-import { useQueries, useQuery } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import { getDb } from '../data/db/expoDb';
 import { gridRowsBetween, type GridRow } from '../data/mirror';
 import { lastDayOf } from '../domain/occurrenceDays';
@@ -14,32 +14,12 @@ const monthQuery = (monthKey: string, includeSystem: boolean) => ({
   queryFn: async () => gridRowsBetween(await getDb(), `${monthKey}-01`, `${monthKey}-31`, includeSystem),
 });
 
-export function useMonthOccurrences(monthKey: string) {
-  const includeSystem = usePrefs((p) => p.showSystemCalendars);
-  return useQuery<GridRow[]>(monthQuery(monthKey, includeSystem));
-}
-
-/** A run of days can straddle a month boundary (grid weeks do) — one query per touched month bucket keeps
- *  the monthKey invalidation contract intact. */
-export function useDaysOccurrences(dayKeys: string[]): { rows: GridRow[]; loading: boolean } {
-  const includeSystem = usePrefs((p) => p.showSystemCalendars);
-  const monthKeys = [...new Set(dayKeys.map((d) => d.slice(0, 7)))];
-  const results = useQueries({ queries: monthKeys.map((k) => monthQuery(k, includeSystem)) });
-  const daySet = new Set(dayKeys);
-  const rows = results
-    .flatMap((r) => r.data ?? [])
-    .filter((r) => daySet.has(r.start_day))
-    .sort((a, b) => (a.start_utc < b.start_utc ? -1 : a.start_utc > b.start_utc ? 1 : 0));
-  return { rows, loading: results.some((r) => r.isLoading) };
-}
-
 const SPAN_LOOKBACK_DAYS = 31;
 const PREFETCH_DAYS = 7;
 
-/** The week grid's read: rows covering any of the (consecutive) days, including multi-day ones that
- *  began up to SPAN_LOOKBACK_DAYS earlier, which continue in from the left edge. Months a further
- *  PREFETCH_DAYS out either side are loaded too, so the pager's next step finds its data cached. Same
- *  per-month queries as useDaysOccurrences, so the invalidation contract holds. */
+/** The grids' read: rows covering any of the (consecutive) days, including multi-day ones that began up
+ *  to SPAN_LOOKBACK_DAYS earlier. Months a further PREFETCH_DAYS out either side are loaded too, so a
+ *  pager's next step finds its data cached. One query per month bucket, so the invalidation contract holds. */
 export function useOverlappingOccurrences(dayKeys: string[]): { rows: GridRow[]; loading: boolean } {
   const includeSystem = usePrefs((p) => p.showSystemCalendars);
   const first = dayKeys[0];

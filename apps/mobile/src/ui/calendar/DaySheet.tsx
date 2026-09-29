@@ -9,7 +9,7 @@ import { Chip, FAB, Text } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { isTaskRow } from '../../domain/taskRows';
-import { useDaysOccurrences, type CalRow } from '../../state/useOccurrences';
+import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrences';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
 import { Glyph } from '../components/Glyph';
 import { BIRTHDAY_COLOR, availabilityColor, useCalendarColors } from '../hooks/palette';
@@ -94,7 +94,7 @@ export function DaySheet({ day, areaH, onDismiss, onOpenOccurrence }: {
 
 function DayAgenda({ day, onPress }: { day: string; onPress: (row: CalRow) => void }) {
   const c = useColors();
-  const { rows } = useDaysOccurrences([day]);
+  const { rows } = useOverlappingOccurrences([day]);
   const taskRows = useTaskDeadlines([day]);
   const colorOf = useCalendarColors();
   const sorted: CalRow[] = [...rows, ...taskRows].sort((a, b) => b.all_day - a.all_day || (a.start_utc < b.start_utc ? -1 : 1));

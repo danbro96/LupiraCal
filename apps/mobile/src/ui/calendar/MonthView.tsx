@@ -3,16 +3,20 @@ import { textOn } from '@lupira/cal-tokens/contrast';
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { lastDayOf } from '../../domain/occurrenceDays';
 import { isTaskRow } from '../../domain/taskRows';
-import { useDaysOccurrences, type CalRow } from '../../state/useOccurrences';
+import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrences';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
 import { BIRTHDAY_COLOR, availabilityColor, useCalendarColors } from '../hooks/palette';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
 
+const BAR_GLYPH = 9;
+
 /** Month grid straight off the mirror: monthMatrix (domain) for the day layout, one occurrence query per
- *  touched month bucket, up to three title bars per cell. Day selection drives the agenda in MonthPane.
+ *  touched month bucket, up to three title bars per cell. A multi-day item — and an availability range —
+ *  marks every day it covers, as on the web. Day selection drives the agenda in MonthPane.
  *  `monthKey` ('yyyy-MM') rather than a Date, so the memo holds for the pages a swipe keeps. */
 export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSelectDay }: {
   monthKey: string;
@@ -23,7 +27,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
   const anchor = parseYmd(`${monthKey}-01`);
   const weeks = monthMatrix(anchor);
   const dayKeys = weeks.flat().map(ymd);
-  const { rows } = useDaysOccurrences(dayKeys);
+  const { rows } = useOverlappingOccurrences(dayKeys);
   const taskRows = useTaskDeadlines(dayKeys);
   const colorOf = useCalendarColors();
 
@@ -32,13 +36,17 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
   const availByDay = new Map<string, string | null>();
   const merged: CalRow[] = [...rows, ...taskRows].sort((a, b) => (a.start_utc < b.start_utc ? -1 : a.start_utc > b.start_utc ? 1 : 0));
   for (const r of merged) {
-    if (r.is_availability === 1) {
-      availByDay.set(r.start_day, r.avail_status);   // the band, never a chip
-      continue;
+    const end = lastDayOf(r);
+    for (const k of dayKeys) {
+      if (k < r.start_day || k > end) continue;
+      if (r.is_availability === 1) {
+        availByDay.set(k, r.avail_status);   // the band, never a chip
+        continue;
+      }
+      const list = byDay.get(k) ?? [];
+      list.push(r);
+      byDay.set(k, list);
     }
-    const list = byDay.get(r.start_day) ?? [];
-    list.push(r);
-    byDay.set(r.start_day, list);
   }
 
   return (
@@ -97,7 +105,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                         style={[styles.taskBarText, { color: r.task.overdue ? c.danger : c.textMuted }]}
                         numberOfLines={1}
                       >
-                        <Glyph name={ICONS.schedule} size={11} /> {r.title ?? '(untitled)'}
+                        <Glyph name={ICONS.schedule} size={BAR_GLYPH} /> {r.title ?? '(untitled)'}
                       </Text>
                     </View>
                   ) : (
@@ -106,7 +114,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                       style={[styles.bar, { backgroundColor: fillOf(r) }]}
                     >
                       <Text style={[styles.barText, { color: textOn(fillOf(r)) }]} numberOfLines={1}>
-                        {r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={11} /> {r.title ?? ''}</> : (r.title ?? '(untitled)')}
+                        {r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={BAR_GLYPH} /> {r.title ?? ''}</> : (r.title ?? '(untitled)')}
                       </Text>
                     </View>
                   ),
@@ -136,9 +144,10 @@ const styles = StyleSheet.create({
   dayNum: { fontSize: 11 },
   dayNumToday: { fontWeight: '700' },
   bar: { borderRadius: 3, paddingHorizontal: 2, paddingVertical: 0.5 },
-  barText: { fontSize: 8.5 },
+  // Fixed line box so the inline icon can't push the label down and clip it (see BAR_GLYPH).
+  barText: { fontSize: 8.5, lineHeight: 11, includeFontPadding: false },
   // Deadlines read as outlines, not filled calendar bars (web parity: muted, danger when overdue).
   taskBar: { borderRadius: 3, paddingHorizontal: 2, paddingVertical: 0.5, borderWidth: 0.5 },
-  taskBarText: { fontSize: 8.5 },
+  taskBarText: { fontSize: 8.5, lineHeight: 11, includeFontPadding: false },
   more: { fontSize: 9, paddingLeft: 2 },
 });

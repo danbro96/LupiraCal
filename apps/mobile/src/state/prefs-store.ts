@@ -10,8 +10,12 @@ const DEBUG_KEY = 'prefs.debugEnabled';
 const SHOW_SYSTEM_KEY = 'prefs.showSystemCalendars';
 const SHOW_TASKS_KEY = 'prefs.showTaskDeadlines';
 const HOUR_HEIGHT_KEY = 'prefs.weekHourHeight';
+const ALL_DAY_ROWS_KEY = 'prefs.allDayRows';
 
 export const DEFAULT_HOUR_HEIGHT = 44;
+export const ALL_DAY_ROW_OPTIONS = ['1', '2', '3', '4', 'all'] as const;
+export type AllDayRows = (typeof ALL_DAY_ROW_OPTIONS)[number];
+const isAllDayRows = (v: string | null): v is AllDayRows => ALL_DAY_ROW_OPTIONS.includes(v as AllDayRows);
 
 type Prefs = {
   loaded: boolean;
@@ -24,6 +28,8 @@ type Prefs = {
   showTaskDeadlines: boolean;
   /** Week grid zoom (dp per hour), set by pinching the time axis. */
   hourHeight: number;
+  /** Most rows the week's all-day strip takes; past it, the last row counts per day what is hidden. */
+  allDayRows: AllDayRows;
 };
 
 type PrefsActions = {
@@ -32,6 +38,7 @@ type PrefsActions = {
   setShowSystemCalendars(value: boolean): Promise<void>;
   setShowTaskDeadlines(value: boolean): Promise<void>;
   setHourHeight(value: number): Promise<void>;
+  setAllDayRows(value: AllDayRows): Promise<void>;
 };
 
 export const usePrefs = create<Prefs & PrefsActions>((set) => ({
@@ -40,6 +47,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set) => ({
   showSystemCalendars: false,
   showTaskDeadlines: true,
   hourHeight: DEFAULT_HOUR_HEIGHT,
+  allDayRows: '3',
 
   init: async () => {
     const db = await getDb();
@@ -49,6 +57,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set) => ({
       showSystemCalendars: (await getMeta(db, SHOW_SYSTEM_KEY)) === '1',
       showTaskDeadlines: (await getMeta(db, SHOW_TASKS_KEY)) !== '0',
       hourHeight: Number(await getMeta(db, HOUR_HEIGHT_KEY)) || DEFAULT_HOUR_HEIGHT,
+      allDayRows: await getMeta(db, ALL_DAY_ROWS_KEY).then((v) => (isAllDayRows(v) ? v : '3')),
       loaded: true,
     });
   },
@@ -75,5 +84,11 @@ export const usePrefs = create<Prefs & PrefsActions>((set) => ({
     set({ hourHeight: value });
     const db = await getDb();
     await db.exclusive((tx) => setMeta(tx, HOUR_HEIGHT_KEY, String(value)));
+  },
+
+  setAllDayRows: async (value) => {
+    set({ allDayRows: value });
+    const db = await getDb();
+    await db.exclusive((tx) => setMeta(tx, ALL_DAY_ROWS_KEY, value));
   },
 }));

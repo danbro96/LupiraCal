@@ -11,13 +11,14 @@ import { usePhotoBackup } from '../../state/photo-backup-store';
 import { usePhotoBackupStatus } from '../../sync/photoBackupStatus';
 import { useTrackingStatus } from '../../sync/locationTrackingStatus';
 import { runLocationUpload } from '../../sync/locationUploader';
-import { usePrefs } from '../../state/prefs-store';
+import { ALL_DAY_ROW_OPTIONS, usePrefs } from '../../state/prefs-store';
 import { retryParkedPhotos, runPhotoBackup } from '../../sync/photoUploader';
 import { runSync } from '../../sync/sync';
 import { useSyncStatus } from '../../sync/syncStatus';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
 import { DateField } from '../components/DateField';
+import { SegmentedPicker } from '../components/SegmentedPicker';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors } from '../theme';
 
@@ -149,7 +150,7 @@ export function SettingsScreen() {
           />
         )}
       />
-      <Text style={[styles.detail, { color: c.textMuted }]}>Agent-managed calendars (inbox, availability …) and their events stay hidden unless enabled.</Text>
+      <Text style={[styles.detail, { color: c.textMuted }]}>Agent-managed calendars (inbox, prompts …) and their events stay hidden unless enabled.</Text>
       <List.Item
         title="Show task deadlines"
         right={() => (
@@ -161,6 +162,14 @@ export function SettingsScreen() {
         )}
       />
       <Text style={[styles.detail, { color: c.textMuted }]}>Deadlines from Lupira Tasks appear on their due day. Needs a connection.</Text>
+      <List.Item title="All-day rows in week view" />
+      <SegmentedPicker
+        options={ALL_DAY_ROW_OPTIONS}
+        selected={prefs.allDayRows}
+        onSelect={(v) => void usePrefs.getState().setAllDayRows(v)}
+        getLabel={(v) => (v === 'all' ? 'All' : v)}
+      />
+      <Text style={[styles.detail, { color: c.textMuted }]}>The all-day strip is at most this many rows tall; past that, its last row counts what is hidden per day. Tap a count to show them all.</Text>
 
       <List.Subheader>Photo backup</List.Subheader>
       <List.Item

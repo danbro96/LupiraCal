@@ -1,5 +1,5 @@
 import { clampToDay, layoutColumns, packLanes, type Positioned } from '@lupira/cal-domain/occurrences';
-import { addDays, daysFrom, fmtTime, isToday, minutesOfDay, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { addDays, daysFrom, fmtTime, isToday, minutesOfDay, parseYmd, startOfDay, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
@@ -39,7 +39,7 @@ const DEFAULT_END_MIN = 30;   // open-ended timed occurrences render as a half-h
 const LEAD_HOURS = 2;         // "now" opens this far below the top of the lanes
 const HEADER_H = 24;
 const LANE_H = 17;
-const MAX_LANES = 2;          // collapsed strip height; with more lanes the last row becomes "+N" per day
+const CHIP_GLYPH = 10;
 
 const hoursBeforeNow = () => Math.max(0, minutesOfDay(new Date()) / 60 - LEAD_HOURS);
 
@@ -141,6 +141,9 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
                 <Text style={[styles.dayHeaderText, { color: isToday(d) ? c.primary : c.textMuted }, isToday(d) && styles.today]}>
                   {d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2)} {d.getDate()}
                 </Text>
+                {availByDay.has(dayKeys[i]) && (
+                  <View style={[styles.availStrip, { backgroundColor: availabilityColor(availByDay.get(dayKeys[i]) ?? null) }]} />
+                )}
               </View>
             ))}
           </SlidingDays>
@@ -226,18 +229,21 @@ const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, sl
   const c = useColors();
   const colorOf = useCalendarColors();
   const day = parseYmd(dayKey);
+  const dayStart = startOfDay(day);
   const spans = rows.flatMap((r) => {
     const start = new Date(r.start_utc);
     const end = r.end_utc ? new Date(r.end_utc) : new Date(start.getTime() + DEFAULT_END_MIN * 60_000);
     const span = clampToDay(start, end, day);
-    return span ? [{ ...span, item: r }] : [];
+    // A block carried over from the day before reads by when it ends; its start isn't on this column.
+    const when = start < dayStart ? `until ${fmtTime(end)}` : fmtTime(start);
+    return span ? [{ ...span, item: { row: r, when } }] : [];
   });
   return (
     <Pressable
       style={[
         styles.dayColumn,
         { left: colPct(col), width: colPct(1), borderColor: c.divider },
-        avail !== undefined && { backgroundColor: `${availabilityColor(avail)}14` },
+        avail !== undefined && { backgroundColor: `${availabilityColor(avail)}24` },
       ]}
       onPress={(e) => onTapSlot(dayKey, Math.max(0, Math.min(47, Math.floor(e.nativeEvent.locationY / (hourH.value / 2)))))}
     >
@@ -253,10 +259,10 @@ const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, sl
       )}
       {layoutColumns(spans, 30).map((p) => (
         <EventBlock
-          key={`${p.item.source_id}-${p.item.start_utc}`}
+          key={`${p.item.row.source_id}-${p.item.row.start_utc}`}
           placed={p}
-          color={p.item.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(p.item.calendar_id)}
-          placeName={placeNameOf(places, p.item)}
+          color={p.item.row.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(p.item.row.calendar_id)}
+          placeName={placeNameOf(places, p.item.row)}
           onPress={onPressOccurrence}
         />
       ))}
@@ -267,12 +273,12 @@ const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, sl
 /** Title first, then start time and place: a short block clips to its title, and the rest appears as the
  *  block grows — including live, mid-pinch, without a re-render. */
 function EventBlock({ placed, color, placeName, onPress }: {
-  placed: Positioned<GridRow>;
+  placed: Positioned<{ row: GridRow; when: string }>;
   color: string;
   placeName: string | undefined;
   onPress: (row: CalRow) => void;
 }) {
-  const { item } = placed;
+  const { row: item, when } = placed.item;
   const fg = textOn(color);
   const cancelled = item.status === 'Cancelled';
   return (
@@ -287,15 +293,15 @@ function EventBlock({ placed, color, placeName, onPress }: {
       onPress={() => onPress(item)}
     >
       <Text style={[styles.eventTitle, { color: fg }, cancelled && styles.struck]} numberOfLines={2}>{item.title ?? '(untitled)'}</Text>
-      <Text style={[styles.eventMeta, { color: fg }]} numberOfLines={1}>{fmtTime(new Date(item.start_utc))}</Text>
+      <Text style={[styles.eventMeta, { color: fg }]} numberOfLines={1}>{when}</Text>
       {placeName ? <Text style={[styles.eventMeta, { color: fg }]} numberOfLines={1}>{placeName}</Text> : null}
     </Pressable>
   );
 }
 
-/** Bars packed into lanes per week. The strip is as tall as the current week (index 1) needs; past
- *  MAX_LANES it collapses, the last visible row counting per day what is hidden, and tapping a count or
- *  the gutter chevron shows every lane. */
+/** Bars packed into lanes per week. The strip is as tall as the current week (index 1) needs, capped at the
+ *  `allDayRows` pref: past it, the last row counts per day what is hidden instead of drawing bars. Tapping
+ *  a count or the gutter chevron shows every lane. */
 function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
   weeks: Bar[][];
   firstCol: number;
@@ -307,10 +313,13 @@ function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
   const [expanded, setExpanded] = useState(false);
   const laned = weeks.map((bars) => packLanes(bars));
   const laneCount = (w: number) => laned[w].reduce((n, b) => Math.max(n, b.lane + 1), 0);
+  const rowsPref = usePrefs((p) => p.allDayRows);
+  const limit = rowsPref === 'all' ? Infinity : Number(rowsPref);
+  const folds = (count: number) => count > limit && !expanded;
   const current = laneCount(1);
   if (current === 0) return null;
-  const overflows = current > MAX_LANES;
-  const height = (overflows && !expanded ? MAX_LANES : current) * LANE_H + 2;
+  const overflows = current > limit;
+  const height = (folds(current) ? limit : current) * LANE_H + 2;
 
   return (
     <View style={[styles.allDayRow, { borderColor: c.divider, height }]}>
@@ -330,8 +339,8 @@ function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
       >
         {laned.flatMap((weekBars, w) => {
           const count = laneCount(w);
-          const collapsed = count > MAX_LANES && !expanded;
-          const shown = collapsed ? MAX_LANES - 1 : count;
+          const collapsed = folds(count);
+          const shown = collapsed ? limit - 1 : count;
           const weekCol = firstCol + w * 7;
           const hidden = Array.from({ length: 7 }, () => 0);
           if (collapsed) {
@@ -391,7 +400,7 @@ function StripBar({ bar, left, rowColor, onPress }: {
         style={[styles.chipText, { color: task ? (task.overdue ? c.danger : c.textMuted) : textOn(fill ?? '') }, cancelled && styles.struck]}
         numberOfLines={1}
       >
-        {task ? <><Glyph name={ICONS.schedule} /> {r.title ?? ''}</> : r.source === 'birthday' ? <><Glyph name={ICONS.cake} /> {r.title ?? ''}</> : (r.title ?? '(untitled)')}
+        {task ? <><Glyph name={ICONS.schedule} size={CHIP_GLYPH} /> {r.title ?? ''}</> : r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={CHIP_GLYPH} /> {r.title ?? ''}</> : (r.title ?? '(untitled)')}
       </Text>
     </Pressable>
   );
@@ -493,6 +502,8 @@ const styles = StyleSheet.create({
   days: { flex: 1 },
   viewport: { flex: 1 },
   dayHeader: { position: 'absolute', top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  // The same band as the month cell's: the tint alone is too faint to find a status by.
+  availStrip: { position: 'absolute', left: 2, right: 2, bottom: 1, height: 3, borderRadius: 2 },
   dayHeaderText: { fontSize: 12 },
   today: { fontWeight: '700' },
   allDayRow: { flexDirection: 'row', borderBottomWidth: 0.5 },
@@ -505,7 +516,9 @@ const styles = StyleSheet.create({
   barAfter: { marginRight: 0, borderTopRightRadius: 0, borderBottomRightRadius: 0 },
   more: { position: 'absolute', height: LANE_H - 2, alignItems: 'center', justifyContent: 'center' },
   moreText: { fontSize: 10, fontWeight: '600' },
-  chipText: { fontSize: 9 },
+  // A fixed line box: an inline icon taller than the text would otherwise set the line height, drop the
+  // label onto its baseline and clip it in the bar.
+  chipText: { fontSize: 9, lineHeight: 12, includeFontPadding: false },
   // Deadlines read as outlines with dark text, distinct from the filled calendar chips.
   taskChip: { borderWidth: 0.5 },
   cancelled: { opacity: 0.5 },
