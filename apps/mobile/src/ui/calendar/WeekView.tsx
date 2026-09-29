@@ -17,6 +17,7 @@ import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrenc
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
 import { BIRTHDAY_COLOR, availabilityColor, useCalendarColors } from '../hooks/palette';
+import { useBackDismiss } from '../hooks/useBackDismiss';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
@@ -53,6 +54,8 @@ export const WeekView = memo(function WeekView({ weekStart, slide, focusNow, onP
   // Slot granularity is 30 min; the ＋ chip covers the tapped half hour (prefill length stays 1h).
   const c = useColors();
   const [pendingSlot, setPendingSlot] = useState<{ day: string; slot: number } | null>(null);
+  const clearSlot = useCallback(() => setPendingSlot(null), []);
+  useBackDismiss(pendingSlot !== null, clearSlot);
   const days = daysFrom(weekStart, 7);
   const dayKeys = days.map(ymd);
   const { rows } = useOverlappingOccurrences(dayKeys);

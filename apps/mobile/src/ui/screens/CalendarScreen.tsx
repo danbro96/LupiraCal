@@ -18,6 +18,7 @@ import { BridgePrompt } from '../components/BridgePrompt';
 import { IconButton } from '../components/IconButton';
 import { SettingsButton } from '../components/SettingsButton';
 import { BIRTHDAY_COLOR, availabilityColor, useCalendarColors } from '../hooks/palette';
+import { useBackDismiss } from '../hooks/useBackDismiss';
 import { SyncBanner } from '../components/SyncBanner';
 import type { RootStackParamList, TabParamList } from '../navigation/types';
 import { useColors } from '../theme';
@@ -62,6 +63,8 @@ export function CalendarScreen() {
     setAnchor((a) => (d.getMonth() !== a.getMonth() ? d : a));
     if (sheetCommitted.current < containerH.current * 0.3) animateSheet(containerH.current * 0.38);
   }, [animateSheet]);
+
+  useBackDismiss(mode === 'month' && selectedDay !== null, deselect);
 
   const pan = useRef(
     PanResponder.create({
