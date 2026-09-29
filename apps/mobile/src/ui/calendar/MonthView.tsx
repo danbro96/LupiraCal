@@ -1,4 +1,5 @@
-import { isToday, monthMatrix, ymd } from '@lupira/cal-domain/time';
+import { isToday, monthMatrix, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { textOn } from '@lupira/cal-tokens/contrast';
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -11,19 +12,22 @@ import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
 
 /** Month grid straight off the mirror: monthMatrix (domain) for the day layout, one occurrence query per
- *  touched month bucket, up to three title bars per cell. Day selection drives the agenda in CalendarScreen. */
-export const MonthView = memo(function MonthView({ anchor, selectedDay, onSelectDay }: {
-  anchor: Date;
+ *  touched month bucket, up to three title bars per cell. Day selection drives the agenda in MonthPane.
+ *  `monthKey` ('yyyy-MM') rather than a Date, so the memo holds for the pages a swipe keeps. */
+export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSelectDay }: {
+  monthKey: string;
   selectedDay: string | null;
   onSelectDay: (day: string) => void;
 }) {
   const c = useColors();
+  const anchor = parseYmd(`${monthKey}-01`);
   const weeks = monthMatrix(anchor);
   const dayKeys = weeks.flat().map(ymd);
   const { rows } = useDaysOccurrences(dayKeys);
   const taskRows = useTaskDeadlines(dayKeys);
   const colorOf = useCalendarColors();
 
+  const fillOf = (r: CalRow) => (r.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(r.calendar_id));
   const byDay = new Map<string, CalRow[]>();
   const availByDay = new Map<string, string | null>();
   const merged: CalRow[] = [...rows, ...taskRows].sort((a, b) => (a.start_utc < b.start_utc ? -1 : a.start_utc > b.start_utc ? 1 : 0));
@@ -85,15 +89,15 @@ export const MonthView = memo(function MonthView({ anchor, selectedDay, onSelect
                         style={[styles.taskBarText, { color: r.task.overdue ? c.danger : c.textMuted }]}
                         numberOfLines={1}
                       >
-                        ⏰ {r.title ?? '(untitled)'}
+                        <Glyph name={ICONS.schedule} size={11} /> {r.title ?? '(untitled)'}
                       </Text>
                     </View>
                   ) : (
                     <View
                       key={`${r.source}-${r.source_id}-${r.start_utc}`}
-                      style={[styles.bar, { backgroundColor: r.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(r.calendar_id) }]}
+                      style={[styles.bar, { backgroundColor: fillOf(r) }]}
                     >
-                      <Text style={styles.barText} numberOfLines={1}>
+                      <Text style={[styles.barText, { color: textOn(fillOf(r)) }]} numberOfLines={1}>
                         {r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={11} /> {r.title ?? ''}</> : (r.title ?? '(untitled)')}
                       </Text>
                     </View>
@@ -122,7 +126,7 @@ const styles = StyleSheet.create({
   dayNum: { fontSize: 11, paddingLeft: 2 },
   dayNumToday: { fontWeight: '700' },
   bar: { borderRadius: 3, paddingHorizontal: 2, paddingVertical: 0.5 },
-  barText: { fontSize: 8.5, color: '#fff' },
+  barText: { fontSize: 8.5 },
   // Deadlines read as outlines, not filled calendar bars (web parity: muted, danger when overdue).
   taskBar: { borderRadius: 3, paddingHorizontal: 2, paddingVertical: 0.5, borderWidth: 0.5 },
   taskBarText: { fontSize: 8.5 },

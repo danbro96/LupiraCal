@@ -1,13 +1,11 @@
 import { clampToDay, layoutColumns, packLanes, type Positioned } from '@lupira/cal-domain/occurrences';
 import { addDays, daysFrom, fmtTime, isToday, minutesOfDay, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Text } from 'react-native-paper';
-import Animated, {
-  cancelAnimation, scrollTo, useAnimatedRef, useAnimatedStyle, useScrollOffset, useSharedValue, withTiming,
-} from 'react-native-reanimated';
+import Animated, { scrollTo, useAnimatedRef, useAnimatedStyle, useScrollOffset, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { GridRow } from '../../data/mirror';
 import { isMultiDayTimed, lastDayOf } from '../../domain/occurrenceDays';
@@ -21,6 +19,8 @@ import { useBackDismiss } from '../hooks/useBackDismiss';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
+import { useJump, type CalendarJump } from './jump';
+import { usePager } from './usePager';
 
 const MIN_HOUR_H = 16;
 const MAX_HOUR_H = 160;
@@ -38,11 +38,6 @@ const HEADER_H = 24;
 const LANE_H = 17;
 const MAX_LANES = 2;          // collapsed strip height; with more lanes the last row becomes "+N" per day
 
-const LOCK_PX = 12;
-const COMMIT_FRACTION = 0.25;
-const COMMIT_VELOCITY = 600;
-const SLIDE_MS = 180;
-
 const hoursBeforeNow = () => Math.max(0, minutesOfDay(new Date()) / 60 - LEAD_HOURS);
 
 type Bar = { row: CalRow; startCol: number; endCol: number; before: boolean; after: boolean };
@@ -51,15 +46,13 @@ type Bar = { row: CalRow; startCol: number; endCol: number; before: boolean; aft
  *  more), timed lanes below. Placement is the domain's clampToDay + layoutColumns (the same math the web
  *  grid uses) and packLanes for the strip; data is the mirror's rows overlapping the rendered days.
  *
- *  Paging: the previous, current and next week are all rendered, as 21 columns keyed by date and placed
- *  on a day axis fixed at mount. A swipe only moves that axis, so the neighbour is live under the finger
- *  and a step re-renders nothing visible — the week that slid in keeps its columns, and the new far-side
- *  week mounts off-screen. The offset is never reset on a swipe; `jumpKey` (Today, the date picker)
- *  is the one time it snaps. `focusNow` bumps on Today and scrolls the current time back into view. */
-export const WeekView = memo(function WeekView({ weekStart, jumpKey, focusNow, onStep, onPressOccurrence, onCreateSlot }: {
+ *  Paging (usePager): the previous, current and next week are rendered as 21 columns keyed by date and
+ *  placed on a day axis fixed at mount, one week per page — so the neighbour is live under the finger,
+ *  and after a step the new far-side week mounts off-screen. A jump snaps, and Today also scrolls the
+ *  current time back into view. */
+export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPressOccurrence, onCreateSlot }: {
   weekStart: Date;
-  jumpKey: number;
-  focusNow: number;
+  jump: CalendarJump;
   onStep: (dir: 1 | -1) => void;
   onPressOccurrence: (row: CalRow) => void;
   onCreateSlot: (day: string, time: string) => void;
@@ -83,24 +76,11 @@ export const WeekView = memo(function WeekView({ weekStart, jumpKey, focusNow, o
   const colorOf = useCalendarColors();
   const [initialHours] = useState(() => (weekKeys[1].includes(ymd(new Date())) ? hoursBeforeNow() : 7.5));
   const zoom = useTimeZoom(initialHours);
-  const pager = useWeekPager(onStep);
-
-  // Only a jump snaps: a swipe has already moved the axis on the UI thread, and snapping on its re-render
-  // would yank a second swipe that is mid-drag.
-  const pageRef = useRef(page);
-  pageRef.current = page;
-  const { snapTo } = pager;
-  useLayoutEffect(() => {
-    snapTo(pageRef.current);
-  }, [jumpKey, snapTo]);
-
-  const lastFocus = useRef(focusNow);
-  const { scrollToHours } = zoom;
-  useEffect(() => {
-    if (focusNow === lastFocus.current) return;
-    lastFocus.current = focusNow;
-    scrollToHours(hoursBeforeNow());
-  }, [focusNow, scrollToHours]);
+  const pager = usePager(onStep);
+  useJump(jump, (j) => {
+    pager.snapTo(page);
+    if (j.toNow) zoom.scrollToHours(hoursBeforeNow());
+  });
 
   const bars: Bar[][] = [[], [], []];
   const timed: GridRow[] = [];
@@ -137,7 +117,7 @@ export const WeekView = memo(function WeekView({ weekStart, jumpKey, focusNow, o
     <GestureDetector gesture={pager.gesture}>
       <View style={styles.root}>
         <View style={[styles.headerRow, { borderColor: c.divider }]}>
-          <SlidingDays slideStyle={pager.slideStyle} onClipLayout={pager.onWeekLayout}>
+          <SlidingDays slideStyle={pager.slideStyle} onClipLayout={pager.onPageLayout}>
             {days.map((d, i) => (
               <View key={dayKeys[i]} style={[styles.dayHeader, { left: colPct(firstCol + i), width: colPct(1) }]}>
                 <Text style={[styles.dayHeaderText, { color: isToday(d) ? c.primary : c.textMuted }, isToday(d) && styles.today]}>
@@ -397,70 +377,6 @@ function SlidingDays({ slideStyle, gutter, behind, onClipLayout, children }: {
       </View>
     </>
   );
-}
-
-/** Horizontal paging on the UI thread. `offset` is the day axis' translation, always -page × weekWidth at
- *  rest. A committed swipe animates to the neighbouring page, then advances `page` and reports the step;
- *  grabbing again mid-slide commits the pending step at once so a quick double swipe keeps both. */
-function useWeekPager(onStep: (dir: 1 | -1) => void) {
-  const offset = useSharedValue(0);
-  const weekW = useSharedValue(0);
-  const page = useSharedValue(0);
-  const pending = useSharedValue(0);
-  const dragBase = useSharedValue(0);
-  const onStepRef = useRef(onStep);
-  onStepRef.current = onStep;
-
-  const [gesture] = useState(() => {
-    const step = (dir: 1 | -1) => onStepRef.current(dir);
-    const commitPending = () => {
-      'worklet';
-      const dir = pending.value;
-      if (dir === 0) return;
-      pending.value = 0;
-      page.value += dir;
-      scheduleOnRN(step, dir as 1 | -1);
-    };
-    return Gesture.Pan()
-      .maxPointers(1)
-      .activeOffsetX([-LOCK_PX, LOCK_PX])
-      .failOffsetY([-LOCK_PX, LOCK_PX])
-      .onStart(() => {
-        commitPending();
-        cancelAnimation(offset);
-        dragBase.value = offset.value;
-      })
-      .onUpdate((e) => {
-        offset.value = dragBase.value + e.translationX;
-      })
-      .onEnd((e, success) => {
-        const w = weekW.value;
-        const home = -page.value * w;
-        const moved = offset.value - home;
-        const far = Math.abs(moved) > w * COMMIT_FRACTION;
-        const flung = Math.abs(e.velocityX) > COMMIT_VELOCITY && Math.sign(e.velocityX) === Math.sign(moved);
-        const dir = success && w > 0 && (far || flung) ? (moved < 0 ? 1 : -1) : 0;
-        pending.value = dir;
-        offset.value = withTiming(home - dir * w, { duration: SLIDE_MS }, (done) => {
-          if (done) commitPending();
-        });
-      });
-  });
-
-  const snapTo = useCallback((p: number) => {
-    cancelAnimation(offset);
-    pending.value = 0;
-    page.value = p;
-    offset.value = -p * weekW.value;
-  }, [offset, pending, page, weekW]);
-
-  const onWeekLayout = useCallback((e: LayoutChangeEvent) => {
-    weekW.value = e.nativeEvent.layout.width;
-    offset.value = -page.value * e.nativeEvent.layout.width;
-  }, [weekW, offset, page]);
-
-  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.value }] }));
-  return { gesture, slideStyle, snapTo, onWeekLayout };
 }
 
 /** Pinch zoom on the time axis, anchored on the fingers: the time under the focal point stays under it.
