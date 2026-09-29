@@ -130,6 +130,7 @@ export type GridRow = OccurrenceQueryRow & {
    *  band (status in avail_status), never as chips. */
   is_availability: number | null;
   avail_status: string | null;
+  place_id: string | null;
 };
 
 const outsideSystemCalendars = (itemId: string) => `EXISTS (
@@ -154,7 +155,8 @@ export async function gridRowsBetween(tx: Tx, fromDay: string, toDay: string, in
             ${preferredCalendar('o.source_id')} AS calendar_id,
             (SELECT 1 FROM item_calendars ia JOIN calendars ca ON ca.id = ia.calendar_id
              WHERE ia.item_id = o.source_id AND json_extract(ca.doc, '$.kind') = 'Availability' LIMIT 1) AS is_availability,
-            json_extract(i.doc, '$.details.presence.status') AS avail_status
+            json_extract(i.doc, '$.details.presence.status') AS avail_status,
+            json_extract(i.doc, '$.placeId') AS place_id
      FROM occurrences o
      LEFT JOIN items i ON o.source = 'item' AND i.id = o.source_id
      LEFT JOIN contacts c ON o.source = 'birthday' AND c.id = o.source_id

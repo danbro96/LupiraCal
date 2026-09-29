@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampToDay, layoutColumns } from './occurrences';
+import { clampToDay, layoutColumns, packLanes } from './occurrences';
 
 const day = new Date(2026, 6, 7);
 
@@ -75,5 +75,27 @@ describe('layoutColumns', () => {
     const withMin = layoutColumns(spans, 22.5);
     expect(withMin.find((p) => p.item === 'a')!.col).toBe(0);
     expect(withMin.find((p) => p.item === 'b')!.col).toBe(1);
+  });
+});
+
+describe('packLanes', () => {
+  const lanesOf = (bars: { id: string; startCol: number; endCol: number }[]) =>
+    Object.fromEntries(packLanes(bars).map((b) => [b.id, b.lane]));
+
+  it('shares a row between bars that do not touch', () => {
+    expect(lanesOf([
+      { id: 'mon-tue', startCol: 0, endCol: 1 },
+      { id: 'wed', startCol: 2, endCol: 2 },
+      { id: 'thu-sun', startCol: 3, endCol: 6 },
+    ])).toEqual({ 'mon-tue': 0, wed: 0, 'thu-sun': 0 });
+  });
+
+  it('stacks overlapping bars, longest first within a start day', () => {
+    expect(lanesOf([
+      { id: 'mon', startCol: 0, endCol: 0 },
+      { id: 'mon-fri', startCol: 0, endCol: 4 },
+      { id: 'tue', startCol: 1, endCol: 1 },
+      { id: 'sat', startCol: 5, endCol: 5 },
+    ])).toEqual({ 'mon-fri': 0, mon: 1, tue: 1, sat: 0 });
   });
 });

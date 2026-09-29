@@ -1,4 +1,4 @@
-// Placement math for the timed lanes of the week/day grids.
+// Placement math for the week/day grids: timed lanes and the all-day strip.
 
 export interface DaySpan {
   /** Minutes from local midnight, clamped to [0, 1440]. */
@@ -56,4 +56,23 @@ export function layoutColumns<T>(spans: Array<DaySpan & { item: T }>, minMinutes
   }
   if (cluster.length > 0) closeCluster();
   return placed;
+}
+
+export interface ColumnRange {
+  /** Inclusive day-column indices. */
+  startCol: number;
+  endCol: number;
+}
+
+/** Stack multi-day bars into rows: each bar takes the first row free across its whole range. Sorted by
+ *  start then longest first, which is optimal for intervals — no row is added that a reorder could avoid. */
+export function packLanes<T extends ColumnRange>(bars: T[]): Array<T & { lane: number }> {
+  const sorted = [...bars].sort((a, b) => a.startCol - b.startCol || b.endCol - a.endCol);
+  const laneEnds: number[] = [];
+  return sorted.map((bar) => {
+    let lane = laneEnds.findIndex((end) => end < bar.startCol);
+    if (lane === -1) lane = laneEnds.length;
+    laneEnds[lane] = bar.endCol;
+    return { ...bar, lane };
+  });
 }

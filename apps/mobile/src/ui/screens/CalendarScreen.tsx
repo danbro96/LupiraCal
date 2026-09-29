@@ -40,6 +40,7 @@ export function CalendarScreen() {
   const [mode, setMode] = useState<Mode>('month');
   const [anchor, setAnchor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [focusNow, setFocusNow] = useState(0);
 
   const containerH = useRef(0);
   const sheetH = useRef(new Animated.Value(0)).current;
@@ -96,6 +97,7 @@ export function CalendarScreen() {
   useLayoutEffect(() => {
     const goToday = () => {
       setAnchor(new Date());
+      setFocusNow((n) => n + 1);
       deselect();
     };
     const pickDate = () => DateTimePickerAndroid.open({
@@ -182,7 +184,7 @@ export function CalendarScreen() {
       ) : (
         <GestureDetector gesture={swipe.gesture}>
           <View style={styles.area} onLayout={measureSwipe}>
-            <WeekView weekStart={weekStart} slide={swipe.offset} onPressOccurrence={openOccurrence} onCreateSlot={createSlot} />
+            <WeekView weekStart={weekStart} slide={swipe.offset} focusNow={focusNow} onPressOccurrence={openOccurrence} onCreateSlot={createSlot} />
           </View>
         </GestureDetector>
       )}
