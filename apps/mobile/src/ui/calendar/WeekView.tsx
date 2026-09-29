@@ -1,12 +1,12 @@
 import { clampToDay, layoutColumns, packLanes, type Positioned } from '@lupira/cal-domain/occurrences';
-import { daysFrom, fmtTime, isToday, minutesOfDay, ymd } from '@lupira/cal-domain/time';
+import { addDays, daysFrom, fmtTime, isToday, minutesOfDay, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
-import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Text } from 'react-native-paper';
 import Animated, {
-  scrollTo, useAnimatedRef, useAnimatedStyle, useScrollOffset, useSharedValue, type SharedValue,
+  cancelAnimation, scrollTo, useAnimatedRef, useAnimatedStyle, useScrollOffset, useSharedValue, withTiming,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { GridRow } from '../../data/mirror';
@@ -25,14 +25,23 @@ import { Glyph } from '../components/Glyph';
 const MIN_HOUR_H = 16;
 const MAX_HOUR_H = 160;
 const DAY_MIN = 24 * 60;
+const DAY_MS = 86_400_000;
 const pct = (min: number) => `${(min / DAY_MIN) * 100}%` as const;
+/** Day columns are placed in percent of one week's width, counted from the view's origin day. */
 const colPct = (col: number) => `${(col / 7) * 100}%` as const;
+const dayIndex = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS);
 
 const slotTime = (slot: number) => `${String(Math.floor(slot / 2)).padStart(2, '0')}:${slot % 2 ? '30' : '00'}`;
 const DEFAULT_END_MIN = 30;   // open-ended timed occurrences render as a half-hour block
 const LEAD_HOURS = 2;         // "now" opens this far below the top of the lanes
+const HEADER_H = 24;
 const LANE_H = 17;
 const MAX_LANES = 2;          // collapsed strip height; with more lanes the last row becomes "+N" per day
+
+const LOCK_PX = 12;
+const COMMIT_FRACTION = 0.25;
+const COMMIT_VELOCITY = 600;
+const SLIDE_MS = 180;
 
 const hoursBeforeNow = () => Math.max(0, minutesOfDay(new Date()) / 60 - LEAD_HOURS);
 
@@ -40,13 +49,18 @@ type Bar = { row: CalRow; startCol: number; endCol: number; before: boolean; aft
 
 /** Week grid: a strip of day-spanning bars on top (all-day items, deadlines, and timed items of a day or
  *  more), timed lanes below. Placement is the domain's clampToDay + layoutColumns (the same math the web
- *  grid uses) and packLanes for the strip; data is the mirror's rows overlapping the 7 days.
- *  `slide` is the period swipe's offset — the day columns ride it, the hour gutter stays put.
- *  `focusNow` bumps when Today is tapped, scrolling the current time back into view. */
-export const WeekView = memo(function WeekView({ weekStart, slide, focusNow, onPressOccurrence, onCreateSlot }: {
+ *  grid uses) and packLanes for the strip; data is the mirror's rows overlapping the rendered days.
+ *
+ *  Paging: the previous, current and next week are all rendered, as 21 columns keyed by date and placed
+ *  on a day axis fixed at mount. A swipe only moves that axis, so the neighbour is live under the finger
+ *  and a step re-renders nothing visible — the week that slid in keeps its columns, and the new far-side
+ *  week mounts off-screen. The offset is never reset on a swipe; `jumpKey` (Today, the date picker)
+ *  is the one time it snaps. `focusNow` bumps on Today and scrolls the current time back into view. */
+export const WeekView = memo(function WeekView({ weekStart, jumpKey, focusNow, onStep, onPressOccurrence, onCreateSlot }: {
   weekStart: Date;
-  slide: SharedValue<number>;
+  jumpKey: number;
   focusNow: number;
+  onStep: (dir: 1 | -1) => void;
   onPressOccurrence: (row: CalRow) => void;
   onCreateSlot: (day: string, time: string) => void;
 }) {
@@ -56,14 +70,29 @@ export const WeekView = memo(function WeekView({ weekStart, slide, focusNow, onP
   const [pendingSlot, setPendingSlot] = useState<{ day: string; slot: number } | null>(null);
   const clearSlot = useCallback(() => setPendingSlot(null), []);
   useBackDismiss(pendingSlot !== null, clearSlot);
-  const days = daysFrom(weekStart, 7);
+
+  const [originIdx] = useState(() => dayIndex(weekStart));
+  const page = (dayIndex(weekStart) - originIdx) / 7;
+  const firstCol = page * 7 - 7;
+  const days = daysFrom(addDays(weekStart, -7), 21);
   const dayKeys = days.map(ymd);
+  const weekKeys = [dayKeys.slice(0, 7), dayKeys.slice(7, 14), dayKeys.slice(14)];
+
   const { rows } = useOverlappingOccurrences(dayKeys);
   const taskRows = useTaskDeadlines(dayKeys);
   const colorOf = useCalendarColors();
-  const [initialHours] = useState(() => (dayKeys.includes(ymd(new Date())) ? hoursBeforeNow() : 7.5));
+  const [initialHours] = useState(() => (weekKeys[1].includes(ymd(new Date())) ? hoursBeforeNow() : 7.5));
   const zoom = useTimeZoom(initialHours);
-  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: slide.value }] }));
+  const pager = useWeekPager(onStep);
+
+  // Only a jump snaps: a swipe has already moved the axis on the UI thread, and snapping on its re-render
+  // would yank a second swipe that is mid-drag.
+  const pageRef = useRef(page);
+  pageRef.current = page;
+  const { snapTo } = pager;
+  useLayoutEffect(() => {
+    snapTo(pageRef.current);
+  }, [jumpKey, snapTo]);
 
   const lastFocus = useRef(focusNow);
   const { scrollToHours } = zoom;
@@ -73,10 +102,7 @@ export const WeekView = memo(function WeekView({ weekStart, slide, focusNow, onP
     scrollToHours(hoursBeforeNow());
   }, [focusNow, scrollToHours]);
 
-  const first = dayKeys[0];
-  const last = dayKeys[6];
-  const colOf = (day: string) => (day <= first ? 0 : day >= last ? 6 : dayKeys.indexOf(day));
-  const bars: Bar[] = [];
+  const bars: Bar[][] = [[], [], []];
   const timed: GridRow[] = [];
   const availByDay = new Map<string, string | null>();
   for (const r of [...rows, ...taskRows]) {
@@ -87,7 +113,19 @@ export const WeekView = memo(function WeekView({ weekStart, slide, focusNow, onP
       continue;
     }
     if (r.all_day === 1 || isMultiDayTimed(r)) {
-      bars.push({ row: r, startCol: colOf(r.start_day), endCol: colOf(end), before: r.start_day < first, after: end > last });
+      // Split per week: each week packs its own lanes, the way a paged calendar shows a long span.
+      weekKeys.forEach((keys, w) => {
+        const first = keys[0];
+        const last = keys[6];
+        if (r.start_day > last || end < first) return;
+        bars[w].push({
+          row: r,
+          startCol: r.start_day <= first ? 0 : keys.indexOf(r.start_day),
+          endCol: end >= last ? 6 : keys.indexOf(end),
+          before: r.start_day < first,
+          after: end > last,
+        });
+      });
     } else {
       timed.push(r as GridRow);
     }
@@ -96,94 +134,95 @@ export const WeekView = memo(function WeekView({ weekStart, slide, focusNow, onP
   const rowColor = (r: CalRow) => (r.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(r.calendar_id));
 
   return (
-    <View style={styles.root}>
-      <View style={[styles.headerRow, { borderColor: c.divider }]}>
-        <SlidingDays slideStyle={slideStyle}>
-          {days.map((d) => (
-            <View key={ymd(d)} style={styles.dayHeader}>
-              <Text style={[styles.dayHeaderText, { color: isToday(d) ? c.primary : c.textMuted }, isToday(d) && styles.today]}>
-                {d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2)} {d.getDate()}
-              </Text>
-            </View>
-          ))}
-        </SlidingDays>
-      </View>
+    <GestureDetector gesture={pager.gesture}>
+      <View style={styles.root}>
+        <View style={[styles.headerRow, { borderColor: c.divider }]}>
+          <SlidingDays slideStyle={pager.slideStyle} onClipLayout={pager.onWeekLayout}>
+            {days.map((d, i) => (
+              <View key={dayKeys[i]} style={[styles.dayHeader, { left: colPct(firstCol + i), width: colPct(1) }]}>
+                <Text style={[styles.dayHeaderText, { color: isToday(d) ? c.primary : c.textMuted }, isToday(d) && styles.today]}>
+                  {d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2)} {d.getDate()}
+                </Text>
+              </View>
+            ))}
+          </SlidingDays>
+        </View>
 
-      <AllDayStrip bars={bars} slideStyle={slideStyle} rowColor={rowColor} onPress={onPressOccurrence} />
+        <AllDayStrip weeks={bars} firstCol={firstCol} slideStyle={pager.slideStyle} rowColor={rowColor} onPress={onPressOccurrence} />
 
-      <GestureDetector gesture={zoom.pinch}>
-        <View style={styles.viewport} onLayout={zoom.onViewportLayout}>
-          <GestureDetector gesture={zoom.scroll}>
-            <Animated.ScrollView ref={zoom.scrollRef} contentOffset={zoom.initialOffset}>
-              <Animated.View style={[styles.lanes, zoom.lanesStyle]}>
-                <SlidingDays
-                  slideStyle={slideStyle}
-                  gutter={Array.from({ length: 24 }, (_, h) => (
-                    <Text key={h} style={[styles.hourLabel, { top: pct(h * 60), color: c.textMuted }]}>
-                      {String(h).padStart(2, '0')}
-                    </Text>
-                  ))}
-                >
-                  <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-                    {Array.from({ length: 48 }, (_, i) => (
+        <GestureDetector gesture={zoom.pinch}>
+          <View style={styles.viewport} onLayout={zoom.onViewportLayout}>
+            <GestureDetector gesture={zoom.scroll}>
+              <Animated.ScrollView ref={zoom.scrollRef} contentOffset={zoom.initialOffset}>
+                <Animated.View style={[styles.lanes, zoom.lanesStyle]}>
+                  <SlidingDays
+                    slideStyle={pager.slideStyle}
+                    gutter={Array.from({ length: 24 }, (_, h) => (
+                      <Text key={h} style={[styles.hourLabel, { top: pct(h * 60), color: c.textMuted }]}>
+                        {String(h).padStart(2, '0')}
+                      </Text>
+                    ))}
+                    // Hour lines are the same every week, so they stay still behind the sliding columns.
+                    behind={Array.from({ length: 48 }, (_, i) => (
                       <View key={i} style={[styles.line, { top: pct(i * 30), backgroundColor: i % 2 ? c.surface : c.divider }]} />
                     ))}
-                  </View>
-                  {days.map((day) => {
-                    const dayKey = ymd(day);
-                    const spans = timed.flatMap((r) => {
-                      const start = new Date(r.start_utc);
-                      const end = r.end_utc ? new Date(r.end_utc) : new Date(start.getTime() + DEFAULT_END_MIN * 60_000);
-                      const span = clampToDay(start, end, day);
-                      return span ? [{ ...span, item: r }] : [];
-                    });
-                    const slot = pendingSlot?.day === dayKey ? pendingSlot.slot : null;
-                    return (
-                      <Pressable
-                        key={dayKey}
-                        style={[
-                          styles.dayColumn,
-                          { borderColor: c.divider },
-                          availByDay.has(dayKey) && { backgroundColor: `${availabilityColor(availByDay.get(dayKey) ?? null)}14` },
-                        ]}
-                        onPress={(e) => {
-                          const tapped = Math.max(0, Math.min(47, Math.floor(e.nativeEvent.locationY / (zoom.hourH.value / 2))));
-                          setPendingSlot((cur) => (cur && cur.day === dayKey && cur.slot === tapped ? null : { day: dayKey, slot: tapped }));
-                        }}
-                      >
-                        {slot !== null && (
-                          <View style={[styles.slotCell, { top: pct(slot * 30), height: pct(30) }]}>
-                            <Pressable
-                              style={[styles.slotChip, { borderColor: c.primary, backgroundColor: c.primary + '22' }]}
-                              onPress={() => {
-                                onCreateSlot(dayKey, slotTime(slot));
-                                setPendingSlot(null);
-                              }}
-                            >
-                              <Text style={[styles.slotChipText, { color: c.primary }]} numberOfLines={1}>＋ {slotTime(slot)}</Text>
-                            </Pressable>
-                          </View>
-                        )}
-                        {layoutColumns(spans, 30).map((p) => (
-                          <EventBlock
-                            key={`${p.item.source_id}-${p.item.start_utc}`}
-                            placed={p}
-                            color={rowColor(p.item)}
-                            placeName={p.item.place_id ? places.get(p.item.place_id)?.name : undefined}
-                            onPress={onPressOccurrence}
-                          />
-                        ))}
-                      </Pressable>
-                    );
-                  })}
-                  <NowLine dayKeys={dayKeys} />
-                </SlidingDays>
-              </Animated.View>
-            </Animated.ScrollView>
-          </GestureDetector>
-        </View>
-      </GestureDetector>
-    </View>
+                  >
+                    {days.map((day, i) => {
+                      const dayKey = dayKeys[i];
+                      const spans = timed.flatMap((r) => {
+                        const start = new Date(r.start_utc);
+                        const end = r.end_utc ? new Date(r.end_utc) : new Date(start.getTime() + DEFAULT_END_MIN * 60_000);
+                        const span = clampToDay(start, end, day);
+                        return span ? [{ ...span, item: r }] : [];
+                      });
+                      const slot = pendingSlot?.day === dayKey ? pendingSlot.slot : null;
+                      return (
+                        <Pressable
+                          key={dayKey}
+                          style={[
+                            styles.dayColumn,
+                            { left: colPct(firstCol + i), width: colPct(1), borderColor: c.divider },
+                            availByDay.has(dayKey) && { backgroundColor: `${availabilityColor(availByDay.get(dayKey) ?? null)}14` },
+                          ]}
+                          onPress={(e) => {
+                            const tapped = Math.max(0, Math.min(47, Math.floor(e.nativeEvent.locationY / (zoom.hourH.value / 2))));
+                            setPendingSlot((cur) => (cur && cur.day === dayKey && cur.slot === tapped ? null : { day: dayKey, slot: tapped }));
+                          }}
+                        >
+                          {slot !== null && (
+                            <View style={[styles.slotCell, { top: pct(slot * 30), height: pct(30) }]}>
+                              <Pressable
+                                style={[styles.slotChip, { borderColor: c.primary, backgroundColor: c.primary + '22' }]}
+                                onPress={() => {
+                                  onCreateSlot(dayKey, slotTime(slot));
+                                  setPendingSlot(null);
+                                }}
+                              >
+                                <Text style={[styles.slotChipText, { color: c.primary }]} numberOfLines={1}>＋ {slotTime(slot)}</Text>
+                              </Pressable>
+                            </View>
+                          )}
+                          {layoutColumns(spans, 30).map((p) => (
+                            <EventBlock
+                              key={`${p.item.source_id}-${p.item.start_utc}`}
+                              placed={p}
+                              color={rowColor(p.item)}
+                              placeName={p.item.place_id ? places.get(p.item.place_id)?.name : undefined}
+                              onPress={onPressOccurrence}
+                            />
+                          ))}
+                        </Pressable>
+                      );
+                    })}
+                    <NowLine dayKeys={dayKeys} firstCol={firstCol} />
+                  </SlidingDays>
+                </Animated.View>
+              </Animated.ScrollView>
+            </GestureDetector>
+          </View>
+        </GestureDetector>
+      </View>
+    </GestureDetector>
   );
 });
 
@@ -216,31 +255,30 @@ function EventBlock({ placed, color, placeName, onPress }: {
   );
 }
 
-/** Bars packed into lanes. Past MAX_LANES it collapses: the last visible row counts, per day, what is
- *  hidden, and tapping a count or the gutter chevron shows every lane. */
-function AllDayStrip({ bars, slideStyle, rowColor, onPress }: {
-  bars: Bar[];
+/** Bars packed into lanes per week. The strip is as tall as the current week (index 1) needs; past
+ *  MAX_LANES it collapses, the last visible row counting per day what is hidden, and tapping a count or
+ *  the gutter chevron shows every lane. */
+function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
+  weeks: Bar[][];
+  firstCol: number;
   slideStyle: ReturnType<typeof useAnimatedStyle>;
   rowColor: (r: CalRow) => string;
   onPress: (row: CalRow) => void;
 }) {
   const c = useColors();
   const [expanded, setExpanded] = useState(false);
-  const laned = packLanes(bars);
-  const laneCount = laned.reduce((n, b) => Math.max(n, b.lane + 1), 0);
-  if (laneCount === 0) return null;
-  const collapsed = laneCount > MAX_LANES && !expanded;
-  const shown = collapsed ? MAX_LANES - 1 : laneCount;
-  const hidden = Array.from({ length: 7 }, () => 0);
-  if (collapsed) {
-    for (const b of laned) if (b.lane >= shown) for (let col = b.startCol; col <= b.endCol; col++) hidden[col]++;
-  }
+  const laned = weeks.map((bars) => packLanes(bars));
+  const laneCount = (w: number) => laned[w].reduce((n, b) => Math.max(n, b.lane + 1), 0);
+  const current = laneCount(1);
+  if (current === 0) return null;
+  const overflows = current > MAX_LANES;
+  const height = (overflows && !expanded ? MAX_LANES : current) * LANE_H + 2;
 
   return (
-    <View style={[styles.allDayRow, { borderColor: c.divider, height: (collapsed ? MAX_LANES : laneCount) * LANE_H + 2 }]}>
+    <View style={[styles.allDayRow, { borderColor: c.divider, height }]}>
       <SlidingDays
         slideStyle={slideStyle}
-        gutter={laneCount > MAX_LANES && (
+        gutter={overflows && (
           <Pressable
             style={styles.stripToggle}
             onPress={() => setExpanded((e) => !e)}
@@ -252,88 +290,177 @@ function AllDayStrip({ bars, slideStyle, rowColor, onPress }: {
           </Pressable>
         )}
       >
-        {laned.filter((b) => b.lane < shown).map((b) => {
-          const r = b.row;
-          const task = isTaskRow(r) ? r.task : null;
-          const fill = task ? null : rowColor(r);
-          const cancelled = r.status === 'Cancelled';
-          return (
-            <Pressable
-              key={`${r.source}-${r.source_id}-${r.start_utc}`}
-              style={[
-                styles.bar,
-                { top: b.lane * LANE_H + 1, left: colPct(b.startCol), width: colPct(b.endCol - b.startCol + 1) },
-                b.before && styles.barBefore,
-                b.after && styles.barAfter,
-                task
-                  ? [
-                      styles.taskChip,
-                      { backgroundColor: c.surface, borderColor: c.border },
-                      task.overdue && { borderColor: c.danger, backgroundColor: c.danger + '22' },
-                    ]
-                  : { backgroundColor: fill ?? undefined },
-                cancelled && styles.cancelled,
-              ]}
-              onPress={() => onPress(r)}
-            >
-              <Text
-                style={[styles.chipText, { color: task ? (task.overdue ? c.danger : c.textMuted) : textOn(fill ?? '') }, cancelled && styles.struck]}
-                numberOfLines={1}
+        {laned.flatMap((weekBars, w) => {
+          const count = laneCount(w);
+          const collapsed = count > MAX_LANES && !expanded;
+          const shown = collapsed ? MAX_LANES - 1 : count;
+          const weekCol = firstCol + w * 7;
+          const hidden = Array.from({ length: 7 }, () => 0);
+          if (collapsed) {
+            for (const b of weekBars) if (b.lane >= shown) for (let col = b.startCol; col <= b.endCol; col++) hidden[col]++;
+          }
+          return [
+            ...weekBars.filter((b) => b.lane < shown).map((b) => (
+              <StripBar key={`${w}-${b.row.source}-${b.row.source_id}-${b.row.start_utc}`} bar={b} left={weekCol + b.startCol} rowColor={rowColor} onPress={onPress} />
+            )),
+            ...hidden.flatMap((n, col) => (n > 0 ? [(
+              <Pressable
+                key={`more-${w}-${col}`}
+                style={[styles.more, { top: shown * LANE_H + 1, left: colPct(weekCol + col), width: colPct(1) }]}
+                onPress={() => setExpanded(true)}
+                accessibilityLabel={`${n} more`}
               >
-                {task ? <><Glyph name={ICONS.schedule} /> {r.title ?? ''}</> : r.source === 'birthday' ? <><Glyph name={ICONS.cake} /> {r.title ?? ''}</> : (r.title ?? '(untitled)')}
-              </Text>
-            </Pressable>
-          );
+                <Text style={[styles.moreText, { color: c.textMuted }]}>+{n}</Text>
+              </Pressable>
+            )] : [])),
+          ];
         })}
-        {hidden.map((n, col) => n > 0 && (
-          <Pressable
-            key={`more-${col}`}
-            style={[styles.more, { top: shown * LANE_H + 1, left: colPct(col), width: colPct(1) }]}
-            onPress={() => setExpanded(true)}
-            accessibilityLabel={`${n} more`}
-          >
-            <Text style={[styles.moreText, { color: c.textMuted }]}>+{n}</Text>
-          </Pressable>
-        ))}
       </SlidingDays>
     </View>
   );
 }
 
+function StripBar({ bar, left, rowColor, onPress }: {
+  bar: Bar & { lane: number };
+  left: number;
+  rowColor: (r: CalRow) => string;
+  onPress: (row: CalRow) => void;
+}) {
+  const c = useColors();
+  const r = bar.row;
+  const task = isTaskRow(r) ? r.task : null;
+  const fill = task ? null : rowColor(r);
+  const cancelled = r.status === 'Cancelled';
+  return (
+    <Pressable
+      style={[
+        styles.bar,
+        { top: bar.lane * LANE_H + 1, left: colPct(left), width: colPct(bar.endCol - bar.startCol + 1) },
+        bar.before && styles.barBefore,
+        bar.after && styles.barAfter,
+        task
+          ? [
+              styles.taskChip,
+              { backgroundColor: c.surface, borderColor: c.border },
+              task.overdue && { borderColor: c.danger, backgroundColor: c.danger + '22' },
+            ]
+          : { backgroundColor: fill ?? undefined },
+        cancelled && styles.cancelled,
+      ]}
+      onPress={() => onPress(r)}
+    >
+      <Text
+        style={[styles.chipText, { color: task ? (task.overdue ? c.danger : c.textMuted) : textOn(fill ?? '') }, cancelled && styles.struck]}
+        numberOfLines={1}
+      >
+        {task ? <><Glyph name={ICONS.schedule} /> {r.title ?? ''}</> : r.source === 'birthday' ? <><Glyph name={ICONS.cake} /> {r.title ?? ''}</> : (r.title ?? '(untitled)')}
+      </Text>
+    </Pressable>
+  );
+}
+
 /** The current-time rule across today's column; ticks on its own, so the grid doesn't re-render for it. */
-function NowLine({ dayKeys }: { dayKeys: string[] }) {
+function NowLine({ dayKeys, firstCol }: { dayKeys: string[]; firstCol: number }) {
   const c = useColors();
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(timer);
   }, []);
-  const col = dayKeys.indexOf(ymd(now));
-  if (col < 0) return null;
+  const i = dayKeys.indexOf(ymd(now));
+  if (i < 0) return null;
   return (
     <View
       pointerEvents="none"
-      style={[styles.nowLine, { top: pct(minutesOfDay(now)), left: colPct(col), width: colPct(1), backgroundColor: c.danger }]}
+      style={[styles.nowLine, { top: pct(minutesOfDay(now)), left: colPct(firstCol + i), width: colPct(1), backgroundColor: c.danger }]}
     >
       <View style={[styles.nowDot, { backgroundColor: c.danger }]} />
     </View>
   );
 }
 
-/** A fixed hour gutter beside a clipped strip of day columns that rides the swipe offset. */
-function SlidingDays({ slideStyle, gutter, children }: {
+/** A fixed hour gutter beside a clipped, one-week-wide window; the day columns inside it ride the pager
+ *  offset, `behind` stays still. */
+function SlidingDays({ slideStyle, gutter, behind, onClipLayout, children }: {
   slideStyle: ReturnType<typeof useAnimatedStyle>;
   gutter?: ReactNode;
+  behind?: ReactNode;
+  onClipLayout?: (e: LayoutChangeEvent) => void;
   children: ReactNode;
 }) {
   return (
     <>
       <View style={styles.gutter}>{gutter}</View>
-      <View style={styles.clip}>
+      <View style={styles.clip} onLayout={onClipLayout}>
+        {behind && <View pointerEvents="none" style={StyleSheet.absoluteFill}>{behind}</View>}
         <Animated.View style={[styles.days, slideStyle]}>{children}</Animated.View>
       </View>
     </>
   );
+}
+
+/** Horizontal paging on the UI thread. `offset` is the day axis' translation, always -page × weekWidth at
+ *  rest. A committed swipe animates to the neighbouring page, then advances `page` and reports the step;
+ *  grabbing again mid-slide commits the pending step at once so a quick double swipe keeps both. */
+function useWeekPager(onStep: (dir: 1 | -1) => void) {
+  const offset = useSharedValue(0);
+  const weekW = useSharedValue(0);
+  const page = useSharedValue(0);
+  const pending = useSharedValue(0);
+  const dragBase = useSharedValue(0);
+  const onStepRef = useRef(onStep);
+  onStepRef.current = onStep;
+
+  const [gesture] = useState(() => {
+    const step = (dir: 1 | -1) => onStepRef.current(dir);
+    const commitPending = () => {
+      'worklet';
+      const dir = pending.value;
+      if (dir === 0) return;
+      pending.value = 0;
+      page.value += dir;
+      scheduleOnRN(step, dir as 1 | -1);
+    };
+    return Gesture.Pan()
+      .maxPointers(1)
+      .activeOffsetX([-LOCK_PX, LOCK_PX])
+      .failOffsetY([-LOCK_PX, LOCK_PX])
+      .onStart(() => {
+        commitPending();
+        cancelAnimation(offset);
+        dragBase.value = offset.value;
+      })
+      .onUpdate((e) => {
+        offset.value = dragBase.value + e.translationX;
+      })
+      .onEnd((e, success) => {
+        const w = weekW.value;
+        const home = -page.value * w;
+        const moved = offset.value - home;
+        const far = Math.abs(moved) > w * COMMIT_FRACTION;
+        const flung = Math.abs(e.velocityX) > COMMIT_VELOCITY && Math.sign(e.velocityX) === Math.sign(moved);
+        const dir = success && w > 0 && (far || flung) ? (moved < 0 ? 1 : -1) : 0;
+        pending.value = dir;
+        offset.value = withTiming(home - dir * w, { duration: SLIDE_MS }, (done) => {
+          if (done) commitPending();
+        });
+      });
+  });
+
+  const snapTo = useCallback((p: number) => {
+    cancelAnimation(offset);
+    pending.value = 0;
+    page.value = p;
+    offset.value = -p * weekW.value;
+  }, [offset, pending, page, weekW]);
+
+  const onWeekLayout = useCallback((e: LayoutChangeEvent) => {
+    weekW.value = e.nativeEvent.layout.width;
+    offset.value = -page.value * e.nativeEvent.layout.width;
+  }, [weekW, offset, page]);
+
+  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.value }] }));
+  return { gesture, slideStyle, snapTo, onWeekLayout };
 }
 
 /** Pinch zoom on the time axis, anchored on the fingers: the time under the focal point stays under it.
@@ -386,12 +513,12 @@ function useTimeZoom(initialHours: number) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  headerRow: { flexDirection: 'row', borderBottomWidth: 0.5 },
+  headerRow: { flexDirection: 'row', height: HEADER_H, borderBottomWidth: 0.5 },
   gutter: { width: 34 },
   clip: { flex: 1, overflow: 'hidden' },
-  days: { flex: 1, flexDirection: 'row' },
+  days: { flex: 1 },
   viewport: { flex: 1 },
-  dayHeader: { flex: 1, alignItems: 'center', paddingVertical: 4 },
+  dayHeader: { position: 'absolute', top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   dayHeaderText: { fontSize: 12 },
   today: { fontWeight: '700' },
   allDayRow: { flexDirection: 'row', borderBottomWidth: 0.5 },
@@ -411,7 +538,7 @@ const styles = StyleSheet.create({
   struck: { textDecorationLine: 'line-through' },
   lanes: { flexDirection: 'row' },
   hourLabel: { position: 'absolute', right: 4, marginTop: -6, fontSize: 9 },
-  dayColumn: { flex: 1, borderLeftWidth: 0.5 },
+  dayColumn: { position: 'absolute', top: 0, bottom: 0, borderLeftWidth: 0.5 },
   line: { position: 'absolute', left: 0, right: 0, height: 0.5 },
   event: { position: 'absolute', minHeight: 18, overflow: 'hidden', borderRadius: 4, padding: 2, borderWidth: 0.5, borderColor: '#ffffff88' },
   eventTitle: { fontSize: 10, fontWeight: '600' },

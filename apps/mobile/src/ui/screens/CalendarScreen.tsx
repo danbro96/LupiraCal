@@ -42,6 +42,7 @@ export function CalendarScreen() {
   const [anchor, setAnchor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [focusNow, setFocusNow] = useState(0);
+  const [jumpKey, setJumpKey] = useState(0);
 
   const containerH = useRef(0);
   const sheetH = useRef(new Animated.Value(0)).current;
@@ -87,11 +88,12 @@ export function CalendarScreen() {
   const weekStart = useMemo(() => startOfWeek(anchor), [anchor]);
   const title = mode === 'month' ? fmtMonthTitle(anchor) : `${fmtShort(weekStart)} – ${fmtShort(addDays(weekStart, 6))}`;
 
-  const step = (dir: 1 | -1) => {
-    setAnchor(mode === 'month' ? addMonths(anchor, dir) : addDays(anchor, dir * 7));
+  // Functional: two quick week swipes can both land before a re-render.
+  const step = useCallback((dir: 1 | -1) => {
+    setAnchor((a) => (mode === 'month' ? addMonths(a, dir) : addDays(a, dir * 7)));
     if (mode === 'month') deselect();
-  };
-  const swipe = usePeriodSwipe(step, `${mode}:${ymd(mode === 'month' ? startOfMonth(anchor) : weekStart)}`);
+  }, [mode, deselect]);
+  const swipe = usePeriodSwipe(step, ymd(startOfMonth(anchor)));   // month only; WeekView pages itself
   const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipe.offset.value }] }));
   const measureSwipe = (e: { nativeEvent: { layout: { width: number } } }) => {
     swipe.width.value = e.nativeEvent.layout.width;
@@ -100,6 +102,7 @@ export function CalendarScreen() {
   useLayoutEffect(() => {
     const goToday = () => {
       setAnchor(new Date());
+      setJumpKey((n) => n + 1);
       setFocusNow((n) => n + 1);
       deselect();
     };
@@ -109,6 +112,7 @@ export function CalendarScreen() {
       onChange: (e, d) => {
         if (e.type !== 'set' || !d) return;
         setAnchor(d);
+        setJumpKey((n) => n + 1);
         if (mode === 'month') selectDay(ymd(d));
       },
     });
@@ -185,11 +189,16 @@ export function CalendarScreen() {
           )}
         </View>
       ) : (
-        <GestureDetector gesture={swipe.gesture}>
-          <View style={styles.area} onLayout={measureSwipe}>
-            <WeekView weekStart={weekStart} slide={swipe.offset} focusNow={focusNow} onPressOccurrence={openOccurrence} onCreateSlot={createSlot} />
-          </View>
-        </GestureDetector>
+        <View style={styles.area}>
+          <WeekView
+            weekStart={weekStart}
+            jumpKey={jumpKey}
+            focusNow={focusNow}
+            onStep={step}
+            onPressOccurrence={openOccurrence}
+            onCreateSlot={createSlot}
+          />
+        </View>
       )}
     </View>
   );

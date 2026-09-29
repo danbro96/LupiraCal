@@ -8,8 +8,9 @@ const COMMIT_FRACTION = 0.25;
 const COMMIT_VELOCITY = 600;
 const SLIDE_MS = 160;
 
-/** Horizontal period paging: the content tracks the finger, and past a quarter of the width (or on a
- *  fling) slides out, `onStep` swaps the period, and the new one slides in from the far side.
+/** Month paging (the week grid renders its neighbours and pages itself): the content tracks the finger,
+ *  and past a quarter of the width (or on a fling) slides out, `onStep` swaps the period, and the new
+ *  one slides in from the far side.
  *  Direction lock is RNGH's — a drag that goes vertical first fails, so the hour scroll and the day
  *  sheet keep it. The PanResponder this replaced lost that race to the native ScrollView. */
 export function usePeriodSwipe(onStep: (dir: 1 | -1) => void, pageKey: string) {
