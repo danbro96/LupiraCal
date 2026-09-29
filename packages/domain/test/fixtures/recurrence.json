@@ -319,7 +319,7 @@
     "TimeZone": "Europe/Stockholm"
   },
   {
-    "Name": "zoned-until-reads-as-wall-clock",
+    "Name": "zoned-until-is-an-instant",
     "Rule": "FREQ=DAILY;UNTIL=20261027T170000Z",
     "Start": "2026-10-23T16:00:00+00:00",
     "DurationMinutes": 60,
@@ -329,7 +329,54 @@
       "2026-10-23T16:00:00+00:00",
       "2026-10-24T16:00:00+00:00",
       "2026-10-25T17:00:00+00:00",
-      "2026-10-26T17:00:00+00:00"
+      "2026-10-26T17:00:00+00:00",
+      "2026-10-27T17:00:00+00:00"
+    ],
+    "TimeZone": "Europe/Stockholm"
+  },
+  {
+    "Name": "zoned-until-is-an-instant-west",
+    "Rule": "FREQ=DAILY;UNTIL=20261027T200000Z",
+    "Start": "2026-10-24T22:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-10-01T00:00:00+00:00",
+    "WindowEnd": "2026-11-01T00:00:00+00:00",
+    "Expected": [
+      "2026-10-24T22:00:00+00:00",
+      "2026-10-25T22:00:00+00:00",
+      "2026-10-26T22:00:00+00:00"
+    ],
+    "TimeZone": "America/New_York"
+  },
+  {
+    "Name": "zoned-floating-until-reads-the-wall-clock",
+    "Rule": "FREQ=DAILY;UNTIL=20261027T180000",
+    "Start": "2026-10-23T16:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-10-01T00:00:00+00:00",
+    "WindowEnd": "2026-11-01T00:00:00+00:00",
+    "Expected": [
+      "2026-10-23T16:00:00+00:00",
+      "2026-10-24T16:00:00+00:00",
+      "2026-10-25T17:00:00+00:00",
+      "2026-10-26T17:00:00+00:00",
+      "2026-10-27T17:00:00+00:00"
+    ],
+    "TimeZone": "Europe/Stockholm"
+  },
+  {
+    "Name": "zoned-date-until-covers-its-day",
+    "Rule": "FREQ=DAILY;UNTIL=20261027",
+    "Start": "2026-10-23T16:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-10-01T00:00:00+00:00",
+    "WindowEnd": "2026-11-01T00:00:00+00:00",
+    "Expected": [
+      "2026-10-23T16:00:00+00:00",
+      "2026-10-24T16:00:00+00:00",
+      "2026-10-25T17:00:00+00:00",
+      "2026-10-26T17:00:00+00:00",
+      "2026-10-27T17:00:00+00:00"
     ],
     "TimeZone": "Europe/Stockholm"
   },

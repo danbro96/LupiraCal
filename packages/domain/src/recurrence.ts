@@ -5,7 +5,7 @@
 // Deliberately a subset: FREQ D/W/M/Y, INTERVAL, COUNT, UNTIL, BYDAY (incl. ordinals), BYMONTHDAY, BYMONTH,
 // WKST. Anything else parses to null and the caller renders the first occurrence only (flagged in the UI).
 // Instants are UTC. A timed series with a start zone recurs on that zone's wall clock, like the server's: the rule
-// math runs on wall-clock ms and only the window compares real instants.
+// math runs on wall-clock ms, and the window and a UTC UNTIL compare real instants.
 
 import { fromWallMs, isValidTimeZone, toWallMs } from './zonedTime';
 
@@ -13,8 +13,9 @@ export type RecurrenceRule = {
   freq: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
   interval: number;
   count: number | null;
-  /** Epoch ms, inclusive (RFC: the last possible instance). */
-  until: number | null;
+  /** Inclusive (RFC: the last possible instance). A UTC UNTIL bounds the instant; a floating or date UNTIL bounds the
+   *  wall clock, ms read as if UTC — a date one covering its whole day. */
+  until: { ms: number; utc: boolean } | null;
   byDay: { ord: number | null; weekday: number }[];
   byMonthDay: number[];
   byMonth: number[];
@@ -87,11 +88,11 @@ export function parseRecurrenceRule(text: string): RecurrenceRule | null {
   return sawFreq ? rule : null;
 }
 
-function parseUntil(value: string): number | null {
-  let m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z?$/.exec(value);
-  if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+function parseUntil(value: string): RecurrenceRule['until'] {
+  let m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)$/.exec(value);
+  if (m) return { ms: Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]), utc: m[7] === 'Z' };
   m = /^(\d{4})(\d{2})(\d{2})$/.exec(value);
-  if (m) return Date.UTC(+m[1], +m[2] - 1, +m[3], 23, 59, 59);   // date-only UNTIL covers its whole day
+  if (m) return { ms: Date.UTC(+m[1], +m[2] - 1, +m[3], 23, 59, 59), utc: false };
   return null;
 }
 
@@ -120,11 +121,10 @@ export function expandRecurrence(
   const out: Date[] = [];
   let produced = 0;
   const consider = (wall: number): 'emitted' | 'skipped' | 'done' => {
-    // The server evaluates rules zone-less, so UNTIL bounds the wall clock even when it carries a Z.
-    if (rule.until !== null && wall > rule.until) return 'done';
+    const t = toInstant(wall);
+    if (rule.until !== null && (rule.until.utc ? t : wall) > rule.until.ms) return 'done';
     produced++;
     if (rule.count !== null && produced > rule.count) return 'done';
-    const t = toInstant(wall);
     if (t >= windowEnd.getTime()) return 'done';
     if (t >= windowStart.getTime()) {
       out.push(new Date(t));
