@@ -42,6 +42,37 @@ export async function unfileItem(itemId: string, calendarId: string): Promise<vo
   await submit({ kind: 'item.unfile', itemId, calendarId, ...stamp() });
 }
 
+export type ItemSave = {
+  core: ItemCore;
+  file: string[];
+  unfile: string[];
+  invite: string[];
+  uninvite: string[];
+};
+
+/** One editor save: the core write plus its filing and attendee diffs, enqueued as one transaction so a
+ *  crash can't leave half of it. A create files into the first calendar and the rest follow as file ops. */
+export async function saveItem(itemId: string | undefined, save: ItemSave): Promise<string> {
+  const ops: ClientOp[] = [];
+  let id = itemId;
+  let files = save.file;
+  if (!id) {
+    const [calendarId, ...rest] = save.file;
+    const sourceKey = uuidv7();
+    id = await deterministicIdFor(sourceKey);
+    ops.push({ kind: 'item.create', itemId: id, sourceKey, calendarId, core: save.core, ...stamp() });
+    files = rest;
+  } else {
+    ops.push({ kind: 'item.revise', itemId: id, core: save.core, ...stamp() });
+  }
+  for (const calendarId of files) ops.push({ kind: 'item.file', itemId: id, calendarId, entryStatus: 'accepted', ...stamp() });
+  for (const calendarId of save.unfile) ops.push({ kind: 'item.unfile', itemId: id, calendarId, ...stamp() });
+  if (save.invite.length > 0) ops.push({ kind: 'item.invite', itemId: id, contactIds: save.invite, ...stamp() });
+  for (const contactId of save.uninvite) ops.push({ kind: 'item.uninvite', itemId: id, contactId, ...stamp() });
+  await enqueue(await getDb(), ops, currentHorizon());
+  return id;
+}
+
 export async function createContact(addressBookId: string, core: ContactCore): Promise<string> {
   const sourceKey = uuidv7();
   const contactId = await deterministicIdFor(sourceKey);

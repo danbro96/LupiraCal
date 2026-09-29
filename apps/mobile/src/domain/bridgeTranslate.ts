@@ -1,3 +1,4 @@
+import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import type { ContactDoc, ItemDoc, PartialDateDto, ReachChannel } from './docTypes';
 import type { ContactCore, ItemCore } from './ops';
 
@@ -37,6 +38,9 @@ export function translateCalRow(row: ParsedCalRow, existing: ItemDoc | null): Ca
 
   const p = row.payload;
   if (p.dtstart === null) return { kind: 'skip', reason: 'captured row has no start' };
+  // The provider hands over instants only. A revise keeps the series' zone — clearing it would re-anchor a
+  // repeating event to UTC — and a create takes the phone's, the zone the stock app showed it in.
+  const zone = p.allDay ? null : row.kind === 'created' ? deviceTimeZone() : (existing?.startTimezone ?? null);
 
   const core: ItemCore = {
     title: p.title?.trim() || null,
@@ -48,7 +52,7 @@ export function translateCalRow(row: ParsedCalRow, existing: ItemDoc | null): Ca
     parentItemId: existing?.parentItemId ?? null,
     isAllDay: p.allDay,
     startsAt: null, endsAt: null, startDate: null, endDate: null,
-    startTimezone: null, endTimezone: null,
+    startTimezone: zone, endTimezone: zone,
     recurrenceRule: p.rrule ? p.rrule.replace(/^RRULE:/i, '') : null,
   };
 

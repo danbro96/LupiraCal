@@ -22,6 +22,9 @@ export type ContactGuards = {
 
 export type CalendarMembership = { calendarId: string; status: string };
 
+/** `participationId` is '' until the server has minted one for an invite still in the outbox. */
+export type ItemAttendee = { participationId: string; contactId: string; role: string; status: string };
+
 export type ItemDoc = {
   id: string;
   title?: string | null;
@@ -38,8 +41,11 @@ export type ItemDoc = {
   category?: string | null;
   tags?: string[] | null;
   parentItemId?: string | null;
+  placeId?: string | null;
+  locationLabel?: string | null;
   metadata?: Record<string, unknown> | null;
   calendars: CalendarMembership[];
+  attendees?: ItemAttendee[];
   updatedAt?: string;
   [key: string]: unknown;
 };

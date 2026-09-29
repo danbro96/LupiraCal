@@ -3,8 +3,8 @@ import { localTime } from '../../domain/editors';
 import { PickerButton } from './PickerButton';
 
 /** Android system picker writing back the editors' string form ('HH:MM'). */
-export function TimeField({ value, onChange, placeholder = 'Set time' }: {
-  value: string; onChange: (v: string) => void; placeholder?: string;
+export function TimeField({ value, onChange, placeholder = 'Set time', clearable = true }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; clearable?: boolean;
 }) {
   const open = () => {
     const base = new Date();
@@ -18,5 +18,7 @@ export function TimeField({ value, onChange, placeholder = 'Set time' }: {
       },
     });
   };
-  return <PickerButton text={value || placeholder} isSet={!!value} onPress={open} onClear={() => onChange('')} />;
+  return (
+    <PickerButton text={value || placeholder} isSet={!!value} onPress={open} onClear={clearable ? () => onChange('') : undefined} />
+  );
 }

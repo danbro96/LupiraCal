@@ -11,13 +11,17 @@ export const OP_ENVELOPE_VERSION = 1;
 type Base = { commandId: string; occurredAt: string };
 
 /** Desired core-section state for a calendar item (whole-section write — PUT with every sentinel set).
- *  null on title/description/status/category/tags means "keep" (the REST contract has no clear for those). */
+ *  null on title/description/status/category/tags means "keep" (the REST contract has no clear for those).
+ *  `placeId` undefined = keep (writers that can't see places, like the calendar bridge), null = clear;
+ *  `location` is the label stored with it. */
 export type ItemCore = Pick<ItemDoc,
   'title' | 'description' | 'status' | 'isAllDay' | 'startsAt' | 'endsAt' | 'startDate' | 'endDate'
   | 'startTimezone' | 'endTimezone' | 'recurrenceRule' | 'category' | 'tags' | 'parentItemId'> & {
   /** Create-only: availability-calendar entries carry their presence status (details.presence.status
    *  server-side). Ignored by revise — details have their own endpoints. */
   availability?: string | null;
+  placeId?: string | null;
+  location?: string | null;
 };
 
 /** Contact fields as ReviseContact interprets them: name/notes/etc null = keep; channels and tags UNION-merge
@@ -33,6 +37,8 @@ export type ClientOp = Base & (
   | { kind: 'item.delete'; itemId: string }
   | { kind: 'item.file'; itemId: string; calendarId: string; entryStatus: 'accepted' | 'proposed' }
   | { kind: 'item.unfile'; itemId: string; calendarId: string }
+  | { kind: 'item.invite'; itemId: string; contactIds: string[] }
+  | { kind: 'item.uninvite'; itemId: string; contactId: string }
   | { kind: 'contact.create'; contactId: string; sourceKey: string; addressBookId: string; core: ContactCore }
   | { kind: 'contact.revise'; contactId: string; core: ContactCore }
   | { kind: 'contact.channels'; contactId: string; channels: ReachChannel[] }
@@ -63,6 +69,8 @@ export const OP_LABELS: Record<OpKind, string> = {
   'item.delete': 'Delete event',
   'item.file': 'File into calendar',
   'item.unfile': 'Remove from calendar',
+  'item.invite': 'Invite to event',
+  'item.uninvite': 'Remove from event',
   'contact.create': 'Create contact',
   'contact.revise': 'Edit contact',
   'contact.channels': 'Edit contact channels',

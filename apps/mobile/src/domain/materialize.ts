@@ -50,7 +50,8 @@ export function occurrenceRowsForItem(doc: ItemDoc, deleted: boolean, horizon: H
   if (doc.recurrenceRule) {
     // Outside the supported rule subset → degrade to the anchor occurrence (same as an unexpandable rule
     // on the server would at least show its first instance) rather than dropping the item from grids.
-    starts = expandRecurrence(doc.recurrenceRule, start, horizon.start, horizon.end) ?? [start];
+    starts = expandRecurrence(doc.recurrenceRule, start, horizon.start, horizon.end, allDay ? null : doc.startTimezone ?? null)
+      ?? [start];
   } else {
     const inWindow = start.getTime() >= horizon.start.getTime() && start.getTime() < horizon.end.getTime();
     starts = inWindow ? [start] : [];

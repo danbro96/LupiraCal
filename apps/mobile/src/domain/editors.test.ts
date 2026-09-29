@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { ContactDoc, ItemDoc } from './docTypes';
-import { categoryAllDayDefault, contactCoreFromForm, contactFormFromDoc, emptyContactForm, emptyItemForm, itemCoreFromForm, itemFormFromDoc, parseCsv } from './editors';
+import {
+  attendeeChanges, categoryAllDayDefault, contactCoreFromForm, contactFormFromDoc, coreOfDoc, defaultStartTime, emptyContactForm,
+  emptyItemForm, filingChanges, itemCoreFromForm, itemFormFromDoc, metadataValueFromInput, parseCsv, withAllDay, withSchedule,
+} from './editors';
 
 const timedDoc: ItemDoc = {
   id: 'i1',
@@ -144,5 +147,187 @@ describe('parseCsv', () => {
   it('trims, drops empties, dedupes case-insensitively', () => {
     expect(parseCsv(' a, B ,a, ,b')).toEqual(['a', 'B']);
     expect(parseCsv('')).toEqual([]);
+  });
+});
+
+describe('FAB-created form', () => {
+  it('starts at the next half hour today and 09:00 on any other day', () => {
+    const now = new Date(2026, 8, 29, 14, 10);
+    expect(defaultStartTime('2026-09-29', now)).toBe('14:30');
+    expect(defaultStartTime('2026-09-29', new Date(2026, 8, 29, 14, 30))).toBe('15:00');
+    expect(defaultStartTime('2026-10-02', now)).toBe('09:00');
+  });
+
+  it('never leaves the picked day', () => {
+    expect(defaultStartTime('2026-09-29', new Date(2026, 8, 29, 23, 50))).toBe('23:30');
+  });
+
+  it('prefills a one-hour event', () => {
+    const form = emptyItemForm('2026-10-02', undefined, new Date(2026, 8, 29, 14, 10));
+    expect(form).toMatchObject({ startDay: '2026-10-02', startTime: '09:00', endDay: '2026-10-02', endTime: '10:00' });
+  });
+});
+
+describe('withSchedule', () => {
+  const timed = { ...emptyItemForm(), startDay: '2026-10-02', startTime: '09:00', endDay: '2026-10-02', endTime: '10:30' };
+
+  it('moving the start carries the end, keeping the duration', () => {
+    expect(withSchedule(timed, 'startTime', '11:00')).toMatchObject({ endDay: '2026-10-02', endTime: '12:30' });
+    expect(withSchedule(timed, 'startDay', '2026-10-05')).toMatchObject({ endDay: '2026-10-05', endTime: '10:30' });
+    expect(withSchedule(timed, 'startTime', '23:00')).toMatchObject({ endDay: '2026-10-03', endTime: '00:30' });
+  });
+
+  it('moving the end leaves the start alone', () => {
+    expect(withSchedule(timed, 'endTime', '17:00')).toMatchObject({ startTime: '09:00', endTime: '17:00' });
+  });
+
+  it('completing a start on an endless event gives it an hour', () => {
+    const dayOnly = { ...emptyItemForm(), startDay: '2026-10-02' };
+    expect(withSchedule(dayOnly, 'startTime', '18:00')).toMatchObject({ endDay: '2026-10-02', endTime: '19:00' });
+  });
+
+  it('shifts an all-day range by whole days', () => {
+    const range = { ...emptyItemForm(), isAllDay: true, startDay: '2026-10-02', endDay: '2026-10-04' };
+    expect(withSchedule(range, 'startDay', '2026-10-30')).toMatchObject({ endDay: '2026-11-01' });
+  });
+});
+
+describe('withAllDay', () => {
+  it('turns a span past midnight into a multi-day range', () => {
+    const overnight = { ...emptyItemForm(), startDay: '2026-10-02', startTime: '20:00', endDay: '2026-10-04', endTime: '10:00' };
+    expect(withAllDay(overnight, true)).toMatchObject({ isAllDay: true, startTime: '', endTime: '', endDay: '2026-10-04' });
+  });
+
+  it('an end at midnight closes the previous day', () => {
+    const evening = { ...emptyItemForm(), startDay: '2026-10-02', startTime: '20:00', endDay: '2026-10-03', endTime: '00:00' };
+    expect(withAllDay(evening, true)).toMatchObject({ endDay: '' });
+  });
+
+  it('a range turned timed starts at 09:00 for an hour', () => {
+    const range = { ...emptyItemForm(), isAllDay: true, startDay: '2026-10-02', endDay: '2026-10-04' };
+    expect(withAllDay(range, false)).toMatchObject({ startTime: '09:00', endDay: '2026-10-02', endTime: '10:00' });
+  });
+});
+
+describe('all-day end is inclusive in the form', () => {
+  it('shows the last day and stores the day after', () => {
+    const doc: ItemDoc = { ...timedDoc, isAllDay: true, startsAt: null, endsAt: null, startDate: '2026-08-10', endDate: '2026-08-13' };
+    const form = itemFormFromDoc(doc);
+    expect(form.endDay).toBe('2026-08-12');
+    const r = itemCoreFromForm({ ...form, endDay: '2026-08-10' }, doc);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value.endDate).toBe('2026-08-11');
+  });
+
+  it('crosses month ends', () => {
+    const r = itemCoreFromForm({ ...emptyItemForm(), isAllDay: true, startDay: '2026-08-30', endDay: '2026-08-31' });
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value.endDate).toBe('2026-09-01');
+  });
+});
+
+describe('time zones', () => {
+  const tokyoDoc: ItemDoc = {
+    ...timedDoc, startsAt: '2026-10-02T01:00:00.000Z', endsAt: '2026-10-02T02:30:00.000Z', startTimezone: 'Asia/Tokyo',
+  };
+
+  it('reads the fields in the event zone and writes them back unchanged', () => {
+    const form = itemFormFromDoc(tokyoDoc);
+    expect(form).toMatchObject({ timeZone: 'Asia/Tokyo', startDay: '2026-10-02', startTime: '10:00', endTime: '11:30' });
+    const r = itemCoreFromForm(form, tokyoDoc);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value).toMatchObject({ startsAt: tokyoDoc.startsAt, endsAt: tokyoDoc.endsAt, startTimezone: 'Asia/Tokyo', endTimezone: 'Asia/Tokyo' });
+  });
+
+  it('changing the zone keeps the wall clock and moves the instant', () => {
+    const r = itemCoreFromForm({ ...itemFormFromDoc(tokyoDoc), timeZone: 'Europe/London' }, tokyoDoc);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value.startsAt).toBe('2026-10-02T09:00:00.000Z');
+  });
+
+  it('an unknown zone opens in the device zone', () => {
+    expect(itemFormFromDoc({ ...tokyoDoc, startTimezone: 'Not/AZone' }).timeZone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  });
+
+  it('all-day events carry no zone', () => {
+    const r = itemCoreFromForm({ ...emptyItemForm(), isAllDay: true, startDay: '2026-10-02', timeZone: 'Asia/Tokyo' });
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value.startTimezone).toBeNull();
+  });
+});
+
+describe('place', () => {
+  it('round-trips the place and its label', () => {
+    const doc: ItemDoc = { ...timedDoc, placeId: 'p1', locationLabel: 'Folkets Park' };
+    const form = itemFormFromDoc(doc);
+    expect(form.place).toEqual({ placeId: 'p1', label: 'Folkets Park' });
+    const r = itemCoreFromForm(form, doc);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value).toMatchObject({ placeId: 'p1', location: 'Folkets Park' });
+  });
+
+  it('removing it clears, not keeps', () => {
+    const r = itemCoreFromForm({ ...itemFormFromDoc({ ...timedDoc, placeId: 'p1' }), place: null });
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value.placeId).toBeNull();
+  });
+});
+
+describe('coreOfDoc', () => {
+  it('copies the core verbatim and keeps tags', () => {
+    const doc: ItemDoc = { ...timedDoc, startTimezone: 'Europe/Stockholm', recurrenceRule: 'FREQ=WEEKLY' };
+    expect(coreOfDoc(doc)).toMatchObject({
+      title: 'Dentist', startsAt: doc.startsAt, startTimezone: 'Europe/Stockholm', recurrenceRule: 'FREQ=WEEKLY',
+      parentItemId: 'parent-1', tags: null,
+    });
+    expect(coreOfDoc(doc).placeId).toBeUndefined();
+  });
+});
+
+describe('filingChanges', () => {
+  const memberships = [
+    { calendarId: 'a', status: 'Accepted' },
+    { calendarId: 'b', status: 'Accepted' },
+    { calendarId: 'p', status: 'Proposed' },
+    { calendarId: 'r', status: 'Removed' },
+  ];
+
+  it('files the new, unfiles the dropped, and leaves proposals alone', () => {
+    expect(filingChanges(memberships, ['a', 'r'])).toEqual({ file: ['r'], unfile: ['b'] });
+  });
+
+  it('selecting a proposal accepts it', () => {
+    expect(filingChanges(memberships, ['a', 'b', 'p'])).toEqual({ file: ['p'], unfile: [] });
+  });
+
+  it('a create files everything selected, in order', () => {
+    expect(filingChanges([], ['b', 'a'])).toEqual({ file: ['b', 'a'], unfile: [] });
+  });
+});
+
+describe('attendeeChanges', () => {
+  it('diffs by contact', () => {
+    const attendees = [
+      { participationId: 'x', contactId: 'c1', role: 'RequiredParticipant', status: 'Accepted' },
+      { participationId: 'y', contactId: 'c2', role: 'RequiredParticipant', status: 'NeedsAction' },
+    ];
+    expect(attendeeChanges(attendees, ['c2', 'c3'])).toEqual({ invite: ['c3'], uninvite: ['c1'] });
+  });
+});
+
+describe('metadataValueFromInput', () => {
+  it('keeps text as text', () => {
+    expect(metadataValueFromInput('42', 'old')).toEqual({ ok: true, value: '42' });
+    expect(metadataValueFromInput('42', undefined)).toEqual({ ok: true, value: '42' });
+  });
+
+  it('keeps a non-string key typed', () => {
+    expect(metadataValueFromInput('43', 42)).toEqual({ ok: true, value: 43 });
+    expect(metadataValueFromInput('{"a":[1]}', { a: [] })).toEqual({ ok: true, value: { a: [1] } });
+    expect(metadataValueFromInput('true', null)).toEqual({ ok: true, value: true });
+  });
+
+  it('rejects text where JSON is held', () => {
+    expect(metadataValueFromInput('forty-three', 42).ok).toBe(false);
   });
 });

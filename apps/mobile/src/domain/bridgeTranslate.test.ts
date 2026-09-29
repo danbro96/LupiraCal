@@ -58,6 +58,18 @@ describe('translateCalRow', () => {
     expect(translateCalRow(row('created'), null)).toMatchObject({ kind: 'skip' });
   });
 
+  it('a revise keeps the series zone; a create takes the phone zone; all-day carries none', () => {
+    const revised = translateCalRow(row('revised'), { ...existing, startTimezone: 'Asia/Tokyo' });
+    if (revised.kind !== 'revise') throw new Error(revised.kind);
+    expect(revised.core).toMatchObject({ startTimezone: 'Asia/Tokyo', endTimezone: 'Asia/Tokyo' });
+    const created = translateCalRow(row('created', {}, { sourceKey: 'bridge:u1' }), null);
+    if (created.kind !== 'create') throw new Error(created.kind);
+    expect(created.core.startTimezone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    const allDay = translateCalRow(row('revised', { allDay: true, dtstart: Date.UTC(2026, 7, 10), dtend: null }), { ...existing, startTimezone: 'Asia/Tokyo' });
+    if (allDay.kind !== 'revise') throw new Error(allDay.kind);
+    expect(allDay.core.startTimezone).toBeNull();
+  });
+
   it('delete translates regardless of payload; startless non-deletes skip', () => {
     expect(translateCalRow(row('deleted', { dtstart: null }), existing)).toMatchObject({ kind: 'delete', itemId: 'item-1' });
     expect(translateCalRow(row('revised', { dtstart: null }), existing)).toMatchObject({ kind: 'skip' });

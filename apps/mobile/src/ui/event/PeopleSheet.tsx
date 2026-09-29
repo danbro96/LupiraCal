@@ -1,0 +1,72 @@
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
+import { List } from 'react-native-paper';
+import { rankByInteraction } from '@lupira/cal-domain/contactRank';
+import type { ItemAttendee } from '../../domain/docTypes';
+import { useContactList } from '../../state/useContactList';
+import { useParticipationSummary } from '../../state/useParticipationSummary';
+import { Button } from '../components/Button';
+import { Input } from '../components/Input';
+import { Sheet } from '../components/Sheet';
+import { ICONS } from '../icons';
+import { useColors } from '../theme';
+import { rsvpLabel } from './rsvp';
+
+const LIST_LIMIT = 50;
+
+/** Contacts come from the offline mirror; the ranking by who you meet most is online and fails open to
+ *  alphabetical. Picks apply live — the editor's Save sends the invites. */
+export function PeopleSheet({ selected, attendees, onChange, onDismiss }: {
+  selected: string[];
+  attendees: ItemAttendee[];
+  onChange: (contactIds: string[]) => void;
+  onDismiss: () => void;
+}) {
+  const c = useColors();
+  const { data: contacts } = useContactList();
+  const { data: summary } = useParticipationSummary(true);
+  const [q, setQ] = useState('');
+
+  const ranked = useMemo(() => rankByInteraction(contacts ?? [], summary), [contacts, summary]);
+  const byId = useMemo(() => new Map((contacts ?? []).map((row) => [row.id, row])), [contacts]);
+  const statusOf = new Map(attendees.map((a) => [a.contactId, a.status]));
+  const term = q.trim().toLowerCase();
+  const candidates = ranked
+    .filter((row) => !selected.includes(row.id) && (!term || row.displayName.toLowerCase().includes(term)))
+    .slice(0, LIST_LIMIT);
+
+  const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
+
+  return (
+    <Sheet anchor="top" onDismiss={onDismiss}>
+      <Input label="Search contacts" autoFocus value={q} onChangeText={setQ} />
+      <ScrollView keyboardShouldPersistTaps="handled">
+        {selected.length > 0 && <List.Subheader>Invited</List.Subheader>}
+        {selected.map((id) => (
+          <List.Item
+            key={id}
+            title={byId.get(id)?.displayName ?? 'Unknown contact'}
+            description={statusOf.has(id) ? rsvpLabel(statusOf.get(id)) : 'Invited when you save'}
+            left={(p) => <List.Icon {...p} icon={ICONS.person} />}
+            right={() => <List.Icon icon={ICONS.check} color={c.primary} />}
+            onPress={() => toggle(id)}
+          />
+        ))}
+        <List.Subheader>{term ? 'Matches' : summary?.length ? 'People you meet most' : 'Contacts'}</List.Subheader>
+        {candidates.map((row) => (
+          <List.Item
+            key={row.id}
+            title={row.displayName}
+            left={(p) => <List.Icon {...p} icon={ICONS.person} />}
+            onPress={() => toggle(row.id)}
+          />
+        ))}
+      </ScrollView>
+      <Button title="Done" onPress={onDismiss} style={styles.done} />
+    </Sheet>
+  );
+}
+
+const styles = StyleSheet.create({
+  done: { marginTop: 8 },
+});

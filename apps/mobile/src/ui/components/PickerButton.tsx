@@ -3,9 +3,9 @@ import { Button as PaperButton, IconButton } from 'react-native-paper';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 
-/** The shared surface behind DateField and TimeField: a value button plus a clear affordance. */
+/** The shared surface behind DateField and TimeField: a value button plus, when clearable, a clear affordance. */
 export function PickerButton({ text, isSet, onPress, onClear }: {
-  text: string; isSet: boolean; onPress: () => void; onClear: () => void;
+  text: string; isSet: boolean; onPress: () => void; onClear?: () => void;
 }) {
   const c = useColors();
   return (
@@ -13,7 +13,7 @@ export function PickerButton({ text, isSet, onPress, onClear }: {
       <PaperButton mode="outlined" style={styles.picker} textColor={isSet ? undefined : c.textMuted} onPress={onPress}>
         {text}
       </PaperButton>
-      {isSet && <IconButton icon={ICONS.close} size={16} onPress={onClear} />}
+      {isSet && onClear && <IconButton icon={ICONS.close} size={16} onPress={onClear} />}
     </View>
   );
 }

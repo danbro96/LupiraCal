@@ -1,31 +1,47 @@
 import { describeRrule } from '@lupira/cal-domain/rrule';
 import { fmtWhen } from '@lupira/cal-domain/time';
+import { deviceTimeZone, instantToWall, isValidTimeZone, zoneCity } from '@lupira/cal-domain/zonedTime';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Chip, List, Text } from 'react-native-paper';
-import { deleteItem, fileItem, mergeItemMetadata, unfileItem } from '../../state/actions';
-import { selectableCalendars, useCalendars } from '../../state/useContainers';
+import { Chip, HelperText, List, Text } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { CalendarMembership, ItemDoc } from '../../domain/docTypes';
+import { coreOfDoc, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
+import { toast } from '../../feedback/toast';
+import { deleteItem, fileItem, mergeItemMetadata, reviseItem, unfileItem } from '../../state/actions';
+import { usePrefs } from '../../state/prefs-store';
+import { useContactList } from '../../state/useContactList';
+import { useCalendars } from '../../state/useContainers';
 import { useItemState } from '../../state/useItemState';
+import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { useToastClearance } from '../components/ToastHost';
+import { AttendeeChips } from '../event/AttendeeChips';
 import { useCalendarColors } from '../hooks/palette';
 import { EventPhotosRow } from '../photos/EventPhotosRow';
 import type { RootStackParamList } from '../navigation/types';
-import { useColors } from '../theme';
+import { spacing, useColors } from '../theme';
 import { ICONS } from '../icons';
 
 export function ItemDetailScreen() {
   const c = useColors();
+  const insets = useSafeAreaInsets();
   const route = useRoute<RouteProp<RootStackParamList, 'ItemDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { itemId } = route.params;
   const { data: state, isLoading } = useItemState(itemId);
+  const { data: contacts } = useContactList();
+  const debugEnabled = usePrefs((s) => s.debugEnabled);
+  const places = usePlaceCoords([state?.doc.placeId]);
   const confirm = useConfirm();
+  const [actionBarHeight, setActionBarHeight] = useState(0);
+  useToastClearance(actionBarHeight);
 
   if (isLoading) return <Centered text="Loading…" />;
   if (!state) return <Centered text="This item is not in the offline mirror." />;
@@ -33,7 +49,11 @@ export function ItemDetailScreen() {
 
   const start = doc.isAllDay ? doc.startDate : doc.startsAt;
   const end = doc.isAllDay ? doc.endDate : doc.endsAt;
-  const attendees = Array.isArray(doc.attendees) ? doc.attendees.length : 0;
+  const cancelled = doc.status === 'Cancelled';
+  const place = doc.placeId ? places.get(doc.placeId) : undefined;
+  const placeLabel = doc.locationLabel || place?.name;
+  const attendees = doc.attendees ?? [];
+  const contactName = (id: string) => contacts?.find((row) => row.id === id)?.displayName ?? 'Unknown contact';
 
   const confirmDelete = async () => {
     const ok = await confirm({
@@ -45,119 +65,193 @@ export function ItemDetailScreen() {
     if (ok) void deleteItem(itemId).then(() => navigation.goBack());
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {state.deleted && <Text style={[styles.deleted, { color: c.danger }]}>Deleted — pending sync</Text>}
-      <Text style={styles.h1}>{doc.title ?? '(untitled)'}</Text>
-      {start && (
-        <Text style={[styles.when, { color: c.textMuted }]}>
-          {fmtWhen(start, doc.isAllDay)}
-          {end ? ` → ${fmtWhen(end, doc.isAllDay)}` : ''}
-        </Text>
-      )}
-      {doc.recurrenceRule && <Text style={[styles.recur, { color: c.primary }]}>{describeRrule(doc.recurrenceRule)}</Text>}
-      <View style={styles.chipRow}>
-        {doc.status && <Chip compact mode="outlined">{doc.status}</Chip>}
-        {doc.category && <Chip compact mode="outlined">{doc.category}</Chip>}
-        {(doc.tags ?? []).map((t) => (
-          <Chip key={t} compact>{`#${t}`}</Chip>
-        ))}
-      </View>
-      {doc.description ? <Text style={styles.description}>{doc.description}</Text> : null}
-      {attendees > 0 && <Text style={[styles.note, { color: c.textMuted }]}>{attendees} participant{attendees === 1 ? '' : 's'} (manage on web)</Text>}
-      {doc.prompt != null && <Text style={[styles.note, { color: c.textMuted }]}>Has a prompt payload (view on web)</Text>}
-      {doc.action != null && <Text style={[styles.note, { color: c.textMuted }]}>Has an action payload (view on web)</Text>}
+  // Cancelling keeps the event (attendees see it cancelled); Undo instead of a confirm, since it's reversible.
+  // The REST contract can't clear a status, so undoing on a never-set one lands on Confirmed.
+  const setStatus = (status: string, message: string) => {
+    const before = coreOfDoc(doc);
+    void reviseItem(itemId, { ...before, status }).then(() =>
+      toast(message, {
+        action: { label: 'Undo', onPress: () => void reviseItem(itemId, { ...before, status: before.status ?? 'Confirmed' }) },
+      }));
+  };
 
-      <EventPhotosRow itemId={itemId} item={doc} />
-      <CalendarsPanel itemId={itemId} memberships={doc.calendars} />
-      <MetadataPanel itemId={itemId} metadata={doc.metadata ?? null} />
-
-      <View style={styles.buttons}>
-        <Button title="Edit" onPress={() => navigation.navigate('ItemEdit', { itemId })} />
-        <Button title="Delete" variant="destructive" onPress={() => void confirmDelete()} />
-      </View>
-    </ScrollView>
-  );
-}
-
-/** Filing manager: every mirror calendar with a membership toggle → item.file / item.unfile ops. */
-function CalendarsPanel({ itemId, memberships }: {
-  itemId: string;
-  memberships: { calendarId: string; status: string }[];
-}) {
-  const c = useColors();
-  const { data: calendars } = useCalendars();
-  const colorOf = useCalendarColors();
-  const statusOf = (calId: string) => memberships.find((m) => m.calendarId === calId)?.status;
+  const openOnMap = place?.latitude != null && place.longitude != null
+    ? () => navigation.navigate('Tabs', { screen: 'Map', params: { at: { lon: place.longitude!, lat: place.latitude! } } })
+    : undefined;
 
   return (
-    <View>
-      <List.Subheader>Calendars</List.Subheader>
-      {selectableCalendars(calendars).map((cal) => {
-        const status = statusOf(cal.id);
-        const member = status === 'Accepted' || status === 'Proposed';
-        return (
+    <View style={styles.screen}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+        {state.deleted && <Text style={[styles.flag, { color: c.danger }]}>Deleted — pending sync</Text>}
+        {cancelled && <Text style={[styles.flag, { color: c.danger }]}>Cancelled</Text>}
+        <Text style={[styles.h1, cancelled && styles.struck]}>{doc.title ?? '(untitled)'}</Text>
+        {start && (
+          <Text style={[styles.when, { color: c.textMuted }]}>
+            {fmtWhen(start, doc.isAllDay)}
+            {end ? ` → ${fmtWhen(end, doc.isAllDay)}` : ''}
+          </Text>
+        )}
+        <ZoneLine doc={doc} />
+        {doc.recurrenceRule && <Text style={[styles.recur, { color: c.primary }]}>{describeRrule(doc.recurrenceRule)}</Text>}
+        {placeLabel && (
           <List.Item
-            key={cal.id}
-            onPress={() => void (member ? unfileItem(itemId, cal.id) : fileItem(itemId, cal.id))}
-            title={cal.displayName ?? cal.id}
-            description={status === 'Proposed' ? 'proposed' : undefined}
-            left={() => <View style={[styles.calDot, { backgroundColor: colorOf(cal.id) }]} />}
-            right={() => (member ? <List.Icon icon={ICONS.check} color={c.primary} /> : null)}
+            title={placeLabel}
+            description={openOnMap ? 'Show on map' : place?.formattedAddress ?? undefined}
+            style={styles.flush}
+            left={(p) => <List.Icon {...p} icon={ICONS.place} />}
+            onPress={openOnMap}
           />
-        );
-      })}
+        )}
+        <View style={styles.chipRow}>
+          {doc.status && !cancelled && <Chip compact mode="outlined">{doc.status}</Chip>}
+          {doc.category && <Chip compact mode="outlined">{doc.category}</Chip>}
+          {(doc.tags ?? []).map((t) => (
+            <Chip key={t} compact>{`#${t}`}</Chip>
+          ))}
+        </View>
+        {doc.description ? <Text style={styles.description}>{doc.description}</Text> : null}
+        {doc.prompt != null && <Text style={[styles.note, { color: c.textMuted }]}>Has a prompt payload (view on web)</Text>}
+        {doc.action != null && <Text style={[styles.note, { color: c.textMuted }]}>Has an action payload (view on web)</Text>}
+
+        {attendees.length > 0 && <AttendeeChips attendees={attendees} nameOf={contactName} />}
+
+        <CalendarsPanel itemId={itemId} memberships={doc.calendars} />
+        <EventPhotosRow itemId={itemId} item={doc} />
+        <MetadataPanel itemId={itemId} metadata={doc.metadata ?? null} editable={debugEnabled} />
+      </ScrollView>
+
+      {/* Pinned above the system navigation bar (edge-to-edge: nothing else pads it); primary action rightmost. */}
+      <View
+        style={[styles.actionBar, { backgroundColor: c.bg, borderTopColor: c.divider, paddingBottom: insets.bottom + spacing.sm }]}
+        onLayout={(e) => setActionBarHeight(e.nativeEvent.layout.height)}
+      >
+        <Button title="Delete" variant="destructive" onPress={() => void confirmDelete()} />
+        {cancelled
+          ? <Button title="Restore" variant="secondary" onPress={() => setStatus('Confirmed', 'Event restored')} />
+          : <Button title="Cancel event" variant="secondary" onPress={() => setStatus('Cancelled', 'Event cancelled')} />}
+        <Button title="Edit" style={styles.primary} onPress={() => navigation.navigate('ItemEdit', { itemId })} />
+      </View>
     </View>
   );
 }
 
-/** Merge-patch editor: add or overwrite one key at a time (the REST surface has no key removal). */
-function MetadataPanel({ itemId, metadata }: { itemId: string; metadata: Record<string, unknown> | null }) {
+/** Only when the event keeps another zone's clock: what the time reads there. */
+function ZoneLine({ doc }: { doc: ItemDoc }) {
+  const c = useColors();
+  const zone = doc.startTimezone;
+  if (doc.isAllDay || !doc.startsAt || !isValidTimeZone(zone) || zone === deviceTimeZone()) return null;
+  const from = instantToWall(doc.startsAt, zone).time;
+  const to = doc.endsAt ? `–${instantToWall(doc.endsAt, zone).time}` : '';
+  return <Text style={[styles.when, { color: c.textMuted }]}>{`${from}${to} in ${zoneCity(zone)}`}</Text>;
+}
+
+/** Read-only filing (the editor moves an event); a proposal is answered here, where it's seen. */
+function CalendarsPanel({ itemId, memberships }: { itemId: string; memberships: CalendarMembership[] }) {
+  const c = useColors();
+  const { data: calendars } = useCalendars();
+  const colorOf = useCalendarColors();
+  const nameOf = (id: string) => calendars?.find((cal) => cal.id === id)?.displayName ?? id;
+  const accepted = memberships.filter((m) => m.status === 'Accepted');
+  const proposed = memberships.filter((m) => m.status === 'Proposed');
+
+  return (
+    <View>
+      <Text variant="labelMedium" style={[styles.sectionLabel, { color: c.textMuted }]}>Calendars</Text>
+      <View style={styles.chipRow}>
+        {accepted.map((m) => (
+          <Chip key={m.calendarId} compact icon={() => <View style={[styles.calDot, { backgroundColor: colorOf(m.calendarId) }]} />}>
+            {nameOf(m.calendarId)}
+          </Chip>
+        ))}
+      </View>
+      {proposed.map((m) => (
+        <View key={m.calendarId} style={styles.proposal}>
+          <View style={[styles.calDot, { backgroundColor: colorOf(m.calendarId) }]} />
+          <Text style={[styles.proposalText, { color: c.text }]}>Proposed for {nameOf(m.calendarId)}</Text>
+          <Button title="Accept" variant="text" onPress={() => void fileItem(itemId, m.calendarId, 'accepted')} />
+          <Button title="Dismiss" variant="text" onPress={() => void unfileItem(itemId, m.calendarId)} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** Mostly written by importers and agents, so it stays folded and read-only; the debug setting unlocks the
+ *  merge-patch editor (add or overwrite one key — the REST surface has no key removal). */
+function MetadataPanel({ itemId, metadata, editable }: {
+  itemId: string;
+  metadata: Record<string, unknown> | null;
+  editable: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
   const [key, setKey] = useState('');
   const [value, setValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const entries = Object.entries(metadata ?? {});
+  if (entries.length === 0 && !editable) return null;
 
   const save = () => {
     const k = key.trim();
     if (!k) return;
-    void mergeItemMetadata(itemId, { [k]: value });
+    const r = metadataValueFromInput(value, metadata?.[k]);
+    if (!r.ok) {
+      setError(r.error);
+      return;
+    }
+    setError(null);
+    void mergeItemMetadata(itemId, { [k]: r.value });
     setKey('');
     setValue('');
   };
 
   return (
-    <View>
-      <List.Subheader>Metadata</List.Subheader>
+    <List.Accordion
+      title={`Metadata (${entries.length})`}
+      style={styles.flush}
+      expanded={expanded}
+      onPress={() => setExpanded((e) => !e)}
+    >
       {entries.map(([k, v]) => (
         <List.Item
           key={k}
-          onPress={() => { setKey(k); setValue(typeof v === 'string' ? v : JSON.stringify(v)); }}
-          title={typeof v === 'string' ? v : JSON.stringify(v)}
-          titleNumberOfLines={1}
+          onPress={editable ? () => { setKey(k); setValue(metadataInputOf(v)); } : undefined}
+          title={metadataInputOf(v)}
+          titleNumberOfLines={2}
           description={k}
+          style={styles.flush}
         />
       ))}
-      <View style={styles.metaEdit}>
-        <Input label="key" style={styles.metaKeyInput} autoCapitalize="none" value={key} onChangeText={setKey} />
-        <Input label="value" style={styles.metaValueInput} value={value} onChangeText={setValue} />
-        <Button title="Set" onPress={save} disabled={!key.trim()} />
-      </View>
-    </View>
+      {editable && (
+        <View style={styles.metaEdit}>
+          <Input label="key" style={styles.metaKeyInput} autoCapitalize="none" value={key} onChangeText={setKey} />
+          <Input label="value" style={styles.metaValueInput} value={value} onChangeText={setValue} />
+          <Button title="Set" onPress={save} disabled={!key.trim()} />
+        </View>
+      )}
+      {!!error && <HelperText type="error">{error}</HelperText>}
+    </List.Accordion>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   container: { padding: 16, gap: 6 },
-  deleted: { fontWeight: '600' },
+  sectionLabel: { marginTop: 12, marginBottom: 4 },
+  flag: { fontWeight: '600' },
   h1: { fontSize: 20, fontWeight: '600' },
+  struck: { textDecorationLine: 'line-through' },
   when: { fontSize: 14 },
   recur: { fontSize: 13 },
+  flush: { paddingHorizontal: 0 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   description: { fontSize: 14, marginTop: 6 },
   note: { fontSize: 13, marginTop: 4 },
   calDot: { width: 10, height: 10, borderRadius: 5 },
+  proposal: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  proposalText: { flex: 1, fontSize: 14 },
   metaEdit: { flexDirection: 'row', gap: 6, alignItems: 'center', marginTop: 6 },
   metaKeyInput: { flex: 2 },
   metaValueInput: { flex: 3 },
-  buttons: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  actionBar: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth },
+  primary: { flex: 1 },
 });

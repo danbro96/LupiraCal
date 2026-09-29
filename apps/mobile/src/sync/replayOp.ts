@@ -1,8 +1,9 @@
-import { createItem, deleteItem, mergeItemMetadata, updateItem } from '@lupira/cal-api/fetch/cal';
+import { createItem, deleteItem, getItem, inviteParticipant, mergeItemMetadata, removeParticipant, updateItem } from '@lupira/cal-api/fetch/cal';
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import { createContact, deleteContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '@lupira/cal-api/fetch/contact';
 import type { ContactReachChannel } from '@lupira/cal-api/models';
+import { ApiError } from '../domain/apiError';
 import type { ClientOp, ItemCore } from '../domain/ops';
 
 /** Op → REST. Every call carries `Idempotency-Key: commandId` (the server ledger makes redelivery a no-op —
@@ -28,6 +29,8 @@ export async function replayOp(op: ClientOp): Promise<void> {
         tags: op.core.tags ?? undefined,
         parentItemId: op.core.parentItemId ?? undefined,
         availability: (op.core.availability ?? undefined) as never,
+        placeId: op.core.placeId ?? undefined,
+        location: op.core.placeId ? (op.core.location ?? undefined) : undefined,
       }, idem);
       return;
     case 'item.revise':
@@ -44,6 +47,14 @@ export async function replayOp(op: ClientOp): Promise<void> {
       return;
     case 'item.unfile':
       await removeItemFromCalendar(op.itemId, op.calendarId, { occurredAt: op.occurredAt }, idem);
+      return;
+    // Participation endpoints ignore Idempotency-Key; invite is idempotent by contact instead, so a
+    // redelivered op re-invites nobody.
+    case 'item.invite':
+      for (const contactId of op.contactIds) await inviteParticipant(op.itemId, { contactId });
+      return;
+    case 'item.uninvite':
+      await uninvite(op.itemId, op.contactId);
       return;
     case 'contact.create':
       await createContact({
@@ -93,6 +104,20 @@ export async function replayOp(op: ClientOp): Promise<void> {
   }
 }
 
+/** The op names a contact because an invite still in the outbox has no participation id yet. */
+async function uninvite(itemId: string, contactId: string): Promise<void> {
+  let item;
+  try {
+    item = await getItem(itemId);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return;
+    throw e;
+  }
+  if (item.status !== 200) return;
+  const participation = item.data.attendees.find((a) => a.contactId === contactId);
+  if (participation) await removeParticipant(itemId, participation.participationId);
+}
+
 /** The whole-core write: every sentinel set so the op's desired state lands verbatim (incl. clears of the
  *  sentinel-backed fields); non-sentinel fields keep server semantics (null = keep). */
 function totalizedPut(core: ItemCore, occurredAt: string): UpdateCalendarItemRequest {
@@ -118,6 +143,11 @@ function totalizedPut(core: ItemCore, occurredAt: string): UpdateCalendarItemReq
     endTimezoneProvided: true,
     recurrenceRule: core.recurrenceRule ?? null,
     recurrenceRuleProvided: true,
+    ...(core.placeId === undefined ? {} : {
+      placeId: core.placeId,
+      placeIdProvided: true,
+      location: core.location ?? undefined,
+    }),
     occurredAt,
   };
 }

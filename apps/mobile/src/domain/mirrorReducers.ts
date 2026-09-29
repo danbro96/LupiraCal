@@ -1,5 +1,5 @@
 import { wins } from '@lupira/cal-domain/lww';
-import type { ContactDoc, ContactGuards, ItemDoc, ItemGuards, ReachChannel, SocialProfile } from './docTypes';
+import type { ContactDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, SocialProfile } from './docTypes';
 import { emptyContactGuards, emptyItemGuards } from './docTypes';
 import type { ClientOp, ContactCore, ItemCore } from './ops';
 
@@ -16,9 +16,10 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
   switch (op.kind) {
     case 'item.create': {
       if (state && !state.deleted) return state;   // idempotent hit, like the server's SourceKey dedup
-      const { availability, ...core } = op.core;
+      const { availability, placeId, location, ...core } = op.core;
       const doc: ItemDoc = {
         ...core,
+        ...(placeId ? { placeId, locationLabel: location?.trim() || null } : {}),
         id: op.itemId,
         isAllDay: op.core.isAllDay ?? false,
         calendars: [{ calendarId: op.calendarId, status: 'Accepted' }],
@@ -72,6 +73,22 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
         guards: { ...state.guards, filing: { ...state.guards.filing, [calId]: { ts: op.occurredAt, cmd: op.commandId } } },
       };
     }
+    // Participation carries no section guard server-side: invites and removals apply in outbox order.
+    case 'item.invite': {
+      if (!state || state.deleted) return state;
+      const attendees = state.doc.attendees ?? [];
+      const present = new Set(attendees.map((a) => a.contactId));
+      const added: ItemAttendee[] = op.contactIds
+        .filter((id, i, all) => !present.has(id) && all.indexOf(id) === i)
+        .map((contactId) => ({ participationId: '', contactId, role: 'RequiredParticipant', status: 'NeedsAction' }));
+      if (added.length === 0) return state;
+      return { ...state, doc: { ...state.doc, attendees: [...attendees, ...added] } };
+    }
+    case 'item.uninvite': {
+      if (!state || state.deleted) return state;
+      const attendees = (state.doc.attendees ?? []).filter((a) => a.contactId !== op.contactId);
+      return { ...state, doc: { ...state.doc, attendees } };
+    }
     default:
       return state;
   }
@@ -96,6 +113,13 @@ function mergeItemCore(doc: ItemDoc, core: ItemCore): ItemDoc {
     startTimezone: core.startTimezone,
     endTimezone: core.endTimezone,
     recurrenceRule: core.recurrenceRule,
+    ...(core.placeId === undefined ? {} : {
+      placeId: core.placeId,
+      // The server keeps the label when the place is unchanged and nothing new is sent.
+      locationLabel: core.location != null
+        ? core.location.trim() || null
+        : (core.placeId === doc.placeId ? doc.locationLabel : null),
+    }),
   };
 }
 

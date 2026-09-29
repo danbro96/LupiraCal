@@ -60,7 +60,11 @@ export function RootStack() {
       <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: 'Event' }} />
       <Stack.Screen name="ItemSearch" component={ItemSearchScreen} options={{ title: 'Search events' }} />
       <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={{ title: 'Task' }} />
-      <Stack.Screen name="ItemEdit" component={ItemEditScreen} options={{ title: 'Edit event' }} />
+      <Stack.Screen
+        name="ItemEdit"
+        component={ItemEditScreen}
+        options={({ route }) => ({ title: route.params?.itemId ? 'Edit event' : 'New event' })}
+      />
       <Stack.Screen name="ContactDetail" component={ContactDetailScreen} options={{ title: 'Contact' }} />
       <Stack.Screen name="ContactEdit" component={ContactEditScreen} options={{ title: 'Edit contact' }} />
       <Stack.Screen name="PhotoViewer" component={PhotoViewerScreen} options={{ title: 'Photo' }} />
