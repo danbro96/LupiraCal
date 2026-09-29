@@ -269,5 +269,145 @@
       "2026-01-06T09:00:00+00:00",
       "2026-01-07T09:00:00+00:00"
     ]
+  },
+  {
+    "Name": "zoned-weekly-autumn-shift",
+    "Rule": "FREQ=WEEKLY",
+    "Start": "2026-10-11T16:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-10-01T00:00:00+00:00",
+    "WindowEnd": "2026-11-15T00:00:00+00:00",
+    "Expected": [
+      "2026-10-11T16:00:00+00:00",
+      "2026-10-18T16:00:00+00:00",
+      "2026-10-25T17:00:00+00:00",
+      "2026-11-01T17:00:00+00:00",
+      "2026-11-08T17:00:00+00:00"
+    ],
+    "TimeZone": "Europe/Stockholm"
+  },
+  {
+    "Name": "zoned-daily-spring-gap",
+    "Rule": "FREQ=DAILY",
+    "Start": "2026-03-27T01:30:00+00:00",
+    "DurationMinutes": 30,
+    "WindowStart": "2026-03-26T00:00:00+00:00",
+    "WindowEnd": "2026-04-01T00:00:00+00:00",
+    "Expected": [
+      "2026-03-27T01:30:00+00:00",
+      "2026-03-28T01:30:00+00:00",
+      "2026-03-29T01:30:00+00:00",
+      "2026-03-30T00:30:00+00:00",
+      "2026-03-31T00:30:00+00:00"
+    ],
+    "TimeZone": "Europe/Stockholm"
+  },
+  {
+    "Name": "zoned-daily-autumn-ambiguous",
+    "Rule": "FREQ=DAILY",
+    "Start": "2026-10-23T00:30:00+00:00",
+    "DurationMinutes": 30,
+    "WindowStart": "2026-10-22T00:00:00+00:00",
+    "WindowEnd": "2026-10-28T00:00:00+00:00",
+    "Expected": [
+      "2026-10-23T00:30:00+00:00",
+      "2026-10-24T00:30:00+00:00",
+      "2026-10-25T00:30:00+00:00",
+      "2026-10-26T01:30:00+00:00",
+      "2026-10-27T01:30:00+00:00"
+    ],
+    "TimeZone": "Europe/Stockholm"
+  },
+  {
+    "Name": "zoned-until-reads-as-wall-clock",
+    "Rule": "FREQ=DAILY;UNTIL=20261027T170000Z",
+    "Start": "2026-10-23T16:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-10-01T00:00:00+00:00",
+    "WindowEnd": "2026-11-01T00:00:00+00:00",
+    "Expected": [
+      "2026-10-23T16:00:00+00:00",
+      "2026-10-24T16:00:00+00:00",
+      "2026-10-25T17:00:00+00:00",
+      "2026-10-26T17:00:00+00:00"
+    ],
+    "TimeZone": "Europe/Stockholm"
+  },
+  {
+    "Name": "zoned-count",
+    "Rule": "FREQ=WEEKLY;COUNT=4",
+    "Start": "2026-10-11T16:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-10-01T00:00:00+00:00",
+    "WindowEnd": "2026-12-01T00:00:00+00:00",
+    "Expected": [
+      "2026-10-11T16:00:00+00:00",
+      "2026-10-18T16:00:00+00:00",
+      "2026-10-25T17:00:00+00:00",
+      "2026-11-01T17:00:00+00:00"
+    ],
+    "TimeZone": "Europe/Stockholm"
+  },
+  {
+    "Name": "zoned-monthly-second-tuesday",
+    "Rule": "FREQ=MONTHLY;BYDAY=2TU",
+    "Start": "2026-01-13T23:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-01-01T00:00:00+00:00",
+    "WindowEnd": "2026-07-01T00:00:00+00:00",
+    "Expected": [
+      "2026-01-13T23:00:00+00:00",
+      "2026-02-10T23:00:00+00:00",
+      "2026-03-10T22:00:00+00:00",
+      "2026-04-14T22:00:00+00:00",
+      "2026-05-12T22:00:00+00:00",
+      "2026-06-09T22:00:00+00:00"
+    ],
+    "TimeZone": "America/New_York"
+  },
+  {
+    "Name": "zoned-byday-is-local-weekday",
+    "Rule": "FREQ=WEEKLY;BYDAY=MO",
+    "Start": "2026-01-04T23:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-01-01T00:00:00+00:00",
+    "WindowEnd": "2026-02-01T00:00:00+00:00",
+    "Expected": [
+      "2026-01-04T23:00:00+00:00",
+      "2026-01-11T23:00:00+00:00",
+      "2026-01-18T23:00:00+00:00",
+      "2026-01-25T23:00:00+00:00"
+    ],
+    "TimeZone": "Asia/Tokyo"
+  },
+  {
+    "Name": "zoned-window-clips-mid-series",
+    "Rule": "FREQ=DAILY",
+    "Start": "2026-10-20T16:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-10-24T12:00:00+00:00",
+    "WindowEnd": "2026-10-27T12:00:00+00:00",
+    "Expected": [
+      "2026-10-24T16:00:00+00:00",
+      "2026-10-25T17:00:00+00:00",
+      "2026-10-26T17:00:00+00:00"
+    ],
+    "TimeZone": "Europe/Stockholm"
+  },
+  {
+    "Name": "unknown-zone-is-utc",
+    "Rule": "FREQ=WEEKLY",
+    "Start": "2026-10-11T16:00:00+00:00",
+    "DurationMinutes": 60,
+    "WindowStart": "2026-10-01T00:00:00+00:00",
+    "WindowEnd": "2026-11-15T00:00:00+00:00",
+    "Expected": [
+      "2026-10-11T16:00:00+00:00",
+      "2026-10-18T16:00:00+00:00",
+      "2026-10-25T16:00:00+00:00",
+      "2026-11-01T16:00:00+00:00",
+      "2026-11-08T16:00:00+00:00"
+    ],
+    "TimeZone": "Not/AZone"
   }
 ]

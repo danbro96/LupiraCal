@@ -9,6 +9,7 @@ type RecurrenceCase = {
   WindowStart: string;
   WindowEnd: string;
   Expected: string[];
+  TimeZone?: string;
 };
 
 const cases = JSON.parse(
@@ -17,7 +18,7 @@ const cases = JSON.parse(
 
 describe('expandRecurrence parity with the server expander', () => {
   it.each(cases.map((c) => [c.Name, c] as const))('%s', (_, c) => {
-    const actual = expandRecurrence(c.Rule, new Date(c.Start), new Date(c.WindowStart), new Date(c.WindowEnd));
+    const actual = expandRecurrence(c.Rule, new Date(c.Start), new Date(c.WindowStart), new Date(c.WindowEnd), c.TimeZone ?? null);
     expect(actual, `rule ${c.Rule} should be in the supported subset`).not.toBeNull();
     expect(actual!.map((d) => d.getTime())).toEqual(c.Expected.map((e) => Date.parse(e)));
   });

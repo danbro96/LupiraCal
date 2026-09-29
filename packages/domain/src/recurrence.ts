@@ -4,7 +4,10 @@
 //
 // Deliberately a subset: FREQ D/W/M/Y, INTERVAL, COUNT, UNTIL, BYDAY (incl. ordinals), BYMONTHDAY, BYMONTH,
 // WKST. Anything else parses to null and the caller renders the first occurrence only (flagged in the UI).
-// Everything is UTC — the server stores UTC instants and never emits timezone identifiers (v1 contract).
+// Instants are UTC. A timed series with a start zone recurs on that zone's wall clock, like the server's: the rule
+// math runs on wall-clock ms and only the window compares real instants.
+
+import { fromWallMs, isValidTimeZone, toWallMs } from './zonedTime';
 
 export type RecurrenceRule = {
   freq: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
@@ -93,27 +96,35 @@ function parseUntil(value: string): number | null {
 }
 
 /// Occurrence starts (ascending, UTC) of `ruleText` anchored at `start`, clipped to [windowStart, windowEnd).
-/// Null = the rule is outside the supported subset. Matching Ical.Net (the fixtures are the spec): only
+/// Null = the rule is outside the supported subset. Matching the server (the fixtures are the spec): only
 /// pattern-matching instants ≥ start are occurrences — a DTSTART that doesn't match the rule is NOT emitted —
-/// and COUNT counts occurrences from the first match, consuming ones before the window. `maxOccurrences`
-/// guards infinite rules against pathological windows.
+/// and COUNT counts occurrences from the first match, consuming ones before the window. `timeZone` is the series'
+/// start zone (absent or unknown = UTC, as on the server). `maxOccurrences` guards infinite rules against
+/// pathological windows.
 export function expandRecurrence(
   ruleText: string,
   start: Date,
   windowStart: Date,
   windowEnd: Date,
+  timeZone: string | null = null,
   maxOccurrences = 10_000,
 ): Date[] | null {
   const rule = parseRecurrenceRule(ruleText);
   if (!rule) return null;
   if (rule.byDay.some((d) => d.ord !== null) && rule.freq !== 'MONTHLY' && rule.freq !== 'YEARLY') return null;
 
+  const zone = isValidTimeZone(timeZone) && timeZone !== 'UTC' ? timeZone : null;
+  const toInstant = zone ? (wall: number) => fromWallMs(wall, zone) : (wall: number) => wall;
+  const anchor = zone ? new Date(toWallMs(start.getTime(), zone)) : start;
+
   const out: Date[] = [];
   let produced = 0;
-  const consider = (t: number): 'emitted' | 'skipped' | 'done' => {
-    if (rule.until !== null && t > rule.until) return 'done';
+  const consider = (wall: number): 'emitted' | 'skipped' | 'done' => {
+    // The server evaluates rules zone-less, so UNTIL bounds the wall clock even when it carries a Z.
+    if (rule.until !== null && wall > rule.until) return 'done';
     produced++;
     if (rule.count !== null && produced > rule.count) return 'done';
+    const t = toInstant(wall);
     if (t >= windowEnd.getTime()) return 'done';
     if (t >= windowStart.getTime()) {
       out.push(new Date(t));
@@ -122,11 +133,11 @@ export function expandRecurrence(
     return 'skipped';
   };
 
-  const startMs = start.getTime();
-  const timeOfDay = startMs - utcMidnight(start);
+  const anchorMs = anchor.getTime();
+  const timeOfDay = anchorMs - utcMidnight(anchor);
   const maxPeriods = 5_000;
   for (let period = 0; period < maxPeriods; period++) {
-    const candidates = periodCandidates(rule, start, period).filter((t) => t + timeOfDay >= startMs);
+    const candidates = periodCandidates(rule, anchor, period).filter((t) => t + timeOfDay >= anchorMs);
     candidates.sort((a, b) => a - b);
     for (const day of candidates) {
       const status = consider(day + timeOfDay);
@@ -134,7 +145,7 @@ export function expandRecurrence(
     }
     // Past the window with nothing left to count — stop walking periods.
     const periodFloor = candidates.length > 0 ? candidates[0] : null;
-    if (periodFloor !== null && periodFloor + timeOfDay >= windowEnd.getTime() && rule.count === null) return out;
+    if (periodFloor !== null && toInstant(periodFloor + timeOfDay) >= windowEnd.getTime() && rule.count === null) return out;
   }
   return out;
 }
