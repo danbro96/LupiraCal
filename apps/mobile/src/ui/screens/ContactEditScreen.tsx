@@ -1,3 +1,5 @@
+import { errorText } from '@lupira/cal-domain/apiError';
+import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -52,7 +54,7 @@ export function ContactEditScreen() {
       const seededForm = contactFormFromDoc(state.doc);
       const seededChannels = (state.doc.channels ?? []).map((ch) => ({ ...ch }));
       const seededProfiles = (state.doc.profiles ?? []).map((p) => ({ ...p }));
-      const seededTags = (state.doc.tags ?? []).join(', ');
+      const seededTags = visibleTags(state.doc.tags).join(', ');
       setForm(seededForm);
       setChannels(seededChannels);
       setProfiles(seededProfiles);
@@ -101,7 +103,7 @@ export function ContactEditScreen() {
 
     const cleanChannels = channels.filter((ch) => ch.value.trim());
     const cleanProfiles = profiles.filter((p) => p.service.trim() && p.handle.trim());
-    const tags = parseCsv(tagsCsv);
+    const tags = withPinPreserved(parseCsv(tagsCsv), contactId ? state?.doc.tags : null);
 
     try {
       if (!contactId) {
@@ -116,7 +118,7 @@ export function ContactEditScreen() {
       }
       return true;
     } catch (e) {
-      setError(String(e));
+      setError(errorText(e));
       return false;
     }
   };

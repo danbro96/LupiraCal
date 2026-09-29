@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PINNED_TAG, isPinned, partitionByActivity, type TierableContact } from './contactTiers';
+import { isPinned, partitionByActivity, PINNED_TAG, type TierableContact, visibleTags, withPinPreserved } from './contactTiers';
 
 const NOW = Date.parse('2026-07-14T00:00:00Z');
 const daysAgo = (n: number) => new Date(NOW - n * 86_400_000).toISOString();
@@ -65,5 +65,13 @@ describe('partitionByActivity', () => {
     expect(isPinned({ tags: [PINNED_TAG] })).toBe(true);
     expect(isPinned({ tags: ['work'] })).toBe(false);
     expect(isPinned({})).toBe(false);
+  });
+});
+
+describe('visibleTags / withPinPreserved', () => {
+  it('hides the pin from the editable list and carries it through an edit', () => {
+    expect(visibleTags(['family', PINNED_TAG])).toEqual(['family']);
+    expect(withPinPreserved(['friends'], ['family', PINNED_TAG])).toEqual(['friends', PINNED_TAG]);
+    expect(withPinPreserved(['friends'], ['family'])).toEqual(['friends']);
   });
 });

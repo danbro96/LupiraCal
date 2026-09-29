@@ -26,6 +26,16 @@ export function isPinned(c: TierableContact): boolean {
   return c.tags?.includes(PINNED_TAG) ?? false;
 }
 
+/** The tags a person sees and edits: everything but the pin sentinel. */
+export function visibleTags(tags: readonly string[] | null | undefined): string[] {
+  return (tags ?? []).filter((t) => t !== PINNED_TAG);
+}
+
+/** An edited tag list with the hidden pin carried over from the contact's `previous` tags. */
+export function withPinPreserved(next: string[], previous: readonly string[] | null | undefined): string[] {
+  return (previous ?? []).includes(PINNED_TAG) && !next.includes(PINNED_TAG) ? [...next, PINNED_TAG] : next;
+}
+
 /**
  * Partition contacts into { active, dormant }. Active = interacted (participation count > 0) OR has a
  * relation OR pinned OR added within graceDays. Active is ordered by interaction (rankByInteraction)

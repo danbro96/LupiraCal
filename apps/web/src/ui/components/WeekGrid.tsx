@@ -6,10 +6,10 @@ import IconButton from '@mui/material/IconButton';
 import type { AvailabilitySegment } from '../../state/useAvailability';
 import { clampToDay, foldLanes, hiddenPerColumn, isDayLong, layoutColumns, packLanes } from '@lupira/cal-domain/occurrences';
 import { type DayRail, familyKey, railsForDay } from '@lupira/cal-domain/family';
-import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, sameDay, ymd } from '@lupira/cal-domain/time';
+import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { AVAILABILITY_COLORS, familyAccent } from '../theme/kinds';
-import { coversDay, type GridEntry } from '../entries';
+import { coversDay, segmentSpan, type GridEntry } from '../entries';
 import { ExpandIcon, ExpandLessIcon } from '../icons';
 
 const HOUR_PX = 48;
@@ -304,13 +304,7 @@ function DayColumn({
   const daySegments = useMemo(
     () =>
       segments.flatMap((s) => {
-        if (s.isAllDay) {
-          const start = new Date(s.start);
-          const end = s.end ? new Date(s.end) : start;
-          return sameDay(start, day) || (start <= day && end >= day)
-            ? [{ startMin: 0, endMin: 1440, status: s.status }]
-            : [];
-        }
+        if (s.isAllDay) return coversDay(segmentSpan(s), day) ? [{ startMin: 0, endMin: 1440, status: s.status }] : [];
         const span = clampToDay(new Date(s.start), s.end ? new Date(s.end) : new Date(s.start), day);
         return span ? [{ ...span, status: s.status }] : [];
       }),

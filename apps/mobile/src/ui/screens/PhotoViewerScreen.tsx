@@ -1,6 +1,7 @@
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fmtBytes, fmtDimensions, fmtDuration } from '@lupira/cal-domain/photoFormat';
+import { fmtDateTime } from '@lupira/cal-domain/time';
 import { Image } from 'expo-image';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
@@ -366,7 +367,7 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
   return (
     <>
       <Text style={[styles.title, { color: c.text }]}>{photo.placeLabel ?? 'Unknown place'}</Text>
-      <Text style={[styles.detail, { color: c.textMuted }]}>{new Date(photo.takenAt).toLocaleString()}</Text>
+      <Text style={[styles.detail, { color: c.textMuted }]}>{fmtDateTime(new Date(photo.takenAt))}</Text>
       {photo.purgesAt && (
         <Text style={[styles.detail, { color: c.warning }]}>
           {`In trash · deleted for good in ${daysLeft(photo.purgesAt, new Date())} days`}

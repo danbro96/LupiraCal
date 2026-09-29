@@ -1,4 +1,5 @@
 import { setApiTransport } from '@lupira/cal-api/transport';
+import { ApiError, problemMessage } from '@lupira/cal-domain/apiError';
 
 /**
  * The SPA's transport for every generated request. Auth rides the BFF's HttpOnly cookie session
@@ -8,15 +9,7 @@ import { setApiTransport } from '@lupira/cal-api/transport';
  * There is one of these now rather than one per upstream: the merged spec carries each BFF route
  * prefix in the path, so nothing is left for a mutator to prepend.
  */
-export class ApiError extends Error {
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-    this.name = 'ApiError';
-  }
-}
+export { ApiError };
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   let res: Response;
@@ -31,16 +24,8 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     throw new ApiError(401, 'Not authenticated');
   }
   if (!res.ok) {
-    // 400/403/409 arrive as application/problem+json — surface the human-readable detail.
-    const text = await res.text().catch(() => res.statusText);
-    let message = text || res.statusText;
-    try {
-      const problem = JSON.parse(text) as { detail?: string; title?: string };
-      message = problem.detail || problem.title || message;
-    } catch {
-      // not a problem document — keep the raw text
-    }
-    throw new ApiError(res.status, message);
+    const text = await res.text().catch(() => '');
+    throw new ApiError(res.status, problemMessage(text, res.statusText || `HTTP ${res.status}`));
   }
   if (res.status === 204) return undefined as T;
   // A 200 of HTML means the SPA fallback answered a dead route; parsing it fails obscurely.

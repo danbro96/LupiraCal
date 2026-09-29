@@ -1,3 +1,4 @@
+import { problemMessage } from '@lupira/cal-domain/apiError';
 import { ApiError, REQUEST_TIMEOUT_MS } from '../../domain/apiError';
 import { isRetriableRequest, isTransientStatus, MAX_RETRIES, retryDelayMs } from '../../domain/retryPolicy';
 import { authPort } from './authProvider';
@@ -62,7 +63,7 @@ export async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
     }
 
     const body = await resp.text().catch(() => '');
-    throw new ApiError(resp.status, body || resp.statusText || `HTTP ${resp.status}`);
+    throw new ApiError(resp.status, problemMessage(body, resp.statusText || `HTTP ${resp.status}`));
   }
 }
 

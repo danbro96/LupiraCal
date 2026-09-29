@@ -19,7 +19,7 @@ import {
   useSetMyContact,
 } from '@lupira/cal-api/query/contact';
 import { useGetContactContext } from '@lupira/cal-api/query/bff-contacts';
-import { PINNED_TAG } from '@lupira/cal-domain/contactTiers';
+import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { fmtResidencyPeriod, residencyStatus, type FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
 
 function residencySuffix(movedIn: FuzzyDate | null | undefined, movedOut: FuzzyDate | null | undefined): string {
@@ -160,9 +160,9 @@ export function ContactDetailPane() {
             ))}
           </Box>
 
-          {(contact.tags ?? []).filter((t) => t !== PINNED_TAG).length > 0 && (
+          {visibleTags(contact.tags).length > 0 && (
             <WrapRow>
-              {(contact.tags ?? []).filter((t) => t !== PINNED_TAG).map((t) => (
+              {visibleTags(contact.tags).map((t) => (
                 <Chip key={t} label={t} />
               ))}
             </WrapRow>

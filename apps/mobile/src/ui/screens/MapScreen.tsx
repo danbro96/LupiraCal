@@ -17,7 +17,7 @@ import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
 import { ActivityIndicator, Banner, Portal, Text, useTheme } from 'react-native-paper';
 import { mapViewport, type Bbox, type MapViewport } from '@lupira/cal-domain/geo';
 import { hotspotStats, photoCellBounds } from '@lupira/cal-domain/mapFeatures';
-import { fmtDate, parseYmd } from '@lupira/cal-domain/time';
+import { fmtDate, fmtDateTime, fmtTime, parseYmd, ymd } from '@lupira/cal-domain/time';
 import type { MapTheme } from '@lupira/cal-tokens/map';
 import { fallbackStyle } from '../../data/mapStyle';
 import { toastError } from '../../feedback/toast';
@@ -72,10 +72,6 @@ function useMapAuthHeader() {
   }, [token, apiUrl]);
 }
 
-function dayKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 type PhotoPin = { id: string; takenAt: string; placeLabel: string | null; thumbUrl: string | null };
 type VisitPin = { placeLabel: string | null; arriveTs: string; departTs: string; durationMin: number };
 type HotspotPin = {
@@ -103,8 +99,8 @@ export function MapScreen() {
   const { fromDay, toDay, movementFrom, movementTo } = useMemo(() => {
     const now = Date.now();
     return {
-      fromDay: dayKey(new Date(now - PAST_DAYS * 86_400_000)),
-      toDay: dayKey(new Date(now + FUTURE_DAYS * 86_400_000)),
+      fromDay: ymd(new Date(now - PAST_DAYS * 86_400_000)),
+      toDay: ymd(new Date(now + FUTURE_DAYS * 86_400_000)),
       movementFrom: new Date(now - MOVEMENT_DAYS * 86_400_000).toISOString(),
       movementTo: new Date(now).toISOString(),
     };
@@ -307,7 +303,7 @@ export function MapScreen() {
                 {openPhoto.placeLabel ?? 'Unknown place'}
               </Text>
               <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
-                {new Date(openPhoto.takenAt).toLocaleString()}
+                {fmtDateTime(new Date(openPhoto.takenAt))}
               </Text>
               <View style={styles.sheetActions}>
                 <Button
@@ -323,7 +319,7 @@ export function MapScreen() {
                   title="All from this day"
                   variant="text"
                   onPress={() => {
-                    const day = dayKey(new Date(openPhoto.takenAt));
+                    const day = ymd(new Date(openPhoto.takenAt));
                     setOpenPhoto(null);
                     navigation.navigate('Tabs', { screen: 'Photos', params: { from: day, to: day } });
                   }}
@@ -342,7 +338,7 @@ export function MapScreen() {
                 {openVisit.placeLabel ?? 'Stay'}
               </Text>
               <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
-                {new Date(openVisit.arriveTs).toLocaleTimeString()}–{new Date(openVisit.departTs).toLocaleTimeString()}
+                {fmtTime(new Date(openVisit.arriveTs))}–{fmtTime(new Date(openVisit.departTs))}
                 {' · '}{openVisit.durationMin} min
               </Text>
             </Pressable>

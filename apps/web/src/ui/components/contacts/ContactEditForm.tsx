@@ -28,7 +28,7 @@ import type {
   ReviseContactRequest,
 } from '@lupira/cal-api/models';
 import { ContactAddressType, DisplayNameFormat, ReachMedium } from '@lupira/cal-api/models';
-import { PINNED_TAG } from '@lupira/cal-domain/contactTiers';
+import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { PlacePicker } from '../places/PlacePicker';
 import { errText } from '../../errText';
@@ -163,7 +163,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
       birthdayMonth: !yearKnownInitial && contact.birthday ? String(Number(contact.birthday.month)) : '',
       birthdayDay: !yearKnownInitial && contact.birthday ? String(Number(contact.birthday.day)) : '',
       channels: contact.channels.map((c) => ({ ...c })),
-      tags: (contact.tags ?? []).filter((t) => t !== PINNED_TAG),
+      tags: visibleTags(contact.tags),
       // Residency dates are edited as text ("2015", "2015-06", "2015-06-12" — precision = certainty) and
       // parsed at save; a filled moved-out marks the address as former.
       addresses: contact.addresses.map((a) => ({
@@ -221,8 +221,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
 
       const cleanChannels = v.channels.filter((c) => c.value.trim()).map((c) => ({ ...c, value: c.value.trim() }));
       if (JSON.stringify(cleanChannels) !== JSON.stringify(contact.channels)) await setChannels.mutateAsync({ id, data: { channels: cleanChannels } });
-      // The pin sentinel is hidden from the editor — preserve it across an edit.
-      const nextTags = (contact.tags ?? []).includes(PINNED_TAG) ? [...v.tags, PINNED_TAG] : v.tags;
+      const nextTags = withPinPreserved(v.tags, contact.tags);
       if (!sameList(nextTags, contact.tags ?? [])) await setTags.mutateAsync({ id, data: { tags: nextTags } });
 
       if (JSON.stringify(cleanAddresses.map(normAddr)) !== JSON.stringify(contact.addresses.map(normAddr)))

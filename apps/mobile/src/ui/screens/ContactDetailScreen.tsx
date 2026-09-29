@@ -1,3 +1,4 @@
+import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { nextBirthday, turningAge } from '@lupira/cal-domain/birthday';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -123,11 +124,11 @@ export function ContactDetailScreen() {
         />
       ))}
 
-      {(doc.tags ?? []).length > 0 && (
+      {visibleTags(doc.tags).length > 0 && (
         <>
           <List.Subheader>Tags</List.Subheader>
           <View style={styles.chipRow}>
-            {(doc.tags ?? []).map((t) => (
+            {visibleTags(doc.tags).map((t) => (
               <Chip key={t} compact>{`#${t}`}</Chip>
             ))}
           </View>

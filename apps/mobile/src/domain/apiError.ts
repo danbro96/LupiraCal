@@ -1,13 +1,6 @@
-/** The one error the data layer throws. Status 0 = transport failure/timeout (no HTTP response at all). */
-export class ApiError extends Error {
-  readonly status: number;
+import { ApiError } from '@lupira/cal-domain/apiError';
 
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-  }
-}
+export { ApiError };
 
 export function isNetworkError(e: unknown): boolean {
   return e instanceof ApiError && e.status === 0;

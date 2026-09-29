@@ -1,4 +1,5 @@
 import { INDEX_LETTERS, indexByLetter, sectionFor, sectionOffsets, type LetterEntry } from '@lupira/cal-domain/letterIndex';
+import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { partialDateBadge } from '@lupira/cal-domain/partialDate';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -38,7 +39,7 @@ export function ContactsScreen() {
     !q
     || r.displayName.toLowerCase().includes(q)
     || (r.doc.nickname ?? '').toLowerCase().includes(q)
-    || (r.doc.tags ?? []).some((t) => t.toLowerCase().includes(q))), [data, q]);
+    || visibleTags(r.doc.tags).some((t) => t.toLowerCase().includes(q))), [data, q]);
   const { entries, headerAt } = useMemo(() => indexByLetter(rows, nameOf), [rows]);
   const stickyHeaderIndices = useMemo(() => [...headerAt.values()], [headerAt]);
   const presentLetters = useMemo(() => new Set(headerAt.keys()), [headerAt]);

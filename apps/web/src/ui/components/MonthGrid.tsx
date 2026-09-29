@@ -8,7 +8,7 @@ import type { AvailabilitySegment } from '../../state/useAvailability';
 import { familyKey } from '@lupira/cal-domain/family';
 import { fmtTime, isToday } from '@lupira/cal-domain/time';
 import { AVAILABILITY_COLORS, familyAccent } from '../theme/kinds';
-import { coversDay, type GridEntry } from '../entries';
+import { coversDay, segmentSpan, type GridEntry } from '../entries';
 
 const MAX_PER_CELL = 4;
 
@@ -103,7 +103,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
           .filter((e) => coversDay(e, day))
           .sort((a, b) => Number(b.isAllDay) - Number(a.isAllDay) || a.start.getTime() - b.start.getTime());
         const shown = dayEntries.slice(0, MAX_PER_CELL);
-        const daySegments = segments.filter((s) => coversDay({ start: new Date(s.start), end: s.end ? new Date(s.end) : null }, day));
+        const daySegments = segments.filter((s) => coversDay(segmentSpan(s), day));
         const otherMonth = day.getMonth() !== date.getMonth();
         const cellSx = {
           borderRight: 1,
