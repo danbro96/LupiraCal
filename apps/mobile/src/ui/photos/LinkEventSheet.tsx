@@ -1,3 +1,4 @@
+import { linkedMessage, linkPhotosTitle } from '@lupira/cal-domain/photoFormat';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { List, Portal, Text } from 'react-native-paper';
@@ -25,7 +26,7 @@ export function LinkEventSheet({ photos, onDismiss, onLinked }: {
     if (!ok) {
       toastError('Could not link the photos.');
     } else {
-      toast(photos.length === 1 ? 'Linked to the event' : `Linked ${linked.length} photos`, linked.length > 0
+      toast(linkedMessage(photos.length, linked.length), linked.length > 0
         ? { action: { label: 'Undo', onPress: () => void unlinkPhotosFromEvent(itemId, linked) } }
         : undefined);
       onLinked?.();
@@ -39,7 +40,7 @@ export function LinkEventSheet({ photos, onDismiss, onLinked }: {
         <Pressable style={[styles.sheet, { backgroundColor: c.surface }]}>
           <ScrollView>
             <Text style={[styles.title, { color: c.text }]}>
-              {photos.length === 1 ? 'Link to an event' : `Link ${photos.length} photos to an event`}
+              {linkPhotosTitle(photos.length)}
             </Text>
             {isLoading && <Text style={[styles.muted, { color: c.textMuted }]}>Looking…</Text>}
             {!isLoading && (candidates ?? []).length === 0 && (

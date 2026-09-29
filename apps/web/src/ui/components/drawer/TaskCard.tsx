@@ -6,7 +6,7 @@ import type { ItemDto } from '@lupira/cal-api/models';
 import { fmtDate, fmtTime } from '@lupira/cal-domain/time';
 import { DetailDrawer } from './DetailDrawer';
 import { DrawerSection } from '../DrawerSection';
-import { taskDeepLink, taskWebUrl } from '@lupira/cal-domain/tasks';
+import { isOverdue, taskDeepLink, taskWebUrl } from '@lupira/cal-domain/tasks';
 
 /** Read-only view for a task deadline (lives in LupiraTasks, not cal): status, due, notes, and the
  *  deep link into the tasks app. The web fallback lands on the list — tasks-web has no per-task route. */
@@ -24,7 +24,7 @@ export function TaskCard({ listId, itemId, onClose }: { listId: string; itemId: 
 
 function TaskBody({ task }: { task: ItemDto }) {
   const due = task.dueAt ? new Date(task.dueAt) : null;
-  const overdue = due != null && due < new Date() && !task.completed;
+  const overdue = !!task.dueAt && !task.completed && isOverdue(task.dueAt, new Date());
 
   return (
     <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>

@@ -5,7 +5,7 @@ import { Image } from 'expo-image';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
-import { daysLeft, fmtDuration } from '@lupira/cal-domain/photoFormat';
+import { daysLeft, fmtDuration, outcomeMessage, photoCount } from '@lupira/cal-domain/photoFormat';
 import { fmtPhotoRange, photoTimeline, yearRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { hapticSelection } from '../../feedback/haptics';
@@ -117,10 +117,9 @@ export function PhotosScreen() {
   }), []);
   const selectedPhotos = useMemo(() => items.filter((p) => selected.has(p.id)), [items, selected]);
 
-  const plural = (n: number) => (n === 1 ? '1 photo' : `${n} photos`);
-  const report = (verb: string, { done, failed: failures }: Outcome, undo?: () => void) => {
-    if (failures > 0) toastError(`${verb} ${done}, ${failures} failed.`);
-    else toast(`${verb} ${plural(done)}`, undo ? { action: { label: 'Undo', onPress: undo } } : undefined);
+  const report = (verb: string, outcome: Outcome, undo?: () => void) => {
+    if (outcome.failed > 0) toastError(outcomeMessage(verb, outcome));
+    else toast(outcomeMessage(verb, outcome), undo ? { action: { label: 'Undo', onPress: undo } } : undefined);
   };
   const takeSelection = () => {
     const ids = selectedPhotos.map((p) => p.id);
@@ -142,7 +141,7 @@ export function PhotosScreen() {
   };
   const onPurgeSelected = async () => {
     const ok = await confirm({
-      title: `Delete ${plural(selectedPhotos.length)} for good`,
+      title: `Delete ${photoCount(selectedPhotos.length)} for good`,
       message: 'This removes the originals and their thumbnails from storage. It cannot be undone.',
       confirmLabel: 'Delete',
       destructive: true,

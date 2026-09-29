@@ -1,3 +1,4 @@
+import { formatCoords } from '@lupira/cal-domain/places';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Marker, type MapMouseEvent } from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';
@@ -32,7 +33,7 @@ export default function MapPinDialog({ title, center, zoom, onConfirm, onCancel 
           </MapCanvas>
         </div>
         <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">
-          {pin ? `${pin.lat.toFixed(5)}, ${pin.lon.toFixed(5)}` : 'Click the map to place the pin, then drag to fine-tune.'}
+          {pin ? formatCoords(pin.lat, pin.lon) : 'Click the map to place the pin, then drag to fine-tune.'}
         </Typography>
       </DialogContent>
       <DialogActions>

@@ -96,3 +96,38 @@ export const PHOTO_LINK = { toKind: 'photo', relationType: 'depicts' } as const;
 export function daysLeft(purgesAt: string, now: Date): number {
   return Math.max(0, Math.ceil((Date.parse(purgesAt) - now.getTime()) / 86_400_000));
 }
+
+export function photoCount(n: number): string {
+  return n === 1 ? '1 photo' : `${n} photos`;
+}
+
+/** A bulk action's result: "Trashed 3 photos", or "Trashed 2, 1 failed" when some failed. */
+export function outcomeMessage(verb: string, { done, failed }: { done: number; failed: number }): string {
+  return failed > 0 ? `${verb} ${done}, ${failed} failed` : `${verb} ${photoCount(done)}`;
+}
+
+export function fmtDays(n: number): string {
+  return n === 1 ? '1 day' : `${n} days`;
+}
+
+/** HEIC originals are stored untranscoded and neither client decodes them — the thumbnail stands in. */
+export function originalIsViewable(contentType: string | null | undefined): boolean {
+  return contentType !== 'image/heic' && contentType !== 'image/heif';
+}
+
+export function geotagLabel(source: string | null | undefined): string {
+  return source === 'ExifGps' ? 'From the camera' : 'Matched from your location history';
+}
+
+/** The photos not yet linked to the event — the ones a link call sends, and an Undo unlinks. */
+export function unlinkedPhotoIds(photoIds: readonly string[], links: ReadonlyMap<string, readonly string[]>, itemId: string): string[] {
+  return photoIds.filter((id) => !links.get(id)?.includes(itemId));
+}
+
+export function linkPhotosTitle(count: number): string {
+  return count === 1 ? 'Link to an event' : `Link ${count} photos to an event`;
+}
+
+export function linkedMessage(count: number, linked: number): string {
+  return count === 1 ? 'Linked to the event' : `Linked ${linked} photos`;
+}

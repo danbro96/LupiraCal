@@ -12,7 +12,7 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useGetItem } from '@lupira/cal-api/query/cal';
-import { daysLeft, fmtDuration } from '@lupira/cal-domain/photoFormat';
+import { daysLeft, fmtDays, fmtDuration, outcomeMessage, photoCount } from '@lupira/cal-domain/photoFormat';
 import { fmtPhotoRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { usePhotoActions } from '../../state/usePhotoActions';
@@ -129,10 +129,9 @@ export default function PhotosScreen() {
   const selecting = selected.size > 0;
   const selectedPhotos = useMemo(() => items.filter((i) => selected.has(i.id)), [items, selected]);
 
-  const plural = (n: number) => (n === 1 ? '1 photo' : `${n} photos`);
-  const report = (verb: string, { done, failed }: { done: number; failed: number }, undo?: () => void) => {
-    if (failed > 0) showSnack(`${verb} ${done}, ${failed} failed`);
-    else showSnack(`${verb} ${plural(done)}`, 'success', undo && { label: 'Undo', onPress: undo });
+  const report = (verb: string, outcome: { done: number; failed: number }, undo?: () => void) => {
+    if (outcome.failed > 0) showSnack(outcomeMessage(verb, outcome));
+    else showSnack(outcomeMessage(verb, outcome), 'success', undo && { label: 'Undo', onPress: undo });
   };
 
   const onTrashSelected = async () => {
@@ -381,7 +380,7 @@ export default function PhotosScreen() {
 
       <Dialog open={confirming !== null} onClose={() => setConfirming(null)}>
         <DialogTitle>
-          {confirming === 'empty' ? 'Empty the trash?' : `Delete ${plural(selected.size)} for good?`}
+          {confirming === 'empty' ? 'Empty the trash?' : `Delete ${photoCount(selected.size)} for good?`}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2">This removes the originals and their thumbnails from storage. It cannot be undone.</Typography>
@@ -438,7 +437,7 @@ function PhotoTile({ item, eventId, selected, selecting, onOpen, onToggle, onSho
       )}
       {item.purgesAt && (
         <Typography variant="caption" sx={{ ...OVERLAY, left: 4, bottom: 4 }}>
-          {daysLeft(item.purgesAt, new Date())} days left
+          {fmtDays(daysLeft(item.purgesAt, new Date()))} left
         </Typography>
       )}
       {eventId && (

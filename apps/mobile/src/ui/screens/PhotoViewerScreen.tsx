@@ -11,7 +11,8 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { scheduleOnRN } from 'react-native-worklets';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { reprocessPhoto } from '@lupira/cal-api/fetch/photo';
-import { daysLeft } from '@lupira/cal-domain/photoFormat';
+import { daysLeft, fmtDays, geotagLabel, originalIsViewable } from '@lupira/cal-domain/photoFormat';
+import { formatCoords } from '@lupira/cal-domain/places';
 import { toast, toastError } from '../../feedback/toast';
 import { purgePhotos, restorePhotos, trashPhotos } from '../../state/photoActions';
 import { DEFAULT_PHOTO_FILTERS, usePhoto, usePhotoLibrary } from '../../state/usePhotoLibrary';
@@ -335,10 +336,7 @@ const PhotoPage = memo(function PhotoPage({ photo, width, active, originalUrl, o
     transform: [{ translateX: x.value }, { translateY: y.value }, { scale: scale.value }],
   }));
 
-  // HEIC originals are stored untranscoded and the decoder can't read them — the WebP thumbnail is the
-  // only viewable rendition.
-  const heic = photo.contentType === 'image/heic' || photo.contentType === 'image/heif';
-  const original = !heic && originalUrl ? originalUrl : null;
+  const original = originalIsViewable(photo.contentType) && originalUrl ? originalUrl : null;
   const uri = original ?? photo.thumbUrl;
   const cacheKey = original ? originalCacheKey(photo.id) : thumbCacheKey(photo.id);
 
@@ -370,7 +368,7 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
       <Text style={[styles.detail, { color: c.textMuted }]}>{fmtDateTime(new Date(photo.takenAt))}</Text>
       {photo.purgesAt && (
         <Text style={[styles.detail, { color: c.warning }]}>
-          {`In trash · deleted for good in ${daysLeft(photo.purgesAt, new Date())} days`}
+          {`In trash · deleted for good in ${fmtDays(daysLeft(photo.purgesAt, new Date()))}`}
         </Text>
       )}
 
@@ -384,7 +382,7 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
       <List.Subheader>Location</List.Subheader>
       <Text style={[styles.detail, { color: c.textMuted }]}>
         {photo.latitude != null && photo.longitude != null
-          ? `${photo.latitude.toFixed(5)}, ${photo.longitude.toFixed(5)} · ${photo.geotagSource === 'ExifGps' ? 'from the camera' : 'matched from your location history'}`
+          ? `${formatCoords(photo.latitude, photo.longitude)} · ${geotagLabel(photo.geotagSource)}`
           : 'No location — this photo never appears on the map.'}
       </Text>
 

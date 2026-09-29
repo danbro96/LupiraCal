@@ -1,3 +1,4 @@
+import { formatCoords } from '@lupira/cal-domain/places';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
@@ -176,7 +177,7 @@ function UnlocatedRow({ place, onFixOnMap, onManualCoords, onVerify, onHistory }
       <TableCell>
         {place.name}
         {regeocode.data && regeocode.data.latitude != null && (
-          <Chip color="success" sx={{ ml: 1 }} label={`${regeocode.data.latitude.toFixed(5)}, ${regeocode.data.longitude?.toFixed(5)}`} />
+          <Chip color="success" sx={{ ml: 1 }} label={formatCoords(regeocode.data.latitude, regeocode.data.longitude)} />
         )}
         {regeocode.error != null && <Typography variant="body2" component="span" sx={{ my: 0.5, color: 'error.main' }}> {errText(regeocode.error) ?? 'Regeocode failed.'}</Typography>}
       </TableCell>

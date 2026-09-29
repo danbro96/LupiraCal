@@ -3,7 +3,7 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import { createItemRelationsBatch, deleteItemRelationsBatch, listRelationEdges, searchItems } from '@lupira/cal-api/fetch/cal';
 import { listPhotos, lookupPhotos } from '@lupira/cal-api/fetch/photo';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
-import { PHOTO_LINK, photoEventLinks, THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
+import { PHOTO_LINK, photoEventLinks, THUMB_SAFE_STALE_MS, unlinkedPhotoIds } from '@lupira/cal-domain/photoFormat';
 import { captureWindow, eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
 import { getDb } from '../data/db/expoDb';
 import { loadItem } from '../data/mirror';
@@ -128,7 +128,7 @@ export function useLinkCandidates(takenAts: readonly string[], enabled: boolean)
 export async function linkPhotosToEvent(
   itemId: string, photoIds: readonly string[], links: ReadonlyMap<string, string[]>,
 ): Promise<{ linked: string[]; ok: boolean }> {
-  const pending = photoIds.filter((id) => !links.get(id)?.includes(itemId));
+  const pending = unlinkedPhotoIds(photoIds, links, itemId);
   if (pending.length === 0) return { linked: [], ok: true };
   const r = await createItemRelationsBatch(itemId, { ...PHOTO_LINK, toRefs: pending }).catch(() => null);
   invalidatePhotos();

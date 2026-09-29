@@ -12,7 +12,8 @@ import { Link } from 'react-router-dom';
 import { fmtBytes, fmtDimensions, fmtDuration } from '@lupira/cal-domain/photoFormat';
 import { fmtDateTime } from '@lupira/cal-domain/time';
 import { useGetPhoto, useReprocessPhoto } from '@lupira/cal-api/query/photo';
-import { daysLeft } from '@lupira/cal-domain/photoFormat';
+import { daysLeft, fmtDays, geotagLabel, originalIsViewable } from '@lupira/cal-domain/photoFormat';
+import { formatCoords } from '@lupira/cal-domain/places';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { useInvalidatePhotos } from '../../../state/useInvalidate';
 import { usePhotoActions } from '../../../state/usePhotoActions';
@@ -72,11 +73,9 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
     return () => window.removeEventListener('keydown', onKey);
   }, [confirming, prev, next, onNavigate]);
 
-  // HEIC originals are stored untranscoded and no browser decodes them — fall back to the WebP thumb.
   const src = useMemo(() => {
     if (!photo) return undefined;
-    const heic = photo.contentType === 'image/heic' || photo.contentType === 'image/heif';
-    return heic ? (photo.thumbUrl ?? undefined) : (photo.originalUrl ?? photo.thumbUrl ?? undefined);
+    return (originalIsViewable(photo.contentType) ? photo.originalUrl ?? photo.thumbUrl : photo.thumbUrl) ?? undefined;
   }, [photo]);
 
   const leave = () => {
@@ -181,7 +180,7 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
                 </Typography>
                 {photo.purgesAt && (
                   <Typography variant="body2" sx={{ color: 'warning.main', mb: 1 }}>
-                    In trash · deleted for good in {daysLeft(photo.purgesAt, new Date())} days
+                    In trash · deleted for good in {fmtDays(daysLeft(photo.purgesAt, new Date()))}
                   </Typography>
                 )}
 
@@ -198,9 +197,9 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
                 <DrawerSection title="Place">
                   {photo.latitude != null ? (
                     <>
-                      <Typography variant="body2">{photo.latitude.toFixed(5)}, {photo.longitude!.toFixed(5)}</Typography>
+                      <Typography variant="body2">{formatCoords(photo.latitude, photo.longitude)}</Typography>
                       <Typography variant="caption" sx={{ color: 'text.subtle' }}>
-                        {photo.geotagSource === 'ExifGps' ? 'From the camera' : 'Matched from your location history'}
+                        {geotagLabel(photo.geotagSource)}
                       </Typography>
                       <Box>
                         <Button

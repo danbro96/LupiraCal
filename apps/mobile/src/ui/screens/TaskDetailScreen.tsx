@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Text } from 'react-native-paper';
 import { tasksGetItem as getItem } from '@lupira/cal-api/fetch/tasks';
-import { taskDeepLink } from '@lupira/cal-domain/tasks';
+import { isOverdue, taskDeepLink } from '@lupira/cal-domain/tasks';
 import { Centered } from '../components/Centered';
 import { Button } from '../components/Button';
 import type { RootStackParamList } from '../navigation/types';
@@ -31,8 +31,7 @@ export function TaskDetailScreen() {
   if (!data || data.status !== 200) return <Centered text="Task not found (or no access)." />;
   const task = data.data;
 
-  const due = task.dueAt ? new Date(task.dueAt) : null;
-  const overdue = due != null && due < new Date() && !task.completed;
+  const overdue = !!task.dueAt && !task.completed && isOverdue(task.dueAt, new Date());
   const openInTasks = () =>
     Linking.openURL(taskDeepLink(task.listId, task.id)).catch(() =>
       toastError('Lupira Tasks is not installed — task details live in that app.'),

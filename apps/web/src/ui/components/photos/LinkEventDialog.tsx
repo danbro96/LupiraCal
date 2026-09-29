@@ -1,3 +1,4 @@
+import { linkedMessage, linkPhotosTitle, unlinkedPhotoIds } from '@lupira/cal-domain/photoFormat';
 import { useState } from 'react';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -28,7 +29,7 @@ export function LinkEventDialog({ photos, onClose, onLinked }: {
   const [busy, setBusy] = useState(false);
 
   const onPick = async (itemId: string) => {
-    const pending = photos.filter((p) => !links.get(p.id)?.includes(itemId)).map((p) => p.id);
+    const pending = unlinkedPhotoIds(photos.map((p) => p.id), links, itemId);
     setBusy(true);
     const { done, failed } = pending.length > 0 ? await actions.link(itemId, pending) : { done: 0, failed: 0 };
     setBusy(false);
@@ -36,7 +37,7 @@ export function LinkEventDialog({ photos, onClose, onLinked }: {
       showSnack('Could not link the photos');
     } else {
       showSnack(
-        photos.length === 1 ? 'Linked to the event' : `Linked ${done} photos`,
+        linkedMessage(photos.length, done),
         'success',
         done > 0 ? { label: 'Undo', onPress: () => void actions.unlink(itemId, pending) } : undefined,
       );
@@ -45,7 +46,7 @@ export function LinkEventDialog({ photos, onClose, onLinked }: {
     onClose();
   };
 
-  const title = photos.length === 1 ? 'Link to an event' : `Link ${photos.length} photos to an event`;
+  const title = linkPhotosTitle(photos.length);
 
   return (
     <Dialog open onClose={busy ? undefined : onClose} fullWidth maxWidth="xs">

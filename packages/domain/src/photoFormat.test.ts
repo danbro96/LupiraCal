@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daysLeft, fmtBytes, fmtDimensions, fmtDuration, groupByDay, linkedEventIds, photoEventLinks, topPlaces } from './photoFormat';
+import { daysLeft, fmtBytes, fmtDays, fmtDimensions, fmtDuration, groupByDay, linkedEventIds, originalIsViewable, outcomeMessage, photoEventLinks, topPlaces, unlinkedPhotoIds } from './photoFormat';
 
 describe('fmtBytes', () => {
   it('scales through the binary units', () => {
@@ -108,5 +108,29 @@ describe('daysLeft', () => {
     expect(daysLeft('2026-09-30T13:00:00Z', now)).toBe(3);
     expect(daysLeft('2026-09-28T12:00:01Z', now)).toBe(1);
     expect(daysLeft('2026-09-27T00:00:00Z', now)).toBe(0);
+  });
+});
+
+describe('photo wording', () => {
+  it('reports a bulk action, and its failures', () => {
+    expect(outcomeMessage('Trashed', { done: 1, failed: 0 })).toBe('Trashed 1 photo');
+    expect(outcomeMessage('Trashed', { done: 2, failed: 1 })).toBe('Trashed 2, 1 failed');
+  });
+
+  it('says one day, not one days', () => {
+    expect(fmtDays(1)).toBe('1 day');
+    expect(fmtDays(12)).toBe('12 days');
+  });
+});
+
+describe('photo rules', () => {
+  it('shows HEIC by its thumbnail', () => {
+    expect(originalIsViewable('image/heic')).toBe(false);
+    expect(originalIsViewable('image/jpeg')).toBe(true);
+  });
+
+  it('links only the photos not yet on the event', () => {
+    const links = new Map([['a', ['e1']], ['b', ['e2']]]);
+    expect(unlinkedPhotoIds(['a', 'b', 'c'], links, 'e1')).toEqual(['b', 'c']);
   });
 });
