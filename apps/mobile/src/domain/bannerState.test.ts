@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bannerState, type BannerInput } from './bannerState';
+import { BULK_SYNC_COUNT, bannerState, type BannerInput } from './bannerState';
 import { PHASE_LABELS } from './syncPhase';
 
 const healthy: BannerInput = {
@@ -18,10 +18,17 @@ describe('bannerState', () => {
   });
 
   it('reports the phase and count while syncing', () => {
-    expect(state({ syncing: true, progress: { phase: 'items', count: 12 } })).toEqual({
+    expect(state({ syncing: true, progress: { phase: 'items', count: 12 } })).toMatchObject({
       kind: 'syncing',
       text: 'Syncing — 12 events…',
     });
+  });
+
+  it('keeps a routine sync quiet and gives a bulk one its strip', () => {
+    expect(state({ syncing: true, progress: null })?.quiet).toBe(true);
+    expect(state({ syncing: true, progress: { phase: 'items', count: BULK_SYNC_COUNT - 1 } })?.quiet).toBe(true);
+    expect(state({ syncing: true, progress: { phase: 'items', count: BULK_SYNC_COUNT } })?.quiet).toBe(false);
+    expect(state({ serverReachable: false })?.quiet).toBe(false);
   });
 
   it('falls back to a bare label before the first count arrives', () => {
@@ -36,11 +43,12 @@ describe('bannerState', () => {
   });
 
   it('surfaces parked changes once the server is reachable again', () => {
-    expect(state({ parked: 1 })).toEqual({ kind: 'parked', text: '1 change need attention' });
+    expect(state({ parked: 1 })).toMatchObject({ kind: 'parked', text: '1 change needs attention' });
+    expect(state({ parked: 2 })?.text).toBe('2 changes need attention');
   });
 
   it('surfaces a sync error that left nothing pending', () => {
-    expect(state({ lastError: 'boom' })).toEqual({ kind: 'error', text: 'Sync problem — tap for details' });
+    expect(state({ lastError: 'boom' })).toMatchObject({ kind: 'error', text: 'Sync problem — tap for details' });
   });
 
   it('prefers in-progress sync over every other state', () => {

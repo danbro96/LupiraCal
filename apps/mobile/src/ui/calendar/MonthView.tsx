@@ -57,24 +57,32 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
             const dayRows = byDay.get(key) ?? [];
             const inMonth = d.getMonth() === anchor.getMonth();
             const selected = key === selectedDay;
+            const today = isToday(d);
             return (
               <Pressable
                 key={key}
-                style={[styles.cell, { borderColor: c.divider }, selected && [styles.cellSelected, { borderColor: c.primary }]]}
+                style={[
+                  styles.cell,
+                  { borderColor: c.divider },
+                  today && { backgroundColor: c.primary + '14' },
+                  selected && [styles.cellSelected, { borderColor: c.primary }],
+                ]}
                 onPress={() => onSelectDay(key)}
               >
                 {availByDay.has(key) && (
                   <View style={[styles.availStrip, { backgroundColor: availabilityColor(availByDay.get(key) ?? null) }]} />
                 )}
-                <Text
-                  style={[
-                    styles.dayNum,
-                    { color: isToday(d) ? c.primary : inMonth ? c.text : c.textMuted },
-                    isToday(d) && styles.dayNumToday,
-                  ]}
-                >
-                  {d.getDate()}
-                </Text>
+                <View style={[styles.dayNumBadge, today && { backgroundColor: c.primary }]}>
+                  <Text
+                    style={[
+                      styles.dayNum,
+                      { color: today ? c.onPrimary : inMonth ? c.text : c.textMuted },
+                      today && styles.dayNumToday,
+                    ]}
+                  >
+                    {d.getDate()}
+                  </Text>
+                </View>
                 {dayRows.slice(0, 3).map((r) =>
                   isTaskRow(r) ? (
                     <View
@@ -123,7 +131,9 @@ const styles = StyleSheet.create({
   cell: { flex: 1, minHeight: 56, borderWidth: 0.5, padding: 1, gap: 1, overflow: 'hidden' },
   cellSelected: { borderWidth: 1.5 },
   availStrip: { height: 3, borderRadius: 2, marginBottom: 1 },
-  dayNum: { fontSize: 11, paddingLeft: 2 },
+  // Today's number sits in a filled circle; other days keep the same box so numbers line up.
+  dayNumBadge: { alignSelf: 'flex-start', minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center' },
+  dayNum: { fontSize: 11 },
   dayNumToday: { fontWeight: '700' },
   bar: { borderRadius: 3, paddingHorizontal: 2, paddingVertical: 0.5 },
   barText: { fontSize: 8.5 },
