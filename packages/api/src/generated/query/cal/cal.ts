@@ -29,6 +29,7 @@ import type {
   CalendarItemOccurrenceDto,
   ClearItemActionParams,
   ClearItemPromptParams,
+  ConfirmAttendanceParams,
   ContainerDto,
   CreateCalendarItemRequest,
   CreateCalendarRequest,
@@ -43,6 +44,7 @@ import type {
   HotspotDto,
   InviteParticipantParams,
   JsonNode,
+  LeaveItemParams,
   ListRelationEdgesParams,
   MergeItemMetadataParams,
   OwnerGrantDto,
@@ -50,6 +52,7 @@ import type {
   ProblemDetails,
   RelationDto,
   RemoveItemFromCalendarParams,
+  RemoveParticipantByContactParams,
   RespondToInvitationParams,
   RevokeCalendarOwnerParams,
   SearchItemsParams,
@@ -2561,7 +2564,7 @@ export const useRemoveItemFromCalendar = <TError = ProblemDetails,
 }
 
 /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s.
+ * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const inviteParticipant = async (id: string,
     params: InviteParticipantParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
@@ -2614,7 +2617,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type InviteParticipantMutationVariables = {id: string;params: InviteParticipantParams}
 
     /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s.
+ * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const useInviteParticipant = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,InviteParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -2625,6 +2628,88 @@ export const useInviteParticipant = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getInviteParticipantMutationOptions(options), queryClient);
+    }
+    export const getRemoveParticipantByContactUrl = (id: string,
+    params: RemoveParticipantByContactParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/items/${id}/participants?${stringifiedParams}` : `/api/items/${id}/participants`
+}
+
+/**
+ * @summary Remove a contact from the item — every participation it holds; a contact holding none is a no-op. For clients that never learned the participation id.
+ */
+export const removeParticipantByContact = async (id: string,
+    params: RemoveParticipantByContactParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
+
+  return apiRequest<CalendarItemDto>(getRemoveParticipantByContactUrl(id,params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveParticipantByContactMutationKey = () => ['removeParticipantByContact'] as const;
+
+export const getRemoveParticipantByContactMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeParticipantByContact>>, TError,RemoveParticipantByContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeParticipantByContact>>, TError,RemoveParticipantByContactMutationVariables, TContext> => {
+
+const mutationKey = getRemoveParticipantByContactMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeParticipantByContact>>, RemoveParticipantByContactMutationVariables> = (props) => {
+          const {id,params} = props ?? {};
+
+          return  removeParticipantByContact(id,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveParticipantByContactMutationResult = NonNullable<Awaited<ReturnType<typeof removeParticipantByContact>>>
+
+    export type RemoveParticipantByContactMutationError = ProblemDetails
+    export type RemoveParticipantByContactMutationVariables = {id: string;params: RemoveParticipantByContactParams}
+
+    /**
+ * @summary Remove a contact from the item — every participation it holds; a contact holding none is a no-op. For clients that never learned the participation id.
+ */
+export const useRemoveParticipantByContact = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeParticipantByContact>>, TError,RemoveParticipantByContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof removeParticipantByContact>>,
+        TError,
+        RemoveParticipantByContactMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveParticipantByContactMutationOptions(options), queryClient);
     }
     export const getRespondToInvitationUrl = (id: string,
     participationId: string,
@@ -2644,7 +2729,7 @@ export const useInviteParticipant = <TError = ProblemDetails,
 }
 
 /**
- * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s.
+ * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s. The current RSVP again is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const respondToInvitation = async (id: string,
     participationId: string,
@@ -2698,7 +2783,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RespondToInvitationMutationVariables = {id: string;participationId: string;params?: RespondToInvitationParams}
 
     /**
- * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s.
+ * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s. The current RSVP again is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const useRespondToInvitation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToInvitation>>, TError,RespondToInvitationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -2711,21 +2796,30 @@ export const useRespondToInvitation = <TError = ProblemDetails,
       return useMutation(getRespondToInvitationMutationOptions(options), queryClient);
     }
     export const getConfirmAttendanceUrl = (id: string,
-    participationId: string,) => {
+    participationId: string,
+    params?: ConfirmAttendanceParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/items/${id}/participants/${participationId}/attend`
+  return stringifiedParams.length > 0 ? `/api/items/${id}/participants/${participationId}/attend?${stringifiedParams}` : `/api/items/${id}/participants/${participationId}/attend`
 }
 
 /**
- * @summary Confirm attendance.
+ * @summary Confirm attendance; already confirmed is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const confirmAttendance = async (id: string,
-    participationId: string, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
+    participationId: string,
+    params?: ConfirmAttendanceParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<CalendarItemDto>(getConfirmAttendanceUrl(id,participationId),
+  return apiRequest<CalendarItemDto>(getConfirmAttendanceUrl(id,participationId,params),
   {
     ...options,
     method: 'POST'
@@ -2755,9 +2849,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmAttendance>>, ConfirmAttendanceMutationVariables> = (props) => {
-          const {id,participationId} = props ?? {};
+          const {id,participationId,params} = props ?? {};
 
-          return  confirmAttendance(id,participationId,requestOptions)
+          return  confirmAttendance(id,participationId,params,requestOptions)
         }
 
 
@@ -2770,10 +2864,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ConfirmAttendanceMutationResult = NonNullable<Awaited<ReturnType<typeof confirmAttendance>>>
 
     export type ConfirmAttendanceMutationError = ProblemDetails
-    export type ConfirmAttendanceMutationVariables = {id: string;participationId: string}
+    export type ConfirmAttendanceMutationVariables = {id: string;participationId: string;params?: ConfirmAttendanceParams}
 
     /**
- * @summary Confirm attendance.
+ * @summary Confirm attendance; already confirmed is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const useConfirmAttendance = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmAttendance>>, TError,ConfirmAttendanceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -2786,21 +2880,30 @@ export const useConfirmAttendance = <TError = ProblemDetails,
       return useMutation(getConfirmAttendanceMutationOptions(options), queryClient);
     }
     export const getLeaveItemUrl = (id: string,
-    participationId: string,) => {
+    participationId: string,
+    params?: LeaveItemParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/items/${id}/participants/${participationId}/leave`
+  return stringifiedParams.length > 0 ? `/api/items/${id}/participants/${participationId}/leave?${stringifiedParams}` : `/api/items/${id}/participants/${participationId}/leave`
 }
 
 /**
- * @summary Record that the participant left.
+ * @summary Record that the participant left; already left is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const leaveItem = async (id: string,
-    participationId: string, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
+    participationId: string,
+    params?: LeaveItemParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<CalendarItemDto>(getLeaveItemUrl(id,participationId),
+  return apiRequest<CalendarItemDto>(getLeaveItemUrl(id,participationId,params),
   {
     ...options,
     method: 'POST'
@@ -2830,9 +2933,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof leaveItem>>, LeaveItemMutationVariables> = (props) => {
-          const {id,participationId} = props ?? {};
+          const {id,participationId,params} = props ?? {};
 
-          return  leaveItem(id,participationId,requestOptions)
+          return  leaveItem(id,participationId,params,requestOptions)
         }
 
 
@@ -2845,10 +2948,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type LeaveItemMutationResult = NonNullable<Awaited<ReturnType<typeof leaveItem>>>
 
     export type LeaveItemMutationError = ProblemDetails
-    export type LeaveItemMutationVariables = {id: string;participationId: string}
+    export type LeaveItemMutationVariables = {id: string;participationId: string;params?: LeaveItemParams}
 
     /**
- * @summary Record that the participant left.
+ * @summary Record that the participant left; already left is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const useLeaveItem = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveItem>>, TError,LeaveItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -2870,7 +2973,7 @@ export const useLeaveItem = <TError = ProblemDetails,
 }
 
 /**
- * @summary Remove an attendee.
+ * @summary Remove an attendee. Pass Idempotency-Key so a redelivered removal succeeds rather than 404s.
  */
 export const removeParticipant = async (id: string,
     participationId: string, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
@@ -2923,7 +3026,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveParticipantMutationVariables = {id: string;participationId: string}
 
     /**
- * @summary Remove an attendee.
+ * @summary Remove an attendee. Pass Idempotency-Key so a redelivered removal succeeds rather than 404s.
  */
 export const useRemoveParticipant = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeParticipant>>, TError,RemoveParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}

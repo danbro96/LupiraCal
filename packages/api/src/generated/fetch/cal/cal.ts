@@ -10,6 +10,7 @@ import type {
   CalendarItemOccurrenceDto,
   ClearItemActionParams,
   ClearItemPromptParams,
+  ConfirmAttendanceParams,
   ContainerDto,
   CreateCalendarItemRequest,
   CreateCalendarRequest,
@@ -24,6 +25,7 @@ import type {
   HotspotDto,
   InviteParticipantParams,
   JsonNode,
+  LeaveItemParams,
   ListRelationEdgesParams,
   MergeItemMetadataParams,
   OwnerGrantDto,
@@ -31,6 +33,7 @@ import type {
   ProblemDetails,
   RelationDto,
   RemoveItemFromCalendarParams,
+  RemoveParticipantByContactParams,
   RespondToInvitationParams,
   RevokeCalendarOwnerParams,
   SearchItemsParams,
@@ -1762,7 +1765,7 @@ export const getInviteParticipantUrl = (id: string,
 }
 
 /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s.
+ * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const inviteParticipant = async (id: string,
     params: InviteParticipantParams, options?: Parameters<typeof apiRequest>[1]): Promise<inviteParticipantResponse> => {
@@ -1771,6 +1774,67 @@ export const inviteParticipant = async (id: string,
   {
     ...options,
     method: 'POST'
+
+
+  }
+);}
+
+
+export type removeParticipantByContactResponse200 = {
+  data: CalendarItemDto
+  status: 200
+}
+
+export type removeParticipantByContactResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type removeParticipantByContactResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type removeParticipantByContactResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type removeParticipantByContactResponseSuccess = (removeParticipantByContactResponse200) & {
+  headers: Headers;
+};
+export type removeParticipantByContactResponseError = (removeParticipantByContactResponse401 | removeParticipantByContactResponse404 | removeParticipantByContactResponse500) & {
+  headers: Headers;
+};
+
+export type removeParticipantByContactResponse = (removeParticipantByContactResponseSuccess | removeParticipantByContactResponseError)
+
+export const getRemoveParticipantByContactUrl = (id: string,
+    params: RemoveParticipantByContactParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/items/${id}/participants?${stringifiedParams}` : `/api/items/${id}/participants`
+}
+
+/**
+ * @summary Remove a contact from the item — every participation it holds; a contact holding none is a no-op. For clients that never learned the participation id.
+ */
+export const removeParticipantByContact = async (id: string,
+    params: RemoveParticipantByContactParams, options?: Parameters<typeof apiRequest>[1]): Promise<removeParticipantByContactResponse> => {
+
+  return apiRequest<removeParticipantByContactResponse>(getRemoveParticipantByContactUrl(id,params),
+  {
+    ...options,
+    method: 'DELETE'
 
 
   }
@@ -1829,7 +1893,7 @@ export const getRespondToInvitationUrl = (id: string,
 }
 
 /**
- * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s.
+ * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s. The current RSVP again is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const respondToInvitation = async (id: string,
     participationId: string,
@@ -1875,21 +1939,30 @@ export type confirmAttendanceResponseError = (confirmAttendanceResponse401 | con
 export type confirmAttendanceResponse = (confirmAttendanceResponseSuccess | confirmAttendanceResponseError)
 
 export const getConfirmAttendanceUrl = (id: string,
-    participationId: string,) => {
+    participationId: string,
+    params?: ConfirmAttendanceParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/items/${id}/participants/${participationId}/attend`
+  return stringifiedParams.length > 0 ? `/api/items/${id}/participants/${participationId}/attend?${stringifiedParams}` : `/api/items/${id}/participants/${participationId}/attend`
 }
 
 /**
- * @summary Confirm attendance.
+ * @summary Confirm attendance; already confirmed is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const confirmAttendance = async (id: string,
-    participationId: string, options?: Parameters<typeof apiRequest>[1]): Promise<confirmAttendanceResponse> => {
+    participationId: string,
+    params?: ConfirmAttendanceParams, options?: Parameters<typeof apiRequest>[1]): Promise<confirmAttendanceResponse> => {
 
-  return apiRequest<confirmAttendanceResponse>(getConfirmAttendanceUrl(id,participationId),
+  return apiRequest<confirmAttendanceResponse>(getConfirmAttendanceUrl(id,participationId,params),
   {
     ...options,
     method: 'POST'
@@ -1929,21 +2002,30 @@ export type leaveItemResponseError = (leaveItemResponse401 | leaveItemResponse40
 export type leaveItemResponse = (leaveItemResponseSuccess | leaveItemResponseError)
 
 export const getLeaveItemUrl = (id: string,
-    participationId: string,) => {
+    participationId: string,
+    params?: LeaveItemParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/items/${id}/participants/${participationId}/leave`
+  return stringifiedParams.length > 0 ? `/api/items/${id}/participants/${participationId}/leave?${stringifiedParams}` : `/api/items/${id}/participants/${participationId}/leave`
 }
 
 /**
- * @summary Record that the participant left.
+ * @summary Record that the participant left; already left is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const leaveItem = async (id: string,
-    participationId: string, options?: Parameters<typeof apiRequest>[1]): Promise<leaveItemResponse> => {
+    participationId: string,
+    params?: LeaveItemParams, options?: Parameters<typeof apiRequest>[1]): Promise<leaveItemResponse> => {
 
-  return apiRequest<leaveItemResponse>(getLeaveItemUrl(id,participationId),
+  return apiRequest<leaveItemResponse>(getLeaveItemUrl(id,participationId,params),
   {
     ...options,
     method: 'POST'
@@ -1992,7 +2074,7 @@ export const getRemoveParticipantUrl = (id: string,
 }
 
 /**
- * @summary Remove an attendee.
+ * @summary Remove an attendee. Pass Idempotency-Key so a redelivered removal succeeds rather than 404s.
  */
 export const removeParticipant = async (id: string,
     participationId: string, options?: Parameters<typeof apiRequest>[1]): Promise<removeParticipantResponse> => {

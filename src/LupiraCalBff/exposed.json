@@ -4,6 +4,7 @@
       "DELETE /calendars/{calendarId}/owners",
       "DELETE /items/{id}",
       "DELETE /items/{id}/action",
+      "DELETE /items/{id}/participants",
       "DELETE /items/{id}/participants/{participationId}",
       "DELETE /items/{id}/prompt",
       "DELETE /items/{itemId}/calendars/{calendarId}",

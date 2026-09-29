@@ -5,8 +5,7 @@
  * OpenAPI spec version: v1
  */
 
-export type RespondToInvitationParams = {
-status?: string;
+export type ConfirmAttendanceParams = {
 /**
  * @nullable
  */

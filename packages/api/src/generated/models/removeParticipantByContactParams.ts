@@ -5,10 +5,6 @@
  * OpenAPI spec version: v1
  */
 
-export type RespondToInvitationParams = {
-status?: string;
-/**
- * @nullable
- */
-occurredAt?: string | null;
+export type RemoveParticipantByContactParams = {
+contactId: string;
 };

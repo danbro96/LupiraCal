@@ -1,8 +1,9 @@
-import { createItem, deleteItem, getItem, inviteParticipant, mergeItemMetadata, removeParticipant, updateItem } from '@lupira/cal-api/fetch/cal';
+import { createItem, deleteItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact, updateItem } from '@lupira/cal-api/fetch/cal';
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import { createContact, deleteContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '@lupira/cal-api/fetch/contact';
 import type { ContactReachChannel } from '@lupira/cal-api/models';
+import { v5 as uuidv5 } from 'uuid';
 import { ApiError } from '../domain/apiError';
 import type { ClientOp, ItemCore } from '../domain/ops';
 
@@ -48,13 +49,16 @@ export async function replayOp(op: ClientOp): Promise<void> {
     case 'item.unfile':
       await removeItemFromCalendar(op.itemId, op.calendarId, { occurredAt: op.occurredAt }, idem);
       return;
-    // Participation endpoints ignore Idempotency-Key; invite is idempotent by contact instead, so a
-    // redelivered op re-invites nobody.
+    // One request per contact, each keyed by a name-based UUID in the op's namespace: a redelivered op resends every
+    // request under the same key, so a partly delivered op resumes without re-applying what landed.
     case 'item.invite':
-      for (const contactId of op.contactIds) await inviteParticipant(op.itemId, { contactId });
+      for (const contactId of op.contactIds) {
+        const key = uuidv5(contactId, op.commandId);
+        await inviteParticipant(op.itemId, { contactId, occurredAt: op.occurredAt }, { headers: { 'Idempotency-Key': key } });
+      }
       return;
     case 'item.uninvite':
-      await uninvite(op.itemId, op.contactId);
+      await uninvite(op.itemId, op.contactId, idem);
       return;
     case 'contact.create':
       await createContact({
@@ -104,18 +108,15 @@ export async function replayOp(op: ClientOp): Promise<void> {
   }
 }
 
-/** The op names a contact because an invite still in the outbox has no participation id yet. */
-async function uninvite(itemId: string, contactId: string): Promise<void> {
-  let item;
+/** Removal names the contact because an invite still in the outbox has no participation id yet. An item that is
+ *  gone has nobody left to remove. */
+async function uninvite(itemId: string, contactId: string, idem: { headers: Record<string, string> }): Promise<void> {
   try {
-    item = await getItem(itemId);
+    await removeParticipantByContact(itemId, { contactId }, idem);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return;
     throw e;
   }
-  if (item.status !== 200) return;
-  const participation = item.data.attendees.find((a) => a.contactId === contactId);
-  if (participation) await removeParticipant(itemId, participation.participationId);
 }
 
 /** The whole-core write: every sentinel set so the op's desired state lands verbatim (incl. clears of the
