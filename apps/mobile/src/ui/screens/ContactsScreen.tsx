@@ -1,6 +1,8 @@
 import { INDEX_LETTERS, indexByLetter, sectionFor, sectionOffsets, type LetterEntry } from '@lupira/cal-domain/letterIndex';
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
+import { initialsOf } from '@lupira/cal-domain/contactNames';
 import { partialDateBadge } from '@lupira/cal-domain/partialDate';
+import { matchesTerms, searchTerms } from '@lupira/cal-domain/textSearch';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
@@ -9,7 +11,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Avatar, FAB, Searchbar, Text } from 'react-native-paper';
 import type { ContactListRow } from '../../data/mirror';
 import { useContactList } from '../../state/useContactList';
-import { hashColor } from '../hooks/palette';
+import { avatarColor } from '../hooks/palette';
 import { ScreenToolbar } from '../components/ScreenToolbar';
 import { SyncBanner } from '../components/SyncBanner';
 import type { RootStackParamList } from '../navigation/types';
@@ -35,11 +37,10 @@ export function ContactsScreen() {
   const [query, setQuery] = useState('');
 
   const q = query.trim().toLowerCase();
-  const rows = useMemo(() => (data ?? []).filter((r) =>
-    !q
-    || r.displayName.toLowerCase().includes(q)
-    || (r.doc.nickname ?? '').toLowerCase().includes(q)
-    || visibleTags(r.doc.tags).some((t) => t.toLowerCase().includes(q))), [data, q]);
+  const rows = useMemo(() => {
+    const terms = searchTerms(q);
+    return (data ?? []).filter((r) => matchesTerms(terms, r.displayName, r.doc.nickname, ...visibleTags(r.doc.tags)));
+  }, [data, q]);
   const { entries, headerAt } = useMemo(() => indexByLetter(rows, nameOf), [rows]);
   const stickyHeaderIndices = useMemo(() => [...headerAt.values()], [headerAt]);
   const presentLetters = useMemo(() => new Set(headerAt.keys()), [headerAt]);
@@ -154,7 +155,7 @@ const ContactRow = memo(function ContactRow({ row, onOpen }: { row: ContactListR
   // Plain views rather than Paper's List.Item: a rail jump mounts a whole screen of rows at once.
   return (
     <Pressable style={[styles.row, { backgroundColor: c.bg }]} android_ripple={{ color: c.divider }} onPress={() => onOpen(row.id)}>
-      <Avatar.Text size={38} label={initialsOf(row.displayName)} style={{ backgroundColor: hashColor(row.id) }} />
+      <Avatar.Text size={38} label={initialsOf(row.displayName)} style={{ backgroundColor: avatarColor(row.id) }} />
       <View style={styles.rowText}>
         <Text variant="bodyLarge" numberOfLines={1} style={{ color: c.text }}>{row.displayName}</Text>
         {firstChannel?.value ? (
@@ -167,12 +168,6 @@ const ContactRow = memo(function ContactRow({ row, onOpen }: { row: ContactListR
     </Pressable>
   );
 });
-
-export function initialsOf(name: string): string {
-  const parts = name.split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
-}
 
 const styles = StyleSheet.create({
   root: { flex: 1 },

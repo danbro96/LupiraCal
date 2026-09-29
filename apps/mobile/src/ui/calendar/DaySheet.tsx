@@ -1,4 +1,6 @@
-import { fmtTime, parseYmd } from '@lupira/cal-domain/time';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { compareDayEntries } from '@lupira/cal-domain/occurrences';
+import { fmtDayTitle, fmtTime, isThisYear, parseYmd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,7 +14,7 @@ import { isTaskRow } from '../../domain/taskRows';
 import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrences';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
 import { Glyph } from '../components/Glyph';
-import { BIRTHDAY_COLOR, availabilityColor, useCalendarColors } from '../hooks/palette';
+import { availabilityColor, useCalendarColors } from '../hooks/palette';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors } from '../theme';
@@ -74,7 +76,7 @@ export function DaySheet({ day, areaH, onDismiss, onOpenOccurrence }: {
           <View style={[styles.handle, { backgroundColor: c.divider }]} />
           <View style={styles.headerRow}>
             <Text style={styles.title}>
-              {parseYmd(day).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+              {fmtDayTitle(parseYmd(day), { year: !isThisYear(parseYmd(day)) })}
             </Text>
             <View style={styles.actions}>
               <Pressable onPress={() => navigation.navigate('AvailabilityEdit', { day })} hitSlop={6}>
@@ -97,7 +99,8 @@ function DayAgenda({ day, onPress }: { day: string; onPress: (row: CalRow) => vo
   const { rows } = useOverlappingOccurrences([day]);
   const taskRows = useTaskDeadlines([day]);
   const colorOf = useCalendarColors();
-  const sorted: CalRow[] = [...rows, ...taskRows].sort((a, b) => b.all_day - a.all_day || (a.start_utc < b.start_utc ? -1 : 1));
+  const sorted: CalRow[] = [...rows, ...taskRows].sort((a, b) =>
+    compareDayEntries({ allDay: a.all_day === 1, start: Date.parse(a.start_utc) }, { allDay: b.all_day === 1, start: Date.parse(b.start_utc) }));
 
   return (
     <View style={styles.agenda}>
@@ -114,14 +117,14 @@ function DayAgenda({ day, onPress }: { day: string; onPress: (row: CalRow) => vo
             </Pressable>
           );
         }
-        const dot = isTaskRow(r) ? (r.task.overdue ? c.danger : c.textMuted) : r.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(r.calendar_id);
+        const dot = isTaskRow(r) ? (r.task.overdue ? c.danger : c.textMuted) : colorOf(r.calendar_id, r.source);
         return (
           <Pressable key={key} style={styles.row} onPress={() => onPress(r)}>
             <View style={[styles.dot, { backgroundColor: dot }]} />
             <Text style={[styles.time, { color: c.textMuted }]}>
               {isTaskRow(r) ? <Glyph name={ICONS.schedule} /> : r.source === 'birthday' ? <Glyph name={ICONS.cake} /> : r.all_day === 1 ? 'all day' : fmtTime(new Date(r.start_utc))}
             </Text>
-            <Text style={styles.text} numberOfLines={1}>{r.title ?? '(untitled)'}</Text>
+            <Text style={styles.text} numberOfLines={1}>{displayTitle(r.title)}</Text>
             {isTaskRow(r) && r.task.overdue && <Text style={[styles.flag, { color: c.danger }]}>overdue</Text>}
             {r.status === 'Cancelled' && <Text style={[styles.flag, { color: c.danger }]}>cancelled</Text>}
           </Pressable>

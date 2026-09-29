@@ -101,3 +101,8 @@ export function hiddenPerColumn(bars: Array<ColumnRange & { lane: number }>, dra
   }
   return hidden;
 }
+
+/** Order within a day: all-day first, then by start — the month cells and day lists of both apps. */
+export function compareDayEntries(a: { allDay: boolean; start: number }, b: { allDay: boolean; start: number }): number {
+  return Number(b.allDay) - Number(a.allDay) || a.start - b.start;
+}

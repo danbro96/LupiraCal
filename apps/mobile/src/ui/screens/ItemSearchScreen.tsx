@@ -1,3 +1,4 @@
+import { displayTitle, statusBadge } from '@lupira/cal-domain/itemLabels';
 import { fmtWhen } from '@lupira/cal-domain/time';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -75,11 +76,11 @@ const ResultRow = memo(function ResultRow({ row, onOpen }: { row: ItemSearchRow;
     <Pressable style={styles.row} android_ripple={{ color: c.divider }} onPress={() => onOpen(row.id)}>
       <View style={[styles.dot, { backgroundColor: colorOf(row.calendar_id) }]} />
       <View style={styles.rowText}>
-        <Text variant="bodyLarge" numberOfLines={1} style={{ color: c.text }}>{row.title ?? '(untitled)'}</Text>
+        <Text variant="bodyLarge" numberOfLines={1} style={{ color: c.text }}>{displayTitle(row.title)}</Text>
         <Text variant="bodyMedium" numberOfLines={1} style={{ color: c.textMuted }}>
           {when ? fmtWhen(when, row.is_all_day === 1) : 'No date'}
           {row.recurrence_rule ? <> · <Glyph name={ICONS.repeat} /></> : null}
-          {row.status === 'Cancelled' ? ' · cancelled' : null}
+          {statusBadge(row.status) ? ` · ${statusBadge(row.status)}` : null}
         </Text>
       </View>
     </Pressable>

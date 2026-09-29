@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import Avatar from '@mui/material/Avatar';
+import { initialsOf } from '@lupira/cal-domain/contactNames';
+import { avatarColor } from '@lupira/cal-tokens/kinds';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
@@ -76,8 +78,8 @@ export function GroupDetailPane() {
       <DrawerSection title="Members">
         {members.map((c) => (
           <Box key={c.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: '6px', borderBottom: 1, borderColor: 'divider' }}>
-            <Avatar sx={{ width: 30, height: 30, fontSize: 12, fontWeight: 700, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-              {(c.displayName[0] ?? '?').toUpperCase()}
+            <Avatar sx={{ width: 30, height: 30, fontSize: 12, fontWeight: 700, color: 'common.white' }} style={{ background: avatarColor(c.id) }}>
+              {initialsOf(c.displayName)}
             </Avatar>
             <MuiLink component={Link} sx={{ flex: 1 }} to={{ pathname: `/contacts/${c.id}`, search: backSearch }}>
               {c.displayName}

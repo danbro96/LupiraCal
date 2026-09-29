@@ -30,18 +30,3 @@ export function reachGlyph(key: string | null | undefined): { name: string; colo
   const exact = REACH_KINDS.find((k) => k.key.toLowerCase() === key.toLowerCase());
   return exact ? { name: exact.glyph, color: exact.color, brand: exact.brand === true } : FALLBACK_GLYPH;
 }
-
-/** Deep link for a reach entry, or null when the value isn't actionable. */
-export function reachLink(kind: string, value: string): string | null {
-  const v = value.trim();
-  if (!v) return null;
-  switch (kind.toLowerCase()) {
-    case 'email': return `mailto:${v}`;
-    case 'phone': return `tel:${v}`;
-    case 'telegram': return `https://t.me/${v.replace(/^@/, '')}`;
-    case 'signal': return `https://signal.me/#p/${v}`;
-    case 'whatsapp': return `https://wa.me/${v.replace(/[^0-9]/g, '')}`;
-    case 'web': return /^https?:\/\//i.test(v) ? v : `https://${v}`;
-    default: return /^https?:\/\//i.test(v) ? v : null;
-  }
-}

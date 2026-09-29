@@ -28,6 +28,7 @@ import type {
   ReviseContactRequest,
 } from '@lupira/cal-api/models';
 import { ContactAddressType, DisplayNameFormat, ReachMedium } from '@lupira/cal-api/models';
+import { DISPLAY_NAME_FORMAT_LABELS as NAME_FORMAT_LABELS } from '@lupira/cal-domain/contactNames';
 import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { PlacePicker } from '../places/PlacePicker';
@@ -75,11 +76,8 @@ function AddressStatusHint({ movedInText, movedOutText }: { movedInText: string;
 const norm = (s?: string | null) => (s ?? '').trim();
 const sameList = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
 
-const DISPLAY_NAME_FORMAT_LABELS: Record<DisplayNameFormat, string> = {
-  [DisplayNameFormat.Full]: 'Full name',
-  [DisplayNameFormat.FirstLast]: 'First & last',
-  [DisplayNameFormat.NickName]: 'Nickname',
-};
+// Re-typed against the generated enum: a new format the shared labels lack stops compiling here.
+const DISPLAY_NAME_FORMAT_LABELS: Record<DisplayNameFormat, string> = NAME_FORMAT_LABELS;
 
 /** Add/remove editor for a simple string list (tags). */
 function ChipList({ label, values, onChange, placeholder, inputType = 'text' }: {

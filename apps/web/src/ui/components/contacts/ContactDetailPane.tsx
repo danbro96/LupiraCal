@@ -20,6 +20,7 @@ import {
 } from '@lupira/cal-api/query/contact';
 import { useGetContactContext } from '@lupira/cal-api/query/bff-contacts';
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
+import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
 import { fmtResidencyPeriod, residencyStatus, type FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
 
 function residencySuffix(movedIn: FuzzyDate | null | undefined, movedOut: FuzzyDate | null | undefined): string {
@@ -120,11 +121,11 @@ export function ContactDetailPane() {
             {contact.channels.map((c, i) => (
               <div key={i}>
                 <dt>
-                  {c.type || c.medium}
+                  {channelLabel(c.medium, c.type)}
                   {c.preferred && <StarIcon fontSize="small" sx={{ verticalAlign: -4, ml: 0.5 }} />}
                 </dt>
                 <dd>
-                  <MuiLink underline="hover" sx={linkSx} href={`${c.medium === 'Phone' ? 'tel' : 'mailto'}:${c.value}`}>
+                  <MuiLink underline="hover" sx={linkSx} href={reachLink(c.medium, c.value) ?? undefined}>
                     {c.value}
                   </MuiLink>
                 </dd>
@@ -148,8 +149,8 @@ export function ContactDetailPane() {
                   {p.preferred && <StarIcon fontSize="small" sx={{ verticalAlign: -4, ml: 0.5 }} />}
                 </dt>
                 <dd>
-                  {p.url ? (
-                    <MuiLink underline="hover" sx={linkSx} href={p.url} target="_blank" rel="noreferrer">
+                  {p.url || reachLink(p.service, p.handle) ? (
+                    <MuiLink underline="hover" sx={linkSx} href={p.url || reachLink(p.service, p.handle) || undefined} target="_blank" rel="noreferrer">
                       {p.handle} ↗
                     </MuiLink>
                   ) : (

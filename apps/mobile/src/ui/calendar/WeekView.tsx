@@ -1,5 +1,6 @@
 import { clampToDay, foldLanes, hiddenPerColumn, layoutColumns, packLanes, type Positioned } from '@lupira/cal-domain/occurrences';
-import { addDays, daysFrom, fmtBlockTime, isToday, minutesOfDay, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { addDays, daysFrom, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, parseYmd, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
@@ -17,8 +18,9 @@ import { usePrefs } from '../../state/prefs-store';
 import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrences';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
-import { BIRTHDAY_COLOR, availabilityColor, useCalendarColors } from '../hooks/palette';
+import { availabilityColor, useCalendarColors } from '../hooks/palette';
 import { useBackDismiss } from '../hooks/useBackDismiss';
+import { AvailStrip, addStatus } from './AvailStrip';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
@@ -96,12 +98,12 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
   const bars: Bar[][] = [[], [], []];
   const timed: GridRow[] = [];
   const timedByDay = new Map<string, GridRow[]>();
-  const availByDay = new Map<string, string | null>();
+  const availByDay = new Map<string, (string | null)[]>();
   for (const r of [...rows, ...taskRows]) {
     const end = lastDayOf(r);
     if (r.is_availability === 1) {
       // Renders as the column tint, never a chip.
-      for (const k of dayKeys) if (k >= r.start_day && k <= end) availByDay.set(k, r.avail_status);
+      for (const k of dayKeys) if (k >= r.start_day && k <= end) addStatus(availByDay, k, r.avail_status);
       continue;
     }
     if (r.all_day === 1 || isMultiDayTimed(r)) {
@@ -129,7 +131,7 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
     }
   }
   const places = usePlaceCoords(timed.map((r) => r.place_id));
-  const rowColor = (r: CalRow) => (r.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(r.calendar_id));
+  const rowColor = (r: CalRow) => colorOf(r.calendar_id, r.source);
 
   return (
     <GestureDetector gesture={pager.gesture}>
@@ -139,11 +141,9 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
             {days.map((d, i) => (
               <View key={dayKeys[i]} style={[styles.dayHeader, { left: colPct(firstCol + i), width: colPct(1) }]}>
                 <Text style={[styles.dayHeaderText, { color: isToday(d) ? c.primary : c.textMuted }, isToday(d) && styles.today]}>
-                  {d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2)} {d.getDate()}
+                  {fmtDayShort(d)}
                 </Text>
-                {availByDay.has(dayKeys[i]) && (
-                  <View style={[styles.availStrip, { backgroundColor: availabilityColor(availByDay.get(dayKeys[i]) ?? null) }]} />
-                )}
+                {availByDay.has(dayKeys[i]) && <AvailStrip statuses={availByDay.get(dayKeys[i]) ?? []} style={styles.availStrip} />}
               </View>
             ))}
           </SlidingDays>
@@ -175,7 +175,7 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
                         col={firstCol + i}
                         rows={timedByDay.get(dayKey) ?? NO_ROWS}
                         places={places}
-                        avail={availByDay.get(dayKey)}
+                        avail={availByDay.get(dayKey)?.[0]}
                         slot={pendingSlot?.day === dayKey ? pendingSlot.slot : null}
                         hourH={zoom.hourH}
                         onTapSlot={tapSlot}
@@ -204,7 +204,7 @@ type DayColumnProps = {
   /** Timed rows touching this day, in start order; the rows themselves are the query's own objects. */
   rows: GridRow[];
   places: Map<string, PlaceDto>;
-  /** Availability status tinting the column; undefined when the day has none. */
+  /** The day's first availability status, tinting the column (every status shows in the header strip). */
   avail: string | null | undefined;
   slot: number | null;
   hourH: SharedValue<number>;
@@ -258,7 +258,7 @@ const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, sl
         <EventBlock
           key={`${p.item.row.source_id}-${p.item.row.start_utc}`}
           placed={p}
-          color={p.item.row.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(p.item.row.calendar_id)}
+          color={colorOf(p.item.row.calendar_id, p.item.row.source)}
           placeName={placeNameOf(places, p.item.row)}
           onPress={onPressOccurrence}
         />
@@ -289,7 +289,7 @@ function EventBlock({ placed, color, placeName, onPress }: {
       }, cancelled && styles.cancelled]}
       onPress={() => onPress(item)}
     >
-      <Text style={[styles.eventTitle, { color: fg }, cancelled && styles.struck]} numberOfLines={2}>{item.title ?? '(untitled)'}</Text>
+      <Text style={[styles.eventTitle, { color: fg }, cancelled && styles.struck]} numberOfLines={2}>{displayTitle(item.title)}</Text>
       <Text style={[styles.eventMeta, { color: fg }]} numberOfLines={1}>{when}</Text>
       {placeName ? <Text style={[styles.eventMeta, { color: fg }]} numberOfLines={1}>{placeName}</Text> : null}
     </Pressable>
@@ -392,7 +392,7 @@ function StripBar({ bar, left, rowColor, onPress }: {
         style={[styles.chipText, { color: task ? (task.overdue ? c.danger : c.textMuted) : textOn(fill ?? '') }, cancelled && styles.struck]}
         numberOfLines={1}
       >
-        {task ? <><Glyph name={ICONS.schedule} size={CHIP_GLYPH} /> {r.title ?? ''}</> : r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={CHIP_GLYPH} /> {r.title ?? ''}</> : (r.title ?? '(untitled)')}
+        {task ? <><Glyph name={ICONS.schedule} size={CHIP_GLYPH} /> {displayTitle(r.title)}</> : r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={CHIP_GLYPH} /> {displayTitle(r.title)}</> : displayTitle(r.title)}
       </Text>
     </Pressable>
   );
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   viewport: { flex: 1 },
   dayHeader: { position: 'absolute', top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   // The same band as the month cell's: the tint alone is too faint to find a status by.
-  availStrip: { position: 'absolute', left: 2, right: 2, bottom: 1, height: 3, borderRadius: 2 },
+  availStrip: { position: 'absolute', left: 2, right: 2, bottom: 1 },
   dayHeaderText: { fontSize: 12 },
   today: { fontWeight: '700' },
   allDayRow: { flexDirection: 'row', borderBottomWidth: 0.5 },

@@ -77,8 +77,28 @@ export function fmtMonthTitle(d: Date): string {
   return d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 }
 
-export function fmtDayTitle(d: Date): string {
-  return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+export function fmtDayTitle(d: Date, { year = true }: { year?: boolean } = {}): string {
+  return d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', ...(year && { year: 'numeric' }) });
+}
+
+export function isThisYear(d: Date, now = new Date()): boolean {
+  return d.getFullYear() === now.getFullYear();
+}
+
+const fmtDayMonth = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+
+/** A week's title: "28 Sep – 4 Oct", with the year only when it isn't the current one, and on both ends
+ *  when the range crosses a year. */
+export function fmtWeekRange(start: Date, end: Date, now = new Date()): string {
+  if (start.getFullYear() !== end.getFullYear()) return `${fmtDate(start)} – ${fmtDate(end)}`;
+  const range = `${fmtDayMonth(start)} – ${fmtDayMonth(end)}`;
+  return isThisYear(start, now) ? range : `${range} ${start.getFullYear()}`;
+}
+
+/** Monday-first short weekday names in the device's locale — the month grids' header row. */
+export function weekdayNames(): string[] {
+  // 1 January 2024 was a Monday.
+  return daysFrom(new Date(2024, 0, 1), 7).map((d) => d.toLocaleDateString(undefined, { weekday: 'short' }));
 }
 
 export function fmtDayShort(d: Date): string {

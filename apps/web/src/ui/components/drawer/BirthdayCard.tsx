@@ -4,8 +4,7 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { useGetContact } from '@lupira/cal-api/query/contact';
 import type { ContactDto } from '@lupira/cal-api/models';
-import { nextBirthday, turningAge } from '@lupira/cal-domain/birthday';
-import { fmtDate } from '@lupira/cal-domain/time';
+import { birthdayAgeLine, nextBirthday, turningAge } from '@lupira/cal-domain/birthday';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
 import { DetailDrawer } from './DetailDrawer';
 import { DrawerSection } from '../DrawerSection';
@@ -37,7 +36,6 @@ function BirthdayBody({ contact, year }: { contact: ContactDto; year: string | n
       : nextBirthday(month, day, new Date())
     : null;
   const age = onDate ? turningAge(birthYear, onDate) : null;
-  const verb = contact.deceased ? 'Would have turned' : 'Turning';
 
   return (
     <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
@@ -52,7 +50,7 @@ function BirthdayBody({ contact, year }: { contact: ContactDto; year: string | n
         {b ? <Typography component="p" sx={{ mb: 1, color: 'text.secondary' }}>{fmtPartialDate(b)}</Typography> : <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Unknown.</Typography>}
         {age != null && onDate && (
           <Typography component="p" sx={{ mb: 1, color: 'text.secondary' }}>
-            {verb} {age} on {fmtDate(onDate)}
+            {birthdayAgeLine(age, onDate, contact.deceased === true)}
           </Typography>
         )}
       </DrawerSection>

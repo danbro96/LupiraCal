@@ -1,4 +1,4 @@
-import { addDays, addMonths, fmtMonthTitle, startOfWeek, ymd } from '@lupira/cal-domain/time';
+import { addDays, addMonths, fmtMonthTitle, fmtWeekRange, startOfWeek, ymd } from '@lupira/cal-domain/time';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useMemo, useState } from 'react';
@@ -16,8 +16,6 @@ import { useColors } from '../theme';
 
 type Mode = 'month' | 'week';
 
-const fmtShort = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-
 /** Owns what the two modes share — the mode, the anchor date and jumps — and routes taps; each pane owns
  *  its own paging and selection. Month: MonthPane (grid + day sheet). Week: timed lanes with
  *  tap-to-create slots. The header is the period control (useCalendarHeader), and swiping either grid
@@ -31,7 +29,7 @@ export function CalendarScreen() {
 
   // Memoized: a new Date each render would defeat WeekView's memo.
   const weekStart = useMemo(() => startOfWeek(anchor), [anchor]);
-  const title = mode === 'month' ? fmtMonthTitle(anchor) : `${fmtShort(weekStart)} – ${fmtShort(addDays(weekStart, 6))}`;
+  const title = mode === 'month' ? fmtMonthTitle(anchor) : fmtWeekRange(weekStart, addDays(weekStart, 6));
 
   // Functional: two quick swipes can both land before a re-render.
   const step = useCallback((dir: 1 | -1) => {

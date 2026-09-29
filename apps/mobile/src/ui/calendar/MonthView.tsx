@@ -1,4 +1,6 @@
-import { isToday, monthMatrix, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { compareDayEntries } from '@lupira/cal-domain/occurrences';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { isToday, monthMatrix, parseYmd, weekdayNames, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -7,12 +9,15 @@ import { lastDayOf } from '../../domain/occurrenceDays';
 import { isTaskRow } from '../../domain/taskRows';
 import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrences';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
-import { BIRTHDAY_COLOR, availabilityColor, useCalendarColors } from '../hooks/palette';
+import { useCalendarColors } from '../hooks/palette';
+import { AvailStrip, addStatus } from './AvailStrip';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
 
 const BAR_GLYPH = 9;
+const WEEKDAYS = weekdayNames();
+const orderKey = (r: CalRow) => ({ allDay: r.all_day === 1, start: Date.parse(r.start_utc) });
 
 /** Month grid straight off the mirror: monthMatrix (domain) for the day layout, one occurrence query per
  *  touched month bucket, up to three title bars per cell. A multi-day item — and an availability range —
@@ -31,16 +36,16 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
   const taskRows = useTaskDeadlines(dayKeys);
   const colorOf = useCalendarColors();
 
-  const fillOf = (r: CalRow) => (r.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(r.calendar_id));
+  const fillOf = (r: CalRow) => colorOf(r.calendar_id, r.source);
   const byDay = new Map<string, CalRow[]>();
-  const availByDay = new Map<string, string | null>();
-  const merged: CalRow[] = [...rows, ...taskRows].sort((a, b) => (a.start_utc < b.start_utc ? -1 : a.start_utc > b.start_utc ? 1 : 0));
+  const availByDay = new Map<string, (string | null)[]>();
+  const merged: CalRow[] = [...rows, ...taskRows].sort((a, b) => compareDayEntries(orderKey(a), orderKey(b)));
   for (const r of merged) {
     const end = lastDayOf(r);
     for (const k of dayKeys) {
       if (k < r.start_day || k > end) continue;
       if (r.is_availability === 1) {
-        availByDay.set(k, r.avail_status);   // the band, never a chip
+        addStatus(availByDay, k, r.avail_status);   // the band, never a chip
         continue;
       }
       const list = byDay.get(k) ?? [];
@@ -52,9 +57,9 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
   return (
     <View style={styles.grid}>
       <View style={styles.weekdayRow}>
-        {weeks[0].map((d) => (
-          <Text key={ymd(d)} style={[styles.weekday, { color: c.textMuted }]}>
-            {d.toLocaleDateString(undefined, { weekday: 'short' }).slice(0, 2)}
+        {WEEKDAYS.map((name) => (
+          <Text key={name} style={[styles.weekday, { color: c.textMuted }]}>
+            {name}
           </Text>
         ))}
       </View>
@@ -77,9 +82,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                 ]}
                 onPress={() => onSelectDay(key)}
               >
-                {availByDay.has(key) && (
-                  <View style={[styles.availStrip, { backgroundColor: availabilityColor(availByDay.get(key) ?? null) }]} />
-                )}
+                {availByDay.has(key) && <AvailStrip statuses={availByDay.get(key) ?? []} style={styles.availStrip} />}
                 <View style={[styles.dayNumBadge, today && { backgroundColor: c.primary }]}>
                   <Text
                     style={[
@@ -105,7 +108,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                         style={[styles.taskBarText, { color: r.task.overdue ? c.danger : c.textMuted }]}
                         numberOfLines={1}
                       >
-                        <Glyph name={ICONS.schedule} size={BAR_GLYPH} /> {r.title ?? '(untitled)'}
+                        <Glyph name={ICONS.schedule} size={BAR_GLYPH} /> {displayTitle(r.title)}
                       </Text>
                     </View>
                   ) : (
@@ -114,7 +117,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                       style={[styles.bar, { backgroundColor: fillOf(r) }]}
                     >
                       <Text style={[styles.barText, { color: textOn(fillOf(r)) }]} numberOfLines={1}>
-                        {r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={BAR_GLYPH} /> {r.title ?? ''}</> : (r.title ?? '(untitled)')}
+                        {r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={BAR_GLYPH} /> {displayTitle(r.title)}</> : displayTitle(r.title)}
                       </Text>
                     </View>
                   ),
@@ -138,7 +141,7 @@ const styles = StyleSheet.create({
   weekday: { flex: 1, textAlign: 'center', fontSize: 11, paddingVertical: 2 },
   cell: { flex: 1, minHeight: 56, borderWidth: 0.5, padding: 1, gap: 1, overflow: 'hidden' },
   cellSelected: { borderWidth: 1.5 },
-  availStrip: { height: 3, borderRadius: 2, marginBottom: 1 },
+  availStrip: { marginBottom: 1 },
   // Today's number sits in a filled circle; other days keep the same box so numbers line up.
   dayNumBadge: { alignSelf: 'flex-start', minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center' },
   dayNum: { fontSize: 11 },

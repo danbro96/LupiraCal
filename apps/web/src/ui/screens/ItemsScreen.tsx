@@ -17,6 +17,7 @@ import { useGetItem } from '@lupira/cal-api/query/cal';
 import { useGetContact } from '@lupira/cal-api/query/contact';
 import { ItemCategory, ItemStatus, OriginKind, type CalendarItemOccurrenceDto, type ContainerDto } from '@lupira/cal-api/models';
 import { groupOccurrences } from '@lupira/cal-domain/itemTree';
+import { statusBadge } from '@lupira/cal-domain/itemLabels';
 import { fmtWhen } from '@lupira/cal-domain/time';
 import { RANGE_PRESETS } from '@lupira/cal-domain/searchRange';
 import { calendarLabel, useContainers } from '../../state/useContainers';
@@ -320,7 +321,7 @@ function ItemRow({
       {o.tags?.map((t) => (
         <Chip key={t} label={t} />
       ))}
-      {o.status && o.status !== ItemStatus.Confirmed && <Chip variant="outlined" label={o.status.toLowerCase()} />}
+      {statusBadge(o.status) && <Chip variant="outlined" label={statusBadge(o.status)} />}
       {childCount > 0 && (
         <Chip
           variant="outlined"

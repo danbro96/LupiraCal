@@ -1,4 +1,5 @@
 import { errorText } from '@lupira/cal-domain/apiError';
+import { DISPLAY_NAME_FORMAT_LABELS } from '@lupira/cal-domain/contactNames';
 import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -24,11 +25,7 @@ import { useColors } from '../theme';
 import { ICONS } from '../icons';
 
 const KIND_OPTIONS = [{ value: 'Individual', label: 'Person' }, { value: 'Organization', label: 'Organization' }];
-const NAME_FORMAT_OPTIONS = [
-  { value: 'Full', label: 'Full name' },
-  { value: 'FirstLast', label: 'First + last' },
-  { value: 'NickName', label: 'Nickname' },
-];
+const NAME_FORMAT_OPTIONS = Object.entries(DISPLAY_NAME_FORMAT_LABELS).map(([value, label]) => ({ value, label }));
 const CHANNEL_TYPES = [null, 'Home', 'Work', 'Mobile'] as const;
 
 export function ContactEditScreen() {

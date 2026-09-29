@@ -4,9 +4,9 @@ import {
   addDays,
   addMonths,
   daysFrom,
-  fmtDate,
   fmtDayTitle,
   fmtMonthTitle,
+  fmtWeekRange,
   monthMatrix,
   parseYmd,
   startOfDay,
@@ -59,7 +59,7 @@ export function useCalendarRange({ defaultView, weekDayCount }: { defaultView: C
     view === 'month'
       ? fmtMonthTitle(date)
       : view === 'week'
-        ? `${fmtDate(days[0])} – ${fmtDate(days[days.length - 1])}`
+        ? fmtWeekRange(days[0], days[days.length - 1])
         : fmtDayTitle(date);
 
   return {

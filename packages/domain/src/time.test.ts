@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, daysFrom, fmtBlockTime, fmtTime, monthMatrix, parseYmd, sameDay, startOfWeek, ymd } from './time';
+import { addDays, daysFrom, fmtBlockTime, fmtDate, fmtTime, fmtWeekRange, monthMatrix, parseYmd, sameDay, startOfWeek, weekdayNames, ymd } from './time';
 
 describe('ymd round-trip', () => {
   it('formats and parses local dates', () => {
@@ -60,5 +60,29 @@ describe('fmtBlockTime', () => {
 
   it('labels the carried-over part by when it ends', () => {
     expect(fmtBlockTime(start, end, new Date(2026, 7, 13))).toBe(`until ${fmtTime(end)}`);
+  });
+});
+
+describe('fmtWeekRange', () => {
+  const dm = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  const start = new Date(2026, 8, 28);
+  const end = new Date(2026, 9, 4);
+
+  it('leaves the current year out', () => {
+    expect(fmtWeekRange(start, end, new Date(2026, 5, 1))).toBe(`${dm(start)} – ${dm(end)}`);
+  });
+
+  it('names another year once, and both years across a year boundary', () => {
+    expect(fmtWeekRange(start, end, new Date(2027, 0, 1))).toBe(`${dm(start)} – ${dm(end)} 2026`);
+    const newYear = [new Date(2026, 11, 28), new Date(2027, 0, 3)] as const;
+    expect(fmtWeekRange(...newYear, new Date(2026, 11, 30))).toBe(`${fmtDate(newYear[0])} – ${fmtDate(newYear[1])}`);
+  });
+});
+
+describe('weekdayNames', () => {
+  it('starts the week on Monday', () => {
+    const names = weekdayNames();
+    expect(names).toHaveLength(7);
+    expect(names[0]).toBe(new Date(2026, 8, 28).toLocaleDateString(undefined, { weekday: 'short' }));
   });
 });

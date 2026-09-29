@@ -1,4 +1,5 @@
 import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto, ItemStatus, OccurrenceOrigin } from '@lupira/cal-api/models';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { isOverdue } from '@lupira/cal-domain/tasks';
 import { parseYmd, sameDay, ymd } from '@lupira/cal-domain/time';
 import type { OpenTask } from '../state/useTaskDeadlines';
@@ -35,7 +36,7 @@ export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: Container
   return {
     key: `${o.id}:${o.start}`,
     itemId: o.id,
-    title: o.title || '(untitled)',
+    title: displayTitle(o.title),
     start: new Date(o.start),
     end: o.end ? new Date(o.end) : null,
     isAllDay: o.isAllDay,
@@ -60,7 +61,7 @@ export function fromTask(t: OpenTask, now: Date): GridEntry {
   return {
     key: `task:${t.id}`,
     itemId: t.id,
-    title: t.title || '(untitled)',
+    title: displayTitle(t.title),
     start: new Date(due.getFullYear(), due.getMonth(), due.getDate()),
     end: null,
     isAllDay: true,
@@ -81,7 +82,7 @@ export function fromProposed(item: CalendarItemDto, calendar: ContainerDto): Gri
   return {
     key: `ghost:${item.id}:${calendar.id}`,
     itemId: item.id,
-    title: item.title || '(untitled)',
+    title: displayTitle(item.title),
     start,
     end,
     isAllDay: item.isAllDay,

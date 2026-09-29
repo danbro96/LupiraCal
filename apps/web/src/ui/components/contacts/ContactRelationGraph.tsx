@@ -16,6 +16,7 @@ import '@xyflow/react/dist/style.css';
 import { getListContactRelationsQueryKey, listContactRelations } from '@lupira/cal-api/query/contact';
 import type { ContactRelationEntryDto } from '@lupira/cal-api/models';
 import { buildRelationGraph } from '@lupira/cal-domain/contactRelations';
+import { matchesTerms, searchTerms } from '@lupira/cal-domain/textSearch';
 import type { RelationCategory } from '@lupira/cal-domain/contactRelations';
 import { useIsPhone } from '../../hooks/useIsPhone';
 
@@ -178,10 +179,10 @@ export function ContactRelationGraph({
     [centerId, centerLabel, entriesByContact, categories],
   );
 
-  const q = query.trim().toLowerCase();
+  const terms = searchTerms(query);
   const expandedSet = useMemo(() => new Set(expandedIds), [expandedIds]);
   const rfNodes: RelationFlowNode[] = graph.nodes.map((n) => {
-    const hit = q.length > 0 && n.label.toLowerCase().includes(q);
+    const hit = terms.length > 0 && matchesTerms(terms, n.label);
     return {
       id: n.id,
       type: 'relation',
@@ -193,7 +194,7 @@ export function ContactRelationGraph({
         expanded: expandedSet.has(n.id),
         selected: n.id === selectedId,
         hit,
-        dimmed: q.length > 0 && !hit,
+        dimmed: terms.length > 0 && !hit,
         onExpand: expand,
         onNavigate: open,
       },

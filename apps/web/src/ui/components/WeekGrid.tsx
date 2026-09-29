@@ -8,7 +8,8 @@ import { clampToDay, foldLanes, hiddenPerColumn, isDayLong, layoutColumns, packL
 import { type DayRail, familyKey, railsForDay } from '@lupira/cal-domain/family';
 import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
-import { AVAILABILITY_COLORS, familyAccent } from '../theme/kinds';
+import { availabilityColor } from '@lupira/cal-tokens/kinds';
+import { familyAccent } from '../theme/kinds';
 import { coversDay, segmentSpan, type GridEntry } from '../entries';
 import { ExpandIcon, ExpandLessIcon } from '../icons';
 
@@ -344,7 +345,7 @@ function DayColumn({
           style={{
             top: (s.startMin / 60) * HOUR_PX,
             height: ((s.endMin - s.startMin) / 60) * HOUR_PX,
-            background: AVAILABILITY_COLORS[s.status],
+            background: availabilityColor(s.status),
           }}
         >
           <Box

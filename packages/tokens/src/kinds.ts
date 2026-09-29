@@ -41,7 +41,20 @@ export function isAvailabilityStatus(s: string | null | undefined): s is Availab
   return s != null && s in AVAILABILITY_COLORS;
 }
 
-export const BIRTHDAY_COLOR = '#d97706';
+const UNKNOWN_AVAILABILITY = '#94a3b8';
+
+/** A status's band colour; a status this build doesn't know yet draws neutral rather than not at all. */
+export function availabilityColor(status: string | null | undefined): string {
+  return isAvailabilityStatus(status) ? AVAILABILITY_COLORS[status] : UNKNOWN_AVAILABILITY;
+}
+
+const isKind = (k: string | null | undefined): k is CalendarKindName => k != null && k in KIND_COLORS;
+
+/** A calendar's colour: its own when it set one, else its kind's. Both apps draw with this one rule, so a
+ *  calendar — and the birthdays it carries — is the same colour everywhere. */
+export function calendarColor(c: { color?: string | null; kind?: string | null } | null | undefined): string {
+  return c?.color || (isKind(c?.kind) ? KIND_COLORS[c.kind] : KIND_COLORS.Generic);
+}
 
 /** Accents for parent/child item families — a separate color channel from calendar colors. */
 export const FAMILY_ACCENTS = [
@@ -61,8 +74,8 @@ export function familyAccent(key: string): string {
   return FAMILY_ACCENTS[h % FAMILY_ACCENTS.length];
 }
 
-/** Stable per-calendar fallback when a container has no stored color and no kind mapping applies. */
-export const CALENDAR_FALLBACK_COLORS = [
+/** Contact avatar fills, picked per id so a person keeps their colour. */
+export const AVATAR_COLORS = [
   '#4457c2',
   '#0e7490',
   '#b45309',
@@ -73,8 +86,8 @@ export const CALENDAR_FALLBACK_COLORS = [
   '#0f766e',
 ] as const;
 
-export function hashColor(id: string): string {
+export function avatarColor(id: string): string {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
-  return CALENDAR_FALLBACK_COLORS[Math.abs(h) % CALENDAR_FALLBACK_COLORS.length];
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }

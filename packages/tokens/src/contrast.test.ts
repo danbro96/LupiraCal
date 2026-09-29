@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { LIGHT } from './color';
 import { textOn } from './contrast';
-import { BIRTHDAY_COLOR, CALENDAR_FALLBACK_COLORS } from './kinds';
+import { AVATAR_COLORS, KIND_COLORS } from './kinds';
 
 describe('textOn', () => {
-  it('keeps white on the palette the grids fill chips with', () => {
-    for (const color of [...CALENDAR_FALLBACK_COLORS, BIRTHDAY_COLOR]) expect(textOn(color)).toBe('#ffffff');
+  it('keeps white on the palettes chips and avatars are filled with', () => {
+    for (const color of [...Object.values(KIND_COLORS), ...AVATAR_COLORS]) expect(textOn(color)).toBe('#ffffff');
   });
 
   it('switches to dark text on light fills, in every hex form', () => {

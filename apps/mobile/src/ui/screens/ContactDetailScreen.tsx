@@ -1,5 +1,7 @@
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
-import { nextBirthday, turningAge } from '@lupira/cal-domain/birthday';
+import { birthdayAgeLine, nextBirthday, turningAge } from '@lupira/cal-domain/birthday';
+import { initialsOf } from '@lupira/cal-domain/contactNames';
+import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -11,16 +13,14 @@ import { getPlace } from '@lupira/cal-api/fetch/geo';
 import { getDb } from '../../data/db/expoDb';
 import { composeDisplayName, loadContact } from '../../data/mirror';
 import type { PartialDateDto } from '../../domain/docTypes';
-import { reachLink } from '../../domain/reach';
 import { deleteContact } from '../../state/actions';
 import { useContactState } from '../../state/useContactList';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
 
-import { hashColor } from '../hooks/palette';
+import { avatarColor } from '../hooks/palette';
 import { ReachIcon } from '../components/ReachIcon';
 import type { RootStackParamList } from '../navigation/types';
-import { initialsOf } from './ContactsScreen';
 import { useColors } from '../theme';
 import { toastError } from '../../feedback/toast';
 import { ICONS } from '../icons';
@@ -84,7 +84,7 @@ export function ContactDetailScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       {state.deleted && <Text style={[styles.deletedNote, { color: c.danger }]}>Deleted — pending sync</Text>}
       <View style={styles.header}>
-        <Avatar.Text size={52} label={initialsOf(displayName)} style={{ backgroundColor: hashColor(contactId) }} />
+        <Avatar.Text size={52} label={initialsOf(displayName)} style={{ backgroundColor: avatarColor(contactId) }} />
         <View style={styles.headerBody}>
           <Text style={styles.h1}>{displayName}{deceased ? ' †' : ''}</Text>
           <Text style={[styles.sub, { color: c.textMuted }]}>
@@ -110,7 +110,7 @@ export function ContactDetailScreen() {
           key={`ch-${i}`}
           onPress={() => openReach(ch.medium, ch.value)}
           title={ch.preferred ? <>{ch.value} <Glyph name={ICONS.star} /></> : ch.value}
-          description={`${ch.medium}${ch.type ? ` (${ch.type})` : ''}`}
+          description={channelLabel(ch.medium, ch.type)}
           left={() => <ReachIcon kind={ch.medium} />}
         />
       ))}
@@ -204,11 +204,11 @@ function BirthdayRow({ birthday, deceased }: { birthday: PartialDateDto; decease
   const c = useColors();
   const { year, month, day } = birthday;
   const next = nextBirthday(month, day, new Date());
-  const age = deceased ? null : turningAge(year, next);
+  const age = turningAge(year, next);
   return (
     <Text style={[styles.birthday, { color: c.warning }]}>
       <Glyph name={ICONS.cake} /> {fmtPartialDate(birthday)}
-      {age != null ? ` — turns ${age} on ${next.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}` : ''}
+      {age != null ? ` · ${birthdayAgeLine(age, next, deceased)}` : ''}
     </Text>
   );
 }

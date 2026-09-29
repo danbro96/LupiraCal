@@ -21,7 +21,9 @@ import {
 } from '@lupira/cal-api/query/cal';
 import type { CalendarItemDto } from '@lupira/cal-api/models';
 import { useSearchContacts } from '@lupira/cal-api/query/contact';
+import { initialsOf } from '@lupira/cal-domain/contactNames';
 import { rankByInteraction } from '@lupira/cal-domain/contactRank';
+import { avatarColor } from '@lupira/cal-tokens/kinds';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
@@ -89,8 +91,8 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
         const status = a.status ?? 'NeedsAction';
         return (
           <Box key={pid} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: '6px', borderBottom: 1, borderColor: 'divider' }}>
-            <Avatar sx={{ width: 30, height: 30, fontSize: 12, fontWeight: 700, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-              {initials(contactName(a.contactId))}
+            <Avatar sx={{ width: 30, height: 30, fontSize: 12, fontWeight: 700, color: 'common.white' }} style={{ background: avatarColor(a.contactId) }}>
+              {initialsOf(contactName(a.contactId))}
             </Avatar>
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <span>{contactName(a.contactId)}</span>
@@ -164,12 +166,4 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
       </WrapRow>
     </DrawerSection>
   );
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? '')
-    .join('');
 }

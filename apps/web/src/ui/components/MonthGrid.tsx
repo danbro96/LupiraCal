@@ -6,11 +6,15 @@ import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import type { AvailabilitySegment } from '../../state/useAvailability';
 import { familyKey } from '@lupira/cal-domain/family';
-import { fmtTime, isToday } from '@lupira/cal-domain/time';
-import { AVAILABILITY_COLORS, familyAccent } from '../theme/kinds';
+import { compareDayEntries } from '@lupira/cal-domain/occurrences';
+import { fmtTime, isToday, weekdayNames } from '@lupira/cal-domain/time';
+import { availabilityColor } from '@lupira/cal-tokens/kinds';
+import { familyAccent } from '../theme/kinds';
 import { coversDay, segmentSpan, type GridEntry } from '../entries';
 
 const MAX_PER_CELL = 4;
+const WEEKDAYS = weekdayNames();
+const orderKey = (e: GridEntry) => ({ allDay: e.isAllDay, start: e.start.getTime() });
 
 const DOT = { borderRadius: '999px', flex: 'none' } as const;
 
@@ -77,7 +81,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
         overflowY: 'auto',
       }}
     >
-      {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+      {WEEKDAYS.map((d) => (
         <Box
           key={d}
           sx={{
@@ -101,7 +105,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
       {weeks.flat().map((day) => {
         const dayEntries = entries
           .filter((e) => coversDay(e, day))
-          .sort((a, b) => Number(b.isAllDay) - Number(a.isAllDay) || a.start.getTime() - b.start.getTime());
+          .sort((a, b) => compareDayEntries(orderKey(a), orderKey(b)));
         const shown = dayEntries.slice(0, MAX_PER_CELL);
         const daySegments = segments.filter((s) => coversDay(segmentSpan(s), day));
         const otherMonth = day.getMonth() !== date.getMonth();
@@ -254,7 +258,7 @@ function AvailDots({ segments, titled }: { segments: AvailabilitySegment[]; titl
           component="span"
           title={titled ? s.status : undefined}
           sx={{ ...DOT, width: 8, height: 8 }}
-          style={{ background: AVAILABILITY_COLORS[s.status] }}
+          style={{ background: availabilityColor(s.status) }}
         />
       ))}
     </Box>

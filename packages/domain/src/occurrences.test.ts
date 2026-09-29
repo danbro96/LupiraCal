@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampToDay, foldLanes, hiddenPerColumn, isDayLong, layoutColumns, packLanes } from './occurrences';
+import { clampToDay, compareDayEntries, foldLanes, hiddenPerColumn, isDayLong, layoutColumns, packLanes } from './occurrences';
 
 const day = new Date(2026, 6, 7);
 
@@ -127,5 +127,12 @@ describe('hiddenPerColumn', () => {
       { startCol: 2, endCol: 2, lane: 2 },
     ];
     expect(hiddenPerColumn(bars, 1, 7)).toEqual([0, 1, 2, 0, 0, 0, 0]);
+  });
+});
+
+describe('compareDayEntries', () => {
+  it('puts all-day entries first, then orders by start', () => {
+    const rows = [{ allDay: false, start: 9 }, { allDay: true, start: 12 }, { allDay: false, start: 8 }];
+    expect(rows.sort(compareDayEntries)).toEqual([{ allDay: true, start: 12 }, { allDay: false, start: 8 }, { allDay: false, start: 9 }]);
   });
 });

@@ -13,7 +13,9 @@ import { NavLink, useLocation, useMatch, useSearchParams } from 'react-router-do
 import { useCreateContact, useSetContactTags } from '@lupira/cal-api/query/contact';
 import type { ContactDto, ContactReachChannel } from '@lupira/cal-api/models';
 import { ReachMedium } from '@lupira/cal-api/models';
+import { initialsOf } from '@lupira/cal-domain/contactNames';
 import { PINNED_TAG, isPinned } from '@lupira/cal-domain/contactTiers';
+import { avatarColor } from '@lupira/cal-tokens/kinds';
 import { addressBookLabel, useAddressBooks } from '../../../state/useAddressBooks';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { useTieredContacts } from '../../../state/useTieredContacts';
@@ -183,8 +185,8 @@ function ContactRow({ contact: c, search }: { contact: ContactDto; search: strin
       >
         <StarIcon fontSize="small" />
       </ButtonBase>
-      <Avatar sx={{ width: 30, height: 30, fontSize: 12, fontWeight: 700, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-        {(c.displayName[0] ?? '?').toUpperCase()}
+      <Avatar sx={{ width: 30, height: 30, fontSize: 12, fontWeight: 700, color: 'common.white' }} style={{ background: avatarColor(c.id) }}>
+        {initialsOf(c.displayName)}
       </Avatar>
       <Box component="span" sx={{ flex: 1, minWidth: 0, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {c.displayName}

@@ -3,6 +3,7 @@ import {
   AVAILABILITY_COLORS as TOKEN_AVAILABILITY_COLORS,
   FAMILY_ACCENTS,
   KIND_COLORS as TOKEN_KIND_COLORS,
+  calendarColor as tokenCalendarColor,
   familyAccent,
 } from '@lupira/cal-tokens/kinds';
 import {
@@ -15,7 +16,7 @@ import * as Icons from '../icons';
 
 // Re-typing the token records against the generated enums is the drift tripwire: when the API adds a
 // kind/status/category the tokens package doesn't know, these assignments stop compiling.
-const KIND_COLORS: Record<CalendarKind, string> = TOKEN_KIND_COLORS;
+export const KIND_COLORS: Record<CalendarKind, string> = TOKEN_KIND_COLORS;
 export const CALENDAR_KIND_ICONS: Record<CalendarKind, IconName> = TOKEN_CALENDAR_KIND_ICONS;
 export const ITEM_CATEGORY_ICONS: Record<ItemCategory, IconName> = TOKEN_ITEM_CATEGORY_ICONS;
 
@@ -46,7 +47,7 @@ export const AVAILABILITY_COLORS: Record<AvailabilityStatus, string> = TOKEN_AVA
 export { FAMILY_ACCENTS, familyAccent };
 
 export function calendarColor(c: ContainerDto): string {
-  return c.color || (c.kind ? KIND_COLORS[c.kind] : KIND_COLORS.Generic);
+  return tokenCalendarColor(c);
 }
 
 export const PARTICIPATION_STATUS_LABELS: Record<ParticipationStatus, string> = {
