@@ -177,6 +177,13 @@ describe('withSchedule', () => {
     expect(withSchedule(timed, 'startTime', '23:00')).toMatchObject({ endDay: '2026-10-03', endTime: '00:30' });
   });
 
+  it('picking one end field of an endless event completes the other', () => {
+    const endless = { ...timed, endDay: '', endTime: '' };
+    expect(withSchedule(endless, 'endDay', '2026-10-03')).toMatchObject({ endDay: '2026-10-03', endTime: '10:00' });
+    expect(withSchedule(endless, 'endTime', '11:00')).toMatchObject({ endDay: '2026-10-02', endTime: '11:00' });
+    expect(withSchedule(endless, 'endTime', '01:00')).toMatchObject({ endDay: '2026-10-03', endTime: '01:00' });
+  });
+
   it('moving the end leaves the start alone', () => {
     expect(withSchedule(timed, 'endTime', '17:00')).toMatchObject({ startTime: '09:00', endTime: '17:00' });
   });

@@ -52,10 +52,17 @@ export function defaultStartTime(day: string, now: Date): string {
 }
 
 /** One schedule field changed. Moving the start carries the end along (same duration, on the wall clock);
- *  completing a start on an endless event gives it an hour. Changing the end never moves the start. */
+ *  completing a start on an endless event gives it an hour. Changing the end never moves the start, and the
+ *  end is never left half-set: picking one end field completes the other. */
 export function withSchedule(form: ItemForm, field: ScheduleField, value: string): ItemForm {
   const next = { ...form, [field]: value };
-  if (field === 'endDay' || field === 'endTime') return next;
+  if (field === 'endDay' || field === 'endTime') {
+    if (form.isAllDay || !value || !form.startDay || !form.startTime) return next;
+    if (field === 'endDay' && !form.endTime) next.endTime = wallFromMs(wallMs(form.startDay, form.startTime) + HOUR_MS).time;
+    // An end time alone reads as the same evening, or past midnight when it's not after the start.
+    if (field === 'endTime' && !form.endDay) next.endDay = value > form.startTime ? form.startDay : addDaysYmd(form.startDay, 1);
+    return next;
+  }
   if (form.isAllDay) {
     if (field === 'startDay' && form.startDay && value && form.endDay)
       next.endDay = addDaysYmd(form.endDay, daysBetween(form.startDay, value));

@@ -172,6 +172,7 @@ export function ItemEditScreen() {
     ? 'Nobody invited'
     : attendeeIds.slice(0, 2).map(contactName).join(', ') + (attendeeIds.length > 2 ? ` +${attendeeIds.length - 2}` : '');
   const cancelled = form.status === 'Cancelled';
+  const noEnd = form.isAllDay ? 'Same day' : 'No end';
   const otherZone = !form.isAllDay && !!form.timeZone && form.timeZone !== deviceTimeZone();
   const legacyLocation = !form.place ? state?.doc.locationLabel : null;
 
@@ -208,14 +209,22 @@ export function ItemEditScreen() {
           <View style={styles.day}>
             <DateField
               weekday
-              placeholder={form.isAllDay ? 'Same day' : 'Set date'}
+              clearable={false}
+              placeholder={noEnd}
+              nullLabel={noEnd}
               value={form.endDay}
               onChange={(v) => (v ? setSchedule('endDay', v) : clearEnd())}
             />
           </View>
-          {!form.isAllDay && (
+          {/* An endless event is one "No end" button; picking its date fills in the time. */}
+          {!form.isAllDay && !!form.endDay && (
             <View style={styles.time}>
-              <TimeField clearable={false} value={form.endTime} onChange={(v) => setSchedule('endTime', v)} />
+              <TimeField
+                clearable={false}
+                nullLabel={noEnd}
+                value={form.endTime}
+                onChange={(v) => (v ? setSchedule('endTime', v) : clearEnd())}
+              />
             </View>
           )}
         </View>

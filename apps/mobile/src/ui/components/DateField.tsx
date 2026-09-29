@@ -4,17 +4,20 @@ import { localDay } from '../../domain/editors';
 import { PickerButton } from './PickerButton';
 
 /** Android system picker writing back the editors' string form ('yyyy-MM-dd'). `weekday` suits event days
- *  ("Tue 30 Sep"); without it the full date reads like a birthday ("30 Sep 1985"). */
-export function DateField({ value, onChange, placeholder = 'Set date', weekday = false, clearable = true }: {
-  value: string; onChange: (v: string) => void; placeholder?: string; weekday?: boolean; clearable?: boolean;
+ *  ("Tue 30 Sep"); without it the full date reads like a birthday ("30 Sep 1985"). `nullLabel` makes the value
+ *  nullable from inside the dialog (a third button that writes ''), instead of a clear icon beside it. */
+export function DateField({ value, onChange, placeholder = 'Set date', weekday = false, clearable = true, nullLabel }: {
+  value: string; onChange: (v: string) => void; placeholder?: string; weekday?: boolean; clearable?: boolean; nullLabel?: string;
 }) {
   const open = () =>
     DateTimePickerAndroid.open({
       // Midday so a DST shift cannot roll the date back a day.
       value: value ? new Date(`${value}T12:00:00`) : new Date(),
       mode: 'date',
+      ...(nullLabel && value ? { neutralButton: { label: nullLabel } } : {}),
       onChange: (e, d) => {
-        if (e.type === 'set' && d) onChange(localDay(d));
+        if (e.type === 'neutralButtonPressed') onChange('');
+        else if (e.type === 'set' && d) onChange(localDay(d));
       },
     });
   return (
