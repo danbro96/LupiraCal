@@ -34,16 +34,19 @@ export function useDaysOccurrences(dayKeys: string[]): { rows: GridRow[]; loadin
 }
 
 const SPAN_LOOKBACK_DAYS = 31;
+const PREFETCH_DAYS = 7;
 
 /** The week grid's read: rows covering any of the (consecutive) days, including multi-day ones that
- *  began up to SPAN_LOOKBACK_DAYS earlier, which continue in from the left edge. Same per-month queries
- *  as useDaysOccurrences, so the invalidation contract holds. */
+ *  began up to SPAN_LOOKBACK_DAYS earlier, which continue in from the left edge. Months a further
+ *  PREFETCH_DAYS out either side are loaded too, so the pager's next step finds its data cached. Same
+ *  per-month queries as useDaysOccurrences, so the invalidation contract holds. */
 export function useOverlappingOccurrences(dayKeys: string[]): { rows: GridRow[]; loading: boolean } {
   const includeSystem = usePrefs((p) => p.showSystemCalendars);
   const first = dayKeys[0];
   const last = dayKeys[dayKeys.length - 1];
+  const until = ymd(addDays(parseYmd(last), PREFETCH_DAYS));
   const monthKeys: string[] = [];
-  for (let m = startOfMonth(addDays(parseYmd(first), -SPAN_LOOKBACK_DAYS)); ymd(m) <= last; m = addMonths(m, 1))
+  for (let m = startOfMonth(addDays(parseYmd(first), -SPAN_LOOKBACK_DAYS - PREFETCH_DAYS)); ymd(m) <= until; m = addMonths(m, 1))
     monthKeys.push(ymd(m).slice(0, 7));
   const results = useQueries({ queries: monthKeys.map((k) => monthQuery(k, includeSystem)) });
   const rows = results

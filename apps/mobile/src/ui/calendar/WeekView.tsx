@@ -1,12 +1,15 @@
 import { clampToDay, layoutColumns, packLanes, type Positioned } from '@lupira/cal-domain/occurrences';
-import { addDays, daysFrom, fmtTime, isToday, minutesOfDay, ymd } from '@lupira/cal-domain/time';
+import { addDays, daysFrom, fmtTime, isToday, minutesOfDay, parseYmd, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Text } from 'react-native-paper';
-import Animated, { scrollTo, useAnimatedRef, useAnimatedStyle, useScrollOffset, useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  scrollTo, useAnimatedRef, useAnimatedStyle, useScrollOffset, useSharedValue, type SharedValue,
+} from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import type { PlaceDto } from '@lupira/cal-api/models';
 import type { GridRow } from '../../data/mirror';
 import { isMultiDayTimed, lastDayOf } from '../../domain/occurrenceDays';
 import { isTaskRow } from '../../domain/taskRows';
@@ -63,6 +66,13 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
   const [pendingSlot, setPendingSlot] = useState<{ day: string; slot: number } | null>(null);
   const clearSlot = useCallback(() => setPendingSlot(null), []);
   useBackDismiss(pendingSlot !== null, clearSlot);
+  const tapSlot = useCallback((day: string, slot: number) => {
+    setPendingSlot((cur) => (cur && cur.day === day && cur.slot === slot ? null : { day, slot }));
+  }, []);
+  const createFromSlot = useCallback((day: string, slot: number) => {
+    onCreateSlot(day, slotTime(slot));
+    setPendingSlot(null);
+  }, [onCreateSlot]);
 
   const [originIdx] = useState(() => dayIndex(weekStart));
   const page = (dayIndex(weekStart) - originIdx) / 7;
@@ -72,7 +82,8 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
   const weekKeys = [dayKeys.slice(0, 7), dayKeys.slice(7, 14), dayKeys.slice(14)];
 
   const { rows } = useOverlappingOccurrences(dayKeys);
-  const taskRows = useTaskDeadlines(dayKeys);
+  // A week wider on each side, so the next step's deadlines are already fetched; bars filter by week.
+  const taskRows = useTaskDeadlines(daysFrom(addDays(weekStart, -14), 35).map(ymd));
   const colorOf = useCalendarColors();
   const [initialHours] = useState(() => (weekKeys[1].includes(ymd(new Date())) ? hoursBeforeNow() : 7.5));
   const zoom = useTimeZoom(initialHours);
@@ -84,6 +95,7 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
 
   const bars: Bar[][] = [[], [], []];
   const timed: GridRow[] = [];
+  const timedByDay = new Map<string, GridRow[]>();
   const availByDay = new Map<string, string | null>();
   for (const r of [...rows, ...taskRows]) {
     const end = lastDayOf(r);
@@ -108,6 +120,12 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
       });
     } else {
       timed.push(r as GridRow);
+      for (const k of dayKeys) {
+        if (k < r.start_day || k > end) continue;
+        const list = timedByDay.get(k) ?? [];
+        list.push(r as GridRow);
+        timedByDay.set(k, list);
+      }
     }
   }
   const places = usePlaceCoords(timed.map((r) => r.place_id));
@@ -147,53 +165,21 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
                       <View key={i} style={[styles.line, { top: pct(i * 30), backgroundColor: i % 2 ? c.surface : c.divider }]} />
                     ))}
                   >
-                    {days.map((day, i) => {
-                      const dayKey = dayKeys[i];
-                      const spans = timed.flatMap((r) => {
-                        const start = new Date(r.start_utc);
-                        const end = r.end_utc ? new Date(r.end_utc) : new Date(start.getTime() + DEFAULT_END_MIN * 60_000);
-                        const span = clampToDay(start, end, day);
-                        return span ? [{ ...span, item: r }] : [];
-                      });
-                      const slot = pendingSlot?.day === dayKey ? pendingSlot.slot : null;
-                      return (
-                        <Pressable
-                          key={dayKey}
-                          style={[
-                            styles.dayColumn,
-                            { left: colPct(firstCol + i), width: colPct(1), borderColor: c.divider },
-                            availByDay.has(dayKey) && { backgroundColor: `${availabilityColor(availByDay.get(dayKey) ?? null)}14` },
-                          ]}
-                          onPress={(e) => {
-                            const tapped = Math.max(0, Math.min(47, Math.floor(e.nativeEvent.locationY / (zoom.hourH.value / 2))));
-                            setPendingSlot((cur) => (cur && cur.day === dayKey && cur.slot === tapped ? null : { day: dayKey, slot: tapped }));
-                          }}
-                        >
-                          {slot !== null && (
-                            <View style={[styles.slotCell, { top: pct(slot * 30), height: pct(30) }]}>
-                              <Pressable
-                                style={[styles.slotChip, { borderColor: c.primary, backgroundColor: c.primary + '22' }]}
-                                onPress={() => {
-                                  onCreateSlot(dayKey, slotTime(slot));
-                                  setPendingSlot(null);
-                                }}
-                              >
-                                <Text style={[styles.slotChipText, { color: c.primary }]} numberOfLines={1}>＋ {slotTime(slot)}</Text>
-                              </Pressable>
-                            </View>
-                          )}
-                          {layoutColumns(spans, 30).map((p) => (
-                            <EventBlock
-                              key={`${p.item.source_id}-${p.item.start_utc}`}
-                              placed={p}
-                              color={rowColor(p.item)}
-                              placeName={p.item.place_id ? places.get(p.item.place_id)?.name : undefined}
-                              onPress={onPressOccurrence}
-                            />
-                          ))}
-                        </Pressable>
-                      );
-                    })}
+                    {dayKeys.map((dayKey, i) => (
+                      <DayColumn
+                        key={dayKey}
+                        dayKey={dayKey}
+                        col={firstCol + i}
+                        rows={timedByDay.get(dayKey) ?? NO_ROWS}
+                        places={places}
+                        avail={availByDay.get(dayKey)}
+                        slot={pendingSlot?.day === dayKey ? pendingSlot.slot : null}
+                        hourH={zoom.hourH}
+                        onTapSlot={tapSlot}
+                        onCreateFromSlot={createFromSlot}
+                        onPressOccurrence={onPressOccurrence}
+                      />
+                    ))}
                     <NowLine dayKeys={dayKeys} firstCol={firstCol} />
                   </SlidingDays>
                 </Animated.View>
@@ -205,6 +191,78 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
     </GestureDetector>
   );
 });
+
+const NO_ROWS: GridRow[] = [];
+
+type DayColumnProps = {
+  dayKey: string;
+  /** Position on the pager's day axis — fixed per date, so a step never moves a kept column. */
+  col: number;
+  /** Timed rows touching this day, in start order; the rows themselves are the query's own objects. */
+  rows: GridRow[];
+  places: Map<string, PlaceDto>;
+  /** Availability status tinting the column; undefined when the day has none. */
+  avail: string | null | undefined;
+  slot: number | null;
+  hourH: SharedValue<number>;
+  onTapSlot: (day: string, slot: number) => void;
+  onCreateFromSlot: (day: string, slot: number) => void;
+  onPressOccurrence: (row: CalRow) => void;
+};
+
+const placeNameOf = (places: Map<string, PlaceDto>, r: GridRow) => (r.place_id ? places.get(r.place_id)?.name : undefined);
+
+/** A step re-renders WeekView with a new 21-day window and fresh arrays, but a kept day's content is
+ *  unchanged — so compare what the column draws: its rows by identity, and only its own place names. */
+function sameColumn(a: DayColumnProps, b: DayColumnProps): boolean {
+  return a.dayKey === b.dayKey && a.col === b.col && a.avail === b.avail && a.slot === b.slot && a.hourH === b.hourH
+    && a.onTapSlot === b.onTapSlot && a.onCreateFromSlot === b.onCreateFromSlot && a.onPressOccurrence === b.onPressOccurrence
+    && a.rows.length === b.rows.length && a.rows.every((r, i) => r === b.rows[i])
+    && a.rows.every((r) => placeNameOf(a.places, r) === placeNameOf(b.places, r));
+}
+
+/** One day's timed lane: tap for a ＋ slot, blocks placed by clampToDay + layoutColumns. */
+const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, slot, hourH, onTapSlot, onCreateFromSlot, onPressOccurrence }: DayColumnProps) {
+  const c = useColors();
+  const colorOf = useCalendarColors();
+  const day = parseYmd(dayKey);
+  const spans = rows.flatMap((r) => {
+    const start = new Date(r.start_utc);
+    const end = r.end_utc ? new Date(r.end_utc) : new Date(start.getTime() + DEFAULT_END_MIN * 60_000);
+    const span = clampToDay(start, end, day);
+    return span ? [{ ...span, item: r }] : [];
+  });
+  return (
+    <Pressable
+      style={[
+        styles.dayColumn,
+        { left: colPct(col), width: colPct(1), borderColor: c.divider },
+        avail !== undefined && { backgroundColor: `${availabilityColor(avail)}14` },
+      ]}
+      onPress={(e) => onTapSlot(dayKey, Math.max(0, Math.min(47, Math.floor(e.nativeEvent.locationY / (hourH.value / 2)))))}
+    >
+      {slot !== null && (
+        <View style={[styles.slotCell, { top: pct(slot * 30), height: pct(30) }]}>
+          <Pressable
+            style={[styles.slotChip, { borderColor: c.primary, backgroundColor: c.primary + '22' }]}
+            onPress={() => onCreateFromSlot(dayKey, slot)}
+          >
+            <Text style={[styles.slotChipText, { color: c.primary }]} numberOfLines={1}>＋ {slotTime(slot)}</Text>
+          </Pressable>
+        </View>
+      )}
+      {layoutColumns(spans, 30).map((p) => (
+        <EventBlock
+          key={`${p.item.source_id}-${p.item.start_utc}`}
+          placed={p}
+          color={p.item.source === 'birthday' ? BIRTHDAY_COLOR : colorOf(p.item.calendar_id)}
+          placeName={placeNameOf(places, p.item)}
+          onPress={onPressOccurrence}
+        />
+      ))}
+    </Pressable>
+  );
+}, sameColumn);
 
 /** Title first, then start time and place: a short block clips to its title, and the rest appears as the
  *  block grows — including live, mid-pinch, without a re-render. */
