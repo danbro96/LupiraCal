@@ -132,22 +132,26 @@ export type GridRow = OccurrenceQueryRow & {
   avail_status: string | null;
 };
 
+const outsideSystemCalendars = (itemId: string) => `EXISTS (
+         SELECT 1 FROM item_calendars icf JOIN calendars cf ON cf.id = icf.calendar_id
+         WHERE icf.item_id = ${itemId} AND icf.status = 'Accepted'
+           AND COALESCE(json_extract(cf.doc, '$.class'), '') != 'System')`;
+
+const preferredCalendar = (itemId: string) => `(SELECT ic.calendar_id FROM item_calendars ic WHERE ic.item_id = ${itemId}
+             ORDER BY CASE ic.status WHEN 'Accepted' THEN 0 ELSE 1 END, ic.calendar_id LIMIT 1)`;
+
 /** The grids' one read: occurrences joined with just enough display data (title, status, a calendar for the
  *  color). Still a single indexed start_day range — no per-item fan-out, no render-time expansion.
  *  With includeSystem=false, items whose only Accepted homes are System-class calendars stay out of the
  *  grids (birthday rows always pass — locally synthesized, and the Birthdays calendar is Agenda-class). */
 export async function gridRowsBetween(tx: Tx, fromDay: string, toDay: string, includeSystem = true): Promise<GridRow[]> {
   const systemFilter = includeSystem ? '' : `
-       AND (o.source != 'item' OR EXISTS (
-         SELECT 1 FROM item_calendars icf JOIN calendars cf ON cf.id = icf.calendar_id
-         WHERE icf.item_id = o.source_id AND icf.status = 'Accepted'
-           AND COALESCE(json_extract(cf.doc, '$.class'), '') != 'System'))`;
+       AND (o.source != 'item' OR ${outsideSystemCalendars('o.source_id')})`;
   return tx.all<GridRow>(
     `SELECT o.source, o.source_id, o.start_utc, o.end_utc, o.start_day, o.all_day,
             COALESCE(i.title, c.display_name) AS title,
             i.status AS status,
-            (SELECT ic.calendar_id FROM item_calendars ic WHERE ic.item_id = o.source_id
-             ORDER BY CASE ic.status WHEN 'Accepted' THEN 0 ELSE 1 END, ic.calendar_id LIMIT 1) AS calendar_id,
+            ${preferredCalendar('o.source_id')} AS calendar_id,
             (SELECT 1 FROM item_calendars ia JOIN calendars ca ON ca.id = ia.calendar_id
              WHERE ia.item_id = o.source_id AND json_extract(ca.doc, '$.kind') = 'Availability' LIMIT 1) AS is_availability,
             json_extract(i.doc, '$.details.presence.status') AS avail_status
@@ -157,6 +161,52 @@ export async function gridRowsBetween(tx: Tx, fromDay: string, toDay: string, in
      WHERE o.start_day >= ? AND o.start_day <= ?${systemFilter}
      ORDER BY o.start_utc`,
     [fromDay, toDay],
+  );
+}
+
+export type ItemSearchRow = {
+  id: string;
+  title: string | null;
+  status: string | null;
+  is_all_day: number;
+  recurrence_rule: string | null;
+  calendar_id: string | null;
+  /** First occurrence on or after `today`; null when the item has none left in the mirror's window. */
+  next_utc: string | null;
+  /** Last occurrence before `today`, else the item's own start (it may predate the window). */
+  last_utc: string | null;
+};
+
+// SQLite's lower() and LIKE fold ASCII only, so "års" would miss "Årsmöte". The query side is
+// lowercased in JS; this folds the capitals a family calendar actually contains.
+const FOLDED = ['Å', 'Ä', 'Ö', 'É', 'È', 'Ü', 'Æ', 'Ø'];
+const fold = (expr: string) => FOLDED.reduce((e, ch) => `REPLACE(${e}, '${ch}', '${ch.toLowerCase()}')`, `lower(${expr})`);
+const likeTerm = (term: string) => `%${term.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
+
+/** Free-text search over the mirror, so it works offline. Every whitespace-separated term must appear in
+ *  the title, description, category or tags. Upcoming items first (soonest first), then past ones (most
+ *  recent first) — `today` is a local 'yyyy-MM-dd', compared against start_day so an all-day item on
+ *  today still counts as upcoming. */
+export async function searchItems(tx: Tx, query: string, today: string, includeSystem = true, limit = 100): Promise<ItemSearchRow[]> {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return [];
+  const haystack = fold(`COALESCE(i.title, '') || ' ' || COALESCE(json_extract(i.doc, '$.description'), '') || ' ' ||
+    COALESCE(json_extract(i.doc, '$.category'), '') || ' ' ||
+    COALESCE((SELECT group_concat(t.value, ' ') FROM json_each(i.doc, '$.tags') t), '')`);
+  return tx.all<ItemSearchRow>(
+    `SELECT i.id, i.title, i.status, i.is_all_day, i.recurrence_rule,
+            ${preferredCalendar('i.id')} AS calendar_id,
+            (SELECT MIN(o.start_utc) FROM occurrences o
+             WHERE o.source = 'item' AND o.source_id = i.id AND o.start_day >= ?) AS next_utc,
+            COALESCE((SELECT MAX(o.start_utc) FROM occurrences o
+             WHERE o.source = 'item' AND o.source_id = i.id AND o.start_day < ?), i.start_utc) AS last_utc
+     FROM items i
+     WHERE i.deleted = 0
+       ${terms.map(() => `AND ${haystack} LIKE ? ESCAPE '\\'`).join('\n       ')}
+       ${includeSystem ? '' : `AND ${outsideSystemCalendars('i.id')}`}
+     ORDER BY next_utc IS NULL, next_utc, last_utc DESC
+     LIMIT ?`,
+    [today, today, ...terms.map(likeTerm), limit],
   );
 }
 
@@ -174,8 +224,7 @@ export async function mapEventRowsBetween(tx: Tx, fromDay: string, toDay: string
   return tx.all<MapEventRow>(
     `SELECT o.source_id, MIN(o.start_utc) AS start_utc, i.title,
             json_extract(i.doc, '$.placeId') AS place_id,
-            (SELECT ic.calendar_id FROM item_calendars ic WHERE ic.item_id = o.source_id
-             ORDER BY CASE ic.status WHEN 'Accepted' THEN 0 ELSE 1 END, ic.calendar_id LIMIT 1) AS calendar_id
+            ${preferredCalendar('o.source_id')} AS calendar_id
      FROM occurrences o
      JOIN items i ON o.source = 'item' AND i.id = o.source_id AND i.deleted = 0
      WHERE o.start_day >= ? AND o.start_day <= ? AND json_extract(i.doc, '$.placeId') IS NOT NULL

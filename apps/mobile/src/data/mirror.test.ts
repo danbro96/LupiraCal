@@ -5,7 +5,7 @@ import type { OccurrenceRow } from '../domain/materialize';
 import { openNodeDb } from './db/nodeDb';
 import { migrate } from './db/schema';
 import type { Db } from './db/types';
-import { mapEventRowsBetween, saveItem } from './mirror';
+import { mapEventRowsBetween, replaceContainers, saveItem, searchItems } from './mirror';
 
 let db: Db;
 
@@ -62,5 +62,51 @@ describe('mapEventRowsBetween', () => {
     });
 
     expect(await mapEventRowsBetween(db, '2026-08-01', '2026-08-31')).toEqual([]);
+  });
+});
+
+describe('searchItems', () => {
+  const save = (id: string, fields: Partial<ItemDoc>, occurrences: OccurrenceRow[], deleted = false, calendarId = 'cal-a') =>
+    db.exclusive(async (tx) => {
+      await saveItem(tx, { doc: { ...doc(id, null, [{ calendarId, status: 'Accepted' }]), ...fields },
+        guards: emptyItemGuards(), deleted }, occurrences);
+    });
+
+  it('matches every term across title, description and tags, folding Swedish capitals', async () => {
+    await save('a', { title: 'Årsmöte', description: 'Föreningen', tags: ['styrelse'] }, [occ('a', '2026-10-01')]);
+    await save('b', { title: 'Årsmöte' }, [occ('b', '2026-10-02')]);
+
+    expect((await searchItems(db, 'års', '2026-09-29')).map((r) => r.id)).toEqual(['a', 'b']);
+    expect((await searchItems(db, 'ÅRS styrelse', '2026-09-29')).map((r) => r.id)).toEqual(['a']);
+    expect(await searchItems(db, '   ', '2026-09-29')).toEqual([]);
+  });
+
+  it('treats LIKE wildcards in the query literally', async () => {
+    await save('pct', { title: '50% off' }, [occ('pct', '2026-10-01')]);
+    await save('plain', { title: '500 off' }, [occ('plain', '2026-10-01')]);
+
+    expect((await searchItems(db, '50%', '2026-09-29')).map((r) => r.id)).toEqual(['pct']);
+  });
+
+  it('lists upcoming soonest-first, then past most-recent-first, and skips deleted items', async () => {
+    await save('later', { title: 'Dentist later' }, [occ('later', '2026-11-01')]);
+    await save('soon', { title: 'Dentist soon' }, [occ('soon', '2026-09-20'), occ('soon', '2026-09-29')]);
+    await save('old', { title: 'Dentist old' }, [occ('old', '2026-01-01')]);
+    await save('recent', { title: 'Dentist recent' }, [occ('recent', '2026-08-01')]);
+    await save('gone', { title: 'Dentist gone' }, [occ('gone', '2026-10-01')], true);
+
+    const rows = await searchItems(db, 'dentist', '2026-09-29');
+    expect(rows.map((r) => r.id)).toEqual(['soon', 'later', 'recent', 'old']);
+    expect(rows[0]).toMatchObject({ next_utc: '2026-09-29T09:00:00.000Z', last_utc: '2026-09-20T09:00:00.000Z', calendar_id: 'cal-a' });
+  });
+
+  it('hides items homed only in System-class calendars unless asked for', async () => {
+    const calendars = [{ id: 'sys', class: 'System' }, { id: 'cal-a', class: 'Personal' }];
+    await db.exclusive((tx) => replaceContainers(tx, 'calendars', calendars));
+    await save('sys', { title: 'Plan' }, [occ('sys', '2026-10-01')], false, 'sys');
+    await save('mine', { title: 'Plan' }, [occ('mine', '2026-10-02')]);
+
+    expect((await searchItems(db, 'plan', '2026-09-29', false)).map((r) => r.id)).toEqual(['mine']);
+    expect((await searchItems(db, 'plan', '2026-09-29', true)).map((r) => r.id)).toEqual(['sys', 'mine']);
   });
 });

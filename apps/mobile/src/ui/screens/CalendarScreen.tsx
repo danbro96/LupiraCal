@@ -1,33 +1,42 @@
-import { addDays, addMonths, fmtMonthTitle, fmtTime, parseYmd, startOfWeek } from '@lupira/cal-domain/time';
-import { useNavigation } from '@react-navigation/native';
+import { addDays, addMonths, fmtMonthTitle, fmtTime, parseYmd, startOfMonth, startOfWeek, ymd } from '@lupira/cal-domain/time';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useNavigation, type CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Chip, FAB, IconButton, Text } from 'react-native-paper';
+import { GestureDetector } from 'react-native-gesture-handler';
+import { Chip, FAB, Text } from 'react-native-paper';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { isTaskRow } from '../../domain/taskRows';
 import { useDaysOccurrences, type CalRow } from '../../state/useOccurrences';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
-import { SwipeHint } from '../calendar/SwipeHint';
-import { useHorizontalSwipe } from '../calendar/useHorizontalSwipe';
+import { usePeriodSwipe } from '../calendar/usePeriodSwipe';
 import { MonthView } from '../calendar/MonthView';
 import { WeekView } from '../calendar/WeekView';
 import { BridgePrompt } from '../components/BridgePrompt';
+import { IconButton } from '../components/IconButton';
+import { SettingsButton } from '../components/SettingsButton';
 import { BIRTHDAY_COLOR, availabilityColor, useCalendarColors } from '../hooks/palette';
-import { ScreenToolbar } from '../components/ScreenToolbar';
 import { SyncBanner } from '../components/SyncBanner';
-import type { RootStackParamList } from '../navigation/types';
+import type { RootStackParamList, TabParamList } from '../navigation/types';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
 
 type Mode = 'month' | 'week';
+type Nav = CompositeNavigationProp<BottomTabNavigationProp<TabParamList, 'Calendar'>, NativeStackNavigationProp<RootStackParamList>>;
+
+const fmtShort = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 
 /** Month mode: the grid flex-fills the screen; selecting a day slides up a draggable agenda sheet
  *  (snap points ≈ 38% / 78%, drag below ~20% deselects). Changing month or jumping to today clears
- *  the selection. Week mode: timed lanes with tap-to-create slots. */
+ *  the selection. Week mode: timed lanes with tap-to-create slots.
+ *  Period controls live in the native header — the title opens a date picker, and swiping the grid
+ *  steps the period — so the grid gets the rows a toolbar would take. */
 export function CalendarScreen() {
   const c = useColors();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<Nav>();
   const [mode, setMode] = useState<Mode>('month');
   const [anchor, setAnchor] = useState(() => new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -72,25 +81,54 @@ export function CalendarScreen() {
 
   // Memoized: a new Date each render would defeat WeekView's memo.
   const weekStart = useMemo(() => startOfWeek(anchor), [anchor]);
-  const title = mode === 'month'
-    ? fmtMonthTitle(anchor)
-    : `${weekStart.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${addDays(weekStart, 6).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
+  const title = mode === 'month' ? fmtMonthTitle(anchor) : `${fmtShort(weekStart)} – ${fmtShort(addDays(weekStart, 6))}`;
 
   const step = (dir: 1 | -1) => {
     setAnchor(mode === 'month' ? addMonths(anchor, dir) : addDays(anchor, dir * 7));
     if (mode === 'month') deselect();
   };
-  const goToday = () => {
-    setAnchor(new Date());
-    deselect();
+  const swipe = usePeriodSwipe(step, `${mode}:${ymd(mode === 'month' ? startOfMonth(anchor) : weekStart)}`);
+  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipe.offset.value }] }));
+  const measureSwipe = (e: { nativeEvent: { layout: { width: number } } }) => {
+    swipe.width.value = e.nativeEvent.layout.width;
   };
-  // Swipe left/right = next/previous month or week (handlers stay fresh inside the hook).
-  const swipe = useHorizontalSwipe(() => step(1), () => step(-1));
-  const periodLabel = (dir: 1 | -1) => {
-    if (mode === 'month') return fmtMonthTitle(addMonths(anchor, dir));
-    const start = startOfWeek(addDays(anchor, dir * 7));
-    return `${start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}–${addDays(start, 6).getDate()}`;
-  };
+
+  useLayoutEffect(() => {
+    const goToday = () => {
+      setAnchor(new Date());
+      deselect();
+    };
+    const pickDate = () => DateTimePickerAndroid.open({
+      value: selectedDay ? parseYmd(selectedDay) : anchor,
+      mode: 'date',
+      onChange: (e, d) => {
+        if (e.type !== 'set' || !d) return;
+        setAnchor(d);
+        if (mode === 'month') selectDay(ymd(d));
+      },
+    });
+    navigation.setOptions({
+      headerTitle: () => (
+        <Pressable style={styles.titleButton} onPress={pickDate} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${title}, pick a date`}>
+          <Text style={[styles.title, { color: c.text }]} numberOfLines={1}>{title}</Text>
+          <Text style={{ color: c.textMuted }}><Glyph name={ICONS.dropDown} size={22} /></Text>
+        </Pressable>
+      ),
+      headerRight: () => (
+        <View style={styles.headerActions}>
+          <IconButton name={ICONS.search} accessibilityLabel="Search events" onPress={() => navigation.navigate('ItemSearch')} />
+          <IconButton name={ICONS.today} accessibilityLabel="Today" onPress={goToday} />
+          <IconButton
+            name={mode === 'month' ? ICONS.viewWeek : ICONS.viewMonth}
+            accessibilityLabel={mode === 'month' ? 'Week view' : 'Month view'}
+            onPress={() => setMode(mode === 'month' ? 'week' : 'month')}
+          />
+          <SettingsButton />
+        </View>
+      ),
+    });
+  }, [navigation, title, mode, anchor, selectedDay, deselect, selectDay, c.text, c.textMuted]);
+
   const openOccurrence = useCallback((row: CalRow) => {
     // Tasks live in LupiraTasks, not the mirror — route to the read-only TaskDetail screen.
     if (isTaskRow(row)) navigation.navigate('TaskDetail', { listId: row.task.listId, itemId: row.task.itemId });
@@ -105,28 +143,20 @@ export function CalendarScreen() {
     <View style={[styles.root, { backgroundColor: c.bg }]}>
       <SyncBanner />
       <BridgePrompt />
-      <ScreenToolbar>
-        <IconButton icon={ICONS.chevronLeft} iconColor={c.primary} style={styles.nav} onPress={() => step(-1)} hitSlop={8} />
-        <Text style={styles.period}>{title}</Text>
-        <IconButton icon={ICONS.chevronRight} iconColor={c.primary} style={styles.nav} onPress={() => step(1)} hitSlop={8} />
-        <Button mode="outlined" compact onPress={goToday}>
-          Today
-        </Button>
-        <Button mode="outlined" compact onPress={() => setMode(mode === 'month' ? 'week' : 'month')}>
-          {mode === 'month' ? 'Week' : 'Month'}
-        </Button>
-      </ScreenToolbar>
 
       {mode === 'month' ? (
         <View
-          style={styles.monthArea}
+          style={styles.area}
           onLayout={(e) => {
             containerH.current = e.nativeEvent.layout.height;
           }}
-          {...swipe.panHandlers}
         >
-          <MonthView anchor={anchor} selectedDay={selectedDay} onSelectDay={selectDay} />
-          <SwipeHint hint={swipe.hint} prevLabel={periodLabel(-1)} nextLabel={periodLabel(1)} />
+          {/* The sheet is a sibling, not a child: a sideways drag on the agenda must not flip the month. */}
+          <GestureDetector gesture={swipe.gesture}>
+            <Reanimated.View style={[styles.area, slideStyle]} onLayout={measureSwipe}>
+              <MonthView anchor={anchor} selectedDay={selectedDay} onSelectDay={selectDay} />
+            </Reanimated.View>
+          </GestureDetector>
           {selectedDay && (
             <Animated.View style={[styles.sheet, { height: sheetH, backgroundColor: c.surface, borderColor: c.divider }]}>
               <View style={styles.sheetHeader} {...pan.panHandlers}>
@@ -150,10 +180,11 @@ export function CalendarScreen() {
           )}
         </View>
       ) : (
-        <View style={styles.monthArea} {...swipe.panHandlers}>
-          <WeekView weekStart={weekStart} onPressOccurrence={openOccurrence} onCreateSlot={createSlot} />
-          <SwipeHint hint={swipe.hint} prevLabel={periodLabel(-1)} nextLabel={periodLabel(1)} />
-        </View>
+        <GestureDetector gesture={swipe.gesture}>
+          <View style={styles.area} onLayout={measureSwipe}>
+            <WeekView weekStart={weekStart} slide={swipe.offset} onPressOccurrence={openOccurrence} onCreateSlot={createSlot} />
+          </View>
+        </GestureDetector>
       )}
     </View>
   );
@@ -203,9 +234,10 @@ function DayAgendaList({ day, onPress }: { day: string; onPress: (row: CalRow) =
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  nav: { margin: 0 },
-  period: { flexGrow: 1, fontSize: 16, fontWeight: '600', textAlign: 'center' },
-  monthArea: { flex: 1 },
+  area: { flex: 1, overflow: 'hidden' },
+  titleButton: { flexShrink: 1, flexDirection: 'row', alignItems: 'center' },
+  title: { flexShrink: 1, fontSize: 20, fontWeight: '500' },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
   sheet: {
     position: 'absolute', left: 0, right: 0, bottom: 0,
     borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 0.5,

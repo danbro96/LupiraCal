@@ -13,6 +13,7 @@ import { ContactsScreen } from '../screens/ContactsScreen';
 import { DebugLogScreen } from '../screens/DebugLogScreen';
 import { DeveloperScreen } from '../screens/DeveloperScreen';
 import { ItemDetailScreen } from '../screens/ItemDetailScreen';
+import { ItemSearchScreen } from '../screens/ItemSearchScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
 import { ItemEditScreen } from '../screens/ItemEditScreen';
 import { LoginScreen } from '../screens/LoginScreen';
@@ -57,6 +58,7 @@ export function RootStack() {
       <Stack.Screen name="SyncIssues" component={SyncIssuesScreen} options={{ title: 'Sync issues' }} />
       <Stack.Screen name="DebugLog" component={DebugLogScreen} options={{ title: 'Debug log' }} />
       <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: 'Event' }} />
+      <Stack.Screen name="ItemSearch" component={ItemSearchScreen} options={{ title: 'Search events' }} />
       <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={{ title: 'Task' }} />
       <Stack.Screen name="ItemEdit" component={ItemEditScreen} options={{ title: 'Edit event' }} />
       <Stack.Screen name="ContactDetail" component={ContactDetailScreen} options={{ title: 'Contact' }} />

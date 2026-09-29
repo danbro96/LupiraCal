@@ -25,6 +25,7 @@ export const ICONS = {
   delete: 'delete',
   deleteForever: 'delete-forever',
   download: 'file-download',
+  dropDown: 'arrow-drop-down',
   email: 'email',
   event: 'event',
   expand: 'expand-more',
@@ -49,6 +50,7 @@ export const ICONS = {
   person: 'person',
   photos: 'photo-library',
   place: 'place',
+  repeat: 'repeat',
   restore: 'restore-from-trash',
   restaurant: 'restaurant',
   robot: 'smart-toy',
@@ -59,9 +61,12 @@ export const ICONS = {
   star: 'star',
   starOutline: 'star-border',
   target: 'track-changes',
+  today: 'today',
   tools: 'construction',
   tune: 'tune',
   upload: 'cloud-upload',
+  viewMonth: 'calendar-view-month',
+  viewWeek: 'view-week',
   walk: 'directions-walk',
 } as const;
 
