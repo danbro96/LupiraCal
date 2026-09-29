@@ -26,4 +26,5 @@ export const CurationAction = {
   Deleted: 'Deleted',
   ExternalIdAdded: 'ExternalIdAdded',
   ExternalIdRemoved: 'ExternalIdRemoved',
+  Reclassified: 'Reclassified',
 } as const;

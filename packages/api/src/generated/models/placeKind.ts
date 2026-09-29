@@ -6,7 +6,8 @@
  */
 
 /**
- * What a Place is: a point-of-interest (a named venue/entity) or a plain street address.
+ * What a Place is: a point-of-interest (a named venue/entity), a plain street address, or a whole
+ *             settlement/administrative area (city, municipality, region, country) — a centroid, not somewhere you arrive.
  */
 export type PlaceKind = typeof PlaceKind[keyof typeof PlaceKind];
 
@@ -14,4 +15,5 @@ export type PlaceKind = typeof PlaceKind[keyof typeof PlaceKind];
 export const PlaceKind = {
   Poi: 'Poi',
   Address: 'Address',
+  Area: 'Area',
 } as const;

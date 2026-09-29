@@ -393,6 +393,91 @@
         ]
       }
     },
+    "/places/duplicates": {
+      "get": {
+        "tags": [
+          "Places"
+        ],
+        "summary": "Duplicate candidates for the curation pass: places sharing a match key (SameName), plus co-located places with similar names (CoLocated, radiusM default 25, minSimilarity default 0.3). Read-only — merging is the caller's call.",
+        "operationId": "FindDuplicatePlaces",
+        "parameters": [
+          {
+            "name": "radiusM",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "minSimilarity",
+            "in": "query",
+            "schema": {
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DuplicateClusterDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/places/by-external/{scheme}/{value}": {
       "get": {
         "tags": [
@@ -1287,6 +1372,75 @@
         ]
       }
     },
+    "/places/regeocode:batch": {
+      "post": {
+        "tags": [
+          "Places"
+        ],
+        "summary": "Regeocode up to 50 places in one call — the bulk healing path for unlocated stubs. Per-item status (Healed/NoHit/Unavailable/Conflict/NotFound); a failure never aborts the rest. force=true bypasses the frozen geocode cache.",
+        "operationId": "RegeocodePlacesBatch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegeocodePlacesBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegeocodePlaceResultDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/places/lookup": {
       "post": {
         "tags": [
@@ -1652,6 +1806,75 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/PrunePlaceResultDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/curation/classify-areas": {
+      "post": {
+        "tags": [
+          "Curation"
+        ],
+        "summary": "Reclassify uncategorized geocoded places whose cached geocode matched a settlement or administrative area (city, municipality, region, country) from Poi to Area. Dry run unless apply=true; reads the geocode cache only.",
+        "operationId": "ClassifyAreaPlaces",
+        "parameters": [
+          {
+            "name": "apply",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AreaReclassificationDto"
                   }
                 }
               }
@@ -2336,6 +2559,31 @@
         ],
         "description": "Level of an AdminArea in the containment tree (Locality → Region → Country)."
       },
+      "AreaReclassificationDto": {
+        "required": [
+          "placeId",
+          "name",
+          "osmId",
+          "applied"
+        ],
+        "type": "object",
+        "properties": {
+          "placeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "osmId": {
+            "type": "string"
+          },
+          "applied": {
+            "type": "boolean"
+          }
+        },
+        "description": "A place the area sweep reclassifies (or, on a dry run, would reclassify) from `Poi` to `Area`."
+      },
       "CreatePlaceFromGeocodeRequest": {
         "required": [
           "query",
@@ -2470,7 +2718,8 @@
           "Relocated",
           "Deleted",
           "ExternalIdAdded",
-          "ExternalIdRemoved"
+          "ExternalIdRemoved",
+          "Reclassified"
         ],
         "description": "A curation decision recorded on a Place in the append-only `curation_log`. Stable names —\n            they are the future event-type names, so never rename a member (add new ones; keep old ones readable)."
       },
@@ -2515,6 +2764,38 @@
           }
         },
         "description": "One curation-log entry for a place. Readable for tombstoned/merged places too — that is the audit's point."
+      },
+      "DuplicateClusterDto": {
+        "required": [
+          "reason",
+          "places"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "$ref": "#/components/schemas/DuplicateReason"
+          },
+          "spreadM": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Greatest separation within the cluster; null when the cluster has no coordinates to compare.",
+            "format": "double"
+          },
+          "places": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceDto"
+            }
+          }
+        }
+      },
+      "DuplicateReason": {
+        "enum": [
+          "SameName",
+          "CoLocated"
+        ]
       },
       "ExternalScheme": {
         "enum": [
@@ -2885,9 +3166,10 @@
       "PlaceKind": {
         "enum": [
           "Poi",
-          "Address"
+          "Address",
+          "Area"
         ],
-        "description": "What a Place is: a point-of-interest (a named venue/entity) or a plain street address."
+        "description": "What a Place is: a point-of-interest (a named venue/entity), a plain street address, or a whole\n            settlement/administrative area (city, municipality, region, country) — a centroid, not somewhere you arrive."
       },
       "PlaceLookupItemDto": {
         "required": [
@@ -3068,6 +3350,75 @@
         ],
         "description": "Per-place outcome of an orphan prune: soft-deleted (or already was), skipped because something still\n            references it, or the id is unknown/merged."
       },
+      "RegeocodePlaceResultDto": {
+        "required": [
+          "placeId",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "placeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegeocodeStatus"
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "latitude": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "longitude": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RegeocodePlacesBatchRequest": {
+        "required": [
+          "placeIds"
+        ],
+        "type": "object",
+        "properties": {
+          "placeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "force": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RegeocodeStatus": {
+        "enum": [
+          "Healed",
+          "NoHit",
+          "Unavailable",
+          "Conflict",
+          "NotFound"
+        ]
+      },
       "ResolvePlaceRequest": {
         "required": [
           "text"
@@ -3212,6 +3563,16 @@
               }
             ]
           },
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlaceKind"
+              }
+            ]
+          },
           "verified": {
             "type": [
               "null",
@@ -3246,7 +3607,7 @@
             "format": "uuid"
           }
         },
-        "description": "Curate a place: rename, recategorize, verify, or correct its location. Omitted members are left unchanged.\n            `Latitude`+`Longitude` (both required together) move the point — for fixing a wrong geocode by hand;\n            `WithinAreaId` re-anchors containment to match."
+        "description": "Curate a place: rename, recategorize, reclassify, verify, or correct its location. Omitted members are left\n            unchanged. `Latitude`+`Longitude` (both required together) move the point — for fixing a wrong geocode by\n            hand; `WithinAreaId` re-anchors containment to match."
       },
       "UpdateSavedPlaceRequest": {
         "type": "object",
