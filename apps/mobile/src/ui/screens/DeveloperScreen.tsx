@@ -8,7 +8,7 @@ import { presetFor, useAuth } from '../../state/auth-store';
 import { useSyncStatus } from '../../sync/syncStatus';
 import { Input } from '../components/Input';
 import type { RootStackParamList } from '../navigation/types';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 
 /** Developer tooling, deliberately out of the user path: backend switching (a family member on the
  *  LAN preset has a silently dead app), diagnostics links, raw sync state. Reachable from Settings
@@ -29,7 +29,7 @@ export function DeveloperScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <List.Subheader>Backend</List.Subheader>
+      <List.Subheader style={styles.subheader}>Backend</List.Subheader>
       {/* http presets need cleartext networking — dev-client-only (release builds block cleartext). */}
       {API_PRESETS.filter((p) => __DEV__ || p.urls.api.startsWith('https')).map((p) => (
         <List.Item
@@ -64,21 +64,23 @@ export function DeveloperScreen() {
         </Button>
       </View>
 
-      <List.Subheader>Diagnostics</List.Subheader>
+      <List.Subheader style={styles.subheader}>Diagnostics</List.Subheader>
       {DIAGNOSTIC_ROUTES.map((d) => (
         <Button key={d.route} mode="text" compact onPress={() => navigation.navigate(d.route as never)}>
           {d.label}
         </Button>
       ))}
 
-      <List.Subheader>Sync state</List.Subheader>
+      <List.Subheader style={styles.subheader}>Sync state</List.Subheader>
       <Text style={[styles.mono, { color: c.textMuted }]}>{JSON.stringify(sync, null, 2)}</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 8 },
-  custom: { paddingVertical: 8, gap: 8 },
+  // Inside a padded page a subheader's own 16dp inset would put headings right of the text they head.
+  subheader: { paddingHorizontal: 0, paddingTop: spacing.md, paddingBottom: spacing.xs },
+  container: { padding: spacing.lg, gap: spacing.sm },
+  custom: { paddingVertical: spacing.sm, gap: spacing.sm },
   mono: { fontFamily: 'monospace', fontSize: 11 },
 });

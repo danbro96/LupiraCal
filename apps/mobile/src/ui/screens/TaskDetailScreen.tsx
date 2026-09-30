@@ -9,7 +9,7 @@ import { isOverdue, taskDeepLink } from '@lupira/cal-domain/tasks';
 import { Centered } from '../components/Centered';
 import { Button } from '../components/Button';
 import type { RootStackParamList } from '../navigation/types';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 import { toastError } from '../../feedback/toast';
 
 /** Read-only view of a LupiraTasks deadline. Online-only by design (tasks never enter the mirror);
@@ -67,11 +67,11 @@ export function TaskDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 8 },
+  container: { padding: spacing.lg, gap: spacing.sm },
   h1: { fontSize: 20, fontWeight: '700' },
   when: { fontSize: 14 },
   chipRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   note: { fontSize: 13 },
   notes: { fontSize: 14, marginTop: 4 },
-  actions: { marginTop: 12 },
+  actions: { marginTop: spacing.md },
 });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { PermissionsAndroid, ScrollView, StyleSheet, View } from 'react-native';
+import { spacing } from '../theme';
 import { List, Text } from 'react-native-paper';
 import type { BridgeState, ContactsSampleRow } from '../../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../../modules/lupira-bridge/src';
@@ -58,14 +59,14 @@ export function BridgeDiagnosticsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <List.Subheader>State</List.Subheader>
+      <List.Subheader style={styles.subheader}>State</List.Subheader>
       <Text style={styles.mono}>
         account: {state ? String(state.accountPresent) : '…'}   calendarId: {state?.calendarId ?? '—'}{'\n'}
         last OS sync: {state?.lastSyncAt ? new Date(state.lastSyncAt).toLocaleString() : 'never'}{'\n'}
         inbox rows: {inboxCount ?? '…'}
       </Text>
 
-      <List.Subheader>Actions</List.Subheader>
+      <List.Subheader style={styles.subheader}>Actions</List.Subheader>
       <View style={styles.buttons}>
         <Button title="Request permissions" onPress={() => void requestPermissions()} />
         <Button title="Ensure account" onPress={run('ensureAccount', () => LupiraBridge.ensureAccount())} />
@@ -98,7 +99,7 @@ export function BridgeDiagnosticsScreen() {
 
       {contacts && (
         <>
-          <List.Subheader>Raw contacts ({contacts.total})</List.Subheader>
+          <List.Subheader style={styles.subheader}>Raw contacts ({contacts.total})</List.Subheader>
           {contacts.rows.map((r) => (
             <Text key={r.id} style={styles.mono}>
               {r.displayName ?? '(no name)'} · {r.accountType ?? 'local'} · src={r.sourceId ?? '—'} · dirty={r.dirty} del={r.deleted}
@@ -107,14 +108,16 @@ export function BridgeDiagnosticsScreen() {
         </>
       )}
 
-      <List.Subheader>Log</List.Subheader>
+      <List.Subheader style={styles.subheader}>Log</List.Subheader>
       {log.map((l, i) => <Text key={i} style={styles.mono}>{l}</Text>)}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 6 },
-  buttons: { gap: 8 },
+  // Inside a padded page a subheader's own 16dp inset would put headings right of the text they head.
+  subheader: { paddingHorizontal: 0, paddingTop: spacing.md, paddingBottom: spacing.xs },
+  container: { padding: spacing.lg, gap: spacing.xs },
+  buttons: { gap: spacing.sm },
   mono: { fontFamily: 'monospace', fontSize: 12 },
 });

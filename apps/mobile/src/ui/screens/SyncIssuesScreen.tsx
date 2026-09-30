@@ -12,7 +12,7 @@ import { useOutboxRows } from '../../state/useOutboxRows';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
 import { IndeterminateBar } from '../components/IndeterminateBar';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 
 /** The review surface for offline writes: parked ops (gave up after backoff or hit a definitive rejection)
  *  get per-row retry / discard — discard also rolls the optimistic mirror write back to server truth. */
@@ -48,10 +48,10 @@ export function SyncIssuesScreen() {
         <Text style={[styles.empty, { color: c.textMuted }]}>All changes are synced.</Text>
       )}
 
-      {parked.length > 0 && <List.Subheader>Needs attention</List.Subheader>}
+      {parked.length > 0 && <List.Subheader style={styles.subheader}>Needs attention</List.Subheader>}
       {parked.map((row) => <ParkedCard key={row.seq} row={row} />)}
 
-      {pending.length > 0 && <List.Subheader>Waiting to sync</List.Subheader>}
+      {pending.length > 0 && <List.Subheader style={styles.subheader}>Waiting to sync</List.Subheader>}
       {pending.map((row) => (
         <View key={row.seq} style={[styles.pendingRow, { borderColor: c.divider }]}>
           <Text style={styles.opLabel}>{labelOf(row)}</Text>
@@ -118,11 +118,13 @@ function payloadOf(row: OutboxRow): string {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 8 },
+  // Inside a padded page a subheader's own 16dp inset would put headings right of the text they head.
+  subheader: { paddingHorizontal: 0, paddingTop: spacing.md, paddingBottom: spacing.xs },
+  container: { padding: spacing.lg, gap: spacing.sm },
   statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   statusText: { fontSize: 13 },
   lastError: { fontSize: 12 },
-  progressBlock: { gap: 6, marginTop: 8 },
+  progressBlock: { gap: spacing.xs, marginTop: spacing.sm },
   progressText: { fontSize: 13, textAlign: 'center' },
   empty: { textAlign: 'center', marginTop: 32 },
   card: { marginBottom: 8 },

@@ -15,7 +15,7 @@ import { avatarColor } from '../hooks/palette';
 import { ScreenToolbar } from '../components/ScreenToolbar';
 import { SyncBanner } from '../components/SyncBanner';
 import type { RootStackParamList } from '../navigation/types';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
 import { LetterRail } from '../components/LetterRail';
@@ -174,8 +174,8 @@ const styles = StyleSheet.create({
   body: { flex: 1, flexDirection: 'row' },
   list: { flex: 1 },
   listArea: { flex: 1, overflow: 'hidden' },
-  header: { height: HEADER_HEIGHT, justifyContent: 'center', paddingHorizontal: 16 },
-  row: { height: ROW_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: 16, paddingHorizontal: 16 },
+  header: { height: HEADER_HEIGHT, justifyContent: 'center', paddingHorizontal: spacing.lg },
+  row: { height: ROW_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg },
   rowText: { flex: 1 },
   skeleton: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden' },
   skeletonAvatar: { width: 38, height: 38, borderRadius: 19 },

@@ -12,7 +12,7 @@ import { ScreenToolbar } from '../components/ScreenToolbar';
 import { useCalendarColors } from '../hooks/palette';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 
 const MIN_QUERY = 2;
 
@@ -90,8 +90,8 @@ const ResultRow = memo(function ResultRow({ row, onOpen }: { row: ItemSearchRow;
 const styles = StyleSheet.create({
   root: { flex: 1 },
   search: { flex: 1 },
-  header: { fontSize: 13, fontWeight: '700', paddingHorizontal: 16, paddingVertical: 6 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 10 },
+  header: { fontSize: 13, fontWeight: '700', paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   dot: { width: 10, height: 10, borderRadius: 5 },
   rowText: { flex: 1 },
   empty: { textAlign: 'center', marginTop: 32 },

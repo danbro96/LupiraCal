@@ -17,7 +17,7 @@ import { Glyph } from '../components/Glyph';
 import { availabilityColor, useCalendarColors } from '../hooks/palette';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 
 // Fractions of the month area: two snap heights, a drag ceiling, and the line below which a release closes.
 const LOW = 0.38;
@@ -140,14 +140,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 0.5,
     shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: -3 }, elevation: 8,
   },
-  header: { paddingTop: 6, paddingBottom: 4, paddingHorizontal: 14 },
+  header: { paddingTop: spacing.xs + 2, paddingBottom: spacing.xs, paddingHorizontal: spacing.lg },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, marginBottom: 6 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 14, fontWeight: '700' },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   link: { fontSize: 13, fontWeight: '600' },
   availText: { fontSize: 12, fontWeight: '600' },
-  agenda: { paddingHorizontal: 14, paddingBottom: 24, gap: 2 },
+  agenda: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: 2 },
   empty: { fontSize: 13, paddingVertical: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
   dot: { width: 8, height: 8, borderRadius: 4 },
