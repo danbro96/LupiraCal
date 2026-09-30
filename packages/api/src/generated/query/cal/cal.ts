@@ -177,7 +177,7 @@ export const useBootstrapMe = <TError = ProblemDetails,
 }
 
 /**
- * @summary Per-contact participation across your readable calendars (contactId, item count, most recent occurrence start), ordered most-interacted first. Optional from/to restricts the window. A ranking signal for contact pickers/resolvers.
+ * @summary Per-contact participation across your readable calendars (contactId, item count, most recent occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Optional from/to restricts the window. A ranking signal for contact pickers/resolvers.
  */
 export const getParticipationSummary = async (params?: GetParticipationSummaryParams, options?: Parameters<typeof apiRequest>[1]): Promise<ParticipationSummaryEntry[]> => {
 
@@ -248,7 +248,7 @@ export function useGetParticipationSummary<TData = Awaited<ReturnType<typeof get
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Per-contact participation across your readable calendars (contactId, item count, most recent occurrence start), ordered most-interacted first. Optional from/to restricts the window. A ranking signal for contact pickers/resolvers.
+ * @summary Per-contact participation across your readable calendars (contactId, item count, most recent occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Optional from/to restricts the window. A ranking signal for contact pickers/resolvers.
  */
 
 export function useGetParticipationSummary<TData = Awaited<ReturnType<typeof getParticipationSummary>>, TError = ProblemDetails>(

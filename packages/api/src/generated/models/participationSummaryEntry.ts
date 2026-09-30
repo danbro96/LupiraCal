@@ -6,12 +6,14 @@
  */
 
 /**
- * One contact's participation across the caller's readable calendars: how many items they attend(ed)
- *             and the most recent occurrence start (past or planned). A ranking signal for pickers/resolvers, not an ACL surface.
+ * One contact's participation across the caller's readable calendars: how many items they attend(ed), the most
+ *             recent occurrence start (past or planned), and a score — interaction weighted by recency (each past
+ *             occurrence 0.5^(age / 90 days), the next planned one 1). A ranking signal for pickers/resolvers, not an ACL surface.
  */
 export interface ParticipationSummaryEntry {
   contactId: string;
   count: number;
   /** @nullable */
   lastAt: string | null;
+  score: number;
 }

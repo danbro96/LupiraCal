@@ -4,6 +4,17 @@ import { rankByInteraction } from './contactRank';
 const c = (id: string) => ({ id });
 
 describe('rankByInteraction', () => {
+  it('ranks recent interaction above a long-gone history', () => {
+    const ranked = rankByInteraction(
+      [c('anna'), c('bo')],
+      [
+        { contactId: 'anna', count: 40, lastAt: '2023-01-01T12:00:00Z', score: 0.1 },
+        { contactId: 'bo', count: 3, lastAt: '2026-09-01T12:00:00Z', score: 2.6 },
+      ],
+    );
+    expect(ranked.map((x) => x.id)).toEqual(['bo', 'anna']);
+  });
+
   it('orders by count desc, then lastAt desc, unmatched last', () => {
     const ranked = rankByInteraction(
       [c('anna'), c('bo'), c('cia'), c('dag')],
