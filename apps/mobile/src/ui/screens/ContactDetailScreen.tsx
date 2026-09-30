@@ -91,7 +91,9 @@ export function ContactDetailScreen() {
       <View style={[styles.inset, styles.header]}>
         <Avatar.Text size={52} label={initialsOf(displayName)} style={{ backgroundColor: avatarColor(contactId) }} />
         <View style={styles.headerBody}>
-          <Text style={styles.h1}>{displayName}{deceased ? ' †' : ''}</Text>
+          <Text style={styles.h1} onLongPress={displayName ? () => copyText(displayName, 'Name') : undefined}>
+            {displayName}{deceased ? ' †' : ''}
+          </Text>
           <Text style={[styles.sub, { color: c.textMuted }]}>
             {[doc.pronouns, doc.kind === 'Organization' ? 'Organization' : null, doc.nickname ? `“${doc.nickname}”` : null]
               .filter(Boolean).join(' · ')}

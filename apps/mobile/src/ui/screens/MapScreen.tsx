@@ -13,12 +13,13 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Feature } from 'geojson';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NativeSyntheticEvent } from 'react-native';
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import { StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { ActivityIndicator, Banner, useTheme } from 'react-native-paper';
 import { mapViewport, type MapViewport } from '@lupira/cal-domain/geo';
 import { hitsFromFeatures, type HitPoint, type MapHit } from '@lupira/cal-domain/mapHits';
 import { photoCellBounds } from '@lupira/cal-domain/mapFeatures';
 import { mapWindow, type MapSince } from '@lupira/cal-domain/mapWindow';
+import { zoomForSpan } from '@lupira/cal-domain/mapZoom';
 import { ymd } from '@lupira/cal-domain/time';
 import type { MapTheme } from '@lupira/cal-tokens/map';
 import { fallbackStyle } from '../../data/mapStyle';
@@ -29,11 +30,13 @@ import {
   useContactFeatures, useEventFeatures, useHotspotFeatures, useMovementFeatures, usePhotoFeatures, useSavedPlaceFeatures,
 } from '../../state/useMapData';
 import { useMapStyle } from '../../state/useMapStyle';
+import { useQuickPlaces, type QuickPlace } from '../../state/useQuickPlaces';
 import { useLivePosition } from '../../sync/livePosition';
 import {
   DEFAULT_LAYERS, LAYER_KEYS, LayersFab, LayersSheet, LocateFab, type FollowMode, type LayerKey,
 } from '../map/MapChrome';
 import { MapPreviewSheet, type HitAction } from '../map/MapPreviewSheet';
+import { QuickPlacesStrip } from '../map/QuickPlacesStrip';
 import {
   ContactsLayer, EventsLayer, HotspotsLayer, LivePuck, MovementLayer, PhotosLayer, SavedPlacesLayer, SelectionPin,
 } from '../map/layers';
@@ -104,6 +107,8 @@ export function MapScreen() {
   const isFocused = useIsFocused();
   const movement = useMovementFeatures(span.movementFrom.toISOString(), span.to.toISOString(), enabled.movement, isFocused);
   const livePosition = useLivePosition((s) => s.position);
+  const quickPlaces = useQuickPlaces(now.toISOString());
+  const { width } = useWindowDimensions();
 
   const mapRef = useRef<MapRef>(null);
   const cameraRef = useRef<CameraRef>(null);
@@ -208,6 +213,17 @@ export function MapScreen() {
     setHits(tapped);
   }, [enabled, closePreview]);
 
+  /** A jump frames the place by what it is, across the screen's width; an event also opens its card. */
+  const onQuickPick = useCallback((p: QuickPlace) => {
+    if (!p.point) return;
+    setFollow('off');
+    setSelected(p.point);
+    cameraRef.current?.easeTo({
+      center: [p.point.lon, p.point.lat], zoom: zoomForSpan(p.spanM, width, p.point.lat), duration: 600,
+    });
+    setHits(p.event ? [{ kind: 'event', key: p.key, point: p.point, ...p.event }] : null);
+  }, [width]);
+
   const onHitAction = useCallback((hit: MapHit, action: HitAction) => {
     if (action === 'zoom' && hit.kind === 'photoCell') {
       closePreview();
@@ -254,6 +270,7 @@ export function MapScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: paper.colors.background }]}>
+      <QuickPlacesStrip places={quickPlaces} onPick={onQuickPick} />
       {degraded && (
         <Banner visible icon={ICONS.locationOff}>Basemap unavailable — showing pins on a plain background.</Banner>
       )}

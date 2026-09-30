@@ -10,6 +10,7 @@ import { Chip, HelperText, List, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CalendarMembership, ItemDoc } from '../../domain/docTypes';
 import { coreOfDoc, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
+import { copyText } from '../../feedback/copy';
 import { toast } from '../../feedback/toast';
 import { deleteItem, fileItem, joinItem, mergeItemMetadata, reviseItem, unfileItem } from '../../state/actions';
 import { usePrefs } from '../../state/prefs-store';
@@ -87,7 +88,12 @@ export function ItemDetailScreen() {
         <View style={styles.inset}>
           {state.deleted && <Text style={[styles.flag, { color: c.danger }]}>Deleted — pending sync</Text>}
           {cancelled && <Text style={[styles.flag, { color: c.danger }]}>Cancelled</Text>}
-          <Text style={[styles.h1, cancelled && styles.struck]}>{doc.title ?? '(untitled)'}</Text>
+          <Text
+            style={[styles.h1, cancelled && styles.struck]}
+            onLongPress={doc.title ? () => copyText(doc.title!, 'Event name') : undefined}
+          >
+            {doc.title ?? '(untitled)'}
+          </Text>
           {start && (
             <Text style={[styles.when, { color: c.textMuted }]}>
               {fmtWhen(start, doc.isAllDay)}
@@ -105,7 +111,9 @@ export function ItemDetailScreen() {
               {doc.category && <Chip compact mode="outlined">{doc.category}</Chip>}
             </View>
           )}
-          {doc.description ? <Text style={styles.description}>{doc.description}</Text> : null}
+          {doc.description ? (
+            <Text style={styles.description} onLongPress={() => copyText(doc.description!, 'Description')}>{doc.description}</Text>
+          ) : null}
           {doc.prompt != null && <Text style={[styles.note, { color: c.textMuted }]}>Has a prompt payload (view on web)</Text>}
           {doc.action != null && <Text style={[styles.note, { color: c.textMuted }]}>Has an action payload (view on web)</Text>}
 

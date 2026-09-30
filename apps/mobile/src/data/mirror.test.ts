@@ -5,7 +5,7 @@ import type { OccurrenceRow } from '../domain/materialize';
 import { openNodeDb } from './db/nodeDb';
 import { migrate } from './db/schema';
 import type { Db } from './db/types';
-import { mapEventRowsBetween, replaceContainers, saveItem, searchItems } from './mirror';
+import { mapEventRowsBetween, replaceContainers, saveItem, searchItems, upcomingPlacedEvents } from './mirror';
 
 let db: Db;
 
@@ -21,6 +21,25 @@ const doc = (id: string, placeId: string | null, calendars: { calendarId: string
 
 const occ = (sourceId: string, day: string, time = '09:00'): OccurrenceRow => ({
   source: 'item', sourceId, startUtc: `${day}T${time}:00.000Z`, endUtc: null, startDay: day, allDay: false,
+});
+
+describe('upcomingPlacedEvents', () => {
+  const accepted = [{ calendarId: 'cal-a', status: 'Accepted' }];
+  const put = (d: ItemDoc, occurrences: OccurrenceRow[]) => db.exclusive((tx) =>
+    saveItem(tx, { doc: d, guards: emptyItemGuards(), deleted: false }, occurrences));
+
+  it('lists the next placed events, a series by its next occurrence, an ongoing one included', async () => {
+    await put(doc('series', 'p1', accepted), [occ('series', '2026-09-23'), occ('series', '2026-10-07'), occ('series', '2026-10-14')]);
+    await put(doc('later', 'p2', accepted), [occ('later', '2026-10-20')]);
+    await put(doc('past', 'p3', accepted), [occ('past', '2026-09-01')]);
+    await put(doc('now', 'p4', accepted), [{ ...occ('now', '2026-09-30', '11:00'), endUtc: '2026-09-30T13:00:00.000Z' }]);
+    await put({ ...doc('cancelled', 'p5', accepted), status: 'Cancelled' }, [occ('cancelled', '2026-10-01')]);
+
+    const rows = await upcomingPlacedEvents(db, '2026-09-30T12:00:00.000Z', 10);
+    expect(rows.map((r) => [r.source_id, r.start_utc.slice(0, 10)])).toEqual([
+      ['now', '2026-09-30'], ['series', '2026-10-07'], ['later', '2026-10-20'],
+    ]);
+  });
 });
 
 describe('mapEventRowsBetween', () => {

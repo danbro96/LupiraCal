@@ -85,6 +85,7 @@ export const ICONS = {
   viewMonth: 'calendar-view-month',
   viewWeek: 'view-week',
   walk: 'directions-walk',
+  work: 'work',
 } as const;
 
 export type IconKey = keyof typeof ICONS;

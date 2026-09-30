@@ -236,6 +236,24 @@ export async function mapEventRowsBetween(tx: Tx, fromDay: string, toDay: string
   );
 }
 
+/** The next placed events from `nowIso`, soonest first: one row per item (a series by its next occurrence),
+ *  an event already under way included, cancelled ones not. */
+export async function upcomingPlacedEvents(tx: Tx, nowIso: string, limit: number): Promise<MapEventRow[]> {
+  return tx.all<MapEventRow>(
+    `SELECT o.source_id, MIN(o.start_utc) AS start_utc, i.title,
+            json_extract(i.doc, '$.placeId') AS place_id,
+            ${preferredCalendar('o.source_id')} AS calendar_id
+     FROM occurrences o
+     JOIN items i ON o.source = 'item' AND i.id = o.source_id AND i.deleted = 0
+     WHERE COALESCE(o.end_utc, o.start_utc) >= ? AND json_extract(i.doc, '$.placeId') IS NOT NULL
+       AND COALESCE(json_extract(i.doc, '$.status'), '') != 'Cancelled'
+     GROUP BY o.source_id
+     ORDER BY start_utc
+     LIMIT ?`,
+    [nowIso, limit],
+  );
+}
+
 export type MapContactRow = {
   contact_id: string;
   display_name: string;
