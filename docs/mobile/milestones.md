@@ -20,6 +20,7 @@ criteria are verifiable commands/observations.
 | M8 | Hardening + release | LupiraCal | in-progress |
 | M9 | Task deadlines on the calendar | LupiraCal | in-progress |
 | M10 | Material re-skin (Paper + shared tokens) | LupiraCal | in-progress |
+| M14 | Device feedback pass | LupiraCal, LupiraCalApi | in-progress |
 
 Fixed identity: Android package `com.lupira.calendar`, scheme `lupiracalendar`
 (redirect `lupiracalendar://oauthredirect`), Authentik public client `lupira-cal-mobile`,
@@ -341,3 +342,25 @@ findable with psql.
 ### Non-goals
 HEIC transcode (originals are served untranscoded, so the viewer falls back to the thumbnail);
 favourites/albums; bulk select and download; "on this day" memories; trips as a photo grouping.
+
+## M14 — Device feedback pass   [status: in-progress]
+
+### Scope
+- [x] cal-api participation summary carries a recency-weighted `score` (0.5^(age/90 d) per past occurrence, next planned one = 1); both clients rank attendees by it
+- [x] New events invite you as going (`me.contactId` from `/contact-api/me`, offline-safe); Join on event detail, Add me in the people sheet
+- [x] Place sheet: one ranked list (`placeRank`) incl. contacts' addresses by name; resident line on every row, geocode hits matched within 30 m; localities no longer stored as places
+- [x] Address currency: former/future addresses fold away on the contact card and rank last in the picker
+- [x] `PlaceTile` + `MiniMap` for event and contact places; tags as quiet text at the bottom; double insets and literal gaps gone
+- [x] Calendar remembers Month/Week and the last event's calendars; the week all-day strip scrolls past 30% of the screen
+- [x] Map: show-on-map lands at z16 with a pin (first visit included); one age limit over every dated layer; compact layers sheet; tap lists everything on the spot with preview cards; sheets clear the nav bar
+- [x] Settings index + four category subscreens; all-day rows picker fits 360 dp
+
+### Exit criteria
+- [x] Root `npm run typecheck` / `lint` / `test` green; cal-api unit + participation integration green
+- [ ] Device: new event shows you Going on web; Join from detail
+- [ ] Device: place search "Anna" → her home; a hotspot row says who lives there
+- [ ] Device: show-on-map from an event on a cold Map tab lands at street level with a pin
+- [ ] Device: stacked pins open a list; a photo card's buttons clear the nav bar
+- [ ] Device: Month hides older photos/hotspots/track; week/month + last calendar survive kill/relaunch
+- [ ] Device: Settings fits 360 dp; a week with 6+ overlapping all-day items scrolls inside the strip
+
