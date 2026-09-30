@@ -14,8 +14,8 @@ import { IconButton } from './IconButton';
 const THUMB = 64;
 
 /** How the app shows a place: its name, the address, an optional meta line (address type, residency, who
- *  lives there) and a map thumbnail. Tapping it opens the Map tab pinned on the place; `directions` adds the
- *  hand-off to an external maps app. Offline the place can't be resolved — the label still shows, the rest
+ *  lives there) — one line each, ellipsized — and a map thumbnail. Tapping it opens the Map tab pinned on the
+ *  place; `directions` adds the hand-off to an external maps app. Offline the place can't be resolved — the label still shows, the rest
  *  waits for a connection. */
 export function PlaceTile({ placeId, label, meta, muted, directions }: {
   placeId: string | null | undefined;
@@ -52,7 +52,7 @@ export function PlaceTile({ placeId, label, meta, muted, directions }: {
     >
       <View style={styles.body}>
         <Text style={[styles.title, { color: c.text }]} numberOfLines={1}>{title}</Text>
-        {address && <Text style={[styles.line, { color: c.textMuted }]} numberOfLines={2}>{address}</Text>}
+        {address && <Text style={[styles.line, { color: c.textMuted }]} numberOfLines={1} ellipsizeMode="tail">{address}</Text>}
         {!!meta && <Text style={[styles.meta, { color: muted ? c.textSubtle : c.textMuted }]} numberOfLines={1}>{meta}</Text>}
       </View>
       {directions && point && (
