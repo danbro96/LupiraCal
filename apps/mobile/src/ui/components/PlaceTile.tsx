@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
+import { placeSpanM } from '@lupira/cal-domain/mapZoom';
 import { toastError } from '../../feedback/toast';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { ICONS } from '../icons';
@@ -57,7 +58,7 @@ export function PlaceTile({ placeId, label, meta, muted, directions }: {
       {directions && point && (
         <IconButton name={ICONS.directions} size={20} color={c.textMuted} onPress={openDirections} accessibilityLabel="Directions" />
       )}
-      <MiniMap point={point} size={THUMB} />
+      <MiniMap point={point} size={THUMB} spanM={placeSpanM(place)} />
     </Pressable>
   );
 }
