@@ -11,11 +11,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CalendarMembership, ItemDoc } from '../../domain/docTypes';
 import { coreOfDoc, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
 import { toast } from '../../feedback/toast';
-import { deleteItem, fileItem, mergeItemMetadata, reviseItem, unfileItem } from '../../state/actions';
+import { deleteItem, fileItem, joinItem, mergeItemMetadata, reviseItem, unfileItem } from '../../state/actions';
 import { usePrefs } from '../../state/prefs-store';
 import { useContactList } from '../../state/useContactList';
 import { useCalendars } from '../../state/useContainers';
 import { useItemState } from '../../state/useItemState';
+import { useMyContactId } from '../../state/useMe';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
@@ -38,6 +39,7 @@ export function ItemDetailScreen() {
   const { data: state, isLoading } = useItemState(itemId);
   const { data: contacts } = useContactList();
   const debugEnabled = usePrefs((s) => s.debugEnabled);
+  const me = useMyContactId();
   const places = usePlaceCoords([state?.doc.placeId]);
   const confirm = useConfirm();
   const [actionBarHeight, setActionBarHeight] = useState(0);
@@ -53,7 +55,10 @@ export function ItemDetailScreen() {
   const place = doc.placeId ? places.get(doc.placeId) : undefined;
   const placeLabel = doc.locationLabel || place?.name;
   const attendees = doc.attendees ?? [];
-  const contactName = (id: string) => contacts?.find((row) => row.id === id)?.displayName ?? 'Unknown contact';
+  const contactName = (id: string) => (id === me ? 'You' : contacts?.find((row) => row.id === id)?.displayName ?? 'Unknown contact');
+  const join = me && !state.deleted && !attendees.some((a) => a.contactId === me)
+    ? () => void joinItem(itemId, me).then(() => toast('You joined this event'))
+    : undefined;
 
   const confirmDelete = async () => {
     const ok = await confirm({
@@ -113,7 +118,7 @@ export function ItemDetailScreen() {
         {doc.prompt != null && <Text style={[styles.note, { color: c.textMuted }]}>Has a prompt payload (view on web)</Text>}
         {doc.action != null && <Text style={[styles.note, { color: c.textMuted }]}>Has an action payload (view on web)</Text>}
 
-        {attendees.length > 0 && <AttendeeChips attendees={attendees} nameOf={contactName} />}
+        {(attendees.length > 0 || join) && <AttendeeChips attendees={attendees} nameOf={contactName} onJoin={join} />}
 
         <CalendarsPanel itemId={itemId} memberships={doc.calendars} />
         <EventPhotosRow itemId={itemId} item={doc} />

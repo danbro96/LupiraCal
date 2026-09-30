@@ -184,6 +184,14 @@ describe('attendees', () => {
     ]);
   });
 
+  it('marks the invitees who accept on the spot as going', () => {
+    const op: ClientOp = { kind: 'item.invite', itemId: 'item-1', contactIds: ['me', 'c1'], accept: ['me'], occurredAt: T(1), commandId: cmd(1) };
+    expect(applyItemOp(baseItem(), op)!.doc.attendees?.map((a) => [a.contactId, a.status])).toEqual([
+      ['me', 'Accepted'],
+      ['c1', 'NeedsAction'],
+    ]);
+  });
+
   it('applies in outbox order, with no guard', () => {
     const invited = applyItemOp(baseItem(), invite(['c1'], 5))!;
     const removed = applyItemOp(invited, uninvite('c1', 1))!;

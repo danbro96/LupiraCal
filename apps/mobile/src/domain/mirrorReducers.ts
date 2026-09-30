@@ -80,7 +80,9 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
       const present = new Set(attendees.map((a) => a.contactId));
       const added: ItemAttendee[] = op.contactIds
         .filter((id, i, all) => !present.has(id) && all.indexOf(id) === i)
-        .map((contactId) => ({ participationId: '', contactId, role: 'RequiredParticipant', status: 'NeedsAction' }));
+        .map((contactId) => ({
+          participationId: '', contactId, role: 'RequiredParticipant', status: op.accept?.includes(contactId) ? 'Accepted' : 'NeedsAction',
+        }));
       if (added.length === 0) return state;
       return { ...state, doc: { ...state.doc, attendees: [...attendees, ...added] } };
     }

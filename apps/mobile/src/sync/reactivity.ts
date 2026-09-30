@@ -26,6 +26,10 @@ export function invalidateOutbox(): void {
   void queryClient.invalidateQueries({ queryKey: ['outbox'] });
 }
 
+export function invalidateMe(): void {
+  void queryClient.invalidateQueries({ queryKey: ['me'] });
+}
+
 export function invalidateContainers(): void {
   void queryClient.invalidateQueries({ queryKey: ['containers'] });
 }

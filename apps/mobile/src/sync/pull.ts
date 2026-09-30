@@ -1,7 +1,8 @@
 import { getChanges as calGetChanges } from '@lupira/cal-api/fetch/cal';
 import { getSyncContainers as calGetContainers } from '@lupira/cal-api/fetch/cal';
-import { contactGetChanges, contactGetSyncContainers as contactGetContainers } from '@lupira/cal-api/fetch/contact';
+import { contactGetChanges, contactGetSyncContainers as contactGetContainers, getMe } from '@lupira/cal-api/fetch/contact';
 import type { Db, Tx } from '../data/db/types';
+import { saveMyContactId } from '../data/me';
 import * as mirror from '../data/mirror';
 import type { ContactDoc, ContactGuards, ItemDoc, ItemGuards } from '../domain/docTypes';
 import type { Horizon } from '../domain/materialize';
@@ -26,6 +27,8 @@ export type PullDeps = {
   contactChanges(since: string | null): Promise<ChangesPage<ContactChange>>;
   calContainers(): Promise<{ id: string }[]>;
   contactContainers(): Promise<{ addressBooks: { id: string }[]; groups: { id: string }[] }>;
+  /** Your own contact id; absent in harnesses that don't model identity. */
+  myContactId?(): Promise<string | null>;
   now(): Date;
 };
 
@@ -50,6 +53,11 @@ export const realPullDeps: PullDeps = {
     if (r.status !== 200) throw new ApiError(r.status, 'containers failed');
     return r.data;
   },
+  myContactId: async () => {
+    const r = await getMe();
+    if (r.status !== 200) throw new ApiError(r.status, 'me failed');
+    return r.data.contactId ?? null;
+  },
   now: () => new Date(),
 };
 
@@ -63,6 +71,12 @@ export async function pullContainers(db: Db, deps: PullDeps): Promise<boolean> {
     changed = (await mirror.replaceContainers(tx, 'contact_groups', contact.groups)) || changed;
   });
   return changed;
+}
+
+/** Returns whether your contact id changed. */
+export async function pullMe(db: Db, deps: PullDeps): Promise<boolean> {
+  if (!deps.myContactId) return false;
+  return saveMyContactId(db, await deps.myContactId());
 }
 
 /** What a pull touched, for query invalidation. `changed` is separate from `monthKeys`: an aggregate

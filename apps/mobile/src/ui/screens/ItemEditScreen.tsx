@@ -17,6 +17,7 @@ import { usePrefs } from '../../state/prefs-store';
 import { useContactList } from '../../state/useContactList';
 import { selectableCalendars, useCalendars } from '../../state/useContainers';
 import { useItemState } from '../../state/useItemState';
+import { useMyContactId } from '../../state/useMe';
 import { DateField } from '../components/DateField';
 import { Input } from '../components/Input';
 import { TimeField } from '../components/TimeField';
@@ -70,6 +71,16 @@ export function ItemEditScreen() {
       setSeeded(true);
     }
   }, [seeded, itemId, state]);
+  // A new event has you on it, already accepted; taking yourself off is the opt-out.
+  const me = useMyContactId();
+  const meSeeded = useRef(false);
+  useEffect(() => {
+    if (itemId || !me || meSeeded.current) return;
+    meSeeded.current = true;
+    setAttendeeIds((ids) => (ids.includes(me) ? ids : [me, ...ids]));
+    baseline.current = { ...baseline.current, people: JSON.stringify([me]) };
+  }, [itemId, me]);
+
   const prefsLoaded = usePrefs((p) => p.loaded);
   const lastCalendarIds = usePrefs((p) => p.lastCalendarIds);
   useEffect(() => {
@@ -135,6 +146,7 @@ export function ItemEditScreen() {
         core: r.value,
         ...filingChanges(state?.doc.calendars ?? [], calendarIds),
         ...attendeeChanges(state?.doc.attendees ?? [], attendeeIds),
+        accept: me ? [me] : [],
       });
       if (!itemId) void usePrefs.getState().setLastCalendarIds(calendarIds);
       return true;
@@ -174,7 +186,7 @@ export function ItemEditScreen() {
   }
 
   const calendarName = (id: string) => calendars?.find((cal) => cal.id === id)?.displayName ?? id;
-  const contactName = (id: string) => contacts?.find((row) => row.id === id)?.displayName ?? 'Unknown contact';
+  const contactName = (id: string) => (id === me ? 'You' : contacts?.find((row) => row.id === id)?.displayName ?? 'Unknown contact');
   const people = attendeeIds.length === 0
     ? 'Nobody invited'
     : attendeeIds.slice(0, 2).map(contactName).join(', ') + (attendeeIds.length > 2 ? ` +${attendeeIds.length - 2}` : '');
@@ -314,6 +326,7 @@ export function ItemEditScreen() {
         <PeopleSheet
           selected={attendeeIds}
           attendees={state?.doc.attendees ?? []}
+          me={me}
           onChange={setAttendeeIds}
           onDismiss={() => setSheet(null)}
         />

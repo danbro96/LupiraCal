@@ -37,7 +37,8 @@ export type ClientOp = Base & (
   | { kind: 'item.delete'; itemId: string }
   | { kind: 'item.file'; itemId: string; calendarId: string; entryStatus: 'accepted' | 'proposed' }
   | { kind: 'item.unfile'; itemId: string; calendarId: string }
-  | { kind: 'item.invite'; itemId: string; contactIds: string[] }
+  /** `accept` = invitees who RSVP yes in the same op — you, adding yourself. */
+  | { kind: 'item.invite'; itemId: string; contactIds: string[]; accept?: string[] }
   | { kind: 'item.uninvite'; itemId: string; contactId: string }
   | { kind: 'contact.create'; contactId: string; sourceKey: string; addressBookId: string; core: ContactCore }
   | { kind: 'contact.revise'; contactId: string; core: ContactCore }

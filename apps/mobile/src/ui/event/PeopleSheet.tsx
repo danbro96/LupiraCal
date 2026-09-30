@@ -15,10 +15,12 @@ import { rsvpLabel } from './rsvp';
 const LIST_LIMIT = 50;
 
 /** Contacts come from the offline mirror; the ranking by who you meet most is online and fails open to
- *  alphabetical. Picks apply live — the editor's Save sends the invites. */
-export function PeopleSheet({ selected, attendees, onChange, onDismiss }: {
+ *  alphabetical. Picks apply live — the editor's Save sends the invites. You are never ranked: while you're
+ *  not on the event, a "You" row sits above everyone else. */
+export function PeopleSheet({ selected, attendees, me, onChange, onDismiss }: {
   selected: string[];
   attendees: ItemAttendee[];
+  me: string | null;
   onChange: (contactIds: string[]) => void;
   onDismiss: () => void;
 }) {
@@ -32,7 +34,7 @@ export function PeopleSheet({ selected, attendees, onChange, onDismiss }: {
   const statusOf = new Map(attendees.map((a) => [a.contactId, a.status]));
   const term = q.trim().toLowerCase();
   const candidates = ranked
-    .filter((row) => !selected.includes(row.id) && (!term || row.displayName.toLowerCase().includes(term)))
+    .filter((row) => row.id !== me && !selected.includes(row.id) && (!term || row.displayName.toLowerCase().includes(term)))
     .slice(0, LIST_LIMIT);
 
   const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);
@@ -45,13 +47,21 @@ export function PeopleSheet({ selected, attendees, onChange, onDismiss }: {
         {selected.map((id) => (
           <List.Item
             key={id}
-            title={byId.get(id)?.displayName ?? 'Unknown contact'}
-            description={statusOf.has(id) ? rsvpLabel(statusOf.get(id)) : 'Invited when you save'}
+            title={id === me ? 'You' : byId.get(id)?.displayName ?? 'Unknown contact'}
+            description={statusOf.has(id) ? rsvpLabel(statusOf.get(id)) : id === me ? 'Going' : 'Invited when you save'}
             left={(p) => <List.Icon {...p} icon={ICONS.person} />}
             right={() => <List.Icon icon={ICONS.check} color={c.primary} />}
             onPress={() => toggle(id)}
           />
         ))}
+        {me && !selected.includes(me) && !term && (
+          <List.Item
+            title="Add me"
+            description="You're not on this event"
+            left={(p) => <List.Icon {...p} icon={ICONS.personAdd} />}
+            onPress={() => toggle(me)}
+          />
+        )}
         <List.Subheader>{term ? 'Matches' : summary?.length ? 'People you meet most' : 'Contacts'}</List.Subheader>
         {candidates.map((row) => (
           <List.Item

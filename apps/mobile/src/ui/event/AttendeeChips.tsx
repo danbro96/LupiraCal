@@ -8,8 +8,13 @@ import { attendeeSummary, rsvpLabel } from './rsvp';
 
 const COLLAPSED_LIMIT = 8;
 
-/** One wrapping chip per person with the RSVP as its icon, under a line that counts the replies. */
-export function AttendeeChips({ attendees, nameOf }: { attendees: ItemAttendee[]; nameOf: (contactId: string) => string }) {
+/** One wrapping chip per person with the RSVP as its icon, under a line that counts the replies. `onJoin`
+ *  leads the row with a Join chip — for an event you're not on. */
+export function AttendeeChips({ attendees, nameOf, onJoin }: {
+  attendees: ItemAttendee[];
+  nameOf: (contactId: string) => string;
+  onJoin?: () => void;
+}) {
   const c = useColors();
   const [expanded, setExpanded] = useState(false);
   const shown = expanded ? attendees : attendees.slice(0, COLLAPSED_LIMIT);
@@ -28,8 +33,15 @@ export function AttendeeChips({ attendees, nameOf }: { attendees: ItemAttendee[]
 
   return (
     <View>
-      <Text variant="labelMedium" style={[styles.summary, { color: c.textMuted }]}>{attendeeSummary(attendees)}</Text>
+      <Text variant="labelMedium" style={[styles.summary, { color: c.textMuted }]}>
+        {attendees.length > 0 ? attendeeSummary(attendees) : 'Nobody invited'}
+      </Text>
       <View style={styles.chips}>
+        {onJoin && (
+          <Chip compact mode="outlined" icon={({ size }) => <Icon source={ICONS.personAdd} size={size} color={c.primary} />} onPress={onJoin}>
+            Join
+          </Chip>
+        )}
         {shown.map((a) => {
           const r = rsvp(a);
           return (

@@ -48,6 +48,8 @@ export type ItemSave = {
   unfile: string[];
   invite: string[];
   uninvite: string[];
+  /** Invitees who accept on the spot — you. */
+  accept?: string[];
 };
 
 /** One editor save: the core write plus its filing and attendee diffs, enqueued as one transaction so a
@@ -67,10 +69,18 @@ export async function saveItem(itemId: string | undefined, save: ItemSave): Prom
   }
   for (const calendarId of files) ops.push({ kind: 'item.file', itemId: id, calendarId, entryStatus: 'accepted', ...stamp() });
   for (const calendarId of save.unfile) ops.push({ kind: 'item.unfile', itemId: id, calendarId, ...stamp() });
-  if (save.invite.length > 0) ops.push({ kind: 'item.invite', itemId: id, contactIds: save.invite, ...stamp() });
+  if (save.invite.length > 0) {
+    const accept = save.accept?.filter((c) => save.invite.includes(c));
+    ops.push({ kind: 'item.invite', itemId: id, contactIds: save.invite, ...(accept?.length ? { accept } : {}), ...stamp() });
+  }
   for (const contactId of save.uninvite) ops.push({ kind: 'item.uninvite', itemId: id, contactId, ...stamp() });
   await enqueue(await getDb(), ops, currentHorizon());
   return id;
+}
+
+/** Adds you to an event you're not on, already accepted — the detail screen's Join. */
+export async function joinItem(itemId: string, myContactId: string): Promise<void> {
+  await submit({ kind: 'item.invite', itemId, contactIds: [myContactId], accept: [myContactId], ...stamp() });
 }
 
 export async function createContact(addressBookId: string, core: ContactCore): Promise<string> {

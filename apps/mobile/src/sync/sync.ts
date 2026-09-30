@@ -17,8 +17,8 @@ import { toContactDoc, toItemDoc } from './docAdapters';
 import { discardParked, drain } from './outbox';
 import { runPhotoBackup } from './photoUploader';
 import type { PullDeps } from './pull';
-import { pullCal, pullContacts, pullContainers, realPullDeps } from './pull';
-import { invalidateContacts, invalidateContainers, invalidateItems, invalidateMonthKeys } from './reactivity';
+import { pullCal, pullContacts, pullContainers, pullMe, realPullDeps } from './pull';
+import { invalidateContacts, invalidateContainers, invalidateItems, invalidateMe, invalidateMonthKeys } from './reactivity';
 import { useSyncStatus } from './syncStatus';
 
 /** Orchestrator: push first (our writes carry LWW stamps, so order is about promptness, not correctness),
@@ -49,6 +49,12 @@ async function run(dbOverride: Db | undefined, deps: PullDeps): Promise<void> {
     const horizon = currentHorizon(deps.now());
     status.setPhase('containers');
     if (await pullContainers(db, deps)) invalidateContainers();
+    // Identity only seeds "invite me" — a failing /me must not hold back the mirror.
+    const meChanged = await pullMe(db, deps).catch((e: unknown) => {
+      logDebug('sync', `me failed: ${String(e)}`);
+      return false;
+    });
+    if (meChanged) invalidateMe();
     status.setPhase('items');
     const cal = await pullCal(db, horizon, deps);
     status.setPhase('contacts');

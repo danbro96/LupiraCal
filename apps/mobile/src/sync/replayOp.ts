@@ -1,4 +1,4 @@
-import { createItem, deleteItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact, updateItem } from '@lupira/cal-api/fetch/cal';
+import { createItem, deleteItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact, respondToInvitation, updateItem } from '@lupira/cal-api/fetch/cal';
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import { createContact, deleteContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '@lupira/cal-api/fetch/contact';
@@ -54,7 +54,14 @@ export async function replayOp(op: ClientOp): Promise<void> {
     case 'item.invite':
       for (const contactId of op.contactIds) {
         const key = uuidv5(contactId, op.commandId);
-        await inviteParticipant(op.itemId, { contactId, occurredAt: op.occurredAt }, { headers: { 'Idempotency-Key': key } });
+        const r = await inviteParticipant(op.itemId, { contactId, occurredAt: op.occurredAt }, { headers: { 'Idempotency-Key': key } });
+        if (!op.accept?.includes(contactId) || r.status !== 200) continue;
+        const participationId = r.data.attendees.find((a) => a.contactId === contactId)?.participationId;
+        if (!participationId) continue;
+        await respondToInvitation(
+          op.itemId, participationId, { status: 'accepted', occurredAt: op.occurredAt },
+          { headers: { 'Idempotency-Key': uuidv5(`${contactId}:accept`, op.commandId) } },
+        );
       }
       return;
     case 'item.uninvite':
