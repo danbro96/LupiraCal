@@ -15,8 +15,8 @@ const THUMB = 64;
 
 /** How the app shows a place: its name, the address, an optional meta line (address type, residency, who
  *  lives there) — one line each, ellipsized — and a map thumbnail. Tapping it opens the Map tab pinned on the
- *  place; `directions` adds the hand-off to an external maps app. Offline the place can't be resolved — the label still shows, the rest
- *  waits for a connection. */
+ *  place; `directions` adds the hand-off to an external maps app. Offline the place can't be resolved — the
+ *  label still shows, the rest waits for a connection. */
 export function PlaceTile({ placeId, label, meta, muted, directions }: {
   placeId: string | null | undefined;
   /** Shown instead of the place's own name — an event's location label. */
