@@ -21,6 +21,10 @@ import { MapScreen } from '../screens/MapScreen';
 import { PhotosScreen } from '../screens/PhotosScreen';
 import { PhotoViewerScreen } from '../screens/PhotoViewerScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { AndroidSettingsScreen } from '../screens/AndroidSettingsScreen';
+import { CalendarSettingsScreen } from '../screens/CalendarSettingsScreen';
+import { LocationSettingsScreen } from '../screens/LocationSettingsScreen';
+import { PhotoSettingsScreen } from '../screens/PhotoSettingsScreen';
 import { SyncIssuesScreen } from '../screens/SyncIssuesScreen';
 import type { RootStackParamList, TabParamList } from './types';
 import { ICONS } from '../icons';
@@ -55,6 +59,10 @@ export function RootStack() {
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       )}
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen name="CalendarSettings" component={CalendarSettingsScreen} options={{ title: 'Calendar' }} />
+      <Stack.Screen name="PhotoSettings" component={PhotoSettingsScreen} options={{ title: 'Photo backup' }} />
+      <Stack.Screen name="LocationSettings" component={LocationSettingsScreen} options={{ title: 'Location' }} />
+      <Stack.Screen name="AndroidSettings" component={AndroidSettingsScreen} options={{ title: 'Android integration' }} />
       <Stack.Screen name="SyncIssues" component={SyncIssuesScreen} options={{ title: 'Sync issues' }} />
       <Stack.Screen name="DebugLog" component={DebugLogScreen} options={{ title: 'Debug log' }} />
       <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: 'Event' }} />

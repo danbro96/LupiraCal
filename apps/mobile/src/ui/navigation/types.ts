@@ -3,6 +3,10 @@ import type { PhotoQueryFilters } from '../../state/usePhotoLibrary';
 
 export type RootStackParamList = {
   Settings: undefined;
+  CalendarSettings: undefined;
+  PhotoSettings: undefined;
+  LocationSettings: undefined;
+  AndroidSettings: undefined;
   Login: undefined;
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   /** Reachable from Login too — switching to the LAN preset must not require signing in first. */
