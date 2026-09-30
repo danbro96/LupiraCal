@@ -2,15 +2,19 @@ import {
   GeoJSONSource,
   LayerAnnotation,
   Layer,
+  Marker,
   type GeoJSONSourceRef,
   type PressEventWithFeatures,
   type SymbolLayerSpecification,
 } from '@maplibre/maplibre-react-native';
 import type { FeatureCollection } from 'geojson';
 import type { Ref } from 'react';
-import type { NativeSyntheticEvent } from 'react-native';
+import { StyleSheet, View, type NativeSyntheticEvent } from 'react-native';
+import { Icon } from 'react-native-paper';
 import type { LivePosition } from '../../sync/livePosition';
 import { ACTIVITY_COLORS, MAP_COLORS, activityColorExpression, type MapTheme } from '@lupira/cal-tokens/map';
+import { ICONS } from '../icons';
+import { useColors } from '../theme';
 
 /** One component per map layer, mirroring the web client's layers.tsx split. Each renders a source
  *  plus its paint layers and nothing else — the screen owns state, these own appearance. */
@@ -57,7 +61,7 @@ function ClusterLayers({ id, color, ring }: { id: string; color: string; ring: s
 }
 
 export function EventsLayer({ theme, features, sourceRef, onPress }: {
-  theme: MapTheme; features: FeatureCollection; sourceRef: Ref<GeoJSONSourceRef>; onPress: PressHandler;
+  theme: MapTheme; features: FeatureCollection; sourceRef: Ref<GeoJSONSourceRef>; onPress?: PressHandler;
 }) {
   const colors = MAP_COLORS[theme];
   return (
@@ -89,7 +93,7 @@ export function EventsLayer({ theme, features, sourceRef, onPress }: {
 
 /** The server clusters photos, so a feature with a count above 1 is one of its grid cells, not a MapLibre cluster. */
 export function PhotosLayer({ theme, features, onPress }: {
-  theme: MapTheme; features: FeatureCollection; onPress: PressHandler;
+  theme: MapTheme; features: FeatureCollection; onPress?: PressHandler;
 }) {
   const colors = MAP_COLORS[theme];
   return (
@@ -129,7 +133,7 @@ export function PhotosLayer({ theme, features, onPress }: {
 }
 
 export function ContactsLayer({ theme, features, sourceRef, onPress }: {
-  theme: MapTheme; features: FeatureCollection; sourceRef: Ref<GeoJSONSourceRef>; onPress: PressHandler;
+  theme: MapTheme; features: FeatureCollection; sourceRef: Ref<GeoJSONSourceRef>; onPress?: PressHandler;
 }) {
   const colors = MAP_COLORS[theme];
   return (
@@ -204,7 +208,7 @@ export function SavedPlacesLayer({ theme, features }: { theme: MapTheme; feature
 }
 
 export function HotspotsLayer({ theme, features, onPress }: {
-  theme: MapTheme; features: FeatureCollection; onPress: PressHandler;
+  theme: MapTheme; features: FeatureCollection; onPress?: PressHandler;
 }) {
   const colors = MAP_COLORS[theme];
   return (
@@ -245,7 +249,7 @@ export function MovementLayer({ theme, visits, track, current, onVisitPress }: {
   visits: FeatureCollection;
   track: FeatureCollection;
   current: FeatureCollection;
-  onVisitPress: PressHandler;
+  onVisitPress?: PressHandler;
 }) {
   const colors = MAP_COLORS[theme];
   return (
@@ -335,3 +339,25 @@ export function LivePuck({ theme, position }: { theme: MapTheme; position: LiveP
     </LayerAnnotation>
   );
 }
+
+const PIN = 40;
+
+/** A pin over whatever is selected — the dot you tapped, or the place another screen sent you to. A native
+ *  view, not a style layer: the basemap sprite has no pin, and a view needs none. The ring glyph behind
+ *  keeps the pin legible on any tile. */
+export function SelectionPin({ point }: { point: { lon: number; lat: number } }) {
+  const c = useColors();
+  return (
+    <Marker id="selection" lngLat={[point.lon, point.lat]} anchor="bottom">
+      <View pointerEvents="none" style={styles.pin}>
+        <View style={styles.pinRing}><Icon source={ICONS.place} size={PIN + 4} color={c.onPrimary} /></View>
+        <Icon source={ICONS.place} size={PIN} color={c.primary} />
+      </View>
+    </Marker>
+  );
+}
+
+const styles = StyleSheet.create({
+  pin: { width: PIN + 4, height: PIN + 4, alignItems: 'center', justifyContent: 'flex-end' },
+  pinRing: { position: 'absolute', top: 0, left: 0 },
+});

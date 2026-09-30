@@ -1,21 +1,27 @@
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { FAB, List, Portal, Switch, Text } from 'react-native-paper';
-import { useColors } from '../theme/useColors';
-import { ACTIVITY_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
-import { ICONS } from '../icons';
+import { StyleSheet, View } from 'react-native';
+import { Chip, FAB, Text } from 'react-native-paper';
+import { MAP_FUTURE_DAYS, MAP_SINCE_LABELS, type MapSince } from '@lupira/cal-domain/mapWindow';
+import { ACTIVITY_COLORS, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
+import { MAP_SINCE_OPTIONS } from '../../state/prefs-store';
+import { SegmentedPicker } from '../components/SegmentedPicker';
+import { Sheet } from '../components/Sheet';
+import { ICONS, type IconKey } from '../icons';
+import { spacing, useColors } from '../theme';
 
-/** Map chrome: the layer sheet and the locate button. Six layers don't fit a chip row on a phone, so
- *  toggles live in a sheet and the map itself stays unobstructed. */
+/** Map chrome: the layer sheet and the locate button. Toggles live in a sheet so the map itself stays
+ *  unobstructed; inside it they're a two-column chip grid — six layers in three rows. */
 
 export type LayerKey = 'events' | 'saved' | 'photos' | 'movement' | 'contacts' | 'hotspots';
 
-export const LAYER_LABELS: Record<LayerKey, string> = {
-  events: 'Events',
-  saved: 'Saved places',
-  photos: 'Photos',
-  movement: 'Where I’ve been',
-  contacts: 'Contacts',
-  hotspots: 'Hotspots',
+export const LAYER_KEYS: readonly LayerKey[] = ['events', 'photos', 'movement', 'hotspots', 'contacts', 'saved'];
+
+const LAYERS: Record<LayerKey, { label: string; icon: IconKey; color: keyof (typeof MAP_COLORS)['light'] }> = {
+  events: { label: 'Events', icon: 'event', color: 'eventFallback' },
+  photos: { label: 'Photos', icon: 'photos', color: 'photo' },
+  movement: { label: 'Where I’ve been', icon: 'timeline', color: 'visitFill' },
+  hotspots: { label: 'Hotspots', icon: 'target', color: 'hotspot' },
+  contacts: { label: 'Contacts', icon: 'contacts', color: 'contact' },
+  saved: { label: 'Saved places', icon: 'saved', color: 'saved' },
 };
 
 export const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
@@ -41,52 +47,75 @@ export function LayersFab({ onPress, style }: { onPress: () => void; style?: obj
   return <FAB icon={ICONS.layers} size="small" onPress={onPress} style={style} accessibilityLabel="Map layers" />;
 }
 
-export function LayersSheet({ theme, enabled, onToggle, onDismiss }: {
+/** One age limit for every dated layer; saved places and contacts are timeless. */
+export function LayersSheet({ theme, enabled, since, unmappableCount, onToggle, onSince, onDismiss }: {
   theme: MapTheme;
   enabled: Record<LayerKey, boolean>;
+  since: MapSince;
+  unmappableCount: number;
   onToggle: (key: LayerKey) => void;
+  onSince: (since: MapSince) => void;
   onDismiss: () => void;
 }) {
   const c = useColors();
-  const activities = ACTIVITY_COLORS[theme];
+  const colors = MAP_COLORS[theme];
+  const caption = [
+    `Events also show the next ${Math.round(MAP_FUTURE_DAYS / 30)} months.`,
+    enabled.events && unmappableCount > 0
+      ? `${unmappableCount} event${unmappableCount === 1 ? '' : 's'} with a location but no map point.`
+      : null,
+  ].filter(Boolean).join(' ');
 
   return (
-    <Portal>
-      <Pressable style={styles.backdrop} onPress={onDismiss}>
-        <Pressable style={[styles.sheet, { backgroundColor: c.surface }]}>
-          <Text style={[styles.title, { color: c.text }]}>Layers</Text>
-          <ScrollView>
-            {(Object.keys(LAYER_LABELS) as LayerKey[]).map((key) => (
-              <List.Item
-                key={key}
-                title={LAYER_LABELS[key]}
-                titleStyle={{ color: c.text }}
-                right={() => <Switch value={enabled[key]} onValueChange={() => onToggle(key)} />}
-              />
-            ))}
-            {enabled.movement && (
-              <View style={styles.legend}>
-                {Object.entries(activities).map(([name, color]) => (
-                  <View key={name} style={styles.legendItem}>
-                    <View style={[styles.swatch, { backgroundColor: color }]} />
-                    <Text style={[styles.legendLabel, { color: c.textMuted }]}>{name}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Portal>
+    <Sheet title="Map layers" onDismiss={onDismiss}>
+      <Text variant="labelMedium" style={[styles.label, { color: c.textMuted }]}>Show the last</Text>
+      <SegmentedPicker options={MAP_SINCE_OPTIONS} selected={since} onSelect={onSince} getLabel={(v) => MAP_SINCE_LABELS[v]} />
+      <Text style={[styles.caption, { color: c.textMuted }]}>{caption}</Text>
+      <View style={styles.grid}>
+        {LAYER_KEYS.map((key) => {
+          const layer = LAYERS[key];
+          const color = colors[layer.color];
+          const on = enabled[key];
+          return (
+            <Chip
+              key={key}
+              mode="outlined"
+              selected={on}
+              showSelectedCheck={false}
+              onPress={() => onToggle(key)}
+              icon={ICONS[layer.icon]}
+              style={[styles.chip, on && { borderColor: color }]}
+              textStyle={styles.chipText}
+              accessibilityState={{ selected: on }}
+            >
+              {layer.label}
+            </Chip>
+          );
+        })}
+      </View>
+      {enabled.movement && (
+        <View style={styles.legend}>
+          {Object.entries(ACTIVITY_COLORS[theme]).map(([name, color]) => (
+            <View key={name} style={styles.legendItem}>
+              <View style={[styles.swatch, { backgroundColor: color }]} />
+              <Text style={[styles.legendLabel, { color: c.textMuted }]}>{name}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </Sheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' },
-  sheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingVertical: 12, maxHeight: '70%' },
-  title: { fontSize: 16, fontWeight: '600', paddingHorizontal: 16, paddingBottom: 4 },
-  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingHorizontal: 16, paddingTop: 8 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  swatch: { width: 12, height: 12, borderRadius: 6 },
+  label: { marginBottom: spacing.xs },
+  caption: { fontSize: 12, marginTop: spacing.xs },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
+  // Two per row: the grid's one gap between them comes off the pair.
+  chip: { width: '48.5%' },
+  chipText: { fontSize: 13 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.md },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  swatch: { width: 10, height: 10, borderRadius: 5 },
   legendLabel: { fontSize: 12 },
 });

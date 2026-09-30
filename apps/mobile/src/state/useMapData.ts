@@ -31,7 +31,11 @@ import { usePlaceCoords } from './usePlaceLookup';
 /** A recording hole longer than this breaks the drawn track (tracker off, retention edge). */
 const TRACK_MAX_GAP_S = 10 * 60;
 
-export function useEventFeatures(fromDay: string, toDay: string, enabled: boolean): FeatureCollection {
+export type EventFeatures = { features: FeatureCollection; unmappableCount: number };
+
+const NO_EVENTS: EventFeatures = { features: EMPTY_FEATURES, unmappableCount: 0 };
+
+export function useEventFeatures(fromDay: string, toDay: string, enabled: boolean): EventFeatures {
   const rowsQ = useQuery({
     queryKey: ['occurrences', 'map', fromDay, toDay],
     enabled,
@@ -42,7 +46,7 @@ export function useEventFeatures(fromDay: string, toDay: string, enabled: boolea
   const places = usePlaceCoords(useMemo(() => rows.map((r) => r.place_id), [rows]));
 
   return useMemo(() => {
-    if (!enabled) return EMPTY_FEATURES;
+    if (!enabled) return NO_EVENTS;
     const colorByCalendar = new Map((calendarsQ.data ?? []).map((c) => [c.id, c.color ?? null]));
     return eventFeatures(
       rows.map((row) => ({
@@ -54,21 +58,21 @@ export function useEventFeatures(fromDay: string, toDay: string, enabled: boolea
         placeId: row.place_id,
       })),
       places,
-    ).features;
+    );
   }, [enabled, rows, places, calendarsQ.data]);
 }
 
 /** Geotagged photos in the viewport, clustered by the server for its zoom, so panning refetches rather
  *  than holding the whole library; thumbnails are presigned URLs valid for hours. */
-export function usePhotoFeatures(viewport: MapViewport | null, enabled: boolean): FeatureCollection {
+export function usePhotoFeatures(viewport: MapViewport | null, fromIso: string | null, enabled: boolean): FeatureCollection {
   const reachable = useSyncStatus((s) => s.serverReachable);
   const q = useQuery({
-    queryKey: ['map', 'photos', viewport?.bbox, viewport?.zoom],
+    queryKey: ['map', 'photos', viewport?.bbox, viewport?.zoom, fromIso],
     enabled: enabled && reachable && viewport !== null,
     staleTime: 60_000,
     retry: 1,
     queryFn: async () => {
-      const r = await getPhotoMap(viewport!);
+      const r = await getPhotoMap({ ...viewport!, ...(fromIso ? { from: fromIso } : {}) });
       if (r.status !== 200) throw new Error(`photos map ${r.status}`);
       return r.data;
     },
@@ -152,16 +156,16 @@ export function useSavedPlaceFeatures(enabled: boolean): FeatureCollection {
   );
 }
 
-/** All-time hotspots up to now, ranked by active days — the server's defaults, so no params. */
-export function useHotspotFeatures(enabled: boolean): FeatureCollection {
+/** Hotspots from `fromIso` (all-time when null) up to now, ranked by active days. */
+export function useHotspotFeatures(fromIso: string | null, enabled: boolean): FeatureCollection {
   const reachable = useSyncStatus((s) => s.serverReachable);
   const q = useQuery({
-    queryKey: ['map', 'hotspots'],
+    queryKey: ['map', 'hotspots', fromIso],
     enabled: enabled && reachable,
     staleTime: 600_000,
     retry: 1,
     queryFn: async () => {
-      const r = await getHotspots();
+      const r = await getHotspots(fromIso ? { from: fromIso } : undefined);
       if (r.status !== 200) throw new Error(`hotspots ${r.status}`);
       return r.data;
     },

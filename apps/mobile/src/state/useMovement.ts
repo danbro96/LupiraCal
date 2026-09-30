@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCurrentLocation, getThinnedTrack, listVisits } from '@lupira/cal-api/fetch/location';
 import { trackWindowFrozen } from '@lupira/cal-domain/geo';
+import { trackBucketSeconds } from '@lupira/cal-domain/mapWindow';
 import { useSyncStatus } from '../sync/syncStatus';
 
 /** GPS reads for the map, online-only. Empty until something uploads — this app's own recorder is the
@@ -32,7 +33,8 @@ export function useThinnedTrack(fromIso: string, toIso: string, enabled: boolean
     retry: 1,
     queryFn: async () => {
       // Raw /location/track caps at 50k points; the thinned form is one best fix per bucket.
-      const r = await getThinnedTrack({ from: fromIso, to: toIso, bucketSeconds: 30 });
+      const bucketSeconds = trackBucketSeconds(new Date(fromIso), new Date(toIso));
+      const r = await getThinnedTrack({ from: fromIso, to: toIso, bucketSeconds });
       if (r.status !== 200) throw new Error(`track ${r.status}`);
       return r.data;
     },

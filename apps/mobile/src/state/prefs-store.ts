@@ -1,3 +1,4 @@
+import type { MapSince } from '@lupira/cal-domain/mapWindow';
 import { create } from 'zustand';
 import { getDb } from '../data/db/expoDb';
 import { migrate } from '../data/db/schema';
@@ -25,8 +26,7 @@ const isAllDayRows = (v: string | null): v is AllDayRows => ALL_DAY_ROW_OPTIONS.
 const readAllDayRows = (v: string | null): AllDayRows => (isAllDayRows(v) ? v : v === '4' ? 'all' : '3');
 
 export type CalendarMode = 'month' | 'week';
-export const MAP_SINCE_OPTIONS = ['week', 'month', 'year', 'all'] as const;
-export type MapSince = (typeof MAP_SINCE_OPTIONS)[number];
+export const MAP_SINCE_OPTIONS: readonly MapSince[] = ['week', 'month', 'year', 'all'];
 const isMapSince = (v: string | null): v is MapSince => MAP_SINCE_OPTIONS.includes(v as MapSince);
 
 function parseJson<T>(raw: string | null, valid: (v: unknown) => v is T, fallback: T): T {

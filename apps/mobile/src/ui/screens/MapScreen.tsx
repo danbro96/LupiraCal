@@ -3,55 +3,68 @@ import {
   Map as MapView,
   type CameraRef,
   type GeoJSONSourceRef,
-  type PressEventWithFeatures,
+  type MapRef,
+  type PressEvent,
   type StyleSpecification,
   type ViewStateChangeEvent,
 } from '@maplibre/maplibre-react-native';
 import { useFocusEffect, useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Image } from 'expo-image';
+import type { Feature } from 'geojson';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NativeSyntheticEvent } from 'react-native';
-import { Pressable, StyleSheet, useColorScheme, View } from 'react-native';
-import { ActivityIndicator, Banner, Portal, Text, useTheme } from 'react-native-paper';
-import { mapViewport, type Bbox, type MapViewport } from '@lupira/cal-domain/geo';
-import { hotspotStats, photoCellBounds } from '@lupira/cal-domain/mapFeatures';
-import { fmtDate, fmtDateTime, fmtTime, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { StyleSheet, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Banner, useTheme } from 'react-native-paper';
+import { mapViewport, type MapViewport } from '@lupira/cal-domain/geo';
+import { hitsFromFeatures, type HitPoint, type MapHit } from '@lupira/cal-domain/mapHits';
+import { photoCellBounds } from '@lupira/cal-domain/mapFeatures';
+import { mapWindow, type MapSince } from '@lupira/cal-domain/mapWindow';
+import { ymd } from '@lupira/cal-domain/time';
 import type { MapTheme } from '@lupira/cal-tokens/map';
 import { fallbackStyle } from '../../data/mapStyle';
 import { toastError } from '../../feedback/toast';
 import { useLocationTracking } from '../../state/location-tracking-store';
+import { usePrefs } from '../../state/prefs-store';
 import {
   useContactFeatures, useEventFeatures, useHotspotFeatures, useMovementFeatures, usePhotoFeatures, useSavedPlaceFeatures,
 } from '../../state/useMapData';
 import { useMapStyle } from '../../state/useMapStyle';
 import { useLivePosition } from '../../sync/livePosition';
 import {
-  DEFAULT_LAYERS, LayersFab, LayersSheet, LocateFab, type FollowMode, type LayerKey,
+  DEFAULT_LAYERS, LAYER_KEYS, LayersFab, LayersSheet, LocateFab, type FollowMode, type LayerKey,
 } from '../map/MapChrome';
+import { MapPreviewSheet, type HitAction } from '../map/MapPreviewSheet';
 import {
-  ContactsLayer, EventsLayer, HotspotsLayer, LivePuck, MovementLayer, PhotosLayer, SavedPlacesLayer,
+  ContactsLayer, EventsLayer, HotspotsLayer, LivePuck, MovementLayer, PhotosLayer, SavedPlacesLayer, SelectionPin,
 } from '../map/layers';
-import type { RootStackParamList, TabParamList } from '../navigation/types';
-import { ICONS } from '../icons';
 import { useMapAuthHeader } from '../map/useMapAuthHeader';
-import { Button } from '../components/Button';
+import type { MapTarget, RootStackParamList, TabParamList } from '../navigation/types';
+import { ICONS } from '../icons';
 
 // Matches the web MapScreen default (Nordics, the basemap extract's home).
 const DEFAULT_CENTER: [number, number] = [18.07, 59.33];
 const DEFAULT_ZOOM = 9;
-const PAST_DAYS = 90;
-const FUTURE_DAYS = 180;
-/** Movement is the only layer scoped to a short window — a 90-day track would be unreadable. */
-const MOVEMENT_DAYS = 7;
-
+/** Street level: the block a place is on, not the city it's in. */
+const TARGET_ZOOM = 16;
+/** Past this the clustered sources stop clustering (layers.tsx) — a cluster that still expands beyond it is
+ *  pins sharing one spot, which no zoom separates. */
+const CLUSTER_MAX_ZOOM = 14;
+const CLUSTER_LEAVES = 50;
+/** Finger-sized: a tap this close to a pin counts as on it. */
+const HIT_RADIUS = 14;
 const CELL_PADDING = { top: 48, right: 48, bottom: 48, left: 48 };
 
-type PhotoPin = { id: string; takenAt: string; placeLabel: string | null; thumbUrl: string | null };
-type VisitPin = { placeLabel: string | null; arriveTs: string; departTs: string; durationMin: number };
-type HotspotPin = {
-  label: string | null; activeDays: number; eventCount: number; photoCount: number; firstDay: string; lastDay: string;
+const LAYER_IDS: Record<LayerKey, string[]> = {
+  events: ['event-pins', 'event-clusters'],
+  contacts: ['contact-pins', 'contact-clusters'],
+  photos: ['photo-pins', 'photo-clusters'],
+  saved: ['saved-circles'],
+  hotspots: ['hotspot-halos'],
+  movement: ['visit-circles'],
 };
+
+/** Now, to the minute: stable enough to key queries on, recomputed each time the tab comes into view. */
+const minuteNow = () => new Date(Math.floor(Date.now() / 60_000) * 60_000);
 
 export function MapScreen() {
   const paper = useTheme();
@@ -63,48 +76,69 @@ export function MapScreen() {
   useMapAuthHeader();
 
   const { style, degraded } = useMapStyle(theme);
-  const [enabled, setEnabled] = useState<Record<LayerKey, boolean>>(DEFAULT_LAYERS);
+  const layerPrefs = usePrefs((p) => p.mapLayers);
+  const since = usePrefs((p) => p.mapSince);
+  // A photo handed over from the gallery shows even if the layer is off — for this visit, not as a setting.
+  const [photosForced, setPhotosForced] = useState(false);
+  const enabled = useMemo(() => {
+    const merged = { ...DEFAULT_LAYERS };
+    for (const key of LAYER_KEYS) if (typeof layerPrefs[key] === 'boolean') merged[key] = layerPrefs[key];
+    if (photosForced) merged.photos = true;
+    return merged;
+  }, [layerPrefs, photosForced]);
+
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewport, setViewport] = useState<MapViewport | null>(null);
   const [follow, setFollow] = useState<FollowMode>('off');
-  const [openPhoto, setOpenPhoto] = useState<PhotoPin | null>(null);
-  const [openVisit, setOpenVisit] = useState<VisitPin | null>(null);
-  const [openHotspot, setOpenHotspot] = useState<HotspotPin | null>(null);
+  const [hits, setHits] = useState<MapHit[] | null>(null);
+  const [selected, setSelected] = useState<HitPoint | null>(null);
+  const [now, setNow] = useState(minuteNow);
 
-  const { fromDay, toDay, movementFrom, movementTo } = useMemo(() => {
-    const now = Date.now();
-    return {
-      fromDay: ymd(new Date(now - PAST_DAYS * 86_400_000)),
-      toDay: ymd(new Date(now + FUTURE_DAYS * 86_400_000)),
-      movementFrom: new Date(now - MOVEMENT_DAYS * 86_400_000).toISOString(),
-      movementTo: new Date(now).toISOString(),
-    };
-  }, []);
-
-  const events = useEventFeatures(fromDay, toDay, enabled.events);
+  const span = useMemo(() => mapWindow(since, now), [since, now]);
+  const fromIso = span.from?.toISOString() ?? null;
+  const events = useEventFeatures(span.eventsFromDay, span.eventsToDay, enabled.events);
   const saved = useSavedPlaceFeatures(enabled.saved);
-  const photos = usePhotoFeatures(viewport, enabled.photos);
+  const photos = usePhotoFeatures(viewport, fromIso, enabled.photos);
   const contacts = useContactFeatures(enabled.contacts);
-  const hotspots = useHotspotFeatures(enabled.hotspots);
+  const hotspots = useHotspotFeatures(fromIso, enabled.hotspots);
   const isFocused = useIsFocused();
-  const movement = useMovementFeatures(movementFrom, movementTo, enabled.movement, isFocused);
+  const movement = useMovementFeatures(span.movementFrom.toISOString(), span.to.toISOString(), enabled.movement, isFocused);
   const livePosition = useLivePosition((s) => s.position);
 
+  const mapRef = useRef<MapRef>(null);
   const cameraRef = useRef<CameraRef>(null);
   const eventSourceRef = useRef<GeoJSONSourceRef>(null);
   const contactSourceRef = useRef<GeoJSONSourceRef>(null);
 
-  // Handed a photo's coordinates by the gallery: fly there and turn the layer on so it is visible.
+  // The map mounts only once its style has loaded, so a target handed over on the first visit arrives before
+  // there is a camera to move — it waits here until the map reports it's ready.
   const at = route.params?.at;
+  const [initialView] = useState(() => (at
+    ? { center: [at.lon, at.lat] as [number, number], zoom: TARGET_ZOOM }
+    : { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }));
+  const mapLoaded = useRef(false);
+  const pendingTarget = useRef<MapTarget | null>(null);
+  const flyTo = useCallback((t: MapTarget) => {
+    cameraRef.current?.easeTo({ center: [t.lon, t.lat], zoom: TARGET_ZOOM, duration: 600 });
+  }, []);
   useEffect(() => {
     if (!at) return;
-    setEnabled((prev) => ({ ...prev, photos: true }));
+    if (at.focus === 'photo') setPhotosForced(true);
     setFollow('off');
-    cameraRef.current?.easeTo({ center: [at.lon, at.lat], zoom: 15, duration: 600 });
-  }, [at]);
+    setHits(null);
+    setSelected({ lon: at.lon, lat: at.lat });
+    if (mapLoaded.current) flyTo(at);
+    else pendingTarget.current = at;
+  }, [at, flyTo]);
+  const onMapLoaded = useCallback(() => {
+    mapLoaded.current = true;
+    if (pendingTarget.current) flyTo(pendingTarget.current);
+    pendingTarget.current = null;
+  }, [flyTo]);
 
   // GPS stops when you leave the tab. Focus, not mount: a bottom tab stays mounted once visited.
   useFocusEffect(useCallback(() => {
+    setNow(minuteNow());
     void useLivePosition.getState().start();
     return () => useLivePosition.getState().stop();
   }, []));
@@ -126,76 +160,73 @@ export function MapScreen() {
     if (e.nativeEvent.userInteraction) setFollow('off');
   }, []);
 
-  const expandCluster = useCallback(async (
-    sourceRef: React.RefObject<GeoJSONSourceRef | null>,
-    feature: GeoJSON.Feature,
-  ) => {
-    const clusterId = feature.properties?.cluster_id as number;
-    const [lng, lat] = (feature.geometry as GeoJSON.Point).coordinates;
-    const zoom = await sourceRef.current?.getClusterExpansionZoom(clusterId);
-    if (zoom != null) cameraRef.current?.easeTo({ center: [lng, lat], zoom: zoom + 0.5, duration: 400 });
+  const closePreview = useCallback(() => {
+    setHits(null);
+    setSelected(null);
   }, []);
 
-  const onEventPress = async (e: NativeSyntheticEvent<PressEventWithFeatures>) => {
-    const feature = e.nativeEvent.features[0];
-    if (!feature) return;
-    if (feature.properties?.cluster) return expandCluster(eventSourceRef, feature);
-    const itemId = feature.properties?.itemId;
-    if (typeof itemId === 'string') navigation.navigate('ItemDetail', { itemId });
-  };
+  /** Everything under the finger, across layers: a cluster that can still split zooms in; one that can't
+   *  (pins on one spot) lists its members; a lone photo cell zooms to its photos. Layers are queried one
+   *  source at a time so each cluster is known to belong to the source that can expand it. */
+  const onMapPress = useCallback(async (e: NativeSyntheticEvent<PressEvent>) => {
+    const [x, y] = e.nativeEvent.point;
+    const box: [[number, number], [number, number]] = [[x - HIT_RADIUS, y - HIT_RADIUS], [x + HIT_RADIUS, y + HIT_RADIUS]];
+    const found: Feature[] = [];
+    let expand: { feature: Feature; zoom: number } | null = null;
 
-  const onPhotoPress = async (e: NativeSyntheticEvent<PressEventWithFeatures>) => {
-    const feature = e.nativeEvent.features[0];
-    if (!feature) return;
-    const props = feature.properties ?? {};
-    if (Number(props.count) > 1) {
-      // MapLibre stringifies nested properties, so the bounds may come back as JSON.
-      const raw = props.bounds;
-      const bounds = typeof raw === 'string' ? (JSON.parse(raw) as Bbox) : (raw as Bbox | null);
-      if (bounds) cameraRef.current?.fitBounds(photoCellBounds(bounds), { padding: CELL_PADDING, duration: 400 });
+    for (const key of LAYER_KEYS) {
+      if (!enabled[key]) continue;
+      const features = (await mapRef.current?.queryRenderedFeatures(box, { layers: LAYER_IDS[key] })) ?? [];
+      const source = key === 'events' ? eventSourceRef : key === 'contacts' ? contactSourceRef : null;
+      for (const f of features) {
+        if (!source || !f.properties?.cluster) {
+          found.push(f);
+          continue;
+        }
+        const clusterId = f.properties.cluster_id as number;
+        const zoom = await source.current?.getClusterExpansionZoom(clusterId);
+        if (zoom != null && zoom <= CLUSTER_MAX_ZOOM) expand ??= { feature: f, zoom };
+        else found.push(...((await source.current?.getClusterLeaves(clusterId, CLUSTER_LEAVES, 0)) ?? []));
+      }
+    }
+
+    const tapped = hitsFromFeatures(found);
+    if (tapped.length === 0 && expand) {
+      const [lng, lat] = (expand.feature.geometry as GeoJSON.Point).coordinates;
+      cameraRef.current?.easeTo({ center: [lng, lat], zoom: expand.zoom + 0.5, duration: 400 });
       return;
     }
-    setOpenPhoto({
-      id: String(props.photoId),
-      takenAt: String(props.takenAt),
-      placeLabel: (props.placeLabel as string | null) ?? null,
-      thumbUrl: (props.thumbUrl as string | null) ?? null,
-    });
-  };
+    if (tapped.length === 1 && tapped[0].kind === 'photoCell') {
+      cameraRef.current?.fitBounds(photoCellBounds(tapped[0].bounds), { padding: CELL_PADDING, duration: 400 });
+      return;
+    }
+    if (tapped.length === 0) {
+      closePreview();
+      return;
+    }
+    setSelected(tapped[0].point);
+    setHits(tapped);
+  }, [enabled, closePreview]);
 
-  const onContactPress = async (e: NativeSyntheticEvent<PressEventWithFeatures>) => {
-    const feature = e.nativeEvent.features[0];
-    if (!feature) return;
-    if (feature.properties?.cluster) return expandCluster(contactSourceRef, feature);
-    // MapLibre stringifies nested properties, so the id array comes back as JSON.
-    const raw = feature.properties?.contactIds;
-    const ids = typeof raw === 'string' ? (JSON.parse(raw) as string[]) : (raw as string[] | undefined);
-    if (ids?.length) navigation.navigate('ContactDetail', { contactId: ids[0] });
-  };
-
-  const onVisitPress = (e: NativeSyntheticEvent<PressEventWithFeatures>) => {
-    const props = e.nativeEvent.features[0]?.properties;
-    if (!props) return;
-    setOpenVisit({
-      placeLabel: (props.placeLabel as string | null) ?? null,
-      arriveTs: String(props.arriveTs),
-      departTs: String(props.departTs),
-      durationMin: Number(props.durationMin),
-    });
-  };
-
-  const onHotspotPress = (e: NativeSyntheticEvent<PressEventWithFeatures>) => {
-    const props = e.nativeEvent.features[0]?.properties;
-    if (!props) return;
-    setOpenHotspot({
-      label: (props.label as string | null) ?? null,
-      activeDays: Number(props.activeDays),
-      eventCount: Number(props.eventCount),
-      photoCount: Number(props.photoCount),
-      firstDay: String(props.firstDay),
-      lastDay: String(props.lastDay),
-    });
-  };
+  const onHitAction = useCallback((hit: MapHit, action: HitAction) => {
+    if (action === 'zoom' && hit.kind === 'photoCell') {
+      closePreview();
+      cameraRef.current?.fitBounds(photoCellBounds(hit.bounds), { padding: CELL_PADDING, duration: 400 });
+      return;
+    }
+    if (action === 'day' && (hit.kind === 'photo' || hit.kind === 'visit')) {
+      const day = ymd(new Date(hit.kind === 'photo' ? hit.takenAt : hit.arriveTs));
+      closePreview();
+      navigation.navigate('Tabs', { screen: 'Photos', params: { from: day, to: day } });
+      return;
+    }
+    if (action !== 'open') return;
+    // The pin stays: coming back to the map, what you opened is still marked.
+    setHits(null);
+    if (hit.kind === 'event') navigation.navigate('ItemDetail', { itemId: hit.itemId });
+    else if (hit.kind === 'contact') navigation.navigate('ContactDetail', { contactId: hit.contactId });
+    else if (hit.kind === 'photo') navigation.navigate('PhotoViewer', { photoId: hit.photoId });
+  }, [navigation, closePreview]);
 
   const onLocatePress = async () => {
     const started = await useLivePosition.getState().start();
@@ -214,7 +245,11 @@ export function MapScreen() {
     setFollow((m) => (m === 'off' ? 'follow' : m === 'follow' ? 'heading' : 'off'));
   };
 
-  const toggle = (key: LayerKey) => setEnabled((s) => ({ ...s, [key]: !s[key] }));
+  const toggle = (key: LayerKey) => {
+    if (key === 'photos') setPhotosForced(false);
+    void usePrefs.getState().setMapLayers({ ...layerPrefs, [key]: !enabled[key] });
+  };
+  const setSince = (value: MapSince) => void usePrefs.getState().setMapSince(value);
   const mapStyle = style ?? (degraded ? fallbackStyle(theme) : undefined);
 
   return (
@@ -225,33 +260,25 @@ export function MapScreen() {
       {mapStyle ? (
         <View style={styles.mapWrap}>
           <MapView
+            ref={mapRef}
             style={styles.map}
             mapStyle={mapStyle as unknown as StyleSpecification}
             onRegionDidChange={onRegionDidChange}
+            onDidFinishLoadingMap={onMapLoaded}
+            onPress={(e) => void onMapPress(e)}
           >
-            <Camera ref={cameraRef} initialViewState={{ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }} />
-            {/* Always mounted: a layer mounted later is appended above the pins and would steal their taps. */}
-            <HotspotsLayer theme={theme} features={hotspots} onPress={onHotspotPress} />
+            <Camera ref={cameraRef} initialViewState={initialView} />
+            {/* Always mounted: a layer mounted later is appended above the pins and would cover them. */}
+            <HotspotsLayer theme={theme} features={hotspots} />
             {enabled.movement && (
-              <MovementLayer
-                theme={theme}
-                visits={movement.visits}
-                track={movement.track}
-                current={movement.current}
-                onVisitPress={onVisitPress}
-              />
+              <MovementLayer theme={theme} visits={movement.visits} track={movement.track} current={movement.current} />
             )}
             {enabled.saved && <SavedPlacesLayer theme={theme} features={saved} />}
-            {enabled.contacts && (
-              <ContactsLayer theme={theme} features={contacts} sourceRef={contactSourceRef} onPress={onContactPress} />
-            )}
-            {enabled.events && (
-              <EventsLayer theme={theme} features={events} sourceRef={eventSourceRef} onPress={onEventPress} />
-            )}
-            {enabled.photos && (
-              <PhotosLayer theme={theme} features={photos} onPress={onPhotoPress} />
-            )}
+            {enabled.contacts && <ContactsLayer theme={theme} features={contacts} sourceRef={contactSourceRef} />}
+            {enabled.events && <EventsLayer theme={theme} features={events.features} sourceRef={eventSourceRef} />}
+            {enabled.photos && <PhotosLayer theme={theme} features={photos} />}
             {livePosition && <LivePuck theme={theme} position={livePosition} />}
+            {selected && <SelectionPin point={selected} />}
           </MapView>
 
           <LayersFab onPress={() => setSheetOpen(true)} style={styles.layersFab} />
@@ -264,80 +291,18 @@ export function MapScreen() {
       )}
 
       {sheetOpen && (
-        <LayersSheet theme={theme} enabled={enabled} onToggle={toggle} onDismiss={() => setSheetOpen(false)} />
+        <LayersSheet
+          theme={theme}
+          enabled={enabled}
+          since={since}
+          unmappableCount={events.unmappableCount}
+          onToggle={toggle}
+          onSince={setSince}
+          onDismiss={() => setSheetOpen(false)}
+        />
       )}
 
-      {openPhoto && (
-        <Portal>
-          <Pressable style={styles.sheetBackdrop} onPress={() => setOpenPhoto(null)}>
-            <Pressable style={[styles.sheet, { backgroundColor: paper.colors.elevation.level2 }]}>
-              {openPhoto.thumbUrl && (
-                <Image source={{ uri: openPhoto.thumbUrl }} style={styles.sheetImage} contentFit="cover" transition={150} />
-              )}
-              <Text style={[styles.sheetTitle, { color: paper.colors.onSurface }]}>
-                {openPhoto.placeLabel ?? 'Unknown place'}
-              </Text>
-              <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
-                {fmtDateTime(new Date(openPhoto.takenAt))}
-              </Text>
-              <View style={styles.sheetActions}>
-                <Button
-                  title="Open photo"
-                  variant="text"
-                  onPress={() => {
-                    const photoId = openPhoto.id;
-                    setOpenPhoto(null);
-                    navigation.navigate('PhotoViewer', { photoId });
-                  }}
-                />
-                <Button
-                  title="All from this day"
-                  variant="text"
-                  onPress={() => {
-                    const day = ymd(new Date(openPhoto.takenAt));
-                    setOpenPhoto(null);
-                    navigation.navigate('Tabs', { screen: 'Photos', params: { from: day, to: day } });
-                  }}
-                />
-              </View>
-            </Pressable>
-          </Pressable>
-        </Portal>
-      )}
-
-      {openVisit && (
-        <Portal>
-          <Pressable style={styles.sheetBackdrop} onPress={() => setOpenVisit(null)}>
-            <Pressable style={[styles.sheet, { backgroundColor: paper.colors.elevation.level2 }]}>
-              <Text style={[styles.sheetTitle, { color: paper.colors.onSurface }]}>
-                {openVisit.placeLabel ?? 'Stay'}
-              </Text>
-              <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
-                {fmtTime(new Date(openVisit.arriveTs))}–{fmtTime(new Date(openVisit.departTs))}
-                {' · '}{openVisit.durationMin} min
-              </Text>
-            </Pressable>
-          </Pressable>
-        </Portal>
-      )}
-
-      {openHotspot && (
-        <Portal>
-          <Pressable style={styles.sheetBackdrop} onPress={() => setOpenHotspot(null)}>
-            <Pressable style={[styles.sheet, { backgroundColor: paper.colors.elevation.level2 }]}>
-              <Text style={[styles.sheetTitle, { color: paper.colors.onSurface }]}>
-                {openHotspot.label ?? 'Unnamed spot'}
-              </Text>
-              <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
-                {hotspotStats(openHotspot)}
-              </Text>
-              <Text style={[styles.sheetDetail, { color: paper.colors.onSurfaceVariant }]}>
-                {fmtDate(parseYmd(openHotspot.firstDay))} – {fmtDate(parseYmd(openHotspot.lastDay))}
-              </Text>
-            </Pressable>
-          </Pressable>
-        </Portal>
-      )}
+      {hits && <MapPreviewSheet hits={hits} theme={theme} onAction={onHitAction} onDismiss={closePreview} />}
     </View>
   );
 }
@@ -349,10 +314,4 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   layersFab: { position: 'absolute', right: 16, bottom: 88 },
   locateFab: { position: 'absolute', right: 16, bottom: 24 },
-  sheetActions: { flexDirection: 'row', flexWrap: 'wrap' },
-  sheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' },
-  sheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, gap: 4 },
-  sheetImage: { width: '100%', height: 240, borderRadius: 12, marginBottom: 8 },
-  sheetTitle: { fontSize: 16, fontWeight: '600' },
-  sheetDetail: { fontSize: 13 },
 });

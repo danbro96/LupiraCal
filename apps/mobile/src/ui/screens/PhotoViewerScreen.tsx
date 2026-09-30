@@ -209,7 +209,7 @@ export function PhotoViewerScreen() {
           disabled={!located}
           onPress={() => navigation.navigate('Tabs', {
             screen: 'Map',
-            params: { at: { lon: current.longitude!, lat: current.latitude! } },
+            params: { at: { lon: current.longitude!, lat: current.latitude!, focus: 'photo' } },
           })}
           accessibilityLabel="Show on the map"
         />

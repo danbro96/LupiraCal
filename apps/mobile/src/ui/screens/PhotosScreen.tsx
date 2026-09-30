@@ -176,7 +176,7 @@ export function PhotosScreen() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
   const onPlace = useCallback((place: string) => applyFilters((f) => ({ ...f, place })), [applyFilters]);
   const onDayMap = useCallback((at: { lon: number; lat: number }) =>
-    navigation.navigate('Tabs', { screen: 'Map', params: { at } }), [navigation]);
+    navigation.navigate('Tabs', { screen: 'Map', params: { at: { ...at, focus: 'photo' } } }), [navigation]);
   const renderSectionHeader = useCallback(({ section }: { section: (typeof sections)[number] }) => (
     <DayHeader
       day={section}
