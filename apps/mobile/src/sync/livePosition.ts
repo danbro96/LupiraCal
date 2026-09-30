@@ -62,3 +62,11 @@ export const useLivePosition = create<LiveState & LiveActions>((set) => ({
 
   set: (partial) => set(partial),
 }));
+
+/** The OS's cached fix, if location is already allowed and it's recent — never prompts, never starts GPS. */
+export async function lastKnownPosition(): Promise<{ lat: number; lon: number } | null> {
+  const { granted } = await Location.getForegroundPermissionsAsync();
+  if (!granted) return null;
+  const fix = await Location.getLastKnownPositionAsync({ maxAge: 3_600_000 });
+  return fix ? { lat: fix.coords.latitude, lon: fix.coords.longitude } : null;
+}

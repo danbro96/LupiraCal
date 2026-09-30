@@ -1,19 +1,23 @@
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { List, Text } from 'react-native-paper';
 import type { GeocodeResultDto } from '@lupira/cal-api/models';
 import { toastError } from '../../feedback/toast';
-import { createPlaceFromHit, type PlaceOption, useFrequentPlaces, useGeocodeHits, useSuggestedPlaces } from '../../state/usePlaceSearch';
+import { createPlaceFromHit, type PickerPlace, type PlaceOption, useGeocodeHits, usePlaceCandidates } from '../../state/usePlaceSearch';
 import { useSyncStatus } from '../../sync/syncStatus';
 import { Input } from '../components/Input';
 import { Sheet } from '../components/Sheet';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
 
-/** Existing places first (frequent ones before typing, typeahead after); an address search is one tap further
- *  and creates the place it picks. Nothing is created on dismiss. Online-only — the event itself saves offline. */
-export function PlaceSheet({ hasPlace, onPick, onDismiss }: {
+/** One ranked list of places that exist — saved, frequent, typeahead, and your contacts' addresses (search a
+ *  name to find where they live; an invited person's home leads). Every row says who lives there. An address
+ *  search is one tap further and creates the place it picks. Nothing is created on dismiss. Online-only, bar
+ *  the contacts — the event itself saves offline. */
+export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
   hasPlace: boolean;
+  attendeeIds: string[];
+  day: string | null;
   onPick: (place: PlaceOption | null) => void;
   onDismiss: () => void;
 }) {
@@ -30,10 +34,8 @@ export function PlaceSheet({ hasPlace, onPick, onDismiss }: {
   }, [text]);
 
   const typing = q.length >= 2;
-  const frequent = useFrequentPlaces(!typing);
-  const suggested = useSuggestedPlaces(q);
+  const { places, residentsNear } = usePlaceCandidates({ query: typing ? q : '', attendeeIds, day });
   const hits = useGeocodeHits(addressQuery);
-  const options = (typing ? suggested.data : frequent.data) ?? [];
 
   const pick = (place: PlaceOption | null) => {
     onPick(place);
@@ -66,16 +68,8 @@ export function PlaceSheet({ hasPlace, onPick, onDismiss }: {
       />
       {!reachable && <Text style={[styles.muted, { color: c.textMuted }]}>Finding places needs a connection.</Text>}
       <ScrollView keyboardShouldPersistTaps="handled">
-        {!typing && options.length > 0 && <List.Subheader>Frequent</List.Subheader>}
-        {options.map((o) => (
-          <List.Item
-            key={o.placeId}
-            title={o.label}
-            description={o.context ?? undefined}
-            left={(p) => <List.Icon {...p} icon={ICONS.place} />}
-            onPress={() => pick(o)}
-          />
-        ))}
+        {!typing && places.length > 0 && <List.Subheader>Suggested</List.Subheader>}
+        {places.map((p) => <PlaceRow key={p.placeId} place={p} onPress={() => pick({ placeId: p.placeId, label: p.label })} />)}
         {typing && reachable && !addressQuery && (
           <List.Item
             title={`Search addresses for “${text.trim()}”`}
@@ -86,16 +80,20 @@ export function PlaceSheet({ hasPlace, onPick, onDismiss }: {
         {!!addressQuery && <List.Subheader>New place</List.Subheader>}
         {!!addressQuery && hits.isLoading && <Text style={[styles.muted, { color: c.textMuted }]}>Looking…</Text>}
         {!!addressQuery && hits.data?.length === 0 && <Text style={[styles.muted, { color: c.textMuted }]}>No address matches.</Text>}
-        {(addressQuery ? hits.data ?? [] : []).map((hit) => (
-          <List.Item
-            key={`${hit.osmType ?? ''}${hit.osmId ?? `${hit.latitude},${hit.longitude}`}`}
-            title={hit.displayName}
-            titleNumberOfLines={2}
-            left={(p) => <List.Icon {...p} icon={ICONS.add} />}
-            disabled={creating}
-            onPress={() => void create(hit)}
-          />
-        ))}
+        {(addressQuery ? hits.data ?? [] : []).map((hit) => {
+          const lives = residentsNear({ lat: hit.latitude, lon: hit.longitude });
+          return (
+            <List.Item
+              key={`${hit.osmType ?? ''}${hit.osmId ?? `${hit.latitude},${hit.longitude}`}`}
+              title={hit.displayName}
+              titleNumberOfLines={2}
+              description={lives ? () => <ResidentsLine text={lives} /> : undefined}
+              left={(p) => <List.Icon {...p} icon={ICONS.add} />}
+              disabled={creating}
+              onPress={() => void create(hit)}
+            />
+          );
+        })}
         {hasPlace && (
           <List.Item title="Remove place" left={(p) => <List.Icon {...p} icon={ICONS.locationOff} />} onPress={() => pick(null)} />
         )}
@@ -104,6 +102,38 @@ export function PlaceSheet({ hasPlace, onPick, onDismiss }: {
   );
 }
 
+
+/** A current resident outranks everything else the row could say, so it gets the icon and the colour. */
+function PlaceRow({ place, onPress }: { place: PickerPlace; onPress: () => void }) {
+  const c = useColors();
+  const faded = place.viaContact && place.viaContact.status !== 'active';
+  const icon = place.residentsLine ? ICONS.home : place.saved ? ICONS.saved : place.otherLine ? ICONS.history : ICONS.place;
+  return (
+    <List.Item
+      title={place.label}
+      style={faded ? styles.faded : undefined}
+      description={() => (
+        <View>
+          {!!place.context && <Text numberOfLines={1} style={[styles.line, { color: c.textMuted }]}>{place.context}</Text>}
+          {place.residentsLine
+            ? <ResidentsLine text={place.residentsLine} />
+            : !!place.otherLine && <Text numberOfLines={1} style={[styles.line, styles.other, { color: c.textMuted }]}>{place.otherLine}</Text>}
+        </View>
+      )}
+      left={(p) => <List.Icon {...p} icon={icon} color={place.residentsLine ? c.primary : p.color} />}
+      onPress={onPress}
+    />
+  );
+}
+
+function ResidentsLine({ text }: { text: string }) {
+  const c = useColors();
+  return <Text numberOfLines={1} style={[styles.line, { color: c.primary }]}>{text}</Text>;
+}
+
 const styles = StyleSheet.create({
   muted: { fontSize: 13, marginVertical: 8 },
+  line: { fontSize: 13 },
+  other: { fontStyle: 'italic' },
+  faded: { opacity: 0.6 },
 });

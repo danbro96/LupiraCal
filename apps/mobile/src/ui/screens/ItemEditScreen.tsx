@@ -318,6 +318,8 @@ export function ItemEditScreen() {
       {sheet === 'place' && (
         <PlaceSheet
           hasPlace={!!form.place}
+          attendeeIds={attendeeIds}
+          day={form.startDay || null}
           onPick={(p) => set('place', p ? { placeId: p.placeId, label: p.label } : null)}
           onDismiss={() => setSheet(null)}
         />

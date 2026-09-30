@@ -54,6 +54,10 @@ export type ReachChannel = { medium: string; value: string; type?: string | null
 export type SocialProfile = { service: string; handle: string; url?: string | null; preferred: boolean };
 export type PartialDateDto = { year: number | null; month: number; day: number };
 
+export type FuzzyDateDto = { year: number; month?: number | null; day?: number | null };
+/** Current iff today falls between movedIn and movedOut — see `@lupira/cal-domain/fuzzyDate` residencyStatus. */
+export type ContactAddress = { placeId: string; type?: string | null; movedIn?: FuzzyDateDto | null; movedOut?: FuzzyDateDto | null };
+
 export type ContactDoc = {
   id: string;
   addressBookId: string;
@@ -70,6 +74,7 @@ export type ContactDoc = {
   notes?: string | null;
   pronouns?: string | null;
   profiles?: SocialProfile[] | null;
+  addresses?: ContactAddress[] | null;
   metadata?: Record<string, unknown> | null;
   updatedAt?: string;
   [key: string]: unknown;
