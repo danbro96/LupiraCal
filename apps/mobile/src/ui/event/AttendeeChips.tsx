@@ -9,11 +9,12 @@ import { attendeeSummary, rsvpLabel } from './rsvp';
 const COLLAPSED_LIMIT = 8;
 
 /** One wrapping chip per person with the RSVP as its icon, under a line that counts the replies. `onJoin`
- *  leads the row with a Join chip — for an event you're not on. */
-export function AttendeeChips({ attendees, nameOf, onJoin }: {
+ *  leads the row with a Join chip — for an event you're not on. `onOpen` makes each chip open that person. */
+export function AttendeeChips({ attendees, nameOf, onJoin, onOpen }: {
   attendees: ItemAttendee[];
   nameOf: (contactId: string) => string;
   onJoin?: () => void;
+  onOpen?: (contactId: string) => void;
 }) {
   const c = useColors();
   const [expanded, setExpanded] = useState(false);
@@ -50,6 +51,7 @@ export function AttendeeChips({ attendees, nameOf, onJoin }: {
               compact
               accessibilityLabel={`${nameOf(a.contactId)}, ${r.label}`}
               icon={({ size }) => <Icon source={r.icon} size={size} color={r.color} />}
+              onPress={onOpen ? () => onOpen(a.contactId) : undefined}
             >
               {nameOf(a.contactId)}
             </Chip>

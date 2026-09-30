@@ -14,6 +14,7 @@ import { Avatar, Button, List, Text } from 'react-native-paper';
 import { getDb } from '../../data/db/expoDb';
 import { composeDisplayName, loadContact } from '../../data/mirror';
 import type { ContactAddress, PartialDateDto } from '../../domain/docTypes';
+import { copyText } from '../../feedback/copy';
 import { deleteContact } from '../../state/actions';
 import { useContactState } from '../../state/useContactList';
 import { Centered } from '../components/Centered';
@@ -113,6 +114,8 @@ export function ContactDetailScreen() {
         <List.Item
           key={`ch-${i}`}
           onPress={() => openReach(ch.medium, ch.value)}
+          onLongPress={() => copyText(ch.value, ch.medium)}
+          accessibilityHint="Hold to copy"
           title={ch.preferred ? <>{ch.value} <Glyph name={ICONS.star} /></> : ch.value}
           description={channelLabel(ch.medium, ch.type)}
           style={styles.dense}
@@ -123,6 +126,8 @@ export function ContactDetailScreen() {
         <List.Item
           key={`pr-${i}`}
           onPress={() => openReach(p.service, p.handle)}
+          onLongPress={() => copyText(p.handle, p.service)}
+          accessibilityHint="Hold to copy"
           title={p.preferred ? <>{p.handle} <Glyph name={ICONS.star} /></> : p.handle}
           description={p.service}
           style={styles.dense}

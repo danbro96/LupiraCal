@@ -53,6 +53,10 @@ export function ItemDetailScreen() {
   const cancelled = doc.status === 'Cancelled';
   const attendees = doc.attendees ?? [];
   const contactName = (id: string) => (id === me ? 'You' : contacts?.find((row) => row.id === id)?.displayName ?? 'Unknown contact');
+  // Only people the mirror has: a contact outside your address books would open to "not in the offline mirror".
+  const openContact = (contactId: string) => {
+    if (contacts?.some((row) => row.id === contactId)) navigation.navigate('ContactDetail', { contactId });
+  };
   const join = me && !state.deleted && !attendees.some((a) => a.contactId === me)
     ? () => void joinItem(itemId, me).then(() => toast('You joined this event'))
     : undefined;
@@ -105,7 +109,9 @@ export function ItemDetailScreen() {
           {doc.prompt != null && <Text style={[styles.note, { color: c.textMuted }]}>Has a prompt payload (view on web)</Text>}
           {doc.action != null && <Text style={[styles.note, { color: c.textMuted }]}>Has an action payload (view on web)</Text>}
 
-          {(attendees.length > 0 || join) && <AttendeeChips attendees={attendees} nameOf={contactName} onJoin={join} />}
+          {(attendees.length > 0 || join) && (
+          <AttendeeChips attendees={attendees} nameOf={contactName} onJoin={join} onOpen={openContact} />
+        )}
 
           <CalendarsPanel itemId={itemId} memberships={doc.calendars} />
         </View>

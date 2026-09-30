@@ -354,6 +354,7 @@ favourites/albums; bulk select and download; "on this day" memories; trips as a 
 - [x] Calendar remembers Month/Week and the last event's calendars; the week all-day strip scrolls past 30% of the screen
 - [x] Map: show-on-map lands at z16 with a pin (first visit included); one age limit over every dated layer; compact layers sheet; tap lists everything on the spot with preview cards; sheets clear the nav bar
 - [x] Settings index + four category subscreens; all-day rows picker fits 360 dp
+- [x] Hold a place tile or a reach row to copy it (`expo-clipboard` — native, so the next release is a full EAS build, not OTA); attendee chips open the contact card
 
 ### Exit criteria
 - [x] Root `npm run typecheck` / `lint` / `test` green; cal-api unit + participation integration green

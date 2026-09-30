@@ -3,6 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { placeSpanM } from '@lupira/cal-domain/mapZoom';
+import { copyText } from '../../feedback/copy';
 import { toastError } from '../../feedback/toast';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { ICONS } from '../icons';
@@ -15,8 +16,9 @@ const THUMB = 64;
 
 /** How the app shows a place: its name, the address, an optional meta line (address type, residency, who
  *  lives there) — one line each, ellipsized — and a map thumbnail. Tapping it opens the Map tab pinned on the
- *  place; `directions` adds the hand-off to an external maps app. Offline the place can't be resolved — the
- *  label still shows, the rest waits for a connection. */
+ *  place; holding it copies the address (the name, when there's no address yet); `directions` adds the
+ *  hand-off to an external maps app. Offline the place can't be resolved — the label still shows, the rest
+ *  waits for a connection. */
 export function PlaceTile({ placeId, label, meta, muted, directions }: {
   placeId: string | null | undefined;
   /** Shown instead of the place's own name — an event's location label. */
@@ -36,6 +38,8 @@ export function PlaceTile({ placeId, label, meta, muted, directions }: {
   const openMap = point
     ? () => navigation.navigate('Tabs', { screen: 'Map', params: { at: { ...point, focus: 'place' } } })
     : undefined;
+  const canCopy = !!(placeId || label);
+  const copy = () => copyText(place?.formattedAddress || title, place?.formattedAddress ? 'Address' : 'Place name');
   const openDirections = () => {
     const query = point ? `${point.lat},${point.lon}` : address ?? title;
     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`)
@@ -43,11 +47,15 @@ export function PlaceTile({ placeId, label, meta, muted, directions }: {
   };
 
   return (
+    // Never `disabled`: that would block the hold too, and an unmapped place can still be copied.
     <Pressable
       onPress={openMap}
-      disabled={!openMap}
+      onLongPress={canCopy ? copy : undefined}
       accessibilityRole="button"
-      accessibilityLabel={`${title}${address ? `, ${address}` : ''}. Show on map`}
+      accessibilityLabel={`${title}${address ? `, ${address}` : ''}${openMap ? '. Show on map' : ''}`}
+      accessibilityHint={canCopy ? 'Hold to copy the address' : undefined}
+      accessibilityActions={canCopy ? [{ name: 'longpress', label: 'Copy address' }] : undefined}
+      onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'longpress') copy(); }}
       style={({ pressed }) => [styles.tile, muted && styles.muted, pressed && { backgroundColor: c.surface }]}
     >
       <View style={styles.body}>
