@@ -21,8 +21,6 @@ export type RelationKind =
   | 'NieceNephew'
   | 'Cousin';
 
-export type RelationDirection = 'Outgoing' | 'Incoming';
-
 /** Alias kept for the resolved-entry shape; identical to RelationKind now that extended kin are storable. */
 export type KinKind = RelationKind;
 
@@ -96,13 +94,86 @@ export function isSymmetric(kind: RelationKind): boolean {
   return INVERSE[kind] === kind;
 }
 
-/** One resolved relation as seen from a viewing contact (structurally == ContactRelationEntryDto). */
+/** A relation copy as one contact stores it (ContactRelationDto; the mobile mirror doc's `relations`):
+ *  "toContactId is my kind". Storage, not the relationship — the other side may hold a copy too. */
+export interface StoredRelation {
+  toContactId: string;
+  kind: RelationKind;
+  label?: string | null;
+  since?: string | null;
+  note?: string | null;
+  ended?: boolean;
+  until?: string | null;
+}
+
+export interface RelationCopy {
+  holderId: string;
+  edge: StoredRelation;
+}
+
+/** Side-independent identity of a relationship: "high is low's kind", ids ordered as strings. */
+export interface RelationshipKey {
+  low: string;
+  high: string;
+  kind: RelationKind;
+}
+
+/** The key of "otherId is selfId's kind" — the same whichever side states it. */
+export function relationshipKey(selfId: string, otherId: string, kind: RelationKind): RelationshipKey {
+  return selfId <= otherId ? { low: selfId, high: otherId, kind } : { low: otherId, high: selfId, kind: INVERSE[kind] };
+}
+
+/** A relationship as seen from one of its contacts: `kind` is the other's role, `label` the viewer's own word. */
+export interface ResolvedRelation {
+  otherId: string;
+  kind: RelationKind;
+  label: string | null;
+  since: string | null;
+  note: string | null;
+  ended: boolean;
+  until: string | null;
+}
+
+/**
+ * Merge stored copies into relationships seen from `viewerId`, the way LupiraContactApi's
+ * RelationResolver does, so an offline read agrees with `GET /contacts/{id}/relations`: the label
+ * comes from the viewer's own copy; since/note/until from the low contact's copy, falling back to
+ * the other; ended only when every copy is.
+ */
+export function resolveRelations(viewerId: string, copies: Iterable<RelationCopy>): ResolvedRelation[] {
+  const groups = new Map<string, { key: RelationshipKey; copies: RelationCopy[] }>();
+  for (const c of copies) {
+    if ((c.holderId === viewerId) === (c.edge.toContactId === viewerId)) continue; // someone else's, or a self-loop
+    const key = relationshipKey(c.holderId, c.edge.toContactId, c.edge.kind);
+    const id = `${key.low}|${key.high}|${key.kind}`;
+    const group = groups.get(id);
+    if (group) group.copies.push(c);
+    else groups.set(id, { key, copies: [c] });
+  }
+  return [...groups.values()].map(({ key, copies: held }) => {
+    const edges = [...held].sort((a, b) => Number(a.holderId !== key.low) - Number(b.holderId !== key.low)).map((c) => c.edge);
+    const first = (field: 'since' | 'note' | 'until') => edges.find((e) => e[field] != null)?.[field] ?? null;
+    const ended = edges.every((e) => e.ended === true);
+    const viewerIsLow = key.low === viewerId;
+    return {
+      otherId: viewerIsLow ? key.high : key.low,
+      kind: viewerIsLow ? key.kind : INVERSE[key.kind],
+      label: held.find((c) => c.holderId === viewerId)?.edge.label ?? null,
+      since: first('since'),
+      note: first('note'),
+      ended,
+      until: ended ? first('until') : null,
+    };
+  });
+}
+
+/** One relationship as seen from a viewing contact (structurally == ContactRelationEntryDto): `kind` is the
+ *  other contact's role relative to the viewer, `label` the viewer's own name for them. */
 export interface RelationEntry {
   contactId: string;
   displayName: string;
   kind: KinKind;
   label?: string | null;
-  direction: RelationDirection;
   provenance?: RelationProvenance;
   /** Ended relationships (ex-spouse, falling-out) no longer assert current kinship — excluded from the graph. */
   ended?: boolean;
@@ -121,7 +192,7 @@ export interface GraphNode {
 
 export interface GraphEdge {
   id: string;
-  /** Stored owner ("target is owner's kind"); for inferred edges, the center contact. */
+  /** Elder side of a directed kinship, lower id of a symmetric one; for inferred edges, the center contact. */
   source: string;
   target: string;
   kind: KinKind;
@@ -149,28 +220,23 @@ const ELDER_KIND: Partial<Record<RelationKind, RelationKind>> = { Parent: 'Paren
 const YOUNGER_TO_ELDER: Partial<Record<RelationKind, RelationKind>> = { Child: 'Parent', Grandchild: 'Grandparent', NieceNephew: 'AuntUncle' };
 
 /**
- * Normalize a stored edge to a single display orientation so identical relationships read the same
- * regardless of which contact stored them (and so mirror/redundant facts dedupe to one edge):
- * directed kinships → arrow elder → younger; symmetric kinds → endpoints sorted.
+ * Normalize "other is viewer's kind" to a single display orientation, so a relationship seen from
+ * either of its contacts dedupes to one edge: directed kinships → arrow elder → younger; symmetric
+ * kinds → endpoints sorted.
  */
-function orient(owner: string, target: string, storedKind: RelationKind): { source: string; target: string; kind: RelationKind } {
-  const elder = ELDER_KIND[storedKind];
-  if (elder) return { source: target, target: owner, kind: elder }; // target is owner's elder (parent/grandparent/aunt-uncle)
-  const asElder = YOUNGER_TO_ELDER[storedKind];
-  if (asElder) return { source: owner, target, kind: asElder }; // owner is the elder
-  if (isSymmetric(storedKind)) {
-    return owner < target
-      ? { source: owner, target, kind: storedKind }
-      : { source: target, target: owner, kind: storedKind };
-  }
-  return { source: owner, target, kind: storedKind };
+function orient(viewer: string, other: string, kind: RelationKind): { source: string; target: string; kind: RelationKind } {
+  const elder = ELDER_KIND[kind];
+  if (elder) return { source: other, target: viewer, kind: elder }; // other is viewer's elder (parent/grandparent/aunt-uncle)
+  const asElder = YOUNGER_TO_ELDER[kind];
+  if (asElder) return { source: viewer, target: other, kind: asElder }; // viewer is the elder
+  return viewer < other ? { source: viewer, target: other, kind } : { source: other, target: viewer, kind };
 }
 
 /**
  * Merge per-contact relation lists into one deduped directed ego-graph, radially laid out around
- * `center`. Each entry is canonicalized to its stored edge (owner → target, storedKind) so a
- * stored edge and its derived inverse collapse to a single edge — and an unexpanded neighbor still
- * contributes its edge via the center's own list.
+ * `center`. Each entry is oriented independently of its viewer, so the two sides of a relationship
+ * collapse to a single edge — and an unexpanded neighbor still contributes its edge via the center's
+ * own list. The edge label is the first viewer's (the center's, when it lists the edge).
  */
 export function buildRelationGraph(
   center: { id: string; label: string },
@@ -203,12 +269,7 @@ export function buildRelationGraph(
 
       if (e.ended) continue; // ended relationships stay listed on the card but leave the graph
 
-      const stored = e.kind as RelationKind; // explicit entries only ever carry storable kinds
-      const outgoing = e.direction === 'Outgoing';
-      const owner = outgoing ? viewer : e.contactId;
-      const target = outgoing ? e.contactId : viewer;
-      const storedKind = outgoing ? stored : inverseKind(stored);
-      const o = orient(owner, target, storedKind);
+      const o = orient(viewer, e.contactId, e.kind);
       const key = `${o.source}|${o.target}|${o.kind}`;
       const existing = edges.get(key);
       if (!existing) {
@@ -217,12 +278,12 @@ export function buildRelationGraph(
           source: o.source,
           target: o.target,
           kind: o.kind,
-          label: outgoing ? e.label ?? null : null,
+          label: e.label ?? null,
           category: kindCategory(o.kind),
           directed: !isSymmetric(o.kind),
         });
-      } else if (outgoing && e.label && !existing.label) {
-        existing.label = e.label; // the label lives on the owner's outgoing entry
+      } else if (e.label && !existing.label) {
+        existing.label = e.label;
       }
     }
   }
@@ -253,29 +314,26 @@ export function buildRelationGraph(
 export interface RelationEntryGroup<T> {
   category: RelationCategory;
   total: number;
-  outgoing: T[];
-  incoming: T[];
+  explicit: T[];
   inferred: T[];
 }
 
 /** Bucket relation entries per category (in CATEGORY_ORDER, empty ones omitted) and per
- *  direction/provenance within it, alphabetically — the shape the grouped list renders. */
-export function groupRelationEntries<
-  T extends Pick<RelationEntry, 'kind' | 'direction' | 'provenance' | 'displayName'>,
->(entries: readonly T[]): RelationEntryGroup<T>[] {
+ *  provenance within it, alphabetically — the shape the grouped list renders. */
+export function groupRelationEntries<T extends Pick<RelationEntry, 'kind' | 'provenance' | 'displayName'>>(
+  entries: readonly T[],
+): RelationEntryGroup<T>[] {
   const byName = (a: T, b: T) => a.displayName.localeCompare(b.displayName);
   const groups = new Map<RelationCategory, RelationEntryGroup<T>>();
   for (const e of entries) {
     const cat = kindCategory(e.kind);
     let g = groups.get(cat);
-    if (!g) groups.set(cat, (g = { category: cat, total: 0, outgoing: [], incoming: [], inferred: [] }));
-    const bucket = e.provenance === 'Inferred' ? g.inferred : e.direction === 'Outgoing' ? g.outgoing : g.incoming;
-    bucket.push(e);
+    if (!g) groups.set(cat, (g = { category: cat, total: 0, explicit: [], inferred: [] }));
+    (e.provenance === 'Inferred' ? g.inferred : g.explicit).push(e);
     g.total++;
   }
   for (const g of groups.values()) {
-    g.outgoing.sort(byName);
-    g.incoming.sort(byName);
+    g.explicit.sort(byName);
     g.inferred.sort(byName);
   }
   return CATEGORY_ORDER.filter((c) => groups.has(c)).map((c) => groups.get(c)!);

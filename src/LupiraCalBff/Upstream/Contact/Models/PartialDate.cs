@@ -8,7 +8,7 @@ using System;
 namespace LupiraCalBff.Upstream.Contact.Models
 {
     /// <summary>
-    /// A calendar date that may omit the year — a birthday is often known only as a month-day.            int PartialDate.Month and int PartialDate.Day are always present; int? PartialDate.Year is null when unknown.            Canonical text is `yyyy-MM-dd` with a year, else `--MM-dd` (a serialization concern; wire formats            live at the seam, see VCardSerializer).
+    /// A calendar date that may omit the year — a birthday is often known only as a month-day.            int PartialDate.Month and int PartialDate.Day are always present; int? PartialDate.Year is null when unknown.            Canonical text is `yyyy-MM-dd` with a year, else `--MM-dd`; other wire formats are the serializers&apos; concern.
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class PartialDate : IAdditionalDataHolder, IParsable

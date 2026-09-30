@@ -1631,7 +1631,7 @@ export const useMarkContactDeceased = <TError = ProblemDetails,
 }
 
 /**
- * @summary Undo a deceased marking recorded in error. (CardDAV can set but never clear deceased — clearing is API-only.)
+ * @summary Undo a deceased marking recorded in error — the only way to clear it.
  */
 export const clearContactDeceased = async (id: string,
     params?: ClearContactDeceasedParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
@@ -1684,7 +1684,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ClearContactDeceasedMutationVariables = {id: string;params?: ClearContactDeceasedParams}
 
     /**
- * @summary Undo a deceased marking recorded in error. (CardDAV can set but never clear deceased — clearing is API-only.)
+ * @summary Undo a deceased marking recorded in error — the only way to clear it.
  */
 export const useClearContactDeceased = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearContactDeceased>>, TError,ClearContactDeceasedMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -2153,7 +2153,7 @@ export const useSetContactTags = <TError = ProblemDetails,
 }
 
 /**
- * @summary Resolved relations, both directions: each entry's kind is the other contact's role relative to this one (incoming = derived inverse). Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred.
+ * @summary The contact's relationships, identical whichever side stores them: each entry's kind is the other contact's role relative to this one and its label this contact's own name for them. Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred.
  */
 export const listContactRelations = async (id: string,
     params?: ListContactRelationsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactRelationEntryDto[]> => {
@@ -2230,7 +2230,7 @@ export function useListContactRelations<TData = Awaited<ReturnType<typeof listCo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Resolved relations, both directions: each entry's kind is the other contact's role relative to this one (incoming = derived inverse). Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred.
+ * @summary The contact's relationships, identical whichever side stores them: each entry's kind is the other contact's role relative to this one and its label this contact's own name for them. Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred.
  */
 
 export function useListContactRelations<TData = Awaited<ReturnType<typeof listContactRelations>>, TError = ProblemDetails>(
@@ -2260,10 +2260,10 @@ export const getAddContactRelationUrl = (id: string,) => {
 }
 
 /**
- * @summary Upsert a relation: 'toContactId is this contact's kind' (re-adding the same target+kind revises the label).
+ * @summary Upsert a relationship from either side: 'toContactId is this contact's kind'. The label is this contact's own name for the other; since and note are shared. Re-adding revises it and revives an ended one.
  */
 export const addContactRelation = async (id: string,
-    addContactRelationRequest: AddContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
+    addContactRelationRequest: AddContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactRelationEntryDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2279,7 +2279,7 @@ export const addContactRelation = async (id: string,
     }
     return headers;
   };
-return apiRequest<ContactDto>(getAddContactRelationUrl(id),
+return apiRequest<ContactRelationEntryDto>(getAddContactRelationUrl(id),
   {
     ...options,
     method: 'POST',
@@ -2327,7 +2327,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AddContactRelationMutationVariables = {id: string;data: AddContactRelationRequest}
 
     /**
- * @summary Upsert a relation: 'toContactId is this contact's kind' (re-adding the same target+kind revises the label).
+ * @summary Upsert a relationship from either side: 'toContactId is this contact's kind'. The label is this contact's own name for the other; since and note are shared. Re-adding revises it and revives an ended one.
  */
 export const useAddContactRelation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactRelation>>, TError,AddContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -2357,13 +2357,13 @@ export const useAddContactRelation = <TError = ProblemDetails,
 }
 
 /**
- * @summary Remove the relation edge to a contact with the given kind — for edges entered by mistake. A relationship that ran its course should be ended instead.
+ * @summary Remove a relationship entered by mistake, from either side. A relationship that ran its course should be ended instead.
  */
 export const removeContactRelation = async (id: string,
     toContactId: string,
-    params: RemoveContactRelationParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
+    params: RemoveContactRelationParams, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<ContactDto>(getRemoveContactRelationUrl(id,toContactId,params),
+  return apiRequest<void>(getRemoveContactRelationUrl(id,toContactId,params),
   {
     ...options,
     method: 'DELETE'
@@ -2411,7 +2411,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveContactRelationMutationVariables = {id: string;toContactId: string;params: RemoveContactRelationParams}
 
     /**
- * @summary Remove the relation edge to a contact with the given kind — for edges entered by mistake. A relationship that ran its course should be ended instead.
+ * @summary Remove a relationship entered by mistake, from either side. A relationship that ran its course should be ended instead.
  */
 export const useRemoveContactRelation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactRelation>>, TError,RemoveContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -2433,11 +2433,11 @@ export const useRemoveContactRelation = <TError = ProblemDetails,
 }
 
 /**
- * @summary Mark a relation as ended (ex-spouse, falling-out): the edge stays, flagged with an optional end date, and no longer asserts current kinship. Re-adding the same relation revives it.
+ * @summary Mark a relationship as ended, from either side (ex-spouse, falling-out): it stays, flagged with an optional end date, and no longer asserts current kinship. Re-adding it revives it.
  */
 export const endContactRelation = async (id: string,
     toContactId: string,
-    endContactRelationRequest: EndContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
+    endContactRelationRequest: EndContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactRelationEntryDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2453,7 +2453,7 @@ export const endContactRelation = async (id: string,
     }
     return headers;
   };
-return apiRequest<ContactDto>(getEndContactRelationUrl(id,toContactId),
+return apiRequest<ContactRelationEntryDto>(getEndContactRelationUrl(id,toContactId),
   {
     ...options,
     method: 'POST',
@@ -2501,7 +2501,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type EndContactRelationMutationVariables = {id: string;toContactId: string;data: EndContactRelationRequest}
 
     /**
- * @summary Mark a relation as ended (ex-spouse, falling-out): the edge stays, flagged with an optional end date, and no longer asserts current kinship. Re-adding the same relation revives it.
+ * @summary Mark a relationship as ended, from either side (ex-spouse, falling-out): it stays, flagged with an optional end date, and no longer asserts current kinship. Re-adding it revives it.
  */
 export const useEndContactRelation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endContactRelation>>, TError,EndContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}

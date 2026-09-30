@@ -6,7 +6,7 @@
  */
 
 /**
- * iCalendar `PARTSTAT` (attendee RSVP).
+ * An attendee's RSVP.
  */
 export type ParticipationStatus = typeof ParticipationStatus[keyof typeof ParticipationStatus];
 

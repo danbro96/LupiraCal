@@ -1,11 +1,12 @@
+import type { StoredRelation } from '@lupira/cal-domain/contactRelations';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ItemDoc } from '../domain/docTypes';
-import { emptyItemGuards } from '../domain/docTypes';
+import { emptyContactGuards, emptyItemGuards } from '../domain/docTypes';
 import type { OccurrenceRow } from '../domain/materialize';
 import { openNodeDb } from './db/nodeDb';
 import { migrate } from './db/schema';
 import type { Db } from './db/types';
-import { mapEventRowsBetween, replaceContainers, saveItem, searchItems, upcomingPlacedEvents } from './mirror';
+import { mapEventRowsBetween, relationCopiesOf, replaceContainers, saveContact, saveItem, searchItems, upcomingPlacedEvents } from './mirror';
 
 let db: Db;
 
@@ -127,5 +128,24 @@ describe('searchItems', () => {
 
     expect((await searchItems(db, 'plan', '2026-09-29', false)).map((r) => r.id)).toEqual(['mine']);
     expect((await searchItems(db, 'plan', '2026-09-29', true)).map((r) => r.id)).toEqual(['sys', 'mine']);
+  });
+});
+
+describe('relationCopiesOf', () => {
+  const put = (id: string, givenName: string, relations: StoredRelation[] = [], deleted = false) =>
+    db.exclusive((tx) => saveContact(tx, { doc: { id, addressBookId: 'ab', givenName, relations }, guards: emptyContactGuards(), deleted }, []));
+
+  it("returns both sides' copies with the other contact's name, and none whose other side is deleted", async () => {
+    await put('y', 'Yara', [{ toContactId: 'x', kind: 'Parent', label: 'dad' }, { toContactId: 'gone', kind: 'Friend' }]);
+    await put('x', 'Xavier', [{ toContactId: 'y', kind: 'Child', label: 'kiddo' }]);
+    await put('z', 'Zoe', [{ toContactId: 'y', kind: 'Friend' }, { toContactId: 'x', kind: 'Friend' }]);
+    await put('gone', 'Gone', [{ toContactId: 'y', kind: 'Friend' }], true);
+
+    const rows = await relationCopiesOf(db, 'y');
+    expect(rows.map((r) => [r.holderId, r.edge.toContactId, r.otherId, r.otherName]).sort()).toEqual([
+      ['x', 'y', 'x', 'Xavier'],
+      ['y', 'x', 'x', 'Xavier'],
+      ['z', 'y', 'z', 'Zoe'],
+    ]);
   });
 });

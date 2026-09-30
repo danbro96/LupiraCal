@@ -9,7 +9,7 @@ using System;
 namespace LupiraCalBff.Upstream.Contact.Models
 {
     /// <summary>
-    /// One outgoing relation edge as published: &quot;the `ToContactId` contact is my `Kind`&quot;.            `Ended`/`Until` mark a relationship that ran its course, distinct from removal.
+    /// A relation copy this contact&apos;s own record holds: &quot;the `ToContactId` contact is my `Kind`&quot;. Storage, not the            relationship — the other side may hold a copy too, so render `GET /contacts/{id}/relations`, which merges both.            `Ended`/`Until` mark a relationship that ran its course.
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class ContactRelationDto : IAdditionalDataHolder, IParsable

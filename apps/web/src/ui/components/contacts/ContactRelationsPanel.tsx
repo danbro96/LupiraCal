@@ -41,9 +41,9 @@ const catAccent = (c: string) => `var(--cat-${c.toLowerCase()})`;
 const OPEN_THRESHOLD = 8;
 
 /** Relations network for a contact: interactive graph + an editable list, sharing category-chip and
- *  search filters plus a selection. Only OUTGOING (stored) edges are editable here; incoming edges
- *  are derived and managed on the other contact's card. A toggle reveals kin CalApi infers from the
- *  parent/child graph (grandparents, cousins, …), read-only. */
+ *  search filters plus a selection. Every stored relationship is editable from either of its contacts.
+ *  A toggle reveals kin the contact API infers from the parent/child graph (grandparents, cousins, …),
+ *  read-only. */
 export function ContactRelationsPanel({ contact }: { contact: ContactDto }) {
   const location = useLocation();
   const invalidate = useInvalidateContacts();
@@ -66,8 +66,8 @@ export function ContactRelationsPanel({ contact }: { contact: ContactDto }) {
   const [label, setLabel] = useState('');
 
   const groups = useMemo(() => groupRelationEntries(relations ?? []), [relations]);
-  const outgoingIds = new Set((relations ?? []).filter((r) => r.direction === 'Outgoing' && r.provenance !== 'Inferred').map((r) => r.contactId));
-  const pickable = (candidates ?? []).filter((c) => c.id !== contact.id && !outgoingIds.has(c.id));
+  const relatedIds = new Set((relations ?? []).filter((r) => r.provenance !== 'Inferred').map((r) => r.contactId));
+  const pickable = (candidates ?? []).filter((c) => c.id !== contact.id && !relatedIds.has(c.id));
 
   const terms = searchTerms(query);
   const q = terms.length > 0;
@@ -87,15 +87,14 @@ export function ContactRelationsPanel({ contact }: { contact: ContactDto }) {
     setSelectedId((cur) => (cur === id ? null : id));
   };
   // Spread order matters the way the stylesheet's rule order used to: 'selected' lands last so its
-  // background wins over the incoming/inferred/ended fades.
-  const rowSx = (r: ContactRelationEntryDto, kind?: 'incoming' | 'inferred' | 'ended') => ({
+  // background wins over the inferred/ended fades.
+  const rowSx = (r: ContactRelationEntryDto, kind?: 'inferred' | 'ended') => ({
     display: 'flex',
     alignItems: 'center',
     gap: 1,
     py: '6px',
     borderBottom: 1,
     borderColor: 'divider',
-    ...(kind === 'incoming' && { opacity: 0.65 }),
     ...(kind === 'inferred' && { opacity: 0.75, fontStyle: 'italic' }),
     ...(kind === 'ended' && {
       opacity: 0.6,
@@ -153,10 +152,9 @@ export function ContactRelationsPanel({ contact }: { contact: ContactDto }) {
       {groups
         .filter((g) => activeCats.size === 0 || activeCats.has(g.category))
         .map((g) => {
-          const outgoing = g.outgoing.filter(matches);
-          const incoming = g.incoming.filter(matches);
+          const explicit = g.explicit.filter(matches);
           const inferred = g.inferred.filter(matches);
-          const shown = outgoing.length + incoming.length + inferred.length;
+          const shown = explicit.length + inferred.length;
           if (q && shown === 0) return null;
           const open = q ? true : (openCats[g.category] ?? g.total <= OPEN_THRESHOLD);
           return (
@@ -187,8 +185,8 @@ export function ContactRelationsPanel({ contact }: { contact: ContactDto }) {
                   {open ? '▾' : '▸'}
                 </Box>
               </ButtonBase>
-              {open && outgoing.map((r) => (
-                <Box key={`out-${r.contactId}-${r.kind}`} sx={rowSx(r, r.ended ? 'ended' : undefined)} onClick={rowSelect(r.contactId)}>
+              {open && explicit.map((r) => (
+                <Box key={`rel-${r.contactId}-${r.kind}`} sx={rowSx(r, r.ended ? 'ended' : undefined)} onClick={rowSelect(r.contactId)}>
                   <Chip variant="outlined" label={r.kind} sx={{ color: `var(--cat-${g.category.toLowerCase()})`, borderColor: `var(--cat-${g.category.toLowerCase()})` }} />
                   <MuiLink component={Link} sx={{ flex: 1 }} to={link(r.contactId)}>
                     {r.displayName}
@@ -199,7 +197,12 @@ export function ContactRelationsPanel({ contact }: { contact: ContactDto }) {
                     <Tooltip title="Revive relationship">
                       <IconButton
                         disabled={add.isPending}
-                        onClick={() => add.mutate({ id: contact.id, data: { toContactId: r.contactId, kind: r.kind as ContactRelationKind, label: r.label ?? null } })}
+                        onClick={() =>
+                          add.mutate({
+                            id: contact.id,
+                            data: { toContactId: r.contactId, kind: r.kind as ContactRelationKind, label: r.label ?? null, since: r.since ?? null, note: r.note ?? null },
+                          })
+                        }
                       >
                         <RestoreIcon fontSize="small" />
                       </IconButton>
@@ -222,15 +225,6 @@ export function ContactRelationsPanel({ contact }: { contact: ContactDto }) {
                       <CloseIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                </Box>
-              ))}
-              {open && incoming.map((r) => (
-                <Box key={`in-${r.contactId}-${r.kind}`} sx={rowSx(r, 'incoming')} onClick={rowSelect(r.contactId)}>
-                  <Chip variant="outlined" label={r.kind} sx={{ color: `var(--cat-${g.category.toLowerCase()})`, borderColor: `var(--cat-${g.category.toLowerCase()})` }} />
-                  <MuiLink component={Link} sx={{ flex: 1 }} to={link(r.contactId)}>
-                    {r.displayName}
-                  </MuiLink>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>· managed on their card</Typography>
                 </Box>
               ))}
               {open && inferred.map((r) => (

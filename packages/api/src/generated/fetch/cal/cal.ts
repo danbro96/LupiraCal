@@ -504,7 +504,7 @@ export const getCreateItemUrl = () => {
 }
 
 /**
- * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location must be a resolved PlaceId (free text is CalDAV-only).
+ * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location must be a resolved PlaceId.
  */
 export const createItem = async (createCalendarItemRequest: CreateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createItemResponse> => {
 

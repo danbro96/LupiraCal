@@ -7,8 +7,9 @@
 import type { ContactRelationKind } from './contactRelationKind';
 
 /**
- * One outgoing relation edge as published: "the `ToContactId` contact is my `Kind`".
- *             `Ended`/`Until` mark a relationship that ran its course, distinct from removal.
+ * A relation copy this contact's own record holds: "the `ToContactId` contact is my `Kind`". Storage, not the
+ *             relationship — the other side may hold a copy too, so render `GET /contacts/{id}/relations`, which merges both.
+ *             `Ended`/`Until` mark a relationship that ran its course.
  */
 export interface ContactRelationDto {
   toContactId: string;

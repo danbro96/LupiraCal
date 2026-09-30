@@ -26,7 +26,7 @@ export interface UpdateCalendarItemRequest {
   /**
      * Re-anchor the location to a resolved LupiraGeoApi place; string? UpdateCalendarItemRequest.Location then carries the display
      *             label. Set bool UpdateCalendarItemRequest.PlaceIdProvided with a null value to clear. Free-text-only location changes are rejected
-     *             (resolve via geo first); CalDAV remains the lenient path.
+     *             (resolve via geo first).
      * @nullable
      */
   placeId?: string | null;
@@ -49,7 +49,7 @@ export interface UpdateCalendarItemRequest {
   endDate?: string | null;
   endDateProvided?: boolean;
   /**
-     * IANA timezone names annotating the timed start/end (not serialized to ICS today).
+     * IANA timezone names annotating the timed start/end.
      * @nullable
      */
   startTimezone?: string | null;

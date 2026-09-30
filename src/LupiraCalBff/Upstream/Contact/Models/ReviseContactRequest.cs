@@ -15,7 +15,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>A calendar date that may omit the year — a birthday is often known only as a month-day.            int PartialDate.Month and int PartialDate.Day are always present; int? PartialDate.Year is null when unknown.            Canonical text is `yyyy-MM-dd` with a year, else `--MM-dd` (a serialization concern; wire formats            live at the seam, see VCardSerializer).</summary>
+        /// <summary>A calendar date that may omit the year — a birthday is often known only as a month-day.            int PartialDate.Month and int PartialDate.Day are always present; int? PartialDate.Year is null when unknown.            Canonical text is `yyyy-MM-dd` with a year, else `--MM-dd`; other wire formats are the serializers&apos; concern.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public global::LupiraCalBff.Upstream.Contact.Models.PartialDate? Birthday { get; set; }
@@ -49,7 +49,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
 #else
         public string GivenName { get; set; }
 #endif
-        /// <summary>What the contact card represents — vCard `KIND`. A business/venue (a provider referenced from            bookings, say) is an `Organization`: no birthday, employer, or kinship applies. `Individual` is ordinal 0            so pre-existing events replay as persons.</summary>
+        /// <summary>What the contact card represents. A business/venue (a provider referenced from            bookings, say) is an `Organization`: no birthday, employer, or kinship applies. `Individual` is ordinal 0            so pre-existing events replay as persons.</summary>
         public global::LupiraCalBff.Upstream.Contact.Models.ContactKind? Kind { get; set; }
         /// <summary>The middleName property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER

@@ -4,14 +4,14 @@
  * LupiraCal BFF
  * OpenAPI spec version: v1
  */
-import type { ContactRelationDirection } from './contactRelationDirection';
 import type { ContactRelationKind } from './contactRelationKind';
 import type { RelationProvenance } from './relationProvenance';
 
 /**
- * One resolved relation as seen from the viewed contact: ContactRelationKind ContactRelationEntryDto.Kind is always the OTHER contact's role
- *             relative to the viewed one (incoming edges show the derived inverse kind, and their label — the other side's phrasing — is omitted).
- *             RelationProvenance ContactRelationEntryDto.Provenance distinguishes stored edges from kin derived off the parent/child graph (returned only when inferred relations are requested).
+ * One relationship as seen from the viewed contact, identical whichever side stores it. ContactRelationKind ContactRelationEntryDto.Kind is the OTHER
+ *             contact's role relative to the viewed one and string? ContactRelationEntryDto.Label the viewed contact's own name for them; since, note and the
+ *             ended flag belong to the relationship and read the same from both sides. RelationProvenance ContactRelationEntryDto.Provenance distinguishes stored
+ *             relationships from kin derived off the parent/child graph (returned only when inferred relations are requested).
  */
 export interface ContactRelationEntryDto {
   contactId: string;
@@ -20,18 +20,17 @@ export interface ContactRelationEntryDto {
   /** @nullable */
   label?: string | null;
   /**
-     * When the relationship began, on outgoing edges where a precise date is known.
+     * When the relationship began, if a precise date is known.
      * @nullable
      */
   since?: string | null;
   /**
-     * Free-text note about the edge, on outgoing edges.
+     * Free-text note about the relationship.
      * @nullable
      */
   note?: string | null;
-  direction: ContactRelationDirection;
   provenance?: RelationProvenance;
-  /** The relationship ran its course (ex-spouse); the edge remains for history but asserts no current kinship. */
+  /** The relationship ran its course (ex-spouse); it remains for history but asserts no current kinship. */
   ended?: boolean;
   /** @nullable */
   until?: string | null;

@@ -1,3 +1,5 @@
+import type { StoredRelation } from '@lupira/cal-domain/contactRelations';
+
 /** Structural mirrors of the wire DTOs the mirror stores (domain stays generated-code-free; the shapes are
  *  asserted where data-layer code hands DTOs in). Unknown fields ride along untouched — the mirror stores the
  *  full server JSON and only reads/writes the fields the reducers know. */
@@ -75,6 +77,8 @@ export type ContactDoc = {
   pronouns?: string | null;
   profiles?: SocialProfile[] | null;
   addresses?: ContactAddress[] | null;
+  /** Relation copies this contact holds — storage; read relationships through `resolveRelations`. */
+  relations?: StoredRelation[] | null;
   metadata?: Record<string, unknown> | null;
   updatedAt?: string;
   [key: string]: unknown;

@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Lupira Cal API",
-    "description": "Calendar backend for Lupira (contacts live in LupiraContactApi; the DAV protocol surface in LupiraDavApi). Authenticate with a Bearer token issued by the OIDC provider (Authentik).",
+    "description": "Calendar backend for Lupira (contacts live in LupiraContactApi). Authenticate with a Bearer token issued by the OIDC provider (Authentik).",
     "version": "v1"
   },
   "paths": {
@@ -678,7 +678,7 @@
         "tags": [
           "CalendarItems"
         ],
-        "summary": "Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location must be a resolved PlaceId (free text is CalDAV-only).",
+        "summary": "Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location must be a resolved PlaceId.",
         "operationId": "CreateItem",
         "requestBody": {
           "content": {
@@ -3875,7 +3875,7 @@
             "$ref": "#/components/schemas/JsonNode"
           },
           "prompt": {
-            "description": "Event-bound payload (server-side only; never in ICS). At most one of ItemPrompt? CalendarItemDto.Prompt/ItemAction? CalendarItemDto.Action is set.",
+            "description": "Event-bound payload (server-side only). At most one of ItemPrompt? CalendarItemDto.Prompt/ItemAction? CalendarItemDto.Action is set.",
             "$ref": "#/components/schemas/ItemPrompt"
           },
           "action": {
@@ -4325,7 +4325,7 @@
             "$ref": "#/components/schemas/DatePrecision"
           },
           "metadata": {
-            "description": "Optional server-side annotations (e.g. import provenance) merged onto the item at creation \u2014 same store\n            as \u0060POST /items/{id}/metadata\u0060, saving a second call. Never in ICS.",
+            "description": "Optional server-side annotations (e.g. import provenance) merged onto the item at creation \u2014 same store\n            as \u0060POST /items/{id}/metadata\u0060, saving a second call.",
             "$ref": "#/components/schemas/JsonObject"
           },
           "availability": {
@@ -4979,7 +4979,7 @@
           "OptionalParticipant",
           "NonParticipant"
         ],
-        "description": "iCalendar \u0060ROLE\u0060."
+        "description": "An attendee\u0027s role in an item."
       },
       "ParticipationStatus": {
         "enum": [
@@ -4989,7 +4989,7 @@
           "Tentative",
           "Delegated"
         ],
-        "description": "iCalendar \u0060PARTSTAT\u0060 (attendee RSVP)."
+        "description": "An attendee\u0027s RSVP."
       },
       "ParticipationSummaryEntry": {
         "required": [
@@ -5680,7 +5680,7 @@
               "null",
               "string"
             ],
-            "description": "Re-anchor the location to a resolved LupiraGeoApi place; string? UpdateCalendarItemRequest.Location then carries the display\n            label. Set bool UpdateCalendarItemRequest.PlaceIdProvided with a null value to clear. Free-text-only location changes are rejected\n            (resolve via geo first); CalDAV remains the lenient path.",
+            "description": "Re-anchor the location to a resolved LupiraGeoApi place; string? UpdateCalendarItemRequest.Location then carries the display\n            label. Set bool UpdateCalendarItemRequest.PlaceIdProvided with a null value to clear. Free-text-only location changes are rejected\n            (resolve via geo first).",
             "format": "uuid"
           },
           "placeIdProvided": {
@@ -5738,7 +5738,7 @@
               "null",
               "string"
             ],
-            "description": "IANA timezone names annotating the timed start/end (not serialized to ICS today)."
+            "description": "IANA timezone names annotating the timed start/end."
           },
           "startTimezoneProvided": {
             "type": "boolean"

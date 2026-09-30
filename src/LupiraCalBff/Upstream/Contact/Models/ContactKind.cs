@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 using System;
 namespace LupiraCalBff.Upstream.Contact.Models
 {
-    /// <summary>What the contact card represents — vCard `KIND`. A business/venue (a provider referenced from            bookings, say) is an `Organization`: no birthday, employer, or kinship applies. `Individual` is ordinal 0            so pre-existing events replay as persons.</summary>
+    /// <summary>What the contact card represents. A business/venue (a provider referenced from            bookings, say) is an `Organization`: no birthday, employer, or kinship applies. `Individual` is ordinal 0            so pre-existing events replay as persons.</summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public enum ContactKind
     {

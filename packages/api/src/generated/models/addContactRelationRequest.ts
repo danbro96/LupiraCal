@@ -7,13 +7,13 @@
 import type { ContactRelationKind } from './contactRelationKind';
 
 /**
- * Upserts a directed relation edge on a contact: "Guid AddContactRelationRequest.ToContactId is this contact's ContactRelationKind AddContactRelationRequest.Kind".
+ * Upserts a relationship from either side: "Guid AddContactRelationRequest.ToContactId is this contact's ContactRelationKind AddContactRelationRequest.Kind".
  */
 export interface AddContactRelationRequest {
   toContactId: string;
   kind: ContactRelationKind;
   /**
-     * Free-text refinement of the kind, e.g. "dad".
+     * This contact's own name for the other, e.g. "dad". The other side keeps its own.
      * @nullable
      */
   label?: string | null;
@@ -23,7 +23,7 @@ export interface AddContactRelationRequest {
      */
   since?: string | null;
   /**
-     * Free-text note about the edge (how/where it started); fuzzy periods that aren't a precise date go here.
+     * Free-text note about the relationship (how/where it started); fuzzy periods that aren't a precise date go here.
      * @nullable
      */
   note?: string | null;

@@ -8,8 +8,7 @@
 /**
  * A calendar date that may omit the year — a birthday is often known only as a month-day.
  *             int PartialDate.Month and int PartialDate.Day are always present; int? PartialDate.Year is null when unknown.
- *             Canonical text is `yyyy-MM-dd` with a year, else `--MM-dd` (a serialization concern; wire formats
- *             live at the seam, see VCardSerializer).
+ *             Canonical text is `yyyy-MM-dd` with a year, else `--MM-dd`; other wire formats are the serializers' concern.
  */
 export interface PartialDate {
   /** @nullable */

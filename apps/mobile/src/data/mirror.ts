@@ -1,3 +1,4 @@
+import type { RelationCopy, StoredRelation } from '@lupira/cal-domain/contactRelations';
 import type { ContactGuards, ItemGuards } from '../domain/docTypes';
 import type { ContactDoc, ItemDoc } from '../domain/docTypes';
 import type { OccurrenceRow } from '../domain/materialize';
@@ -277,6 +278,29 @@ export async function mapContactAddresses(tx: Tx): Promise<MapContactRow[]> {
      WHERE c.deleted = 0 AND json_extract(a.value, '$.placeId') IS NOT NULL
      ORDER BY c.display_name COLLATE NOCASE`,
   );
+}
+
+export type RelationCopyRow = RelationCopy & { otherId: string; otherName: string };
+
+/** Every stored copy of a relationship touching `contactId`: the ones its own doc holds and the ones
+ *  other contacts hold about it, with the other contact's name. Copies whose other side is deleted or
+ *  absent from the mirror are dropped, as the server's listing drops them. */
+export async function relationCopiesOf(tx: Tx, contactId: string): Promise<RelationCopyRow[]> {
+  const rows = await tx.all<{ holder_id: string; edge: string; other_id: string; other_name: string }>(
+    `SELECT c.id AS holder_id, r.value AS edge, o.id AS other_id, o.display_name AS other_name
+     FROM contacts c
+     JOIN json_each(json_extract(c.doc, '$.relations')) r
+     JOIN contacts o ON o.deleted = 0
+       AND o.id = CASE WHEN c.id = ? THEN json_extract(r.value, '$.toContactId') ELSE c.id END
+     WHERE c.id = ? OR (c.deleted = 0 AND json_extract(r.value, '$.toContactId') = ?)`,
+    [contactId, contactId, contactId],
+  );
+  return rows.map((r) => ({
+    holderId: r.holder_id,
+    edge: JSON.parse(r.edge) as StoredRelation,
+    otherId: r.other_id,
+    otherName: r.other_name,
+  }));
 }
 
 export type ContactListRow = { id: string; displayName: string; doc: ContactDoc };

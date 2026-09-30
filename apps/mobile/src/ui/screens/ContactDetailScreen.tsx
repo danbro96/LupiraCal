@@ -16,7 +16,7 @@ import { composeDisplayName, loadContact } from '../../data/mirror';
 import type { ContactAddress, PartialDateDto } from '../../domain/docTypes';
 import { copyText } from '../../feedback/copy';
 import { deleteContact } from '../../state/actions';
-import { useContactState } from '../../state/useContactList';
+import { useContactRelations, useContactState } from '../../state/useContactList';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
 import { PlaceTile } from '../components/PlaceTile';
@@ -38,6 +38,7 @@ export function ContactDetailScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { contactId } = route.params;
   const { data: state, isLoading } = useContactState(contactId);
+  const { data: relations = [] } = useContactRelations(contactId);
   const confirm = useConfirm();
   const [relationsOpen, setRelationsOpen] = useState(false);
   const [otherAddressesOpen, setOtherAddressesOpen] = useState(false);
@@ -77,7 +78,7 @@ export function ContactDetailScreen() {
   if (!state) return <Centered text="This contact is not in the offline mirror." />;
   const doc = state.doc;
   const displayName = composeDisplayName(doc);
-  const relations = (doc.relations as { toContactId?: string; kind?: string; label?: string | null; ended?: boolean }[] | undefined) ?? [];
+  const currentRelations = relations.filter((r) => !r.ended);
   const emergency = (doc.emergencyContactIds as string[] | undefined) ?? [];
   const addresses = (doc.addresses ?? []).map((a) => withResidency(a));
   const currentAddresses = addresses.filter((a) => a.status === 'active');
@@ -167,23 +168,22 @@ export function ContactDetailScreen() {
         </>
       )}
 
-      {relations.filter((r) => !r.ended).length > 0 && (
-        <>
-          <List.Accordion
-            title={`Relations (${relations.filter((r) => !r.ended).length})`}
-            expanded={relationsOpen}
-            onPress={() => setRelationsOpen((o) => !o)}
-          >
-            {relations.filter((r) => !r.ended).map((r, i) => (
-              <ResolvedName
-                key={`${r.toContactId}-${i}`}
-                contactId={r.toContactId ?? ''}
-                prefix={`${r.label ?? r.kind ?? 'Related'} — `}
-                navigation={navigation}
-              />
-            ))}
-          </List.Accordion>
-        </>
+      {currentRelations.length > 0 && (
+        <List.Accordion
+          title={`Relations (${currentRelations.length})`}
+          expanded={relationsOpen}
+          onPress={() => setRelationsOpen((o) => !o)}
+        >
+          {currentRelations.map((r) => (
+            <List.Item
+              key={`${r.otherId}-${r.kind}`}
+              onPress={() => navigation.push('ContactDetail', { contactId: r.otherId })}
+              description={r.label ?? r.kind}
+              style={styles.dense}
+              title={r.displayName}
+            />
+          ))}
+        </List.Accordion>
       )}
 
       <TagRow tags={visibleTags(doc.tags)} />

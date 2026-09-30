@@ -6,7 +6,7 @@
  */
 
 /**
- * What the contact card represents — vCard `KIND`. A business/venue (a provider referenced from
+ * What the contact card represents. A business/venue (a provider referenced from
  *             bookings, say) is an `Organization`: no birthday, employer, or kinship applies. `Individual` is ordinal 0
  *             so pre-existing events replay as persons.
  */

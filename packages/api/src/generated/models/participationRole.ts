@@ -6,7 +6,7 @@
  */
 
 /**
- * iCalendar `ROLE`.
+ * An attendee's role in an item.
  */
 export type ParticipationRole = typeof ParticipationRole[keyof typeof ParticipationRole];
 

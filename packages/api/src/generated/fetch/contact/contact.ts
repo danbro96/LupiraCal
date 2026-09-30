@@ -1153,7 +1153,7 @@ export const getClearContactDeceasedUrl = (id: string,
 }
 
 /**
- * @summary Undo a deceased marking recorded in error. (CardDAV can set but never clear deceased — clearing is API-only.)
+ * @summary Undo a deceased marking recorded in error — the only way to clear it.
  */
 export const clearContactDeceased = async (id: string,
     params?: ClearContactDeceasedParams, options?: Parameters<typeof apiRequest>[1]): Promise<clearContactDeceasedResponse> => {
@@ -1599,7 +1599,7 @@ export const getListContactRelationsUrl = (id: string,
 }
 
 /**
- * @summary Resolved relations, both directions: each entry's kind is the other contact's role relative to this one (incoming = derived inverse). Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred.
+ * @summary The contact's relationships, identical whichever side stores them: each entry's kind is the other contact's role relative to this one and its label this contact's own name for them. Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred.
  */
 export const listContactRelations = async (id: string,
     params?: ListContactRelationsParams, options?: Parameters<typeof apiRequest>[1]): Promise<listContactRelationsResponse> => {
@@ -1615,7 +1615,7 @@ export const listContactRelations = async (id: string,
 
 
 export type addContactRelationResponse200 = {
-  data: ContactDto
+  data: ContactRelationEntryDto
   status: 200
 }
 
@@ -1662,7 +1662,7 @@ export const getAddContactRelationUrl = (id: string,) => {
 }
 
 /**
- * @summary Upsert a relation: 'toContactId is this contact's kind' (re-adding the same target+kind revises the label).
+ * @summary Upsert a relationship from either side: 'toContactId is this contact's kind'. The label is this contact's own name for the other; since and note are shared. Re-adding revises it and revives an ended one.
  */
 export const addContactRelation = async (id: string,
     addContactRelationRequest: AddContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<addContactRelationResponse> => {
@@ -1691,9 +1691,9 @@ return apiRequest<addContactRelationResponse>(getAddContactRelationUrl(id),
 );}
 
 
-export type removeContactRelationResponse200 = {
-  data: ContactDto
-  status: 200
+export type removeContactRelationResponse204 = {
+  data: void
+  status: 204
 }
 
 export type removeContactRelationResponse401 = {
@@ -1716,7 +1716,7 @@ export type removeContactRelationResponse500 = {
   status: 500
 }
 
-export type removeContactRelationResponseSuccess = (removeContactRelationResponse200) & {
+export type removeContactRelationResponseSuccess = (removeContactRelationResponse204) & {
   headers: Headers;
 };
 export type removeContactRelationResponseError = (removeContactRelationResponse401 | removeContactRelationResponse403 | removeContactRelationResponse404 | removeContactRelationResponse500) & {
@@ -1743,7 +1743,7 @@ export const getRemoveContactRelationUrl = (id: string,
 }
 
 /**
- * @summary Remove the relation edge to a contact with the given kind — for edges entered by mistake. A relationship that ran its course should be ended instead.
+ * @summary Remove a relationship entered by mistake, from either side. A relationship that ran its course should be ended instead.
  */
 export const removeContactRelation = async (id: string,
     toContactId: string,
@@ -1760,7 +1760,7 @@ export const removeContactRelation = async (id: string,
 
 
 export type endContactRelationResponse200 = {
-  data: ContactDto
+  data: ContactRelationEntryDto
   status: 200
 }
 
@@ -1803,7 +1803,7 @@ export const getEndContactRelationUrl = (id: string,
 }
 
 /**
- * @summary Mark a relation as ended (ex-spouse, falling-out): the edge stays, flagged with an optional end date, and no longer asserts current kinship. Re-adding the same relation revives it.
+ * @summary Mark a relationship as ended, from either side (ex-spouse, falling-out): it stays, flagged with an optional end date, and no longer asserts current kinship. Re-adding it revives it.
  */
 export const endContactRelation = async (id: string,
     toContactId: string,
