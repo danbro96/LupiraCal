@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { Chip, Icon, Text } from 'react-native-paper';
 import type { ItemAttendee } from '../../domain/docTypes';
 import { ICONS } from '../icons';
-import { useColors } from '../theme';
+import { spacing, useColors } from '../theme';
 import { attendeeSummary, rsvpLabel } from './rsvp';
 
 const COLLAPSED_LIMIT = 8;
@@ -62,6 +62,6 @@ export function AttendeeChips({ attendees, nameOf, onJoin }: {
 }
 
 const styles = StyleSheet.create({
-  summary: { marginTop: 12, marginBottom: 4 },
+  summary: { marginTop: spacing.sm, marginBottom: spacing.xs },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
 });

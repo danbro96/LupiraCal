@@ -24,11 +24,14 @@ export type RootStackParamList = {
   AvailabilityEdit: { day?: string } | undefined;
 };
 
+export type MapTarget = { lon: number; lat: number; focus?: 'photo' | 'place' };
+
 export type TabParamList = {
   Calendar: undefined;
   Contacts: undefined;
-  /** `at` centres the camera on one point — how the gallery hands a photo over. */
-  Map: { at?: { lon: number; lat: number } } | undefined;
+  /** `at` flies to one point and pins it — how an event, contact address or photo hands itself over.
+   *  Only a photo focus turns the photo layer on. */
+  Map: { at?: MapTarget } | undefined;
   /** Local day bounds, 'yyyy-MM-dd' — how a map pin hands over "everything from this day"; `event`
    *  is how an event hands over its linked photos. */
   Photos: { from?: string; to?: string; event?: string } | undefined;

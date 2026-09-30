@@ -17,18 +17,18 @@ import { useContactList } from '../../state/useContactList';
 import { useCalendars } from '../../state/useContainers';
 import { useItemState } from '../../state/useItemState';
 import { useMyContactId } from '../../state/useMe';
-import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { PlaceTile } from '../components/PlaceTile';
+import { TagRow } from '../components/TagRow';
 import { useToastClearance } from '../components/ToastHost';
 import { AttendeeChips } from '../event/AttendeeChips';
 import { useCalendarColors } from '../hooks/palette';
 import { EventPhotosRow } from '../photos/EventPhotosRow';
 import type { RootStackParamList } from '../navigation/types';
 import { spacing, useColors } from '../theme';
-import { ICONS } from '../icons';
 
 export function ItemDetailScreen() {
   const c = useColors();
@@ -40,7 +40,6 @@ export function ItemDetailScreen() {
   const { data: contacts } = useContactList();
   const debugEnabled = usePrefs((s) => s.debugEnabled);
   const me = useMyContactId();
-  const places = usePlaceCoords([state?.doc.placeId]);
   const confirm = useConfirm();
   const [actionBarHeight, setActionBarHeight] = useState(0);
   useToastClearance(actionBarHeight);
@@ -52,8 +51,6 @@ export function ItemDetailScreen() {
   const start = doc.isAllDay ? doc.startDate : doc.startsAt;
   const end = doc.isAllDay ? doc.endDate : doc.endsAt;
   const cancelled = doc.status === 'Cancelled';
-  const place = doc.placeId ? places.get(doc.placeId) : undefined;
-  const placeLabel = doc.locationLabel || place?.name;
   const attendees = doc.attendees ?? [];
   const contactName = (id: string) => (id === me ? 'You' : contacts?.find((row) => row.id === id)?.displayName ?? 'Unknown contact');
   const join = me && !state.deleted && !attendees.some((a) => a.contactId === me)
@@ -80,48 +77,40 @@ export function ItemDetailScreen() {
       }));
   };
 
-  const openOnMap = place?.latitude != null && place.longitude != null
-    ? () => navigation.navigate('Tabs', { screen: 'Map', params: { at: { lon: place.longitude!, lat: place.latitude! } } })
-    : undefined;
-
   return (
     <View style={styles.screen}>
       <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-        {state.deleted && <Text style={[styles.flag, { color: c.danger }]}>Deleted — pending sync</Text>}
-        {cancelled && <Text style={[styles.flag, { color: c.danger }]}>Cancelled</Text>}
-        <Text style={[styles.h1, cancelled && styles.struck]}>{doc.title ?? '(untitled)'}</Text>
-        {start && (
-          <Text style={[styles.when, { color: c.textMuted }]}>
-            {fmtWhen(start, doc.isAllDay)}
-            {end ? ` → ${fmtWhen(end, doc.isAllDay)}` : ''}
-          </Text>
-        )}
-        <ZoneLine doc={doc} />
-        {doc.recurrenceRule && <Text style={[styles.recur, { color: c.primary }]}>{describeRrule(doc.recurrenceRule)}</Text>}
-        {placeLabel && (
-          <List.Item
-            title={placeLabel}
-            description={openOnMap ? 'Show on map' : place?.formattedAddress ?? undefined}
-            style={styles.flush}
-            left={(p) => <List.Icon {...p} icon={ICONS.place} />}
-            onPress={openOnMap}
-          />
-        )}
-        <View style={styles.chipRow}>
-          {doc.status && !cancelled && <Chip compact mode="outlined">{doc.status}</Chip>}
-          {doc.category && <Chip compact mode="outlined">{doc.category}</Chip>}
-          {(doc.tags ?? []).map((t) => (
-            <Chip key={t} compact>{`#${t}`}</Chip>
-          ))}
+        <View style={styles.inset}>
+          {state.deleted && <Text style={[styles.flag, { color: c.danger }]}>Deleted — pending sync</Text>}
+          {cancelled && <Text style={[styles.flag, { color: c.danger }]}>Cancelled</Text>}
+          <Text style={[styles.h1, cancelled && styles.struck]}>{doc.title ?? '(untitled)'}</Text>
+          {start && (
+            <Text style={[styles.when, { color: c.textMuted }]}>
+              {fmtWhen(start, doc.isAllDay)}
+              {end ? ` → ${fmtWhen(end, doc.isAllDay)}` : ''}
+            </Text>
+          )}
+          <ZoneLine doc={doc} />
+          {doc.recurrenceRule && <Text style={[styles.recur, { color: c.primary }]}>{describeRrule(doc.recurrenceRule)}</Text>}
         </View>
-        {doc.description ? <Text style={styles.description}>{doc.description}</Text> : null}
-        {doc.prompt != null && <Text style={[styles.note, { color: c.textMuted }]}>Has a prompt payload (view on web)</Text>}
-        {doc.action != null && <Text style={[styles.note, { color: c.textMuted }]}>Has an action payload (view on web)</Text>}
+        {(doc.placeId || doc.locationLabel) && <PlaceTile placeId={doc.placeId} label={doc.locationLabel} />}
+        <View style={styles.inset}>
+          {((doc.status && !cancelled) || doc.category) && (
+            <View style={styles.chipRow}>
+              {doc.status && !cancelled && <Chip compact mode="outlined">{doc.status}</Chip>}
+              {doc.category && <Chip compact mode="outlined">{doc.category}</Chip>}
+            </View>
+          )}
+          {doc.description ? <Text style={styles.description}>{doc.description}</Text> : null}
+          {doc.prompt != null && <Text style={[styles.note, { color: c.textMuted }]}>Has a prompt payload (view on web)</Text>}
+          {doc.action != null && <Text style={[styles.note, { color: c.textMuted }]}>Has an action payload (view on web)</Text>}
 
-        {(attendees.length > 0 || join) && <AttendeeChips attendees={attendees} nameOf={contactName} onJoin={join} />}
+          {(attendees.length > 0 || join) && <AttendeeChips attendees={attendees} nameOf={contactName} onJoin={join} />}
 
-        <CalendarsPanel itemId={itemId} memberships={doc.calendars} />
+          <CalendarsPanel itemId={itemId} memberships={doc.calendars} />
+        </View>
         <EventPhotosRow itemId={itemId} item={doc} />
+        <TagRow tags={doc.tags} />
         <MetadataPanel itemId={itemId} metadata={doc.metadata ?? null} editable={debugEnabled} />
       </ScrollView>
 
@@ -212,7 +201,7 @@ function MetadataPanel({ itemId, metadata, editable }: {
   return (
     <List.Accordion
       title={`Metadata (${entries.length})`}
-      style={styles.flush}
+      style={styles.dense}
       expanded={expanded}
       onPress={() => setExpanded((e) => !e)}
     >
@@ -223,11 +212,11 @@ function MetadataPanel({ itemId, metadata, editable }: {
           title={metadataInputOf(v)}
           titleNumberOfLines={2}
           description={k}
-          style={styles.flush}
+          style={styles.dense}
         />
       ))}
       {editable && (
-        <View style={styles.metaEdit}>
+        <View style={[styles.inset, styles.metaEdit]}>
           <Input label="key" style={styles.metaKeyInput} autoCapitalize="none" value={key} onChangeText={setKey} />
           <Input label="value" style={styles.metaValueInput} value={value} onChangeText={setValue} />
           <Button title="Set" onPress={save} disabled={!key.trim()} />
@@ -240,17 +229,18 @@ function MetadataPanel({ itemId, metadata, editable }: {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  container: { padding: 16, gap: 6 },
-  sectionLabel: { marginTop: 12, marginBottom: 4 },
+  container: { paddingVertical: spacing.md, gap: spacing.xs },
+  inset: { paddingHorizontal: spacing.lg, gap: spacing.xs },
+  dense: { paddingVertical: 0 },
+  sectionLabel: { marginTop: spacing.sm, marginBottom: spacing.xs },
   flag: { fontWeight: '600' },
   h1: { fontSize: 20, fontWeight: '600' },
   struck: { textDecorationLine: 'line-through' },
   when: { fontSize: 14 },
   recur: { fontSize: 13 },
-  flush: { paddingHorizontal: 0 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
-  description: { fontSize: 14, marginTop: 6 },
-  note: { fontSize: 13, marginTop: 4 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs + 2 },
+  description: { fontSize: 14 },
+  note: { fontSize: 13 },
   calDot: { width: 10, height: 10, borderRadius: 5 },
   proposal: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   proposalText: { flex: 1, fontSize: 14 },

@@ -1,7 +1,6 @@
 import {
   Camera,
   Map as MapView,
-  TransformRequestManager,
   type CameraRef,
   type GeoJSONSourceRef,
   type PressEventWithFeatures,
@@ -21,7 +20,6 @@ import { fmtDate, fmtDateTime, fmtTime, parseYmd, ymd } from '@lupira/cal-domain
 import type { MapTheme } from '@lupira/cal-tokens/map';
 import { fallbackStyle } from '../../data/mapStyle';
 import { toastError } from '../../feedback/toast';
-import { useAuth } from '../../state/auth-store';
 import { useLocationTracking } from '../../state/location-tracking-store';
 import {
   useContactFeatures, useEventFeatures, useHotspotFeatures, useMovementFeatures, usePhotoFeatures, useSavedPlaceFeatures,
@@ -36,6 +34,7 @@ import {
 } from '../map/layers';
 import type { RootStackParamList, TabParamList } from '../navigation/types';
 import { ICONS } from '../icons';
+import { useMapAuthHeader } from '../map/useMapAuthHeader';
 import { Button } from '../components/Button';
 
 // Matches the web MapScreen default (Nordics, the basemap extract's home).
@@ -46,31 +45,7 @@ const FUTURE_DAYS = 180;
 /** Movement is the only layer scoped to a short window — a 90-day track would be unreadable. */
 const MOVEMENT_DAYS = 7;
 
-const AUTH_HEADER_ID = 'lupira-auth';
 const CELL_PADDING = { top: 48, right: 48, bottom: 48, left: 48 };
-
-const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-/** The native map fetches style assets (tiles/glyphs/sprite) itself, outside the mutator — the bearer
- *  rides a TransformRequestManager header scoped to the BFF origin. Scoping matters: presigned or
- *  third-party URLs must never receive an Authorization header. Re-adding the same id updates in place,
- *  which is what makes token rotation safe mid-session. */
-function useMapAuthHeader() {
-  const token = useAuth((s) => s.token);
-  const apiUrl = useAuth((s) => s.apiUrl);
-  useEffect(() => {
-    if (!token) {
-      TransformRequestManager.removeHeader(AUTH_HEADER_ID);
-      return;
-    }
-    TransformRequestManager.addHeader({
-      id: AUTH_HEADER_ID,
-      name: 'Authorization',
-      value: `Bearer ${token}`,
-      match: `^${escapeRegex(apiUrl.replace(/\/$/, ''))}/`,
-    });
-  }, [token, apiUrl]);
-}
 
 type PhotoPin = { id: string; takenAt: string; placeLabel: string | null; thumbUrl: string | null };
 type VisitPin = { placeLabel: string | null; arriveTs: string; departTs: string; durationMin: number };

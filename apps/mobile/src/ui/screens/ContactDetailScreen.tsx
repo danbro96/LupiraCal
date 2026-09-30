@@ -3,33 +3,34 @@ import { birthdayAgeLine, nextBirthday, turningAge } from '@lupira/cal-domain/bi
 import { initialsOf } from '@lupira/cal-domain/contactNames';
 import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
+import { fmtFuzzyDate } from '@lupira/cal-domain/fuzzyDate';
+import { residencyPhrase, withResidency } from '@lupira/cal-domain/residents';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
-import { Avatar, Button, Chip, List, Text } from 'react-native-paper';
-import { getPlace } from '@lupira/cal-api/fetch/geo';
+import { Avatar, Button, List, Text } from 'react-native-paper';
 import { getDb } from '../../data/db/expoDb';
 import { composeDisplayName, loadContact } from '../../data/mirror';
-import type { PartialDateDto } from '../../domain/docTypes';
+import type { ContactAddress, PartialDateDto } from '../../domain/docTypes';
 import { deleteContact } from '../../state/actions';
 import { useContactState } from '../../state/useContactList';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
-
+import { PlaceTile } from '../components/PlaceTile';
+import { TagRow } from '../components/TagRow';
 import { avatarColor } from '../hooks/palette';
 import { ReachIcon } from '../components/ReachIcon';
 import type { RootStackParamList } from '../navigation/types';
-import { useColors } from '../theme';
-import { toastError } from '../../feedback/toast';
+import { spacing, useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '../components/Glyph';
 
 /** Read-only overview — ALL editing lives on the edit screen. Shows everything the mirror doc carries:
- *  names, kind, pronouns, birthday+age, deceased, unified reach (channels + profiles), tags, addresses
- *  (tap → Google Maps via a geo place lookup), notes, metadata, emergency contacts and relations with
- *  names resolved from the mirror. */
+ *  names, kind, pronouns, birthday+age, deceased, unified reach (channels + profiles), addresses (current
+ *  ones as place tiles; past and future folded away), notes, emergency contacts, relations with names
+ *  resolved from the mirror, and — least prominent — tags and metadata. */
 export function ContactDetailScreen() {
   const c = useColors();
   const route = useRoute<RouteProp<RootStackParamList, 'ContactDetail'>>();
@@ -38,6 +39,7 @@ export function ContactDetailScreen() {
   const { data: state, isLoading } = useContactState(contactId);
   const confirm = useConfirm();
   const [relationsOpen, setRelationsOpen] = useState(false);
+  const [otherAddressesOpen, setOtherAddressesOpen] = useState(false);
   const name = state ? composeDisplayName(state.doc) : '';
 
   // Edit/Delete live in the native header; delete always confirms (it syncs to the whole family).
@@ -76,14 +78,16 @@ export function ContactDetailScreen() {
   const displayName = composeDisplayName(doc);
   const relations = (doc.relations as { toContactId?: string; kind?: string; label?: string | null; ended?: boolean }[] | undefined) ?? [];
   const emergency = (doc.emergencyContactIds as string[] | undefined) ?? [];
-  const addresses = (doc.addresses as { placeId?: string | null; type?: string }[] | undefined) ?? [];
+  const addresses = (doc.addresses ?? []).map((a) => withResidency(a));
+  const currentAddresses = addresses.filter((a) => a.status === 'active');
+  const otherAddresses = addresses.filter((a) => a.status !== 'active');
   const metadata = Object.entries(doc.metadata ?? {});
   const deceased = doc.deceased === true;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {state.deleted && <Text style={[styles.deletedNote, { color: c.danger }]}>Deleted — pending sync</Text>}
-      <View style={styles.header}>
+      {state.deleted && <Text style={[styles.inset, styles.deletedNote, { color: c.danger }]}>Deleted — pending sync</Text>}
+      <View style={[styles.inset, styles.header]}>
         <Avatar.Text size={52} label={initialsOf(displayName)} style={{ backgroundColor: avatarColor(contactId) }} />
         <View style={styles.headerBody}>
           <Text style={styles.h1}>{displayName}{deceased ? ' †' : ''}</Text>
@@ -96,14 +100,14 @@ export function ContactDetailScreen() {
 
       {doc.birthday != null && <BirthdayRow birthday={doc.birthday} deceased={deceased} />}
       {deceased && (
-        <Text style={[styles.deceased, { color: c.textMuted }]}>
+        <Text style={[styles.inset, styles.deceased, { color: c.textMuted }]}>
           Deceased{typeof doc.deathDate === 'string' ? ` — ${doc.deathDate}` : ''}
         </Text>
       )}
 
       <List.Subheader>Reach</List.Subheader>
       {(doc.channels ?? []).length === 0 && (doc.profiles ?? []).length === 0 && (
-        <Text style={[styles.muted, { color: c.textMuted }]}>Nothing yet</Text>
+        <Text style={[styles.inset, styles.muted, { color: c.textMuted }]}>Nothing yet</Text>
       )}
       {(doc.channels ?? []).map((ch, i) => (
         <List.Item
@@ -111,6 +115,7 @@ export function ContactDetailScreen() {
           onPress={() => openReach(ch.medium, ch.value)}
           title={ch.preferred ? <>{ch.value} <Glyph name={ICONS.star} /></> : ch.value}
           description={channelLabel(ch.medium, ch.type)}
+          style={styles.dense}
           left={() => <ReachIcon kind={ch.medium} />}
         />
       ))}
@@ -120,32 +125,31 @@ export function ContactDetailScreen() {
           onPress={() => openReach(p.service, p.handle)}
           title={p.preferred ? <>{p.handle} <Glyph name={ICONS.star} /></> : p.handle}
           description={p.service}
+          style={styles.dense}
           left={() => <ReachIcon kind={p.service} />}
         />
       ))}
 
-      {visibleTags(doc.tags).length > 0 && (
-        <>
-          <List.Subheader>Tags</List.Subheader>
-          <View style={styles.chipRow}>
-            {visibleTags(doc.tags).map((t) => (
-              <Chip key={t} compact>{`#${t}`}</Chip>
-            ))}
-          </View>
-        </>
-      )}
-
-      {addresses.length > 0 && (
-        <>
-          <List.Subheader>Addresses</List.Subheader>
-          {addresses.map((a, i) => <AddressRow key={i} placeId={a.placeId ?? null} type={a.type ?? 'Home'} />)}
-        </>
+      {addresses.length > 0 && <List.Subheader>Addresses</List.Subheader>}
+      {currentAddresses.map((a, i) => (
+        <PlaceTile key={`now-${i}`} placeId={a.placeId} meta={addressMeta(a)} directions />
+      ))}
+      {otherAddresses.length > 0 && (
+        <List.Accordion
+          title={`Previous & upcoming (${otherAddresses.length})`}
+          titleStyle={[styles.accordionTitle, { color: c.textMuted }]}
+          style={styles.dense}
+          expanded={otherAddressesOpen}
+          onPress={() => setOtherAddressesOpen((o) => !o)}
+        >
+          {otherAddresses.map((a, i) => <PlaceTile key={`other-${i}`} placeId={a.placeId} meta={addressMeta(a)} muted />)}
+        </List.Accordion>
       )}
 
       {doc.notes ? (
         <>
           <List.Subheader>Notes</List.Subheader>
-          <Text style={styles.notes}>{doc.notes}</Text>
+          <Text style={[styles.inset, styles.notes]}>{doc.notes}</Text>
         </>
       ) : null}
 
@@ -175,11 +179,13 @@ export function ContactDetailScreen() {
         </>
       )}
 
+      <TagRow tags={visibleTags(doc.tags)} />
+
       {metadata.length > 0 && (
         <>
           <List.Subheader>Metadata</List.Subheader>
           {metadata.map(([k, v]) => (
-            <Text key={k} style={styles.row}>
+            <Text key={k} style={[styles.inset, styles.row]}>
               <Text style={[styles.rowKind, { color: c.textMuted }]}>{k}  </Text>
               {typeof v === 'string' ? v : JSON.stringify(v)}
             </Text>
@@ -188,7 +194,7 @@ export function ContactDetailScreen() {
       )}
 
       {typeof doc.updatedAt === 'string' && (
-        <Text style={[styles.footer, { color: c.textMuted }]}>Updated {new Date(doc.updatedAt).toLocaleString()}</Text>
+        <Text style={[styles.inset, styles.footer, { color: c.textMuted }]}>Updated {new Date(doc.updatedAt).toLocaleString()}</Text>
       )}
 
     </ScrollView>
@@ -206,46 +212,18 @@ function BirthdayRow({ birthday, deceased }: { birthday: PartialDateDto; decease
   const next = nextBirthday(month, day, new Date());
   const age = turningAge(year, next);
   return (
-    <Text style={[styles.birthday, { color: c.warning }]}>
+    <Text style={[styles.inset, styles.birthday, { color: c.warning }]}>
       <Glyph name={ICONS.cake} /> {fmtPartialDate(birthday)}
       {age != null ? ` · ${birthdayAgeLine(age, next, deceased)}` : ''}
     </Text>
   );
 }
 
-/** Address rows are place refs — resolving to something mappable needs the geo API (online). Tap-to-open
- *  keeps the offline path clean: nothing is fetched until asked. */
-function AddressRow({ placeId, type }: { placeId: string | null; type: string }) {
-  const [busy, setBusy] = useState(false);
-
-  const open = async () => {
-    if (!placeId || busy) return;
-    setBusy(true);
-    try {
-      const r = await getPlace(placeId);
-      if (r.status !== 200) throw new Error(`HTTP ${r.status}`);
-      const place = r.data as { lat?: number; lon?: number; displayName?: string | null; name?: string | null };
-      const { lat, lon } = place;
-      const query = Number.isFinite(lat) && Number.isFinite(lon)
-        ? `${lat},${lon}`
-        : (place.displayName ?? place.name ?? '');
-      if (!query) throw new Error('place has no location');
-      await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`);
-    } catch {
-      toastError('Cannot open map — resolving the address needs a connection.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <List.Item
-      onPress={() => void open()}
-      disabled={!placeId}
-      description={type}
-      title={placeId ? (busy ? 'Opening map…' : 'Open in Google Maps ↗') : '(no place linked)'}
-    />
-  );
+/** "Home · since 2019", "Work · lived here 2010–2015", "Home · moves in Jun 2027". */
+function addressMeta(a: ContactAddress & { status: 'active' | 'former' | 'future' }): string {
+  const type = a.type ?? 'Home';
+  if (a.status !== 'active') return `${type} · ${residencyPhrase(a)}`;
+  return a.movedIn ? `${type} · since ${fmtFuzzyDate(a.movedIn)}` : type;
 }
 
 function ResolvedName({ contactId, prefix, navigation }: {
@@ -269,25 +247,29 @@ function ResolvedName({ contactId, prefix, navigation }: {
     <List.Item
       onPress={() => name && navigation.push('ContactDetail', { contactId })}
       description={prefix}
+      style={styles.dense}
       title={name ?? '(not in mirror)'}
     />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 4 },
+  container: { paddingVertical: spacing.md },
+  // Paper's list rows and subheaders bring their own 16dp; everything else lines up with them.
+  inset: { paddingHorizontal: spacing.lg },
+  dense: { paddingVertical: 0 },
   deletedNote: { fontWeight: '600' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   headerBody: { flex: 1 },
   h1: { fontSize: 20, fontWeight: '600' },
   sub: { fontSize: 13 },
-  birthday: { fontSize: 14, marginTop: 6 },
+  birthday: { fontSize: 14, marginTop: spacing.sm },
   deceased: { fontSize: 13, fontStyle: 'italic' },
-  row: { fontSize: 14, paddingVertical: 4 },
+  row: { fontSize: 14, paddingVertical: 2 },
   rowKind: { fontSize: 13 },
   muted: { fontSize: 13 },
   notes: { fontSize: 14 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  footer: { fontSize: 11, marginTop: 12, marginBottom: 16 },
+  accordionTitle: { fontSize: 14 },
+  footer: { fontSize: 11, marginTop: spacing.md, marginBottom: spacing.lg },
   headerActions: { flexDirection: 'row', paddingRight: 4 },
 });

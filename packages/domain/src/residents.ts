@@ -22,7 +22,7 @@ export interface PlaceResidents {
   other: Resident[];
 }
 
-export function withResidency<T extends ContactAddressRow>(row: T, today: Date = new Date()): T & { status: ResidencyStatus } {
+export function withResidency<T extends Pick<ContactAddressRow, 'movedIn' | 'movedOut'>>(row: T, today: Date = new Date()): T & { status: ResidencyStatus } {
   return { ...row, status: residencyStatus(row.movedIn, row.movedOut, today) };
 }
 
