@@ -3,8 +3,8 @@ import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { addDays, daysFrom, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, parseYmd, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
 import { Text } from 'react-native-paper';
 import Animated, {
   scrollTo, useAnimatedRef, useAnimatedStyle, useScrollOffset, useSharedValue, type SharedValue,
@@ -38,6 +38,7 @@ const dayIndex = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(),
 
 const slotTime = (slot: number) => `${String(Math.floor(slot / 2)).padStart(2, '0')}:${slot % 2 ? '30' : '00'}`;
 const DEFAULT_END_MIN = 30;   // open-ended timed occurrences render as a half-hour block
+const MAX_STRIP_SHARE = 0.3;
 const LEAD_HOURS = 2;         // "now" opens this far below the top of the lanes
 const HEADER_H = 24;
 const LANE_H = 17;
@@ -298,7 +299,8 @@ function EventBlock({ placed, color, placeName, onPress }: {
 
 /** Bars packed into lanes per week. The strip is as tall as the current week (index 1) needs, capped at the
  *  `allDayRows` pref: past it, the last row counts per day what is hidden instead of drawing bars. Tapping
- *  a count or the gutter chevron shows every lane. */
+ *  a count or the gutter chevron shows every lane. However many lanes are shown, the strip never takes more
+ *  than a share of the screen — past that it scrolls, so the timed lanes stay reachable. */
 function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
   weeks: Bar[][];
   firstCol: number;
@@ -307,6 +309,7 @@ function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
   onPress: (row: CalRow) => void;
 }) {
   const c = useColors();
+  const maxHeight = Math.round(useWindowDimensions().height * MAX_STRIP_SHARE);
   const [expanded, setExpanded] = useState(false);
   const laned = weeks.map((bars) => packLanes(bars));
   const laneCount = (w: number) => laned[w].reduce((n, b) => Math.max(n, b.lane + 1), 0);
@@ -319,42 +322,44 @@ function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
   const height = fold(current).rows * LANE_H + 2;
 
   return (
-    <View style={[styles.allDayRow, { borderColor: c.divider, height }]}>
-      <SlidingDays
-        slideStyle={slideStyle}
-        gutter={overflows && (
-          <Pressable
-            style={styles.stripToggle}
-            onPress={() => setExpanded((e) => !e)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={expanded ? 'Collapse all-day events' : 'Show all all-day events'}
-          >
-            <Text style={{ color: c.textMuted }}><Glyph name={expanded ? ICONS.collapse : ICONS.expand} size={18} /></Text>
-          </Pressable>
-        )}
-      >
-        {laned.flatMap((weekBars, w) => {
-          const { drawn: shown, folded } = fold(laneCount(w));
-          const weekCol = firstCol + w * 7;
-          const hidden = folded ? hiddenPerColumn(weekBars, shown, 7) : [];
-          return [
-            ...weekBars.filter((b) => b.lane < shown).map((b) => (
-              <StripBar key={`${w}-${b.row.source}-${b.row.source_id}-${b.row.start_utc}`} bar={b} left={weekCol + b.startCol} rowColor={rowColor} onPress={onPress} />
-            )),
-            ...hidden.flatMap((n, col) => (n > 0 ? [(
-              <Pressable
-                key={`more-${w}-${col}`}
-                style={[styles.more, { top: shown * LANE_H + 1, left: colPct(weekCol + col), width: colPct(1) }]}
-                onPress={() => setExpanded(true)}
-                accessibilityLabel={`${n} more`}
-              >
-                <Text style={[styles.moreText, { color: c.textMuted }]}>+{n}</Text>
-              </Pressable>
-            )] : [])),
-          ];
-        })}
-      </SlidingDays>
+    <View style={[styles.allDayStrip, { borderColor: c.divider, height: Math.min(height, maxHeight) }]}>
+      <ScrollView scrollEnabled={height > maxHeight} contentContainerStyle={[styles.allDayRow, { height }]}>
+        <SlidingDays
+          slideStyle={slideStyle}
+          gutter={overflows && (
+            <Pressable
+              style={styles.stripToggle}
+              onPress={() => setExpanded((e) => !e)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={expanded ? 'Collapse all-day events' : 'Show all all-day events'}
+            >
+              <Text style={{ color: c.textMuted }}><Glyph name={expanded ? ICONS.collapse : ICONS.expand} size={18} /></Text>
+            </Pressable>
+          )}
+        >
+          {laned.flatMap((weekBars, w) => {
+            const { drawn: shown, folded } = fold(laneCount(w));
+            const weekCol = firstCol + w * 7;
+            const hidden = folded ? hiddenPerColumn(weekBars, shown, 7) : [];
+            return [
+              ...weekBars.filter((b) => b.lane < shown).map((b) => (
+                <StripBar key={`${w}-${b.row.source}-${b.row.source_id}-${b.row.start_utc}`} bar={b} left={weekCol + b.startCol} rowColor={rowColor} onPress={onPress} />
+              )),
+              ...hidden.flatMap((n, col) => (n > 0 ? [(
+                <Pressable
+                  key={`more-${w}-${col}`}
+                  style={[styles.more, { top: shown * LANE_H + 1, left: colPct(weekCol + col), width: colPct(1) }]}
+                  onPress={() => setExpanded(true)}
+                  accessibilityLabel={`${n} more`}
+                >
+                  <Text style={[styles.moreText, { color: c.textMuted }]}>+{n}</Text>
+                </Pressable>
+              )] : [])),
+            ];
+          })}
+        </SlidingDays>
+      </ScrollView>
     </View>
   );
 }
@@ -498,7 +503,8 @@ const styles = StyleSheet.create({
   availStrip: { position: 'absolute', left: 2, right: 2, bottom: 1 },
   dayHeaderText: { fontSize: 12 },
   today: { fontWeight: '700' },
-  allDayRow: { flexDirection: 'row', borderBottomWidth: 0.5 },
+  allDayStrip: { borderBottomWidth: 0.5 },
+  allDayRow: { flexDirection: 'row' },
   stripToggle: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   bar: {
     position: 'absolute', height: LANE_H - 2, marginHorizontal: 1, paddingHorizontal: 3,

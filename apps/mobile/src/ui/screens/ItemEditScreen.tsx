@@ -13,6 +13,7 @@ import {
   itemFormFromDoc, withAllDay, withSchedule,
 } from '../../domain/editors';
 import { saveItem } from '../../state/actions';
+import { usePrefs } from '../../state/prefs-store';
 import { useContactList } from '../../state/useContactList';
 import { selectableCalendars, useCalendars } from '../../state/useContainers';
 import { useItemState } from '../../state/useItemState';
@@ -69,12 +70,17 @@ export function ItemEditScreen() {
       setSeeded(true);
     }
   }, [seeded, itemId, state]);
+  const prefsLoaded = usePrefs((p) => p.loaded);
+  const lastCalendarIds = usePrefs((p) => p.lastCalendarIds);
   useEffect(() => {
-    const first = selectableCalendars(calendars)[0];
-    if (itemId || calendarIds.length > 0 || !first) return;
-    setCalendarIds([first.id]);
-    baseline.current = { ...baseline.current, calendars: JSON.stringify([first.id]) };
-  }, [itemId, calendarIds, calendars]);
+    if (itemId || calendarIds.length > 0 || !prefsLoaded) return;
+    const selectable = selectableCalendars(calendars);
+    const remembered = lastCalendarIds.filter((id) => selectable.some((cal) => cal.id === id));
+    const initial = remembered.length > 0 ? remembered : selectable.slice(0, 1).map((cal) => cal.id);
+    if (initial.length === 0) return;
+    setCalendarIds(initial);
+    baseline.current = { ...baseline.current, calendars: JSON.stringify(initial) };
+  }, [itemId, calendarIds, calendars, prefsLoaded, lastCalendarIds]);
 
   const dirty = JSON.stringify(form) !== baseline.current.form
     || JSON.stringify(calendarIds) !== baseline.current.calendars
@@ -130,6 +136,7 @@ export function ItemEditScreen() {
         ...filingChanges(state?.doc.calendars ?? [], calendarIds),
         ...attendeeChanges(state?.doc.attendees ?? [], attendeeIds),
       });
+      if (!itemId) void usePrefs.getState().setLastCalendarIds(calendarIds);
       return true;
     } catch (e) {
       setError(String(e));

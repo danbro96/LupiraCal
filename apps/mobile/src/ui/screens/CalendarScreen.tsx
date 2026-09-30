@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { isTaskRow } from '../../domain/taskRows';
+import { usePrefs } from '../../state/prefs-store';
 import type { CalRow } from '../../state/useOccurrences';
 import type { CalendarJump } from '../calendar/jump';
 import { MonthPane } from '../calendar/MonthPane';
@@ -14,8 +15,6 @@ import { SyncBanner } from '../components/SyncBanner';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors } from '../theme';
 
-type Mode = 'month' | 'week';
-
 /** Owns what the two modes share — the mode, the anchor date and jumps — and routes taps; each pane owns
  *  its own paging and selection. Month: MonthPane (grid + day sheet). Week: timed lanes with
  *  tap-to-create slots. The header is the period control (useCalendarHeader), and swiping either grid
@@ -23,7 +22,8 @@ type Mode = 'month' | 'week';
 export function CalendarScreen() {
   const c = useColors();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const [mode, setMode] = useState<Mode>('month');
+  const mode = usePrefs((p) => p.calendarMode);
+  const prefsLoaded = usePrefs((p) => p.loaded);
   const [anchor, setAnchor] = useState(() => new Date());
   const [jump, setJump] = useState<CalendarJump>({ seq: 0, toNow: false });
 
@@ -46,7 +46,9 @@ export function CalendarScreen() {
     anchor,
     onToday: useCallback(() => jumpTo(new Date(), { toNow: true }), [jumpTo]),
     onPickDate: useCallback((d: Date) => jumpTo(d, { select: true }), [jumpTo]),
-    onToggleMode: useCallback(() => setMode((m) => (m === 'month' ? 'week' : 'month')), []),
+    onToggleMode: useCallback(() => {
+      void usePrefs.getState().setCalendarMode(usePrefs.getState().calendarMode === 'month' ? 'week' : 'month');
+    }, []),
   });
 
   const openOccurrence = useCallback((row: CalRow) => {
@@ -63,7 +65,8 @@ export function CalendarScreen() {
     <View style={[styles.root, { backgroundColor: c.bg }]}>
       <SyncBanner />
       <BridgePrompt />
-      {mode === 'month' ? (
+      {/* Until prefs load the mode is a guess; mounting month first would flash it and fetch its grid. */}
+      {!prefsLoaded ? null : mode === 'month' ? (
         <MonthPane anchor={anchor} jump={jump} onStep={step} onOpenOccurrence={openOccurrence} />
       ) : (
         <View style={styles.area}>
