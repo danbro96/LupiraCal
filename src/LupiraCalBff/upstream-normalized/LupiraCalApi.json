@@ -5418,6 +5418,7 @@
         "required": [
           "cursor",
           "hasMore",
+          "reset",
           "changed",
           "deleted"
         ],
@@ -5428,6 +5429,10 @@
           },
           "hasMore": {
             "type": "boolean"
+          },
+          "reset": {
+            "type": "boolean",
+            "description": "Stream restarted from zero (no \u0060since\u0060, or readable calendars changed): a full sync from here."
           },
           "changed": {
             "type": "array",
@@ -5441,10 +5446,10 @@
               "type": "string",
               "format": "uuid"
             },
-            "description": "Ids no longer visible to the caller: soft-deleted, or every accepted membership left the caller\u0027s\n            readable calendars. Unknown ids are safe to ignore."
+            "description": "Ids filed to a readable calendar but no longer visible (deleted, or no accepted membership). Unknown\n            ids are safe to ignore."
           }
         },
-        "description": "One page of the changes feed. \u0060Cursor\u0060 is opaque \u2014 hand it back as \u0060?since=\u0060; loop while\n            \u0060HasMore\u0060. A full sync (no \u0060since\u0060) streams every live visible item and suppresses tombstones \u2014\n            the client replaces its mirror wholesale and rebases pending work."
+        "description": "One page of the changes feed. \u0060Cursor\u0060 is opaque \u2014 hand it back as \u0060?since=\u0060; loop while\n            \u0060HasMore\u0060. A full sync (no \u0060since\u0060, or a \u0060Reset\u0060) streams every live visible item and suppresses\n            tombstones \u2014 the client replaces its mirror wholesale and rebases pending work."
       },
       "TransportMode": {
         "enum": [

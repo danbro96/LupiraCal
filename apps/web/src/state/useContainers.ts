@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getListContainersQueryKey, useBootstrapMe, useListContainers } from '@lupira/cal-api/query/cal';
 import type { ContainerDto } from '@lupira/cal-api/models';
+import { needsCalendarBootstrap } from '@lupira/cal-domain/bootstrap';
 
 export function useContainers() {
   const query = useListContainers();
@@ -11,7 +12,7 @@ export function useContainers() {
   return { ...query, containers, calendars };
 }
 
-/** First-login seeding: once containers load with no calendars, run /me/bootstrap (idempotent) once. */
+/** First-login seeding: once containers load without the standard set, run /me/bootstrap (idempotent) once. */
 export function useEnsureBootstrap() {
   const queryClient = useQueryClient();
   const { isSuccess, calendars } = useContainers();
@@ -24,11 +25,11 @@ export function useEnsureBootstrap() {
   const { mutate } = bootstrap;
 
   useEffect(() => {
-    if (isSuccess && calendars.length === 0 && !started.current) {
+    if (isSuccess && needsCalendarBootstrap(calendars) && !started.current) {
       started.current = true;
       mutate();
     }
-  }, [isSuccess, calendars.length, mutate]);
+  }, [isSuccess, calendars, mutate]);
 
   return bootstrap.isPending;
 }

@@ -1,6 +1,7 @@
 import { getItem } from '@lupira/cal-api/fetch/cal';
 import { getContact } from '@lupira/cal-api/fetch/contact';
 import NetInfo from '@react-native-community/netinfo';
+import * as Sentry from '@sentry/react-native';
 import { AppState } from 'react-native';
 import { authPort } from '../data/api/authProvider';
 import { getDb } from '../data/db/expoDb';
@@ -80,6 +81,8 @@ async function run(dbOverride: Db | undefined, deps: PullDeps): Promise<void> {
     void runPhotoBackup(db).catch((e) => logDebug('photos', `backup pass failed: ${String(e)}`));
   } catch (e) {
     logDebug('sync', `sync failed: ${String(e)}`);
+    // Offline is expected; anything else is invisible off the phone without this.
+    if (!isNetworkError(e)) Sentry.captureException(e, { tags: { area: 'sync', phase: useSyncStatus.getState().progress?.phase ?? 'start' } });
     useSyncStatus.getState().set({
       serverReachable: !(e instanceof ApiError) || !isNetworkError(e),
       lastError: String(e),

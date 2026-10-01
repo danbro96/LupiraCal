@@ -407,14 +407,25 @@ export async function getCursor(tx: Tx, scope: 'cal' | 'contact'): Promise<strin
   return row?.cursor ?? null;
 }
 
-export async function setCursor(tx: Tx, scope: 'cal' | 'contact', cursor: string, full: boolean, nowIso: string): Promise<void> {
+/** Null while a full sync is incomplete: its prune needs every id, so an interrupted one restarts. */
+export async function getResumeCursor(tx: Tx, scope: 'cal' | 'contact'): Promise<string | null> {
+  const row = await tx.first<{ cursor: string | null; last_full_sync_at: string | null }>(
+    'SELECT cursor, last_full_sync_at FROM sync_state WHERE scope = ?', [scope]);
+  return row?.last_full_sync_at ? row.cursor : null;
+}
+
+export async function setCursor(tx: Tx, scope: 'cal' | 'contact', cursor: string, inFullSync: boolean, nowIso: string): Promise<void> {
   await tx.run(
-    `INSERT INTO sync_state (scope, cursor, last_full_sync_at, last_delta_at) VALUES (?, ?, ?, ?)
+    `INSERT INTO sync_state (scope, cursor, last_full_sync_at, last_delta_at) VALUES (?, ?, NULL, ?)
      ON CONFLICT(scope) DO UPDATE SET cursor=excluded.cursor,
-       last_full_sync_at=COALESCE(excluded.last_full_sync_at, sync_state.last_full_sync_at),
+       last_full_sync_at=CASE WHEN ? THEN NULL ELSE sync_state.last_full_sync_at END,
        last_delta_at=excluded.last_delta_at`,
-    [scope, cursor, full ? nowIso : null, nowIso],
+    [scope, cursor, nowIso, inFullSync ? 1 : 0],
   );
+}
+
+export async function completeFullSync(tx: Tx, scope: 'cal' | 'contact', nowIso: string): Promise<void> {
+  await tx.run('UPDATE sync_state SET last_full_sync_at = ? WHERE scope = ?', [nowIso, scope]);
 }
 
 export async function getMeta(tx: Tx, key: string): Promise<string | null> {

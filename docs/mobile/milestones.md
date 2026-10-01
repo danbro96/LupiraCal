@@ -56,8 +56,8 @@ aliases; no barrel index; no orval regen.
 Additive only — existing routes and the legacy feed untouched; web unaffected.
 
 ### Scope
-- [x] Projected `UpdatedSequence` (indexed, set in `Apply(IEvent<T>)`) + `createdAt`/`updatedAt`/`version` on snapshot and DTO. The planned flat `CalendarIds[]` column proved unnecessary: the feed is account-wide, so visibility filters in memory over the changed page only. Event store switched to Rich append mode (Quick assigns sequences server-side at INSERT — inline applies read 0)
-- [x] `GET /sync/changes?since={cursor}&limit={n}` → `{cursor, hasMore, changed[full DTOs + guards], deleted[ids]}` — indexed watermark query, paged (default 200/cap 500); deleted = soft-deleted ∪ no-longer-visible (covers unfile + unshare)
+- [x] Projected `UpdatedSequence` (indexed, set in `Apply(IEvent<T>)`) + `createdAt`/`updatedAt`/`version` on snapshot and DTO. The planned flat `CalendarIds[]` column proved unnecessary: the feed query filters on the item's memberships. Event store switched to Rich append mode (Quick assigns sequences server-side at INSERT — inline applies read 0)
+- [x] `GET /sync/changes?since={cursor}&limit={n}` → `{cursor, hasMore, reset, changed[full DTOs + guards], deleted[ids]}` — indexed watermark query over items filed to a readable calendar, paged (default 200/cap 500); deleted = soft-deleted ∪ unfiled; the cursor carries a readable-calendar scope, so a grant/revoke answers `reset` (full sync)
 - [x] `GET /sync/containers` → calendars snapshot (plain docs have no cursor)
 - [x] Per-section LWW guards on the snapshot — sections: `core`, `metadata`, `payload` (prompt/action share the XOR slot, one guard), `filing` (per-calendar dict). Tasks-api wins rule byte-for-byte; unstamped events fall back to event timestamp + sequence-encoded command id (append order preserved). Delete absorbing. Deviation: participants stay append-ordered (rare conflicts; Idempotency-Key still dedups replays)
 - [x] `occurredAt` optional on mutating endpoints (PUT body; `?occurredAt=` on metadata/clears/curation; payload set via body)
@@ -78,7 +78,7 @@ Additive only — existing routes and the legacy feed untouched; web unaffected.
 ## M2 — contact-api sync surface + BFF bearer + Authentik   [status: done]
 
 ### Scope
-- [x] contact-api `/sync/changes` (account-wide watermark query; tombstones cover deletes + book-moves to unreadable books) + `/sync/containers` (books + groups — groups leave the cursor domain, closing the group feed gap)
+- [x] contact-api `/sync/changes` (same contract; scoped to readable books + books a contact moved out of, so moves still tombstone) + `/sync/containers` (books + groups — groups leave the cursor domain, closing the group feed gap)
 - [x] Per-section guards + occurredAt + idempotency ledger (same port as M1). Deviation: channel and tag writes ride the `ContactRevised` event server-side, so they share the `core` guard — sections are core/addresses/profiles/avatar/metadata/deceased (mark/clear share one). Relations + emergency contacts stay append-ordered. Bonus: `CreateContactRequest.SourceKey` added — offline creates are replay-safe (cal already had it)
 - [x] BFF: JwtBearer second scheme (`Auth:Bearer:Authority` ?? OIDC authority; aud `lupira-cal`); Default policy = interactive scheme OR bearer; YARP forwards a caller-presented bearer verbatim (transform stands aside), else Duende cookie exchange
 - [x] 302-vs-401 guard covers `/api` + `/geo-api` + `/contact-api` (cookie login/denied + OIDC challenge)
@@ -121,7 +121,7 @@ Additive only — existing routes and the legacy feed untouched; web unaffected.
 - [x] Exclusive transactions: every mirror helper takes a Tx; writes only inside Db.exclusive (expo `withExclusiveTransactionAsync` / node BEGIN IMMEDIATE + mutex)
 - [x] Outbox: per-row backoff (next_attempt_at, exp + jitter, 30 min cap), park after 8 attempts, causal hold (SQL NOT EXISTS earlier parked sibling), 429 = retry, 401 = pause untouched
 - [x] Client LWW twin: `@lupira/cal-domain/lww` passes the emitted vector suite (sub-ms ISO precision preserved — Date.parse would mis-tie .NET's 7-digit timestamps); reducers seed per-section guards from sync `sectionGuards`; rebase folds pending AND parked ops over the server base
-- [x] Paged delta pull that reads the cursor (persisted per page); tombstone apply; full-sync prune keeps pending local creates; containers snapshot replace
+- [x] Paged delta pull that reads the cursor (persisted per page); a full sync (no cursor, or a server `reset`) that never completed restarts, since its prune needs every id; tombstone apply; full-sync prune keeps pending local creates; containers snapshot replace; first sync seeds missing standard containers (`@lupira/cal-domain/bootstrap`)
 - [x] TS recurrence expander in packages/domain — 17/17 parity fixtures (incl. Ical.Net's non-matching-DTSTART behavior); occurrence materialization over a −12/+24-month rolling horizon with drift re-materialization; birthday synthesis (year-less + Feb 29)
 - [x] monthKey-scoped react-query invalidation (no global revision counter); deterministic ids (MD5 + .NET Guid layout, pinned against real .NET output) so offline creates need no temp-id reconciliation
 - [x] expo-background-task registration (15-min floor, best-effort) + foreground triggers (app-active, connectivity, sign-in, post-enqueue)

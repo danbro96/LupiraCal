@@ -6,6 +6,7 @@ import {
   useListAddressBooks,
 } from '@lupira/cal-api/query/contact';
 import type { AddressBookDto } from '@lupira/cal-api/models';
+import { needsAddressBookBootstrap } from '@lupira/cal-domain/bootstrap';
 
 export function useAddressBooks() {
   const query = useListAddressBooks();
@@ -30,11 +31,11 @@ export function useEnsureContactBootstrap() {
   const { mutate } = bootstrap;
 
   useEffect(() => {
-    if (isSuccess && addressBooks.length === 0 && !started.current) {
+    if (isSuccess && needsAddressBookBootstrap(addressBooks) && !started.current) {
       started.current = true;
       mutate();
     }
-  }, [isSuccess, addressBooks.length, mutate]);
+  }, [isSuccess, addressBooks, mutate]);
 
   return bootstrap.isPending;
 }

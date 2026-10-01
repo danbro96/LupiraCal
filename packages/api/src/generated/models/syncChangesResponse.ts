@@ -8,16 +8,18 @@ import type { SyncChangeDto } from './syncChangeDto';
 
 /**
  * One page of the changes feed. `Cursor` is opaque — hand it back as `?since=`; loop while
- *             `HasMore`. A full sync (no `since`) streams every live visible item and suppresses tombstones —
- *             the client replaces its mirror wholesale and rebases pending work.
+ *             `HasMore`. A full sync (no `since`, or a `Reset`) streams every live visible item and suppresses
+ *             tombstones — the client replaces its mirror wholesale and rebases pending work.
  */
 export interface SyncChangesResponse {
   cursor: string;
   hasMore: boolean;
+  /** Stream restarted from zero (no `since`, or readable calendars changed): a full sync from here. */
+  reset: boolean;
   changed: SyncChangeDto[];
   /**
-     * Ids no longer visible to the caller: soft-deleted, or every accepted membership left the caller's
-     *             readable calendars. Unknown ids are safe to ignore.
+     * Ids filed to a readable calendar but no longer visible (deleted, or no accepted membership). Unknown
+     *             ids are safe to ignore.
      */
   deleted: string[];
 }

@@ -1,6 +1,7 @@
 import { getChanges as calGetChanges } from '@lupira/cal-api/fetch/cal';
-import { getSyncContainers as calGetContainers } from '@lupira/cal-api/fetch/cal';
-import { contactGetChanges, contactGetSyncContainers as contactGetContainers, getMe } from '@lupira/cal-api/fetch/contact';
+import { bootstrapMe as calBootstrap, getSyncContainers as calGetContainers } from '@lupira/cal-api/fetch/cal';
+import { contactBootstrapMe, contactGetChanges, contactGetSyncContainers as contactGetContainers, getMe } from '@lupira/cal-api/fetch/contact';
+import { needsAddressBookBootstrap, needsCalendarBootstrap } from '@lupira/cal-domain/bootstrap';
 import type { Db, Tx } from '../data/db/types';
 import { saveMyContactId } from '../data/me';
 import * as mirror from '../data/mirror';
@@ -9,6 +10,7 @@ import type { Horizon } from '../domain/materialize';
 import { birthdayRows, monthKeyOf, occurrenceRowsForItem } from '../domain/materialize';
 import type { MirrorContact, MirrorItem } from '../domain/mirrorReducers';
 import { applyContactOp, applyItemOp } from '../domain/mirrorReducers';
+import { logDebug } from '../debug/log';
 import { ApiError } from '../domain/apiError';
 import { toContactChangesPage, toItemChangesPage } from './docAdapters';
 import { useSyncStatus } from './syncStatus';
@@ -20,13 +22,17 @@ import { useSyncStatus } from './syncStatus';
 
 export type ItemChange = { item: ItemDoc; guards: ItemGuards };
 export type ContactChange = { contact: ContactDoc; guards: ContactGuards };
-export type ChangesPage<TChange> = { cursor: string; hasMore: boolean; changed: TChange[]; deleted: string[] };
+/** `reset`: the server restarted from zero — a full sync from that page on. */
+export type ChangesPage<TChange> = { cursor: string; hasMore: boolean; reset: boolean; changed: TChange[]; deleted: string[] };
 
 export type PullDeps = {
   calChanges(since: string | null): Promise<ChangesPage<ItemChange>>;
   contactChanges(since: string | null): Promise<ChangesPage<ContactChange>>;
-  calContainers(): Promise<{ id: string }[]>;
-  contactContainers(): Promise<{ addressBooks: { id: string }[]; groups: { id: string }[] }>;
+  calContainers(): Promise<{ id: string; kind?: string | null }[]>;
+  contactContainers(): Promise<{ addressBooks: { id: string; slug: string }[]; groups: { id: string }[] }>;
+  /** Seed the caller's standard containers; absent in harnesses that don't model it. */
+  bootstrapCalendars?(): Promise<void>;
+  bootstrapAddressBooks?(): Promise<void>;
   /** Your own contact id; absent in harnesses that don't model identity. */
   myContactId?(): Promise<string | null>;
   now(): Date;
@@ -53,6 +59,14 @@ export const realPullDeps: PullDeps = {
     if (r.status !== 200) throw new ApiError(r.status, 'containers failed');
     return r.data;
   },
+  bootstrapCalendars: async () => {
+    const r = await calBootstrap();
+    if (r.status !== 200) throw new ApiError(r.status, 'calendar bootstrap failed');
+  },
+  bootstrapAddressBooks: async () => {
+    const r = await contactBootstrapMe();
+    if (r.status !== 200) throw new ApiError(r.status, 'address book bootstrap failed');
+  },
   myContactId: async () => {
     const r = await getMe();
     if (r.status !== 200) throw new ApiError(r.status, 'me failed');
@@ -63,7 +77,12 @@ export const realPullDeps: PullDeps = {
 
 /** Returns whether any container changed. */
 export async function pullContainers(db: Db, deps: PullDeps): Promise<boolean> {
-  const [cal, contact] = [await deps.calContainers(), await deps.contactContainers()];
+  let cal = await deps.calContainers();
+  if (deps.bootstrapCalendars && needsCalendarBootstrap(cal) && (await seed('calendars', deps.bootstrapCalendars)))
+    cal = await deps.calContainers();
+  let contact = await deps.contactContainers();
+  if (deps.bootstrapAddressBooks && needsAddressBookBootstrap(contact.addressBooks) && (await seed('address books', deps.bootstrapAddressBooks)))
+    contact = await deps.contactContainers();
   let changed = false;
   await db.exclusive(async (tx) => {
     changed = (await mirror.replaceContainers(tx, 'calendars', cal)) || changed;
@@ -71,6 +90,17 @@ export async function pullContainers(db: Db, deps: PullDeps): Promise<boolean> {
     changed = (await mirror.replaceContainers(tx, 'contact_groups', contact.groups)) || changed;
   });
   return changed;
+}
+
+/** The app may be a member's first client. A failed seed must not hold back the mirror; the next sync retries. */
+async function seed(what: string, bootstrap: () => Promise<void>): Promise<boolean> {
+  try {
+    await bootstrap();
+    return true;
+  } catch (e) {
+    logDebug('sync', `${what} bootstrap failed: ${String(e)}`);
+    return false;
+  }
 }
 
 /** Returns whether your contact id changed. */
@@ -86,22 +116,28 @@ export type PullResult = { monthKeys: Set<string>; changed: boolean };
 export async function pullCal(db: Db, horizon: Horizon, deps: PullDeps): Promise<PullResult> {
   const monthKeys = new Set<string>();
   let changed = false;
-  let cursor = await mirror.getCursor(db, 'cal');
-  const full = cursor === null;
+  let cursor = await mirror.getResumeCursor(db, 'cal');
+  let full = cursor === null;
   const seen = new Set<string>();
 
   for (;;) {
     const page = await deps.calChanges(cursor);
-    if (page.changed.length + page.deleted.length > 0) changed = true;
-    await db.exclusive(async (tx) => {
+    if (page.reset) {
+      full = true;
+      seen.clear();
+    }
+    const touched = await db.exclusive(async (tx) => {
+      let n = page.changed.length;
       for (const change of page.changed) {
         seen.add(change.item.id);
         await rebaseItem(tx, change, horizon, monthKeys);
       }
-      for (const id of page.deleted) await tombstoneItem(tx, id, horizon, monthKeys);
+      for (const id of page.deleted) if (await tombstoneItem(tx, id, horizon, monthKeys)) n++;
       await mirror.setCursor(tx, 'cal', page.cursor, full, deps.now().toISOString());
+      return n;
     });
-    useSyncStatus.getState().bumpProgress('items', page.changed.length + page.deleted.length);
+    if (touched > 0) changed = true;
+    useSyncStatus.getState().bumpProgress('items', touched);
     cursor = page.cursor;
     if (!page.hasMore) break;
   }
@@ -117,6 +153,7 @@ export async function pullCal(db: Db, horizon: Horizon, deps: PullDeps): Promise
         await mirror.removeItem(tx, id);
         changed = true;
       }
+      await mirror.completeFullSync(tx, 'cal', deps.now().toISOString());
     });
   }
   return { monthKeys, changed };
@@ -125,25 +162,33 @@ export async function pullCal(db: Db, horizon: Horizon, deps: PullDeps): Promise
 export async function pullContacts(db: Db, horizon: Horizon, deps: PullDeps): Promise<PullResult> {
   const monthKeys = new Set<string>();
   let changed = false;
-  let cursor = await mirror.getCursor(db, 'contact');
-  const full = cursor === null;
+  let cursor = await mirror.getResumeCursor(db, 'contact');
+  let full = cursor === null;
   const seen = new Set<string>();
 
   for (;;) {
     const page = await deps.contactChanges(cursor);
-    if (page.changed.length + page.deleted.length > 0) changed = true;
-    await db.exclusive(async (tx) => {
+    if (page.reset) {
+      full = true;
+      seen.clear();
+    }
+    const touched = await db.exclusive(async (tx) => {
+      let n = page.changed.length;
       for (const change of page.changed) {
         seen.add(change.contact.id);
         await rebaseContact(tx, change, horizon, monthKeys);
       }
       for (const id of page.deleted) {
+        if (!(await mirror.loadContact(tx, id))) continue;
         await collectBirthdayMonths(tx, id, monthKeys);
         await mirror.removeContact(tx, id);
+        n++;
       }
       await mirror.setCursor(tx, 'contact', page.cursor, full, deps.now().toISOString());
+      return n;
     });
-    useSyncStatus.getState().bumpProgress('contacts', page.changed.length + page.deleted.length);
+    if (touched > 0) changed = true;
+    useSyncStatus.getState().bumpProgress('contacts', touched);
     cursor = page.cursor;
     if (!page.hasMore) break;
   }
@@ -157,6 +202,7 @@ export async function pullContacts(db: Db, horizon: Horizon, deps: PullDeps): Pr
         await mirror.removeContact(tx, id);
         changed = true;
       }
+      await mirror.completeFullSync(tx, 'contact', deps.now().toISOString());
     });
   }
   return { monthKeys, changed };
@@ -185,16 +231,19 @@ async function rebaseContact(tx: Tx, change: ContactChange, horizon: Horizon, mo
 }
 
 /** Delete-wins: the row and its occurrences go. Pending ops for it are left to 404-park on replay — the
- *  Sync issues screen is where a user resurrects that intent deliberately. */
-async function tombstoneItem(tx: Tx, id: string, horizon: Horizon, monthKeys: Set<string>): Promise<void> {
-  await collectItemMonths(tx, id, horizon, monthKeys);
+ *  Sync issues screen is where a user resurrects that intent deliberately. Returns whether the mirror held it. */
+async function tombstoneItem(tx: Tx, id: string, horizon: Horizon, monthKeys: Set<string>): Promise<boolean> {
+  if (!(await collectItemMonths(tx, id, horizon, monthKeys))) return false;
   await mirror.removeItem(tx, id);
+  return true;
 }
 
-async function collectItemMonths(tx: Tx, id: string, horizon: Horizon, monthKeys: Set<string>): Promise<void> {
+/** Returns whether the mirror holds the item. */
+async function collectItemMonths(tx: Tx, id: string, horizon: Horizon, monthKeys: Set<string>): Promise<boolean> {
   const existing = await mirror.loadItem(tx, id);
-  if (!existing) return;
+  if (!existing) return false;
   for (const r of occurrenceRowsForItem(existing.doc, existing.deleted, horizon)) monthKeys.add(monthKeyOf(r.startDay));
+  return true;
 }
 
 async function collectBirthdayMonths(tx: Tx, id: string, monthKeys: Set<string>): Promise<void> {

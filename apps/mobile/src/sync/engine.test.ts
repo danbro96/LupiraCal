@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { openNodeDb } from '../data/db/nodeDb';
 import { MIGRATIONS, migrate } from '../data/db/schema';
 import type { Db } from '../data/db/types';
@@ -12,6 +12,8 @@ import type { ClientOp } from '../domain/ops';
 import { drain, enqueue } from './outbox';
 import type { ChangesPage, ContactChange, ItemChange, PullDeps } from './pull';
 import { pullCal, pullContainers, pullContacts } from './pull';
+
+vi.mock('../debug/log', () => ({ logDebug: vi.fn() }));
 
 /** The whole engine under node:sqlite — enqueue/drain (backoff, park, causal hold), the delta/full pull with
  *  rebase-through-pending-ops, tombstones, prune, and cursor plumbing. Every scenario here is a defect class
@@ -60,7 +62,10 @@ async function enqueueOffline(ops: ClientOp[]): Promise<void> {
   await drain(db, deps);   // joins the enqueue-triggered drain so the failure is settled before asserting
 }
 
-function pagesDeps(calPages: ChangesPage<ItemChange>[], contactPages: ChangesPage<ContactChange>[] = []): PullDeps & { calCalls: (string | null)[] } {
+type PageIn<T> = Omit<ChangesPage<T>, 'reset'> & { reset?: boolean };
+const withReset = <T>(p: PageIn<T>): ChangesPage<T> => ({ reset: false, ...p });
+
+function pagesDeps(calPages: PageIn<ItemChange>[], contactPages: PageIn<ContactChange>[] = []): PullDeps & { calCalls: (string | null)[] } {
   const calCalls: (string | null)[] = [];
   let calIdx = 0;
   let contactIdx = 0;
@@ -68,13 +73,13 @@ function pagesDeps(calPages: ChangesPage<ItemChange>[], contactPages: ChangesPag
     calCalls,
     calChanges: async (since) => {
       calCalls.push(since);
-      return calPages[Math.min(calIdx++, calPages.length - 1)];
+      return withReset(calPages[Math.min(calIdx++, calPages.length - 1)]);
     },
     contactChanges: async () =>
-      contactPages[Math.min(contactIdx++, Math.max(contactPages.length - 1, 0))]
-      ?? { cursor: '0', hasMore: false, changed: [], deleted: [] },
+      withReset(contactPages[Math.min(contactIdx++, Math.max(contactPages.length - 1, 0))]
+        ?? { cursor: '0', hasMore: false, changed: [], deleted: [] }),
     calContainers: async () => [{ id: 'cal-1' }],
-    contactContainers: async () => ({ addressBooks: [{ id: 'book-1' }], groups: [] }),
+    contactContainers: async () => ({ addressBooks: [{ id: 'book-1', slug: 'personal' }], groups: [] }),
     now: () => new Date('2026-07-01T13:00:00Z'),
   };
 }
@@ -271,6 +276,74 @@ describe('pull', () => {
     expect(first.changed).toBe(true);
     const empty = await pullCal(db, horizon, pagesDeps([{ cursor: '1', hasMore: false, changed: [], deleted: [] }]));
     expect(empty).toEqual({ monthKeys: new Set(), changed: false });
+  });
+
+  it('an interrupted full sync restarts from scratch instead of resuming as a delta', async () => {
+    const dying = pagesDeps([{ cursor: '10', hasMore: true, changed: [{ item: serverItem('a'), guards: serverGuards() }], deleted: [] }]);
+    dying.calChanges = async (since) => {
+      dying.calCalls.push(since);
+      if (since) throw new Error('connection reset');
+      return withReset({ cursor: '10', hasMore: true, changed: [{ item: serverItem('a'), guards: serverGuards() }], deleted: [] });
+    };
+    await expect(pullCal(db, horizon, dying)).rejects.toThrow('connection reset');
+
+    const retry = pagesDeps([{ cursor: '20', hasMore: false, changed: [{ item: serverItem('b'), guards: serverGuards() }], deleted: [] }]);
+    await pullCal(db, horizon, retry);
+    expect(retry.calCalls).toEqual([null]);
+    expect(await mirror.loadItem(db, 'a')).toBeNull();   // pruned: the completed stream never mentioned it
+    expect(await mirror.loadItem(db, 'b')).not.toBeNull();
+
+    const next = pagesDeps([{ cursor: '20', hasMore: false, changed: [], deleted: [] }]);
+    await pullCal(db, horizon, next);
+    expect(next.calCalls).toEqual(['20']);
+  });
+
+  it('a reset page turns a delta into a full sync that prunes what the stream omits', async () => {
+    await pullCal(db, horizon, pagesDeps([
+      { cursor: '5', hasMore: false, changed: [{ item: serverItem('revoked'), guards: serverGuards() }], deleted: [] },
+    ]));
+    await pullCal(db, horizon, pagesDeps([
+      { cursor: '9', hasMore: false, reset: true, changed: [{ item: serverItem('shared'), guards: serverGuards() }], deleted: [] },
+    ]));
+    expect(await mirror.loadItem(db, 'revoked')).toBeNull();
+    expect(await mirror.loadItem(db, 'shared')).not.toBeNull();
+  });
+
+  it('tombstones for ids the mirror never held change nothing', async () => {
+    await pullCal(db, horizon, pagesDeps([{ cursor: '1', hasMore: false, changed: [], deleted: [] }]));
+    const delta = await pullCal(db, horizon, pagesDeps([{ cursor: '2', hasMore: false, changed: [], deleted: ['foreign-1', 'foreign-2'] }]));
+    expect(delta.changed).toBe(false);
+  });
+
+  it('seeds the standard calendars when no Personal one exists, and refetches', async () => {
+    let seeded = false;
+    const calls: string[] = [];
+    const deps = pagesDeps([{ cursor: '1', hasMore: false, changed: [], deleted: [] }]);
+    deps.calContainers = async () => (seeded ? [{ id: 'shared', kind: 'Group' }, { id: 'mine', kind: 'Personal' }] : [{ id: 'shared', kind: 'Group' }]);
+    deps.bootstrapCalendars = async () => {
+      calls.push('cal');
+      seeded = true;
+    };
+    deps.bootstrapAddressBooks = async () => {
+      calls.push('contact');
+    };
+
+    await pullContainers(db, deps);
+    expect(calls).toEqual(['cal']);   // the harness already has an address book
+    expect(await mirror.listContainerDocs(db, 'calendars')).toHaveLength(2);
+
+    await pullContainers(db, deps);
+    expect(calls).toEqual(['cal']);
+  });
+
+  it('a failing bootstrap does not fail the container pull', async () => {
+    const deps = pagesDeps([{ cursor: '1', hasMore: false, changed: [], deleted: [] }]);
+    deps.calContainers = async () => [];
+    deps.bootstrapCalendars = async () => {
+      throw new ApiError(503, 'down');
+    };
+    await pullContainers(db, deps);
+    expect(await mirror.listContainerDocs(db, 'calendars')).toHaveLength(0);
   });
 
   it('leaves identical containers alone and reports a real change', async () => {

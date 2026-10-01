@@ -14,6 +14,8 @@ vi.mock('expo-secure-store', () => ({
   }),
 }));
 vi.mock('../debug/log', () => ({ logDebug: vi.fn() }));
+vi.mock('@sentry/react-native', () => ({ setUser: vi.fn() }));
+vi.mock('expo-crypto', () => ({ CryptoDigestAlgorithm: { SHA256: 'SHA-256' }, digestStringAsync: vi.fn(() => Promise.resolve('hash')) }));
 
 const refreshTokensMock = vi.fn();
 vi.mock('../data/auth/oidc', () => {

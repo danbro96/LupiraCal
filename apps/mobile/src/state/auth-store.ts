@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/react-native';
+import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { API_PRESETS, DEFAULT_API_URL, DEFAULT_AUTH_MODE, type AuthMode } from '../config';
@@ -7,6 +9,19 @@ import { RefreshError, decodeJwt, refreshTokens, type TokenResponse } from '../d
 import { logDebug } from '../debug/log';
 
 export type AuthUser = { sub: string; name?: string };
+
+/** Pseudonymous Sentry identity: SHA-256 of the email (sendDefaultPii is off). Null clears it. */
+async function setSentryUser(sub: string | null): Promise<void> {
+  if (!sub) {
+    Sentry.setUser(null);
+    return;
+  }
+  try {
+    Sentry.setUser({ id: await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, sub) });
+  } catch {
+    // Leave it unset rather than risk sending the raw email.
+  }
+}
 
 type AuthState = {
   /** Hydration gate — the app renders nothing until the persisted session is loaded. */
@@ -75,6 +90,7 @@ export const useAuth = create<AuthState & AuthActions>((set, get) => ({
       expiresAt: expiresAt ? Number(expiresAt) : 0,
       user: userSub ? { sub: userSub, name: userName || undefined } : null,
     });
+    void setSentryUser(userSub || null);
   },
 
   async setBackend(urls, authMode) {
@@ -96,6 +112,7 @@ export const useAuth = create<AuthState & AuthActions>((set, get) => ({
     const expiresAt = Date.now() + (t.expiresIn ?? 3600) * 1000;
     // In-memory FIRST: a rotated refresh token must survive a persistence failure or the session is stranded.
     set({ token: t.accessToken, refreshToken: t.refreshToken ?? get().refreshToken, expiresAt, user });
+    void setSentryUser(user?.sub ?? null);
     const s = get();
     await Promise.all([
       SecureStore.setItemAsync(K.token, s.token!),
@@ -109,6 +126,7 @@ export const useAuth = create<AuthState & AuthActions>((set, get) => ({
 
   async clearSession() {
     set({ token: null, refreshToken: null, expiresAt: 0, user: null });
+    void setSentryUser(null);
     await Promise.all([K.token, K.refreshToken, K.expiresAt, K.userSub, K.userName]
       .map((k) => SecureStore.deleteItemAsync(k)));
   },

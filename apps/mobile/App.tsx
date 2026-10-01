@@ -1,5 +1,6 @@
 import type { LinkingOptions } from '@react-navigation/native';
 import { NavigationContainer } from '@react-navigation/native';
+import * as Sentry from '@sentry/react-native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -21,6 +22,17 @@ import { startSync } from './src/sync/sync';
 import { RootStack } from './src/ui/navigation/RootStack';
 import type { RootStackParamList } from './src/ui/navigation/types';
 import { paperSettings } from './src/ui/theme/paperSettings';
+import { APP_VERSION, SENTRY_DSN } from './src/config';
+
+Sentry.init({
+  dsn: SENTRY_DSN,
+  enabled: !!SENTRY_DSN,
+  tracesSampleRate: 0.2,
+  sendDefaultPii: false,
+  release: APP_VERSION,
+  dist: APP_VERSION,
+  environment: __DEV__ ? 'development' : 'production',
+});
 
 export default function App() {
   const scheme = useColorScheme();
