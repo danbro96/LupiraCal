@@ -16,9 +16,9 @@ describe('needsCalendarBootstrap', () => {
 });
 
 describe('needsAddressBookBootstrap', () => {
-  it('asks until a personal book exists', () => {
+  it('asks until your own personal book exists', () => {
     expect(needsAddressBookBootstrap([])).toBe(true);
-    expect(needsAddressBookBootstrap([{ slug: 'family' }])).toBe(true);
-    expect(needsAddressBookBootstrap([{ slug: 'family' }, { slug: 'personal' }])).toBe(false);
+    expect(needsAddressBookBootstrap([{ isPersonal: false }])).toBe(true);
+    expect(needsAddressBookBootstrap([{ isPersonal: false }, { isPersonal: true }])).toBe(false);
   });
 });

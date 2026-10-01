@@ -15,4 +15,6 @@ export interface AddressBookDto {
   /** @nullable */
   displayName?: string | null;
   access: Access;
+  /** True only for the caller's own personal book — another member's shared personal book has the same slug. */
+  isPersonal: boolean;
 }

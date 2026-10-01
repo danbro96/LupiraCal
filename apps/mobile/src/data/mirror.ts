@@ -224,7 +224,7 @@ export type MapEventRow = {
 
 /** Map pins: one row per placed item with an occurrence in range. Recurring items repeat occurrence
  *  rows but share one place — GROUP BY collapses them to the earliest occurrence in the window. */
-export async function mapEventRowsBetween(tx: Tx, fromDay: string, toDay: string): Promise<MapEventRow[]> {
+export async function mapEventRowsBetween(tx: Tx, fromDay: string, toDay: string, filter?: CalendarFilter): Promise<MapEventRow[]> {
   return tx.all<MapEventRow>(
     `SELECT o.source_id, MIN(o.start_utc) AS start_utc, i.title,
             json_extract(i.doc, '$.placeId') AS place_id,
@@ -232,15 +232,16 @@ export async function mapEventRowsBetween(tx: Tx, fromDay: string, toDay: string
      FROM occurrences o
      JOIN items i ON o.source = 'item' AND i.id = o.source_id AND i.deleted = 0
      WHERE o.start_day >= ? AND o.start_day <= ? AND json_extract(i.doc, '$.placeId') IS NOT NULL
+       ${filter ? `AND ${inShownCalendars('o.source_id')}` : ''}
      GROUP BY o.source_id
      ORDER BY start_utc`,
-    [fromDay, toDay],
+    [fromDay, toDay, ...(filter ? [JSON.stringify(filter.calendarIds)] : [])],
   );
 }
 
 /** The next placed events from `nowIso`, soonest first: one row per item (a series by its next occurrence),
  *  an event already under way included, cancelled ones not. */
-export async function upcomingPlacedEvents(tx: Tx, nowIso: string, limit: number): Promise<MapEventRow[]> {
+export async function upcomingPlacedEvents(tx: Tx, nowIso: string, limit: number, filter?: CalendarFilter): Promise<MapEventRow[]> {
   return tx.all<MapEventRow>(
     `SELECT o.source_id, MIN(o.start_utc) AS start_utc, i.title,
             json_extract(i.doc, '$.placeId') AS place_id,
@@ -249,10 +250,11 @@ export async function upcomingPlacedEvents(tx: Tx, nowIso: string, limit: number
      JOIN items i ON o.source = 'item' AND i.id = o.source_id AND i.deleted = 0
      WHERE COALESCE(o.end_utc, o.start_utc) >= ? AND json_extract(i.doc, '$.placeId') IS NOT NULL
        AND COALESCE(json_extract(i.doc, '$.status'), '') != 'Cancelled'
+       ${filter ? `AND ${inShownCalendars('o.source_id')}` : ''}
      GROUP BY o.source_id
      ORDER BY start_utc
      LIMIT ?`,
-    [nowIso, limit],
+    [nowIso, ...(filter ? [JSON.stringify(filter.calendarIds)] : []), limit],
   );
 }
 

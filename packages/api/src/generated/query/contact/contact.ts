@@ -1356,7 +1356,7 @@ export const useReviseContact = <TError = ProblemDetails,
 }
 
 /**
- * @summary Delete a contact (soft delete + tombstone).
+ * @summary Delete a contact (soft delete + tombstone). 409 if it is a member's own contact.
  */
 export const deleteContact = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
@@ -1408,7 +1408,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteContactMutationVariables = {id: string}
 
     /**
- * @summary Delete a contact (soft delete + tombstone).
+ * @summary Delete a contact (soft delete + tombstone). 409 if it is a member's own contact.
  */
 export const useDeleteContact = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContact>>, TError,DeleteContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}

@@ -59,6 +59,19 @@ describe('mapEventRowsBetween', () => {
     }]);
   });
 
+  it('keeps only items accepted into a shown calendar when filtered', async () => {
+    await db.exclusive(async (tx) => {
+      await saveItem(tx, { doc: doc('shown', 'place-1', [{ calendarId: 'cal-a', status: 'Accepted' }]),
+        guards: emptyItemGuards(), deleted: false }, [occ('shown', '2026-08-10')]);
+      await saveItem(tx, { doc: doc('hidden', 'place-2', [{ calendarId: 'cal-b', status: 'Accepted' }]),
+        guards: emptyItemGuards(), deleted: false }, [occ('hidden', '2026-08-11')]);
+    });
+
+    const filter = { calendarIds: ['cal-a'], birthdays: true };
+    expect((await mapEventRowsBetween(db, '2026-08-01', '2026-08-31', filter)).map((r) => r.source_id)).toEqual(['shown']);
+    expect((await upcomingPlacedEvents(db, '2026-08-01T00:00:00.000Z', 10, filter)).map((r) => r.source_id)).toEqual(['shown']);
+  });
+
   it('collapses a recurring item to its earliest occurrence in the window', async () => {
     await db.exclusive(async (tx) => {
       await saveItem(tx, { doc: doc('r', 'place-1', [{ calendarId: 'cal-a', status: 'Accepted' }]),

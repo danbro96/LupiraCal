@@ -4,7 +4,7 @@ import { QUICK_EVENT_CANDIDATES, quickPlaces, type QuickPlace } from '@lupira/ca
 import { getDb } from '../data/db/expoDb';
 import { upcomingPlacedEvents } from '../data/mirror';
 import { useContactState } from './useContactList';
-import { useCalendars } from './useContainers';
+import { useCalendarFilter, useCalendars } from './useContainers';
 import { useMyContactId } from './useMe';
 import { usePlaceCoords } from './usePlaceLookup';
 
@@ -14,9 +14,11 @@ export function useQuickPlaces(nowIso: string): QuickPlace[] {
   const me = useMyContactId();
   const { data: meState } = useContactState(me ?? '');
   const { data: calendars } = useCalendars();
+  const filter = useCalendarFilter();
   const upcoming = useQuery({
-    queryKey: ['items', 'upcoming-placed', nowIso],
-    queryFn: async () => upcomingPlacedEvents(await getDb(), nowIso, QUICK_EVENT_CANDIDATES),
+    queryKey: ['items', 'upcoming-placed', nowIso, filter],
+    enabled: filter !== null,
+    queryFn: async () => upcomingPlacedEvents(await getDb(), nowIso, QUICK_EVENT_CANDIDATES, filter!),
   });
 
   const ownAddresses = useMemo(() => meState?.doc.addresses ?? [], [meState]);

@@ -3,7 +3,7 @@ export function needsCalendarBootstrap(calendars: readonly { kind?: string | nul
   return !calendars.some((c) => c.kind === 'Personal');
 }
 
-/** contact-api seeds by slug, so a missing `personal` book is the signal. */
-export function needsAddressBookBootstrap(addressBooks: readonly { slug: string }[]): boolean {
-  return !addressBooks.some((b) => b.slug === 'personal');
+/** Someone else's shared `personal` book isn't yours, so the server's own-book flag is the signal. */
+export function needsAddressBookBootstrap(addressBooks: readonly { isPersonal: boolean }[]): boolean {
+  return !addressBooks.some((b) => b.isPersonal);
 }

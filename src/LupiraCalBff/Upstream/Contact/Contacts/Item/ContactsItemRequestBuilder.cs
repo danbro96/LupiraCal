@@ -34,12 +34,14 @@ namespace LupiraCalBff.Upstream.Contact.Contacts.Item
         {
         }
         /// <summary>
-        /// Delete a contact (soft delete + tombstone).
+        /// Delete a contact (soft delete + tombstone). 409 if it is a member&apos;s own contact.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
         /// <exception cref="global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails">When receiving a 401 status code</exception>
+        /// <exception cref="global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails">When receiving a 403 status code</exception>
         /// <exception cref="global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails">When receiving a 404 status code</exception>
+        /// <exception cref="global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails">When receiving a 409 status code</exception>
         /// <exception cref="global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails">When receiving a 500 status code</exception>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -54,7 +56,9 @@ namespace LupiraCalBff.Upstream.Contact.Contacts.Item
             var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>
             {
                 { "401", global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails.CreateFromDiscriminatorValue },
+                { "403", global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails.CreateFromDiscriminatorValue },
                 { "404", global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails.CreateFromDiscriminatorValue },
+                { "409", global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails.CreateFromDiscriminatorValue },
                 { "500", global::LupiraCalBff.Upstream.Contact.Models.ProblemDetails.CreateFromDiscriminatorValue },
             };
             await RequestAdapter.SendNoContentAsync(requestInfo, errorMapping, cancellationToken).ConfigureAwait(false);
@@ -118,7 +122,7 @@ namespace LupiraCalBff.Upstream.Contact.Contacts.Item
             return await RequestAdapter.SendAsync<global::LupiraCalBff.Upstream.Contact.Models.ContactDto>(requestInfo, global::LupiraCalBff.Upstream.Contact.Models.ContactDto.CreateFromDiscriminatorValue, errorMapping, cancellationToken).ConfigureAwait(false);
         }
         /// <summary>
-        /// Delete a contact (soft delete + tombstone).
+        /// Delete a contact (soft delete + tombstone). 409 if it is a member&apos;s own contact.
         /// </summary>
         /// <returns>A <see cref="RequestInformation"/></returns>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>

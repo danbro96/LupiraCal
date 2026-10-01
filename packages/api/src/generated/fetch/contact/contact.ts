@@ -920,9 +920,19 @@ export type deleteContactResponse401 = {
   status: 401
 }
 
+export type deleteContactResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
 export type deleteContactResponse404 = {
   data: ProblemDetails
   status: 404
+}
+
+export type deleteContactResponse409 = {
+  data: ProblemDetails
+  status: 409
 }
 
 export type deleteContactResponse500 = {
@@ -933,7 +943,7 @@ export type deleteContactResponse500 = {
 export type deleteContactResponseSuccess = (deleteContactResponse204) & {
   headers: Headers;
 };
-export type deleteContactResponseError = (deleteContactResponse401 | deleteContactResponse404 | deleteContactResponse500) & {
+export type deleteContactResponseError = (deleteContactResponse401 | deleteContactResponse403 | deleteContactResponse404 | deleteContactResponse409 | deleteContactResponse500) & {
   headers: Headers;
 };
 
@@ -948,7 +958,7 @@ export const getDeleteContactUrl = (id: string,) => {
 }
 
 /**
- * @summary Delete a contact (soft delete + tombstone).
+ * @summary Delete a contact (soft delete + tombstone). 409 if it is a member's own contact.
  */
 export const deleteContact = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<deleteContactResponse> => {
 

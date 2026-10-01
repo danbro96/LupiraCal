@@ -15,6 +15,7 @@ import { composeDisplayName, loadContact } from '../../data/mirror';
 import type { PartialDateDto } from '../../domain/docTypes';
 import { copyText } from '../../feedback/copy';
 import { deleteContact } from '../../state/actions';
+import { useMyContactId } from '../../state/useMe';
 import { useContactRelations, useContactState } from '../../state/useContactList';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '../components/ConfirmDialog';
@@ -42,6 +43,8 @@ export function ContactDetailScreen() {
   const [relationsOpen, setRelationsOpen] = useState(false);
   const [otherAddressesOpen, setOtherAddressesOpen] = useState(false);
   const name = state ? composeDisplayName(state.doc) : '';
+  // The server refuses to delete anyone's own contact; yours is the one this app can know.
+  const isMe = useMyContactId() === contactId;
 
   // Edit/Delete live in the native header; delete always confirms (it syncs to the whole family).
   useLayoutEffect(() => {
@@ -51,27 +54,29 @@ export function ContactDetailScreen() {
           <Button mode="text" compact onPress={() => navigation.navigate('ContactEdit', { contactId })}>
             Edit
           </Button>
-          <Button
-            mode="text"
-            compact
-            textColor={c.danger}
-            onPress={() =>
-              void confirm({
-                title: 'Delete contact',
-                message: `Delete ${name || 'this contact'}? It syncs to everyone.`,
-                confirmLabel: 'Delete',
-                destructive: true,
-              }).then((ok) => {
-                if (ok) void deleteContact(contactId).then(() => navigation.goBack());
-              })
-            }
-          >
-            Delete
-          </Button>
+          {!isMe && (
+            <Button
+              mode="text"
+              compact
+              textColor={c.danger}
+              onPress={() =>
+                void confirm({
+                  title: 'Delete contact',
+                  message: `Delete ${name || 'this contact'}? It syncs to everyone.`,
+                  confirmLabel: 'Delete',
+                  destructive: true,
+                }).then((ok) => {
+                  if (ok) void deleteContact(contactId).then(() => navigation.goBack());
+                })
+              }
+            >
+              Delete
+            </Button>
+          )}
         </View>
       ),
     });
-  }, [navigation, contactId, name, confirm, c]);
+  }, [navigation, contactId, name, confirm, c, isMe]);
 
   if (isLoading) return <Centered text="Loading…" />;
   if (!state) return <Centered text="This contact is not in the offline mirror." />;

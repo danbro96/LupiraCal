@@ -29,7 +29,7 @@ export type PullDeps = {
   calChanges(since: string | null): Promise<ChangesPage<ItemChange>>;
   contactChanges(since: string | null): Promise<ChangesPage<ContactChange>>;
   calContainers(): Promise<{ id: string; kind?: string | null }[]>;
-  contactContainers(): Promise<{ addressBooks: { id: string; slug: string }[]; groups: { id: string }[] }>;
+  contactContainers(): Promise<{ addressBooks: { id: string; isPersonal: boolean }[]; groups: { id: string }[] }>;
   /** Seed the caller's standard containers; absent in harnesses that don't model it. */
   bootstrapCalendars?(): Promise<void>;
   bootstrapAddressBooks?(): Promise<void>;

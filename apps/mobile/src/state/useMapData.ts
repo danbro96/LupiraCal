@@ -20,7 +20,7 @@ import {
 import { getDb } from '../data/db/expoDb';
 import { mapContactAddresses, mapEventRowsBetween } from '../data/mirror';
 import { useSyncStatus } from '../sync/syncStatus';
-import { useCalendars } from './useContainers';
+import { useCalendarFilter, useCalendars } from './useContainers';
 import { useCurrentFixes, useThinnedTrack, useVisits } from './useMovement';
 import { usePlaceCoords } from './usePlaceLookup';
 
@@ -36,10 +36,11 @@ export type EventFeatures = { features: FeatureCollection; unmappableCount: numb
 const NO_EVENTS: EventFeatures = { features: EMPTY_FEATURES, unmappableCount: 0 };
 
 export function useEventFeatures(fromDay: string, toDay: string, enabled: boolean): EventFeatures {
+  const filter = useCalendarFilter();
   const rowsQ = useQuery({
-    queryKey: ['occurrences', 'map', fromDay, toDay],
-    enabled,
-    queryFn: async () => mapEventRowsBetween(await getDb(), fromDay, toDay),
+    queryKey: ['occurrences', 'map', fromDay, toDay, filter],
+    enabled: enabled && filter !== null,
+    queryFn: async () => mapEventRowsBetween(await getDb(), fromDay, toDay, filter!),
   });
   const rows = useMemo(() => rowsQ.data ?? [], [rowsQ.data]);
   const calendarsQ = useCalendars();

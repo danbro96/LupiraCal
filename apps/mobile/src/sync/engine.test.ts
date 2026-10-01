@@ -79,7 +79,7 @@ function pagesDeps(calPages: PageIn<ItemChange>[], contactPages: PageIn<ContactC
       withReset(contactPages[Math.min(contactIdx++, Math.max(contactPages.length - 1, 0))]
         ?? { cursor: '0', hasMore: false, changed: [], deleted: [] }),
     calContainers: async () => [{ id: 'cal-1' }],
-    contactContainers: async () => ({ addressBooks: [{ id: 'book-1', slug: 'personal' }], groups: [] }),
+    contactContainers: async () => ({ addressBooks: [{ id: 'book-1', isPersonal: true }], groups: [] }),
     now: () => new Date('2026-07-01T13:00:00Z'),
   };
 }

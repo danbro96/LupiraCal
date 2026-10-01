@@ -26,6 +26,7 @@ import { addressMeta, withResidency } from '@lupira/cal-domain/residents';
 import { fmtDate } from '@lupira/cal-domain/time';
 import { addressBookLabel, useAddressBooks } from '../../../state/useAddressBooks';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
+import { useMyContactId } from '../../../state/useMe';
 import { CompletenessBadge } from '../drawer/CompletenessBadge';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
@@ -61,6 +62,8 @@ export function ContactDetailPane() {
   const del = useDeleteContact({ mutation: { onSuccess: () => { invalidate(); navigate('/contacts'); }, onError } });
   const setMe = useSetMyContact({ mutation: { onSuccess: invalidate, onError } });
   const { addressBooks } = useAddressBooks();
+  // The server refuses to delete anyone's own contact; yours is the one this page can know.
+  const isMe = useMyContactId() === contactId;
   const move = useMoveContact({
     mutation: {
       onSuccess: (moved) => {
@@ -283,9 +286,11 @@ export function ContactDetailPane() {
               </MenuItem>
             ))}
         </TextField>
-        <Button variant="outlined" color="error" onClick={() => del.mutate({ id: contact.id })} disabled={del.isPending}>
-          Delete contact
-        </Button>
+        {!isMe && (
+          <Button variant="outlined" color="error" onClick={() => del.mutate({ id: contact.id })} disabled={del.isPending}>
+            Delete contact
+          </Button>
+        )}
       </Box>
     </DetailPane>
   );

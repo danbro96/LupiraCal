@@ -27,6 +27,8 @@ namespace LupiraCalBff.Upstream.Contact.Models
 #endif
         /// <summary>The id property</summary>
         public Guid? Id { get; set; }
+        /// <summary>True only for the caller&apos;s own personal book — another member&apos;s shared personal book has the same slug.</summary>
+        public bool? IsPersonal { get; set; }
         /// <summary>The slug property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -63,6 +65,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
                 { "access", n => { Access = n.GetEnumValue<global::LupiraCalBff.Upstream.Contact.Models.Access>(); } },
                 { "displayName", n => { DisplayName = n.GetStringValue(); } },
                 { "id", n => { Id = n.GetGuidValue(); } },
+                { "isPersonal", n => { IsPersonal = n.GetBoolValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
             };
         }
@@ -76,6 +79,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
             writer.WriteEnumValue<global::LupiraCalBff.Upstream.Contact.Models.Access>("access", Access);
             writer.WriteStringValue("displayName", DisplayName);
             writer.WriteGuidValue("id", Id);
+            writer.WriteBoolValue("isPersonal", IsPersonal);
             writer.WriteStringValue("slug", Slug);
             writer.WriteAdditionalData(AdditionalData);
         }
