@@ -120,14 +120,14 @@ describe('searchItems', () => {
     expect(rows[0]).toMatchObject({ next_utc: '2026-09-29T09:00:00.000Z', last_utc: '2026-09-20T09:00:00.000Z', calendar_id: 'cal-a' });
   });
 
-  it('hides items homed only in System-class calendars unless asked for', async () => {
+  it('finds only items accepted into a shown calendar when filtered', async () => {
     const calendars = [{ id: 'sys', class: 'System' }, { id: 'cal-a', class: 'Personal' }];
     await db.exclusive((tx) => replaceContainers(tx, 'calendars', calendars));
     await save('sys', { title: 'Plan' }, [occ('sys', '2026-10-01')], false, 'sys');
     await save('mine', { title: 'Plan' }, [occ('mine', '2026-10-02')]);
 
-    expect((await searchItems(db, 'plan', '2026-09-29', false)).map((r) => r.id)).toEqual(['mine']);
-    expect((await searchItems(db, 'plan', '2026-09-29', true)).map((r) => r.id)).toEqual(['sys', 'mine']);
+    expect((await searchItems(db, 'plan', '2026-09-29', { calendarIds: ['cal-a'], birthdays: true })).map((r) => r.id)).toEqual(['mine']);
+    expect((await searchItems(db, 'plan', '2026-09-29')).map((r) => r.id)).toEqual(['sys', 'mine']);
   });
 });
 

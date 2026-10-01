@@ -25,7 +25,7 @@ import { fromOccurrence, fromProposed, fromTask, type GridEntry } from '../entri
 import { MiniMonthPicker } from '../components/MiniMonthPicker';
 import { MonthGrid } from '../components/MonthGrid';
 import { WeekGrid } from '../components/WeekGrid';
-import { Sidebar } from '../components/Sidebar';
+import { CalendarToggles } from '../components/CalendarToggles';
 import { useCalendarRange } from '../hooks/useCalendarRange';
 import { useIsPhone } from '../hooks/useIsPhone';
 
@@ -131,141 +131,149 @@ export function CalendarScreen() {
   }, [entries, selectedItemId]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+    <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
       <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 1.5,
-          flexWrap: 'wrap',
-          p: '12px 16px',
-        }}
+        component="aside"
+        sx={{ width: 230, flex: 'none', borderRight: 1, borderColor: 'divider', overflowY: 'auto', display: { xs: 'none', md: 'block' } }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, position: 'relative', width: { xs: '100%', md: 'auto' } }}>
-          <IconButton onClick={() => navigate(-1)} aria-label="Previous">
-            <ChevronLeftIcon fontSize="small" />
-          </IconButton>
-          <Button
-            endIcon={<ArrowDropDownIcon />}
-            onClick={(e) => {
-              const el = e.currentTarget;
-              setDateAnchor((a) => (a ? null : el));
-            }}
-            aria-haspopup="dialog"
-            aria-expanded={!!dateAnchor}
-            sx={{
-              mx: 1,
-              px: 1,
-              color: 'text.primary',
-              fontSize: { xs: 16, md: 18 },
-              fontWeight: 700,
-              textTransform: 'none',
-              flex: { xs: 1, md: 'none' },
-            }}
-          >
-            {title}
-          </Button>
-          <IconButton onClick={() => navigate(1)} aria-label="Next">
-            <ChevronRightIcon fontSize="small" />
-          </IconButton>
-          {!todayVisible && (
-            <Button variant="outlined" onClick={() => setDate(null)}>
-              Today
+        <CalendarToggles />
+      </Box>
+      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, minWidth: 0 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1.5,
+            flexWrap: 'wrap',
+            p: '12px 16px',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, position: 'relative', width: { xs: '100%', md: 'auto' } }}>
+            <IconButton onClick={() => navigate(-1)} aria-label="Previous">
+              <ChevronLeftIcon fontSize="small" />
+            </IconButton>
+            <Button
+              endIcon={<ArrowDropDownIcon />}
+              onClick={(e) => {
+                const el = e.currentTarget;
+                setDateAnchor((a) => (a ? null : el));
+              }}
+              aria-haspopup="dialog"
+              aria-expanded={!!dateAnchor}
+              sx={{
+                mx: 1,
+                px: 1,
+                color: 'text.primary',
+                fontSize: { xs: 16, md: 18 },
+                fontWeight: 700,
+                textTransform: 'none',
+                flex: { xs: 1, md: 'none' },
+              }}
+            >
+              {title}
             </Button>
-          )}
-          {isLoading && <CircularProgress size={14} aria-label="loading" sx={{ flex: 'none' }} />}
-          <MiniMonthPicker
-            selected={date}
-            anchorEl={dateAnchor}
-            onPick={(d) => {
-              setDate(d);
-              setDateAnchor(null);
-            }}
-            onClose={() => setDateAnchor(null)}
-          />
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: { xs: '100%', md: 'auto' } }}>
-            <ToggleButtonGroup exclusive value={view} onChange={(_, nv) => nv != null && setView(nv)}>
-              {(['month', 'week', 'day'] as const).map((v) => (
-                <ToggleButton key={v} value={v}>
-                  {v}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-            <IconButton
-              sx={{ display: { md: 'none' } }}
-              onClick={() => setSearchOpen((o) => !o)}
-              aria-label="Search"
-              aria-pressed={searchOpen}
-            >
-              <SearchIcon fontSize="small" />
+            <IconButton onClick={() => navigate(1)} aria-label="Next">
+              <ChevronRightIcon fontSize="small" />
             </IconButton>
-            <IconButton
-              sx={{ display: { md: 'none' } }}
-              onClick={() => setSheetOpen(true)}
-              aria-label="Calendars"
-            >
-              <FolderOpenIcon fontSize="small" />
-            </IconButton>
-          </Box>
-          <Box
-            sx={{
-              alignItems: 'center',
-              gap: 1,
-              width: { xs: '100%', md: 'auto' },
-              display: { xs: searchOpen ? 'flex' : 'none', md: 'flex' },
-              '& form': { flex: 1, display: 'flex', minWidth: 140 },
-            }}
-          >
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setParam('q', search || null);
+            {!todayVisible && (
+              <Button variant="outlined" onClick={() => setDate(null)}>
+                Today
+              </Button>
+            )}
+            {isLoading && <CircularProgress size={14} aria-label="loading" sx={{ flex: 'none' }} />}
+            <MiniMonthPicker
+              selected={date}
+              anchorEl={dateAnchor}
+              onPick={(d) => {
+                setDate(d);
+                setDateAnchor(null);
               }}
-            >
-              <TextField
-                placeholder="Search title/description…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </form>
-            <TextField
-              placeholder="tag"
-              defaultValue={tag}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') setParam('tag', (e.target as HTMLInputElement).value || null);
-              }}
-              onBlur={(e) => setParam('tag', e.target.value || null)}
+              onClose={() => setDateAnchor(null)}
             />
           </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: { xs: '100%', md: 'auto' } }}>
+              <ToggleButtonGroup exclusive value={view} onChange={(_, nv) => nv != null && setView(nv)}>
+                {(['month', 'week', 'day'] as const).map((v) => (
+                  <ToggleButton key={v} value={v}>
+                    {v}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+              <IconButton
+                sx={{ display: { md: 'none' } }}
+                onClick={() => setSearchOpen((o) => !o)}
+                aria-label="Search"
+                aria-pressed={searchOpen}
+              >
+                <SearchIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                sx={{ display: { md: 'none' } }}
+                onClick={() => setSheetOpen(true)}
+                aria-label="Calendars"
+              >
+                <FolderOpenIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            <Box
+              sx={{
+                alignItems: 'center',
+                gap: 1,
+                width: { xs: '100%', md: 'auto' },
+                display: { xs: searchOpen ? 'flex' : 'none', md: 'flex' },
+                '& form': { flex: 1, display: 'flex', minWidth: 140 },
+              }}
+            >
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setParam('q', search || null);
+                }}
+              >
+                <TextField
+                  placeholder="Search title/description…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </form>
+              <TextField
+                placeholder="tag"
+                defaultValue={tag}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') setParam('tag', (e.target as HTMLInputElement).value || null);
+                }}
+                onBlur={(e) => setParam('tag', e.target.value || null)}
+              />
+            </Box>
+          </Box>
         </Box>
+        {view === 'month' ? (
+          <MonthGrid
+            date={date}
+            weeks={weeks}
+            entries={entries}
+            segments={segments}
+            compact={isPhone}
+            onOpenItem={openItem}
+            onOpenDay={openDay}
+            selectedFamilyKey={selectedFamilyKey}
+          />
+        ) : (
+          <WeekGrid days={days} entries={entries} segments={segments} onOpenItem={openItem} selectedFamilyKey={selectedFamilyKey} />
+        )}
+        <SwipeableDrawer
+          anchor="bottom"
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          onOpen={() => setSheetOpen(true)}
+          disableSwipeToOpen
+          slotProps={{ paper: { sx: { maxHeight: '85dvh' } } }}
+        >
+          <CalendarToggles />
+        </SwipeableDrawer>
       </Box>
-      {view === 'month' ? (
-        <MonthGrid
-          date={date}
-          weeks={weeks}
-          entries={entries}
-          segments={segments}
-          compact={isPhone}
-          onOpenItem={openItem}
-          onOpenDay={openDay}
-          selectedFamilyKey={selectedFamilyKey}
-        />
-      ) : (
-        <WeekGrid days={days} entries={entries} segments={segments} onOpenItem={openItem} selectedFamilyKey={selectedFamilyKey} />
-      )}
-      <SwipeableDrawer
-        anchor="bottom"
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
-        onOpen={() => setSheetOpen(true)}
-        disableSwipeToOpen
-        slotProps={{ paper: { sx: { maxHeight: '85dvh' } } }}
-      >
-        <Sidebar />
-      </SwipeableDrawer>
     </Box>
   );
 }

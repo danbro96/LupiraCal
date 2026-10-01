@@ -9,26 +9,16 @@ import { calendarColor } from '../theme/kinds';
 import { KindIcon, NamedIcon } from './KindIcon';
 import { useCalendarVisibility } from './CalendarVisibility';
 
-/** Calendar toggles grouped by class — System calendars are the agent-facing set no DAV client sees. */
-export function Sidebar() {
+/** Calendar toggles grouped by class — System calendars are the agent-facing set. The calendar screen places
+ *  them: a side panel on desktop, a sheet on phones. */
+export function CalendarToggles() {
   const { calendars } = useContainers();
   const { tasksVisible, toggleTasks } = useCalendarVisibility();
   const agenda = calendars.filter((c) => c.class !== 'System');
   const system = calendars.filter((c) => c.class === 'System');
 
   return (
-    <Box
-      component="aside"
-      sx={{
-        width: 230,
-        flex: 'none',
-        borderRight: 1,
-        borderColor: 'divider',
-        overflowY: 'auto',
-        pb: 3,
-        display: { xs: 'none', md: 'block' },
-      }}
-    >
+    <Box sx={{ pb: 3 }}>
       <CalendarGroup title="Agenda" calendars={agenda} />
       <CalendarGroup title="System" calendars={system} />
       <List disablePadding>

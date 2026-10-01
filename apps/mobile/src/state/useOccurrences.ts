@@ -1,17 +1,18 @@
 import { addDays, addMonths, parseYmd, startOfMonth, ymd } from '@lupira/cal-domain/time';
 import { useQueries } from '@tanstack/react-query';
 import { getDb } from '../data/db/expoDb';
-import { gridRowsBetween, type GridRow } from '../data/mirror';
+import { gridRowsBetween, type CalendarFilter, type GridRow } from '../data/mirror';
 import { lastDayOf } from '../domain/occurrenceDays';
 import type { TaskDeadlineRow } from '../domain/taskRows';
-import { usePrefs } from './prefs-store';
+import { useCalendarFilter } from './useContainers';
 
 /** Grid reads over the mirror, keyed ['occurrences', monthKey] — sync/reactivity.ts invalidates per month. */
 
-const monthQuery = (monthKey: string, includeSystem: boolean) => ({
-  // includeSystem rides the key AFTER the monthKey so per-month invalidation (prefix match) still works.
-  queryKey: ['occurrences', monthKey, includeSystem] as const,
-  queryFn: async () => gridRowsBetween(await getDb(), `${monthKey}-01`, `${monthKey}-31`, includeSystem),
+const monthQuery = (monthKey: string, filter: CalendarFilter | null) => ({
+  // The filter rides the key AFTER the monthKey so per-month invalidation (prefix match) still works.
+  queryKey: ['occurrences', monthKey, filter] as const,
+  queryFn: async () => gridRowsBetween(await getDb(), `${monthKey}-01`, `${monthKey}-31`, filter!),
+  enabled: filter !== null,
 });
 
 const SPAN_LOOKBACK_DAYS = 31;
@@ -21,14 +22,14 @@ const PREFETCH_DAYS = 7;
  *  to SPAN_LOOKBACK_DAYS earlier. Months a further PREFETCH_DAYS out either side are loaded too, so a
  *  pager's next step finds its data cached. One query per month bucket, so the invalidation contract holds. */
 export function useOverlappingOccurrences(dayKeys: string[]): { rows: GridRow[]; loading: boolean } {
-  const includeSystem = usePrefs((p) => p.showSystemCalendars);
+  const filter = useCalendarFilter();
   const first = dayKeys[0];
   const last = dayKeys[dayKeys.length - 1];
   const until = ymd(addDays(parseYmd(last), PREFETCH_DAYS));
   const monthKeys: string[] = [];
   for (let m = startOfMonth(addDays(parseYmd(first), -SPAN_LOOKBACK_DAYS - PREFETCH_DAYS)); ymd(m) <= until; m = addMonths(m, 1))
     monthKeys.push(ymd(m).slice(0, 7));
-  const results = useQueries({ queries: monthKeys.map((k) => monthQuery(k, includeSystem)) });
+  const results = useQueries({ queries: monthKeys.map((k) => monthQuery(k, filter)) });
   const rows = results
     .flatMap((r) => r.data ?? [])
     .filter((r) => r.start_day <= last && lastDayOf(r) >= first)

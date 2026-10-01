@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useLocation, useSearchParams } from 'react-router-dom';
+import { NavLink, Outlet, useSearchParams } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
@@ -13,7 +13,6 @@ import { useEnsureBootstrap } from '../../state/useContainers';
 import { useEnsureContactBootstrap } from '../../state/useAddressBooks';
 import { BottomNav } from './BottomNav';
 import { CalendarVisibilityProvider } from './CalendarVisibility';
-import { Sidebar } from './Sidebar';
 import { ItemDrawer } from './drawer/ItemDrawer';
 import { BirthdayCard } from './drawer/BirthdayCard';
 import { TaskCard } from './drawer/TaskCard';
@@ -51,9 +50,6 @@ export function AppShell() {
   const birthdayYear = searchParams.get('year');
   // ?task=<listId>:<itemId> — the tasks API addresses items list-scoped, so the ref carries both GUIDs.
   const [taskListId, taskItemId] = (searchParams.get('task') ?? '').split(':');
-  // Contacts and the Map own their own layout, so the calendar sidebar is hidden there.
-  const path = useLocation().pathname;
-  const showSidebar = !path.startsWith('/contacts') && !path.startsWith('/locations') && !path.startsWith('/photos');
 
   const dropParams = (...keys: string[]) =>
     setSearchParams((prev) => {
@@ -81,11 +77,8 @@ export function AppShell() {
             </Stack>
           </Toolbar>
         </AppBar>
-        <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          {showSidebar && <Sidebar />}
-          <Box component="main" sx={{ flex: 1, minWidth: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-            <Outlet />
-          </Box>
+        <Box component="main" sx={{ flex: 1, minHeight: 0, minWidth: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <Outlet />
         </Box>
         <Box
           sx={{

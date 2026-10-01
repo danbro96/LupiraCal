@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScrollView, StyleSheet } from 'react-native';
 import { Divider, List, Switch, Text } from 'react-native-paper';
+import { isCalendarShown } from '@lupira/cal-domain/calendars';
 import { fmtDateTime } from '@lupira/cal-domain/time';
 import { APP_VERSION } from '../../config';
 import { useAuth } from '../../state/auth-store';
@@ -9,6 +10,7 @@ import { useBridge } from '../../state/bridge-store';
 import { useLocationTracking } from '../../state/location-tracking-store';
 import { usePhotoBackup } from '../../state/photo-backup-store';
 import { usePrefs } from '../../state/prefs-store';
+import { useCalendars } from '../../state/useContainers';
 import { useTrackingStatus } from '../../sync/locationTrackingStatus';
 import { usePhotoBackupStatus } from '../../sync/photoBackupStatus';
 import { runSync } from '../../sync/sync';
@@ -29,6 +31,7 @@ export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { authMode, user, token } = useAuth();
   const prefs = usePrefs();
+  const { data: calendars } = useCalendars();
   const bridge = useBridge();
   const photos = usePhotoBackup();
   const photoStatus = usePhotoBackupStatus();
@@ -40,10 +43,11 @@ export function SettingsScreen() {
   const icon = (name: string) => (p: { color: string; style?: object }) => <List.Icon {...p} icon={name} />;
   const attention = { color: c.warning };
 
+  const hidden = (calendars ?? []).filter((cal) => cal.class !== 'System' && !isCalendarShown(cal, prefs.calendarChoices)).length;
   const calendar = join(
+    hidden > 0 && `${hidden} hidden`,
     prefs.showTaskDeadlines ? 'Deadlines on' : 'Deadlines off',
     `${prefs.allDayRows === 'all' ? 'All' : prefs.allDayRows} all-day row${prefs.allDayRows === '1' ? '' : 's'}`,
-    prefs.showSystemCalendars && 'System calendars shown',
   );
   const photoAttention = photos.settings.enabled && photoStatus.parked > 0;
   const photo = !photos.settings.enabled ? 'Off' : join(

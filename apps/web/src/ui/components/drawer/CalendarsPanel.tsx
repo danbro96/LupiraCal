@@ -13,6 +13,7 @@ import {
   useRemoveItemFromCalendar,
 } from '@lupira/cal-api/query/cal';
 import type { CalendarItemDto } from '@lupira/cal-api/models';
+import { canWriteCalendar } from '@lupira/cal-domain/calendars';
 import { calendarLabel, useContainers } from '../../../state/useContainers';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { calendarColor } from '../../theme/kinds';
@@ -30,12 +31,13 @@ export function CalendarsPanel({ item }: { item: CalendarItemDto }) {
 
   const memberships = item.calendars.filter((m) => m.status !== 'Removed');
   const memberIds = new Set(memberships.map((m) => m.calendarId));
-  const fileable = calendars.filter((c) => !memberIds.has(c.id));
+  const fileable = calendars.filter((c) => !memberIds.has(c.id) && canWriteCalendar(c));
 
   return (
     <DrawerSection title="Calendars">
       {memberships.map((m) => {
         const cal = calendars.find((c) => c.id === m.calendarId);
+        const writable = !!cal && canWriteCalendar(cal);
         return (
           <Box key={m.calendarId} sx={{ display: 'flex', alignItems: 'center', gap: 1, py: '6px', borderBottom: 1, borderColor: 'divider' }}>
             <Box component="span" sx={{ width: 13, height: 13, borderRadius: '999px', border: 1, borderColor: 'border', flex: 'none', display: 'inline-block' }} style={{ background: cal ? calendarColor(cal) : 'var(--mui-palette-border)' }} />
@@ -45,14 +47,16 @@ export function CalendarsPanel({ item }: { item: CalendarItemDto }) {
             ) : (
               <Chip variant="outlined" label="accepted" />
             )}
-            {m.status === 'Proposed' && (
+            {writable && m.status === 'Proposed' && (
               <Chip variant="outlined" label="Accept" onClick={() => accept.mutate({ itemId: item.id, calendarId: m.calendarId })} />
             )}
-            <Tooltip title="Remove from calendar">
-              <IconButton onClick={() => remove.mutate({ itemId: item.id, calendarId: m.calendarId })}>
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            {writable && (
+              <Tooltip title="Remove from calendar">
+                <IconButton onClick={() => remove.mutate({ itemId: item.id, calendarId: m.calendarId })}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
         );
       })}

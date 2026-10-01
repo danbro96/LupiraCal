@@ -1,11 +1,15 @@
+import { canWriteCalendar, isCalendarShown } from '@lupira/cal-domain/calendars';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { getDb } from '../data/db/expoDb';
-import { listContainerDocs } from '../data/mirror';
+import { listContainerDocs, type CalendarFilter } from '../data/mirror';
+import { usePrefs } from './prefs-store';
 
 /** Container docs from the mirror, keyed ['containers', kind]. */
 
 export type CalendarContainer = {
   id: string;
+  slug?: string;
   displayName?: string | null;
   color?: string | null;
   access?: string;
@@ -13,11 +17,12 @@ export type CalendarContainer = {
   kind?: string | null;
 };
 
-/** Calendars a user may deliberately put items into: never System-class scaffolding, never the
+/** Calendars a user may deliberately put items into: writable, never System-class scaffolding, never the
  *  synthesized Birthdays calendar (the API 400s on it), never Availability (its entries go through
  *  the dedicated quick-add, not the event editor). */
 export function selectableCalendars(calendars: CalendarContainer[] | undefined): CalendarContainer[] {
-  return (calendars ?? []).filter((c) => c.class !== 'System' && c.kind !== 'Birthdays' && c.kind !== 'Availability');
+  return (calendars ?? []).filter((c) =>
+    canWriteCalendar(c) && c.class !== 'System' && c.kind !== 'Birthdays' && c.kind !== 'Availability');
 }
 
 export function useCalendars() {
@@ -25,4 +30,16 @@ export function useCalendars() {
     queryKey: ['containers', 'calendars'],
     queryFn: async () => listContainerDocs<CalendarContainer>(await getDb(), 'calendars'),
   });
+}
+
+/** The grids' and search's filter; null until the containers load. */
+export function useCalendarFilter(): CalendarFilter | null {
+  const { data } = useCalendars();
+  const choices = usePrefs((p) => p.calendarChoices);
+  return useMemo(() => {
+    if (!data) return null;
+    const shown = data.filter((c) => isCalendarShown(c, choices));
+    const birthdays = data.find((c) => c.kind === 'Birthdays');
+    return { calendarIds: shown.map((c) => c.id).sort(), birthdays: !birthdays || shown.includes(birthdays) };
+  }, [data, choices]);
 }

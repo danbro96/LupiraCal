@@ -134,21 +134,22 @@ export type GridRow = OccurrenceQueryRow & {
   place_id: string | null;
 };
 
-const outsideSystemCalendars = (itemId: string) => `EXISTS (
-         SELECT 1 FROM item_calendars icf JOIN calendars cf ON cf.id = icf.calendar_id
+/** What the grids and search show: items accepted into a shown calendar, and birthdays when theirs is shown. */
+export type CalendarFilter = { calendarIds: string[]; birthdays: boolean };
+
+const inShownCalendars = (itemId: string) => `EXISTS (
+         SELECT 1 FROM item_calendars icf
          WHERE icf.item_id = ${itemId} AND icf.status = 'Accepted'
-           AND COALESCE(json_extract(cf.doc, '$.class'), '') != 'System')`;
+           AND icf.calendar_id IN (SELECT value FROM json_each(?)))`;
 
 const preferredCalendar = (itemId: string) => `(SELECT ic.calendar_id FROM item_calendars ic WHERE ic.item_id = ${itemId}
              ORDER BY CASE ic.status WHEN 'Accepted' THEN 0 ELSE 1 END, ic.calendar_id LIMIT 1)`;
 
 /** The grids' one read: occurrences joined with just enough display data (title, status, a calendar for the
- *  color). Still a single indexed start_day range — no per-item fan-out, no render-time expansion.
- *  With includeSystem=false, items whose only Accepted homes are System-class calendars stay out of the
- *  grids (birthday rows always pass — locally synthesized, and the Birthdays calendar is Agenda-class). */
-export async function gridRowsBetween(tx: Tx, fromDay: string, toDay: string, includeSystem = true): Promise<GridRow[]> {
-  const systemFilter = includeSystem ? '' : `
-       AND (o.source != 'item' OR ${outsideSystemCalendars('o.source_id')})`;
+ *  color). Still a single indexed start_day range — no per-item fan-out, no render-time expansion. */
+export async function gridRowsBetween(tx: Tx, fromDay: string, toDay: string, filter?: CalendarFilter): Promise<GridRow[]> {
+  const shownFilter = filter ? `
+       AND (CASE o.source WHEN 'item' THEN ${inShownCalendars('o.source_id')} ELSE ? END)` : '';
   return tx.all<GridRow>(
     `SELECT o.source, o.source_id, o.start_utc, o.end_utc, o.start_day, o.all_day,
             COALESCE(i.title, c.display_name) AS title,
@@ -161,9 +162,9 @@ export async function gridRowsBetween(tx: Tx, fromDay: string, toDay: string, in
      FROM occurrences o
      LEFT JOIN items i ON o.source = 'item' AND i.id = o.source_id
      LEFT JOIN contacts c ON o.source = 'birthday' AND c.id = o.source_id
-     WHERE o.start_day >= ? AND o.start_day <= ?${systemFilter}
+     WHERE o.start_day >= ? AND o.start_day <= ?${shownFilter}
      ORDER BY o.start_utc`,
-    [fromDay, toDay],
+    [fromDay, toDay, ...(filter ? [JSON.stringify(filter.calendarIds), filter.birthdays ? 1 : 0] : [])],
   );
 }
 
@@ -190,7 +191,7 @@ const likeTerm = (term: string) => `%${term.replace(/[\\%_]/g, (m) => `\\${m}`)}
  *  the title, description, category or tags. Upcoming items first (soonest first), then past ones (most
  *  recent first) — `today` is a local 'yyyy-MM-dd', compared against start_day so an all-day item on
  *  today still counts as upcoming. */
-export async function searchItems(tx: Tx, query: string, today: string, includeSystem = true, limit = 100): Promise<ItemSearchRow[]> {
+export async function searchItems(tx: Tx, query: string, today: string, filter?: CalendarFilter, limit = 100): Promise<ItemSearchRow[]> {
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return [];
   const haystack = fold(`COALESCE(i.title, '') || ' ' || COALESCE(json_extract(i.doc, '$.description'), '') || ' ' ||
@@ -206,10 +207,10 @@ export async function searchItems(tx: Tx, query: string, today: string, includeS
      FROM items i
      WHERE i.deleted = 0
        ${terms.map(() => `AND ${haystack} LIKE ? ESCAPE '\\'`).join('\n       ')}
-       ${includeSystem ? '' : `AND ${outsideSystemCalendars('i.id')}`}
+       ${filter ? `AND ${inShownCalendars('i.id')}` : ''}
      ORDER BY next_utc IS NULL, next_utc, last_utc DESC
      LIMIT ?`,
-    [today, today, ...terms.map(likeTerm), limit],
+    [today, today, ...terms.map(likeTerm), ...(filter ? [JSON.stringify(filter.calendarIds)] : []), limit],
   );
 }
 

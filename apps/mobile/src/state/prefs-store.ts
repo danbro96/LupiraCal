@@ -8,7 +8,7 @@ import { getMeta, setMeta } from '../data/mirror';
  *  data layer can read, and no brittle SecureStore key destructuring). */
 
 const DEBUG_KEY = 'prefs.debugEnabled';
-const SHOW_SYSTEM_KEY = 'prefs.showSystemCalendars';
+const CALENDAR_CHOICES_KEY = 'prefs.calendarChoices';
 const SHOW_TASKS_KEY = 'prefs.showTaskDeadlines';
 const HOUR_HEIGHT_KEY = 'prefs.weekHourHeight';
 const ALL_DAY_ROWS_KEY = 'prefs.allDayRows';
@@ -46,9 +46,8 @@ type Prefs = {
   loaded: boolean;
   /** Gates the Developer + debug-log entries in Settings. */
   debugEnabled: boolean;
-  /** System-class calendars (Inbox, Availability, agent scaffolding …) are developer/agent surfaces —
-   *  hidden from lists, pickers, AND grids unless this is on. Birthdays is Agenda-class: unaffected. */
-  showSystemCalendars: boolean;
+  /** Calendars the user showed or hid; the rest follow `@lupira/cal-domain/calendars` defaults. */
+  calendarChoices: Record<string, boolean>;
   /** Task deadlines from LupiraTasks (online-only third grid source). Default ON — unset means shown. */
   showTaskDeadlines: boolean;
   /** Week grid zoom (dp per hour), set by pinching the time axis. */
@@ -67,7 +66,7 @@ type Prefs = {
 type PrefsActions = {
   init(): Promise<void>;
   setDebugEnabled(value: boolean): Promise<void>;
-  setShowSystemCalendars(value: boolean): Promise<void>;
+  setCalendarShown(calendarId: string, shown: boolean): Promise<void>;
   setShowTaskDeadlines(value: boolean): Promise<void>;
   setHourHeight(value: number): Promise<void>;
   setAllDayRows(value: AllDayRows): Promise<void>;
@@ -77,10 +76,10 @@ type PrefsActions = {
   setMapLayers(value: Record<string, boolean>): Promise<void>;
 };
 
-export const usePrefs = create<Prefs & PrefsActions>((set) => ({
+export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
   loaded: false,
   debugEnabled: false,
-  showSystemCalendars: false,
+  calendarChoices: {},
   showTaskDeadlines: true,
   hourHeight: DEFAULT_HOUR_HEIGHT,
   allDayRows: '3',
@@ -94,7 +93,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set) => ({
     await migrate(db);
     set({
       debugEnabled: (await getMeta(db, DEBUG_KEY)) === '1',
-      showSystemCalendars: (await getMeta(db, SHOW_SYSTEM_KEY)) === '1',
+      calendarChoices: parseJson(await getMeta(db, CALENDAR_CHOICES_KEY), isFlagRecord, {}),
       showTaskDeadlines: (await getMeta(db, SHOW_TASKS_KEY)) !== '0',
       hourHeight: Number(await getMeta(db, HOUR_HEIGHT_KEY)) || DEFAULT_HOUR_HEIGHT,
       allDayRows: readAllDayRows(await getMeta(db, ALL_DAY_ROWS_KEY)),
@@ -112,10 +111,11 @@ export const usePrefs = create<Prefs & PrefsActions>((set) => ({
     await db.exclusive((tx) => setMeta(tx, DEBUG_KEY, value ? '1' : '0'));
   },
 
-  setShowSystemCalendars: async (value) => {
-    set({ showSystemCalendars: value });
+  setCalendarShown: async (calendarId, shown) => {
+    const calendarChoices = { ...get().calendarChoices, [calendarId]: shown };
+    set({ calendarChoices });
     const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, SHOW_SYSTEM_KEY, value ? '1' : '0'));
+    await db.exclusive((tx) => setMeta(tx, CALENDAR_CHOICES_KEY, JSON.stringify(calendarChoices)));
   },
 
   setShowTaskDeadlines: async (value) => {

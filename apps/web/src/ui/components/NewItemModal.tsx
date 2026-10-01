@@ -17,6 +17,7 @@ import type { CreateCalendarItemRequest } from '@lupira/cal-api/models';
 import { RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { ymd } from '@lupira/cal-domain/time';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
+import { canWriteCalendar } from '@lupira/cal-domain/calendars';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
 import { useJoinItem } from '../../state/useJoinItem';
@@ -51,7 +52,7 @@ const LAST_CALENDAR = 'newItem.calendarId';
 export function NewItemModal({ onClose }: { onClose: () => void }) {
   const isPhone = useIsPhone();
   const { calendars: allCalendars } = useContainers();
-  const calendars = allCalendars.filter((c) => c.kind !== 'Availability');
+  const calendars = allCalendars.filter((c) => c.kind !== 'Availability' && canWriteCalendar(c));
   const me = useMyContactId();
   const join = useJoinItem();
   const invalidate = useInvalidateItems();

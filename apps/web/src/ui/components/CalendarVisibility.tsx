@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { ContainerDto } from '@lupira/cal-api/models';
+import { isCalendarShown } from '@lupira/cal-domain/calendars';
+import { readPref, writePref } from '../../state/localPrefs';
 
 interface Visibility {
   isVisible: (c: ContainerDto) => boolean;
@@ -10,25 +12,40 @@ interface Visibility {
 
 const VisibilityContext = createContext<Visibility | null>(null);
 
-const defaultVisible = (c: ContainerDto) => c.class !== 'System';
+const CHOICES_PREF = 'calendars.shown';
+const TASKS_PREF = 'calendars.tasksShown';
 
-/** Per-session calendar visibility. Agenda calendars start visible; System calendars start hidden.
- *  `tasksVisible` gates the task-deadline pseudo-source (LupiraTasksApi), visible by default. */
+function readChoices(): Record<string, boolean> {
+  try {
+    const v: unknown = JSON.parse(readPref(CHOICES_PREF) ?? '{}');
+    return typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, boolean>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Calendar visibility, remembered per browser. `tasksVisible` gates the task-deadline pseudo-source
+ *  (LupiraTasksApi), visible by default. */
 export function CalendarVisibilityProvider({ children }: { children: ReactNode }) {
-  const [overrides, setOverrides] = useState<Map<string, boolean>>(new Map());
-  const [tasksVisible, setTasksVisible] = useState(true);
+  const [choices, setChoices] = useState(readChoices);
+  const [tasksVisible, setTasksVisible] = useState(() => readPref(TASKS_PREF) !== '0');
 
-  const isVisible = useCallback((c: ContainerDto) => overrides.get(c.id) ?? defaultVisible(c), [overrides]);
+  const isVisible = useCallback((c: ContainerDto) => isCalendarShown(c, choices), [choices]);
 
   const toggle = useCallback((c: ContainerDto) => {
-    setOverrides((prev) => {
-      const next = new Map(prev);
-      next.set(c.id, !(next.get(c.id) ?? defaultVisible(c)));
+    setChoices((prev) => {
+      const next = { ...prev, [c.id]: !isCalendarShown(c, prev) };
+      writePref(CHOICES_PREF, JSON.stringify(next));
       return next;
     });
   }, []);
 
-  const toggleTasks = useCallback(() => setTasksVisible((v) => !v), []);
+  const toggleTasks = useCallback(() => {
+    setTasksVisible((v) => {
+      writePref(TASKS_PREF, v ? '0' : '1');
+      return !v;
+    });
+  }, []);
 
   const value = useMemo(
     () => ({ isVisible, toggle, tasksVisible, toggleTasks }),

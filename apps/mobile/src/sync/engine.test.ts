@@ -448,20 +448,26 @@ describe('migration ladder concurrency', () => {
   });
 });
 
-describe('system-calendar grid filter', () => {
-  it('hides items homed only in System-class calendars when asked', async () => {
-    await db.exclusive(async (tx) => {
-      await mirror.replaceContainers(tx, 'calendars', [
-        { id: 'cal-1' },
-        { id: 'sys-1', class: 'System' } as { id: string },
-      ]);
-    });
-    await enqueueOffline([createOp('item-1', 1), createOp('item-2', 2, 'sys-1')]);
+describe('calendar visibility filter', () => {
+  it('shows only items accepted into a shown calendar, and birthdays when asked', async () => {
+    await db.exclusive((tx) => mirror.replaceContainers(tx, 'calendars', [{ id: 'cal-1' }, { id: 'cal-2' }]));
+    const stamp = { ts: T(1), cmd: cmd(1) };
+    await pullContacts(db, horizon, pagesDeps([], [{
+      cursor: '1', hasMore: false, deleted: [],
+      changed: [{
+        contact: { id: 'c1', addressBookId: 'book-1', givenName: 'Jane', birthday: { year: 1990, month: 8, day: 14 } },
+        guards: { core: stamp, addresses: stamp, profiles: stamp, avatar: stamp, metadata: stamp, deceased: stamp },
+      }],
+    }]));
+    await enqueueOffline([createOp('item-1', 1), createOp('item-2', 2, 'cal-2')]);
 
     const all = await mirror.gridRowsBetween(db, '2026-08-01', '2026-08-31');
-    expect(all.map((r) => r.source_id).sort()).toEqual(['item-1', 'item-2']);
+    expect(all.map((r) => r.source_id).sort()).toEqual(['c1', 'item-1', 'item-2']);
 
-    const visible = await mirror.gridRowsBetween(db, '2026-08-01', '2026-08-31', false);
-    expect(visible.map((r) => r.source_id)).toEqual(['item-1']);
+    const some = await mirror.gridRowsBetween(db, '2026-08-01', '2026-08-31', { calendarIds: ['cal-1'], birthdays: false });
+    expect(some.map((r) => r.source_id)).toEqual(['item-1']);
+
+    const found = await mirror.searchItems(db, 'item', '2026-07-01', { calendarIds: ['cal-2'], birthdays: true });
+    expect(found.map((r) => r.id)).toEqual(['item-2']);
   });
 });
