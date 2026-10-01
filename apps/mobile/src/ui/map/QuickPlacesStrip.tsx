@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Icon } from 'react-native-paper';
-import type { QuickPlace } from '../../state/useQuickPlaces';
+import type { QuickPlace } from '@lupira/cal-domain/quickPlaces';
 import { ICONS } from '../icons';
 import { spacing, useColors } from '../theme';
 

@@ -2,36 +2,15 @@ import { StyleSheet, View } from 'react-native';
 import { Chip, FAB, Text } from 'react-native-paper';
 import { MAP_FUTURE_DAYS, MAP_SINCE_LABELS, type MapSince } from '@lupira/cal-domain/mapWindow';
 import { ACTIVITY_COLORS, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
+import { LAYERS, LAYER_KEYS, type LayerKey } from '@lupira/cal-tokens/mapLayers';
 import { MAP_SINCE_OPTIONS } from '../../state/prefs-store';
 import { SegmentedPicker } from '../components/SegmentedPicker';
 import { Sheet } from '../components/Sheet';
-import { ICONS, type IconKey } from '../icons';
+import { ICON_BY_NAME, ICONS } from '../icons';
 import { spacing, useColors } from '../theme';
 
 /** Map chrome: the layer sheet and the locate button. Toggles live in a sheet so the map itself stays
  *  unobstructed; inside it they're a two-column chip grid — six layers in three rows. */
-
-export type LayerKey = 'events' | 'saved' | 'photos' | 'movement' | 'contacts' | 'hotspots';
-
-export const LAYER_KEYS: readonly LayerKey[] = ['events', 'photos', 'movement', 'hotspots', 'contacts', 'saved'];
-
-const LAYERS: Record<LayerKey, { label: string; icon: IconKey; color: keyof (typeof MAP_COLORS)['light'] }> = {
-  events: { label: 'Events', icon: 'event', color: 'eventFallback' },
-  photos: { label: 'Photos', icon: 'photos', color: 'photo' },
-  movement: { label: 'Where I’ve been', icon: 'timeline', color: 'visitFill' },
-  hotspots: { label: 'Hotspots', icon: 'target', color: 'hotspot' },
-  contacts: { label: 'Contacts', icon: 'contacts', color: 'contact' },
-  saved: { label: 'Saved places', icon: 'saved', color: 'saved' },
-};
-
-export const DEFAULT_LAYERS: Record<LayerKey, boolean> = {
-  events: true,
-  saved: true,
-  photos: true,
-  movement: true,
-  contacts: false,
-  hotspots: false,
-};
 
 /** Follow-mode cycles off → centred → centred+rotated, the standard phone-map progression. */
 export type FollowMode = 'off' | 'follow' | 'heading';
@@ -83,7 +62,7 @@ export function LayersSheet({ theme, enabled, since, unmappableCount, onToggle, 
               selected={on}
               showSelectedCheck={false}
               onPress={() => onToggle(key)}
-              icon={ICONS[layer.icon]}
+              icon={ICON_BY_NAME[layer.icon]}
               style={[styles.chip, on && { borderColor: color }]}
               textStyle={styles.chipText}
               accessibilityState={{ selected: on }}

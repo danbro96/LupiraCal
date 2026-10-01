@@ -16,10 +16,12 @@ import type { NativeSyntheticEvent } from 'react-native';
 import { StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { ActivityIndicator, Banner, useTheme } from 'react-native-paper';
 import { mapViewport, type MapViewport } from '@lupira/cal-domain/geo';
+import type { HitAction } from '@lupira/cal-domain/mapHitLabels';
 import { hitsFromFeatures, type HitPoint, type MapHit } from '@lupira/cal-domain/mapHits';
 import { photoCellBounds } from '@lupira/cal-domain/mapFeatures';
 import { mapWindow, type MapSince } from '@lupira/cal-domain/mapWindow';
 import { zoomForSpan } from '@lupira/cal-domain/mapZoom';
+import type { QuickPlace } from '@lupira/cal-domain/quickPlaces';
 import { ymd } from '@lupira/cal-domain/time';
 import type { MapTheme } from '@lupira/cal-tokens/map';
 import { fallbackStyle } from '../../data/mapStyle';
@@ -30,12 +32,11 @@ import {
   useContactFeatures, useEventFeatures, useHotspotFeatures, useMovementFeatures, usePhotoFeatures, useSavedPlaceFeatures,
 } from '../../state/useMapData';
 import { useMapStyle } from '../../state/useMapStyle';
-import { useQuickPlaces, type QuickPlace } from '../../state/useQuickPlaces';
+import { useQuickPlaces } from '../../state/useQuickPlaces';
 import { useLivePosition } from '../../sync/livePosition';
-import {
-  DEFAULT_LAYERS, LAYER_KEYS, LayersFab, LayersSheet, LocateFab, type FollowMode, type LayerKey,
-} from '../map/MapChrome';
-import { MapPreviewSheet, type HitAction } from '../map/MapPreviewSheet';
+import { DEFAULT_LAYERS, LAYER_KEYS, type LayerKey } from '@lupira/cal-tokens/mapLayers';
+import { LayersFab, LayersSheet, LocateFab, type FollowMode } from '../map/MapChrome';
+import { MapPreviewSheet } from '../map/MapPreviewSheet';
 import { QuickPlacesStrip } from '../map/QuickPlacesStrip';
 import {
   ContactsLayer, EventsLayer, HotspotsLayer, LivePuck, MovementLayer, PhotosLayer, SavedPlacesLayer, SelectionPin,

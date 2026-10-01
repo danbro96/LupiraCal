@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { otherResidentsLine, residentsByPlace, residentsLine } from './residents';
+import { addressMeta, otherResidentsLine, residentsByPlace, residentsLine } from './residents';
 
 const today = new Date(2026, 8, 30);
 
@@ -30,3 +30,12 @@ describe('residentsByPlace', () => {
     expect(otherResidentsLine(byPlace.get('flat'))).toBe('Cia moves in Jun 2027');
   });
 });
+
+describe('addressMeta', () => {
+  it('names the type and when the residency began or ended', () => {
+    expect(addressMeta({ type: 'Home', movedIn: { year: 2019 }, status: 'active' })).toBe('Home · since 2019');
+    expect(addressMeta({ type: 'Work', movedIn: { year: 2010 }, movedOut: { year: 2015 }, status: 'former' })).toBe('Work · lived here 2010–2015');
+    expect(addressMeta({ movedIn: { year: 2027, month: 6 }, status: 'future' })).toBe('Home · moves in Jun 2027');
+  });
+});
+

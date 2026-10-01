@@ -4,11 +4,7 @@ import { getHotspots } from '@lupira/cal-api/fetch/cal';
 import { createPlace, createPlaceFromGeocode, forwardGeocode, listSavedPlaces, suggestPlaces } from '@lupira/cal-api/fetch/geo';
 import { SuggestionType, type GeocodeResultDto } from '@lupira/cal-api/models';
 import type { FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
-import { haversineM } from '@lupira/cal-domain/geo';
-import { hotspotStats } from '@lupira/cal-domain/mapFeatures';
-import { rankPlaces, type PlaceCandidate } from '@lupira/cal-domain/placeRank';
-import { otherResidentsLine, residentsByPlace, residentsLine, withResidency } from '@lupira/cal-domain/residents';
-import { matchesTerms, searchTerms } from '@lupira/cal-domain/textSearch';
+import { MIN_PLACE_QUERY, eventOrigin, pickPlaces } from '@lupira/cal-domain/placeCandidates';
 import { getDb } from '../data/db/expoDb';
 import { mapContactAddresses, mapEventRowsBetween } from '../data/mirror';
 import { lastKnownPosition } from '../sync/livePosition';
@@ -19,18 +15,6 @@ import { usePlaceCoords } from './usePlaceLookup';
 /** What the event editor stores: a geo place id plus the label written next to it. */
 export type PlaceOption = { placeId: string; label: string; context?: string | null };
 
-const CANDIDATE_HOTSPOTS = 30;
-const SHOWN_LIMIT = 15;
-/** A geocoder hit this close to a resident's place is taken to be that address. */
-const RESIDENT_RADIUS_M = 30;
-
-export type PickerPlace = PlaceCandidate & {
-  /** "Anna lives here". */
-  residentsLine: string | null;
-  /** "Anna lived here 2010–2015" — muted, and only where nobody lives now. */
-  otherLine: string | null;
-};
-
 const parseFuzzy = (raw: string | null): FuzzyDate | null => (raw ? (JSON.parse(raw) as FuzzyDate) : null);
 
 /** Every place the picker can offer, as one list ranked by `@lupira/cal-domain/placeRank`: saved places, your
@@ -39,7 +23,7 @@ const parseFuzzy = (raw: string | null): FuzzyDate | null => (raw ? (JSON.parse(
 export function usePlaceCandidates({ query, attendeeIds, day }: { query: string; attendeeIds: string[]; day: string | null }) {
   const reachable = useSyncStatus((s) => s.serverReachable);
   const q = query.trim();
-  const typing = q.length >= 2;
+  const typing = q.length >= MIN_PLACE_QUERY;
 
   const hotspots = useQuery({
     queryKey: ['map', 'hotspots'],
@@ -100,77 +84,19 @@ export function usePlaceCandidates({ query, attendeeIds, day }: { query: string;
   const dayPlaces = usePlaceCoords(useMemo(() => (dayEvents.data ?? []).map((r) => r.place_id), [dayEvents.data]));
 
   return useMemo(() => {
-    const now = new Date();
-    const residents = residentsByPlace(rows, now);
-    const residentsOf = (placeId: string) => {
-      const r = residents.get(placeId);
-      return r ? [...r.active, ...r.other].map((x) => ({ contactId: x.contactId, status: x.status })) : undefined;
-    };
-    const pointOf = (lat?: number | null, lon?: number | null) => (lat != null && lon != null ? { lat, lon } : null);
-    const attendees = new Set(attendeeIds);
-    const terms = searchTerms(q);
-
-    const candidates: PlaceCandidate[] = [
-      ...(saved.data ?? []).flatMap((p) => (p.placeId
-        ? [{ placeId: p.placeId, label: p.label, saved: true, point: pointOf(p.latitude, p.longitude) }]
-        : [])),
-      ...(hotspots.data ?? []).slice(0, CANDIDATE_HOTSPOTS).flatMap((h) => (h.placeId && h.label
-        ? [{
-            placeId: h.placeId, label: h.label, context: hotspotStats(h),
-            hotspot: { activeDays: h.activeDays, lastDay: h.lastDay }, point: pointOf(h.latitude, h.longitude),
-          }]
-        : [])),
-      ...(typing ? suggested.data ?? [] : []).map((s, i) => ({
-        placeId: s.id, label: s.name, context: s.context, suggestRank: i, point: pointOf(s.latitude, s.longitude),
-      })),
-      ...rows.flatMap((r) => {
-        const named = typing && matchesTerms(terms, r.displayName);
-        const invited = !typing && attendees.has(r.contactId);
-        if (!named && !invited) return [];
-        const place = places.get(r.placeId);
-        const status = withResidency(r, now).status;
-        if (invited && status !== 'active') return [];
-        return [{
-          placeId: r.placeId,
-          label: place?.name ?? `${r.displayName}'s ${(r.addressType ?? 'address').toLowerCase()}`,
-          context: place?.formattedAddress,
-          viaContact: named ? { contactId: r.contactId, status } : undefined,
-          point: pointOf(place?.latitude, place?.longitude),
-        }];
-      }),
-    ].map((c) => ({ ...c, residents: residentsOf(c.placeId) }));
-
-    const located = [...dayPlaces.values()].filter((p) => p.latitude != null && p.longitude != null);
-    const origin = located.length > 0
-      ? { lat: located.reduce((n, p) => n + p.latitude!, 0) / located.length, lon: located.reduce((n, p) => n + p.longitude!, 0) / located.length }
-      : fix.data ?? null;
-
-    const ranked = rankPlaces(candidates, {
-      query: q,
-      now,
-      attendeeIds: attendees,
+    const picked = pickPlaces({
+      query: typing ? q : '',
+      now: new Date(),
+      saved: saved.data ?? [],
+      hotspots: hotspots.data ?? [],
+      suggestions: suggested.data ?? [],
+      addresses: rows,
+      places,
+      attendeeIds,
       contactScores: new Map((summary ?? []).map((e) => [e.contactId, e.score])),
-      origin,
-    }).slice(0, SHOWN_LIMIT);
-
-    const residentsNear = (point: { lat: number; lon: number }) => {
-      for (const [placeId, r] of residents) {
-        const p = places.get(placeId);
-        if (r.active.length > 0 && p?.latitude != null && p.longitude != null
-          && haversineM(point, { lat: p.latitude, lon: p.longitude }) <= RESIDENT_RADIUS_M) return residentsLine(r);
-      }
-      return null;
-    };
-
-    return {
-      places: ranked.map((c): PickerPlace => ({
-        ...c,
-        residentsLine: residentsLine(residents.get(c.placeId)),
-        otherLine: otherResidentsLine(residents.get(c.placeId)),
-      })),
-      residentsNear,
-      loading: typing && suggested.isFetching,
-    };
+      origin: eventOrigin(dayPlaces.values(), fix.data ?? null),
+    });
+    return { ...picked, loading: typing && suggested.isFetching };
   }, [rows, places, dayPlaces, saved.data, hotspots.data, suggested.data, suggested.isFetching, fix.data, summary, attendeeIds, q, typing]);
 }
 

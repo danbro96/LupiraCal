@@ -37,6 +37,8 @@ export const MAP_COLORS = {
   },
 } as const satisfies Record<MapTheme, Record<string, string>>;
 
+export type MapColorKey = keyof (typeof MAP_COLORS)['light'];
+
 /** MapLibre `match` expression over the feature's activity property. */
 export function activityColorExpression(theme: MapTheme): unknown[] {
   const colors = ACTIVITY_COLORS[theme];

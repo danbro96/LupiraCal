@@ -32,11 +32,14 @@ export type IconName =
   | 'luggage'
   | 'medical'
   | 'person'
+  | 'photo'
   | 'restaurant'
   | 'robot'
   | 'run'
+  | 'saved'
   | 'schedule'
   | 'target'
+  | 'timeline'
   | 'tools'
   | 'walk';
 

@@ -1,3 +1,5 @@
+import type { IconName } from '@lupira/cal-tokens/icons';
+
 /**
  * The estate's icon vocabulary, resolved to `MaterialIcons` (Google Material — the same family the
  * SPAs render through `@mui/icons-material`). Paper's `icon` prop defaults to MaterialCommunityIcons,
@@ -89,3 +91,7 @@ export const ICONS = {
 } as const;
 
 export type IconKey = keyof typeof ICONS;
+
+/** Every token icon concept has a glyph here: a concept added to `@lupira/cal-tokens/icons` and not mapped
+ *  is a compile error, not a blank icon. */
+export const ICON_BY_NAME: Record<IconName, string> = ICONS;

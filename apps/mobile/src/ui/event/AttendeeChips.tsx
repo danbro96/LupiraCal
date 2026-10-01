@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Chip, Icon, Text } from 'react-native-paper';
+import { attendeeSummary, rsvpLabel } from '@lupira/cal-domain/participation';
 import type { ItemAttendee } from '../../domain/docTypes';
 import { ICONS } from '../icons';
 import { spacing, useColors } from '../theme';
-import { attendeeSummary, rsvpLabel } from './rsvp';
 
 const COLLAPSED_LIMIT = 8;
 

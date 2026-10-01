@@ -3,8 +3,7 @@ import { birthdayAgeLine, nextBirthday, turningAge } from '@lupira/cal-domain/bi
 import { initialsOf } from '@lupira/cal-domain/contactNames';
 import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
-import { fmtFuzzyDate } from '@lupira/cal-domain/fuzzyDate';
-import { residencyPhrase, withResidency } from '@lupira/cal-domain/residents';
+import { addressMeta, withResidency } from '@lupira/cal-domain/residents';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,7 +12,7 @@ import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Avatar, Button, List, Text } from 'react-native-paper';
 import { getDb } from '../../data/db/expoDb';
 import { composeDisplayName, loadContact } from '../../data/mirror';
-import type { ContactAddress, PartialDateDto } from '../../domain/docTypes';
+import type { PartialDateDto } from '../../domain/docTypes';
 import { copyText } from '../../feedback/copy';
 import { deleteContact } from '../../state/actions';
 import { useContactRelations, useContactState } from '../../state/useContactList';
@@ -224,13 +223,6 @@ function BirthdayRow({ birthday, deceased }: { birthday: PartialDateDto; decease
       {age != null ? ` · ${birthdayAgeLine(age, next, deceased)}` : ''}
     </Text>
   );
-}
-
-/** "Home · since 2019", "Work · lived here 2010–2015", "Home · moves in Jun 2027". */
-function addressMeta(a: ContactAddress & { status: 'active' | 'former' | 'future' }): string {
-  const type = a.type ?? 'Home';
-  if (a.status !== 'active') return `${type} · ${residencyPhrase(a)}`;
-  return a.movedIn ? `${type} · since ${fmtFuzzyDate(a.movedIn)}` : type;
 }
 
 function ResolvedName({ contactId, prefix, navigation }: {

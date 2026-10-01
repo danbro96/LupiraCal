@@ -2,18 +2,14 @@ import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Avatar, Icon, Text } from 'react-native-paper';
 import { initialsOf } from '@lupira/cal-domain/contactNames';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { describeHit, hitActions, type HitAction } from '@lupira/cal-domain/mapHitLabels';
 import type { MapHit } from '@lupira/cal-domain/mapHits';
-import { hotspotStats } from '@lupira/cal-domain/mapFeatures';
-import { fmtDate, fmtDateTime, fmtTime, parseYmd } from '@lupira/cal-domain/time';
 import { MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 import { Button } from '../components/Button';
 import { Sheet } from '../components/Sheet';
 import { avatarColor } from '../hooks/palette';
 import { ICONS } from '../icons';
 import { radii, spacing, useColors } from '../theme';
-
-export type HitAction = 'open' | 'day' | 'zoom';
 
 const ROW_THUMB = 40;
 
@@ -41,8 +37,8 @@ export function MapPreviewSheet({ hits, theme, onAction, onDismiss }: {
 
 function HitCard({ hit, theme, onAction }: { hit: MapHit; theme: MapTheme; onAction: (hit: MapHit, action: HitAction) => void }) {
   const c = useColors();
-  const { title, detail } = describe(hit);
-  const actions = actionsFor(hit);
+  const { title, detail } = describeHit(hit);
+  const actions = hitActions(hit);
   return (
     <View style={styles.card}>
       {hit.kind === 'photo' && hit.thumbUrl && (
@@ -68,8 +64,8 @@ function HitCard({ hit, theme, onAction }: { hit: MapHit; theme: MapTheme; onAct
 
 function HitRow({ hit, theme, onAction }: { hit: MapHit; theme: MapTheme; onAction: (hit: MapHit, action: HitAction) => void }) {
   const c = useColors();
-  const { title, detail } = describe(hit);
-  const primary = actionsFor(hit)[0]?.action;
+  const { title, detail } = describeHit(hit);
+  const primary = hitActions(hit)[0]?.action;
   return (
     <Pressable
       onPress={primary ? () => onAction(hit, primary) : undefined}
@@ -102,50 +98,13 @@ function Leading({ hit, theme }: { hit: MapHit; theme: MapTheme }) {
     saved: [ICONS.saved, colors.saved],
     hotspot: [ICONS.target, colors.hotspot],
     visit: [ICONS.timeline, colors.visitFill],
+    currentFix: [ICONS.locate, colors.currentFill],
   }[hit.kind];
   return (
     <View style={[styles.leading, { backgroundColor: `${color}22` }]}>
       <Icon source={icon} size={22} color={color} />
     </View>
   );
-}
-
-function describe(hit: MapHit): { title: string; detail: string[] } {
-  switch (hit.kind) {
-    case 'event':
-      return { title: displayTitle(hit.title), detail: hit.start ? [fmtDateTime(new Date(hit.start))] : [] };
-    case 'contact':
-      return { title: hit.name, detail: [[hit.addressType ?? 'Lives here', hit.placeName].filter(Boolean).join(' · ')] };
-    case 'photo':
-      return { title: hit.placeLabel ?? 'Photo', detail: [fmtDateTime(new Date(hit.takenAt))] };
-    case 'photoCell':
-      return { title: `${hit.count} photos`, detail: ['Zoom in to see them'] };
-    case 'saved':
-      return { title: hit.label, detail: ['Saved place'] };
-    case 'hotspot':
-      return {
-        title: hit.label ?? 'Unnamed spot',
-        detail: [hotspotStats(hit), hit.firstDay && hit.lastDay ? `${fmtDate(parseYmd(hit.firstDay))} – ${fmtDate(parseYmd(hit.lastDay))}` : ''].filter(Boolean),
-      };
-    case 'visit':
-      return {
-        title: hit.placeLabel ?? 'Stay',
-        detail: [`${fmtDate(new Date(hit.arriveTs))} · ${fmtTime(new Date(hit.arriveTs))}–${fmtTime(new Date(hit.departTs))} · ${hit.durationMin} min`],
-      };
-  }
-}
-
-function actionsFor(hit: MapHit): { action: HitAction; label: string }[] {
-  switch (hit.kind) {
-    case 'event': return [{ action: 'open', label: 'Open event' }];
-    case 'contact': return [{ action: 'open', label: 'Open contact' }];
-    case 'photo': return [{ action: 'open', label: 'Open photo' }, { action: 'day', label: 'All from this day' }];
-    case 'photoCell': return [{ action: 'zoom', label: 'Zoom in' }];
-    case 'visit': return [{ action: 'day', label: 'Photos from this day' }];
-    case 'saved':
-    case 'hotspot':
-      return [];
-  }
 }
 
 const styles = StyleSheet.create({

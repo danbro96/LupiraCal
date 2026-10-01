@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { List } from 'react-native-paper';
 import { rankByInteraction } from '@lupira/cal-domain/contactRank';
+import { rsvpLabel } from '@lupira/cal-domain/participation';
 import type { ItemAttendee } from '../../domain/docTypes';
 import { useContactList } from '../../state/useContactList';
 import { useParticipationSummary } from '../../state/useParticipationSummary';
@@ -10,7 +11,6 @@ import { Input } from '../components/Input';
 import { Sheet } from '../components/Sheet';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
-import { rsvpLabel } from './rsvp';
 
 const LIST_LIMIT = 50;
 

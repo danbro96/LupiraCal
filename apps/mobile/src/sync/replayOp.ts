@@ -3,6 +3,7 @@ import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetc
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import { createContact, deleteContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '@lupira/cal-api/fetch/contact';
 import type { ContactReachChannel } from '@lupira/cal-api/models';
+import { participationIdOf } from '@lupira/cal-domain/participation';
 import { v5 as uuidv5 } from 'uuid';
 import { ApiError } from '../domain/apiError';
 import type { ClientOp, ItemCore } from '../domain/ops';
@@ -56,7 +57,7 @@ export async function replayOp(op: ClientOp): Promise<void> {
         const key = uuidv5(contactId, op.commandId);
         const r = await inviteParticipant(op.itemId, { contactId, occurredAt: op.occurredAt }, { headers: { 'Idempotency-Key': key } });
         if (!op.accept?.includes(contactId) || r.status !== 200) continue;
-        const participationId = r.data.attendees.find((a) => a.contactId === contactId)?.participationId;
+        const participationId = participationIdOf(r.data, contactId);
         if (!participationId) continue;
         await respondToInvitation(
           op.itemId, participationId, { status: 'accepted', occurredAt: op.occurredAt },

@@ -33,4 +33,13 @@ describe('hitsFromFeatures', () => {
     expect(hits.map((h) => h.kind)).toEqual(['event', 'photoCell']);
     expect(hits[1]).toMatchObject({ count: 12, bounds: [18, 59, 18.1, 59.4] });
   });
+
+  it("reads the history layer's former and future residents with their period, and a device's last fix", () => {
+    const hits = hitsFromFeatures([
+      at({ layer: 'contact-former', status: 'former', placeId: 'pl', contactIds: ['bo'], names: ['Bo'], periods: ['2010–2015'] }),
+      at({ layer: 'current', deviceId: 'phone', ts: '2026-09-30T10:00:00Z', batteryPct: 80 }),
+    ]);
+    expect(hits[0]).toMatchObject({ kind: 'contact', name: 'Bo', residency: 'former', period: '2010–2015' });
+    expect(hits[1]).toMatchObject({ kind: 'currentFix', deviceId: 'phone', batteryPct: 80 });
+  });
 });

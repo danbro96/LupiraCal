@@ -62,3 +62,11 @@ export function residencyPhrase(r: Pick<Resident, 'status' | 'movedIn' | 'movedO
   if (r.status === 'former') return `lived here ${fmtResidencyPeriod(r.movedIn, r.movedOut)}`;
   return '';
 }
+
+/** A contact's address line: "Home · since 2019", "Work · lived here 2010–2015", "Home · moves in Jun 2027". */
+export function addressMeta(a: { type?: string | null; movedIn?: FuzzyDate | null; movedOut?: FuzzyDate | null; status: ResidencyStatus }): string {
+  const type = a.type ?? 'Home';
+  if (a.status !== 'active') return `${type} · ${residencyPhrase(a)}`;
+  return a.movedIn ? `${type} · since ${fmtFuzzyDate(a.movedIn)}` : type;
+}
+
