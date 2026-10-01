@@ -13,7 +13,7 @@ import {
   type UpdateCalendarItemRequest,
 } from '@lupira/cal-api/models';
 import { describeRrule, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
-import { fmtDate, parseYmd } from '@lupira/cal-domain/time';
+import { fmtDate, parseYmd, ymd } from '@lupira/cal-domain/time';
 import { COMMON_TIME_ZONES, deviceTimeZone, fmtZoneOffset, isValidTimeZone, zoneCity } from '@lupira/cal-domain/zonedTime';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { CategoryIcon } from '../KindIcon';
@@ -214,6 +214,8 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
       <DrawerSection title="Where">
         <PlacePicker
           placeId={item.placeId ?? null}
+          attendeeIds={item.attendees.map((a) => a.contactId)}
+          day={itemDay(item)}
           initialText={!item.placeId ? (item.locationLabel ?? '') : ''}
           placeholder="Search or type an address…"
           onChange={(placeId) => (placeId ? patch({ placeId, placeIdProvided: true }) : patch({ placeId: null, placeIdProvided: true }))}
@@ -273,3 +275,10 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
     </Box>
   );
 }
+
+/** The local day an item starts on, 'yyyy-MM-dd' — all-day dates as stored, timed starts in this zone. */
+function itemDay(item: CalendarItemDto): string | null {
+  if (item.isAllDay) return item.startDate ?? null;
+  return item.startsAt ? ymd(new Date(item.startsAt)) : null;
+}
+

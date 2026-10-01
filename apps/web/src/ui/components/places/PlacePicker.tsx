@@ -7,10 +7,9 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import CloseIcon from '@mui/icons-material/Close';
-import { forwardGeocode, useSuggestPlaces } from '@lupira/cal-api/query/geo';
+import { forwardGeocode } from '@lupira/cal-api/query/geo';
 import { SuggestionType, type PlaceSuggestionDto } from '@lupira/cal-api/models';
-import { hotspotStats } from '@lupira/cal-domain/mapFeatures';
-import { useHotspots } from '../../../state/useHotspots';
+import { usePlaceCandidates } from '../../../state/usePlaceCandidates';
 import { useCreatePlaceAtPin, useCreatePlaceFromHit } from '../../../state/usePlaces';
 import { errText } from '../../errText';
 import { GeocodePreview } from './GeocodePreview';
@@ -26,17 +25,22 @@ import { PlaceIcon } from '../../icons';
 
 const MapPinDialog = lazy(() => import('../map/MapPinDialog'));
 
-const FREQUENT_LIMIT = 8;
+type PickerOption = PlaceSuggestionDto & { residentsLine?: string | null; otherLine?: string | null; faded?: boolean };
 
-/** Turn user input into a LupiraGeoApi placeId: typeahead over existing places (an empty field
- *  offers the places the caller frequents); committing unmatched free text runs the picker machine —
- *  forward geocode → hit preview → pick, or drop a pin on the map. Nothing is ever created on cancel/dismiss. */
-export function PlacePicker({ placeId, onChange, placeholder, initialText, autoFocus }: {
+/** Turn user input into a LupiraGeoApi placeId: one ranked list of existing places (saved, frequent,
+ *  typeahead, and contacts' addresses — search a name to find where they live; an invited person's home
+ *  leads), each saying who lives there; committing unmatched free text runs the picker machine — forward
+ *  geocode → hit preview → pick, or drop a pin on the map. Nothing is ever created on cancel/dismiss. */
+export function PlacePicker({ placeId, onChange, placeholder, initialText, autoFocus, attendeeIds = [], day = null }: {
   placeId: string | null;
   onChange: (placeId: string | null) => void;
   placeholder?: string;
   initialText?: string;
   autoFocus?: boolean;
+  /** Invited people — their homes lead the list. */
+  attendeeIds?: readonly string[];
+  /** The event's day, 'yyyy-MM-dd' — its other events break ties by distance. */
+  day?: string | null;
 }) {
   const [state, setState] = useState<PickerState>(() => initialPickerState(initialText ?? ''));
   const stateRef = useRef(state);
@@ -48,16 +52,22 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
     const t = setTimeout(() => setQ(state.text.trim()), 250);
     return () => clearTimeout(t);
   }, [state.text]);
-  const { data: suggestions, isLoading } = useSuggestPlaces({ q, limit: 8 }, { query: { enabled: q.length >= 2 } });
   const [opened, setOpened] = useState(false);
-  const { data: hotspots } = useHotspots(opened);
-  const frequent = useMemo<PlaceSuggestionDto[]>(() => (hotspots ?? [])
-    .filter((h) => h.placeId && h.label)
-    .slice(0, FREQUENT_LIMIT)
-    .map((h) => ({ id: h.placeId!, type: SuggestionType.Place, name: h.label!, latitude: h.latitude, longitude: h.longitude, context: hotspotStats(h) })),
-  [hotspots]);
-  const typing = q.length >= 2;
-  const options = typing ? (suggestions ?? []) : frequent;
+  const { places, localities, typing, loading } = usePlaceCandidates({ query: q, opened, attendeeIds, day });
+  const options = useMemo<PickerOption[]>(() => [
+    ...places.map((p) => ({
+      id: p.placeId,
+      type: SuggestionType.Place,
+      name: p.label,
+      context: p.context,
+      latitude: p.point?.lat,
+      longitude: p.point?.lon,
+      residentsLine: p.residentsLine,
+      otherLine: p.otherLine,
+      faded: !!p.viaContact && p.viaContact.status !== 'active',
+    })),
+    ...localities,
+  ], [places, localities]);
 
   const dispatch = (event: PickerEvent) => {
     const { state: next, commands } = transition(stateRef.current, event);
@@ -114,14 +124,14 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
 
   return (
     <Box component="span" sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap', width: '100%' }}>
-      <Autocomplete<PlaceSuggestionDto, false, false, true>
+      <Autocomplete<PickerOption, false, false, true>
         freeSolo
         options={options}
         filterOptions={(x) => x}
-        loading={(typing && isLoading) || phase.kind === 'geocoding'}
+        loading={loading || phase.kind === 'geocoding'}
         openOnFocus
         onOpen={() => setOpened(true)}
-        groupBy={typing ? undefined : () => 'Frequent'}
+        groupBy={typing ? undefined : () => 'Suggested'}
         getOptionDisabled={(o) => o.type === SuggestionType.Locality}
         value={null}
         inputValue={state.text}
@@ -142,10 +152,19 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
         }}
         getOptionLabel={(o) => (typeof o === 'string' ? o : o.name)}
         renderOption={({ key, ...props }, o) => (
-          <li key={key} {...props}>
-            {o.name}
-            {o.type === SuggestionType.Locality && <Chip label="Area" sx={{ ml: 1 }} />}
-            {o.context && <Typography variant="caption" sx={{ color: 'text.secondary' }}> {o.context}</Typography>}
+          <li key={key} {...props} style={o.faded ? { opacity: 0.6 } : undefined}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span>
+                {o.name}
+                {o.type === SuggestionType.Locality && <Chip label="Area" sx={{ ml: 1 }} />}
+                {o.context && <Typography variant="caption" sx={{ color: 'text.secondary' }}> {o.context}</Typography>}
+              </span>
+              {o.residentsLine ? (
+                <Typography variant="caption" sx={{ color: 'primary.main' }}>{o.residentsLine}</Typography>
+              ) : o.otherLine ? (
+                <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>{o.otherLine}</Typography>
+              ) : null}
+            </Box>
           </li>
         )}
         renderInput={(params) => (
