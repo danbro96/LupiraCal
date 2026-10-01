@@ -11,10 +11,13 @@ public static class ContactContextHandler
     public static async Task<Results<Ok<ContactContextDto>, NotFound, ForbidHttpResult>> Handle(
         Guid id, ContactApiClient contacts, CancellationToken cancellationToken)
     {
+        // Groups span every readable book (membership is cross-book), so none of these reads waits on another.
+        var contactTask = contacts.Contacts[id].GetAsync(cancellationToken: cancellationToken);
+        var containersTask = contacts.Sync.Containers.GetAsync(cancellationToken: cancellationToken);
         ContactDto? contact;
         try
         {
-            contact = await contacts.Contacts[id].GetAsync(cancellationToken: cancellationToken);
+            contact = await contactTask;
         }
         catch (ApiException upstream) when (upstream.ResponseStatusCode is 404 or 403)
         {
@@ -25,24 +28,19 @@ public static class ContactContextHandler
 
         if (contact is null) return TypedResults.NotFound();
 
-        var addressBookId = contact.AddressBookId;
-        var emergencyIds = contact.EmergencyContactIds ?? [];
-
-        // The two remaining reads do not depend on each other; the client had to serialise them
-        // because it only learned the address book id from the call above.
-        var groupsTask = addressBookId is null
-            ? Task.FromResult<List<ContactGroupDto>?>([])
-            : contacts.AddressBooks[addressBookId.Value].Groups.GetAsync(cancellationToken: cancellationToken);
-        var namesTask = ResolveNames(emergencyIds, contacts, cancellationToken);
-        await Task.WhenAll(groupsTask, namesTask);
-
-        var groups = await groupsTask ?? [];
+        var namesTask = ResolveNames(contact.EmergencyContactIds ?? [], contacts, cancellationToken);
+        var containers = await containersTask;
+        var writable = (containers?.AddressBooks ?? [])
+            .Where(b => b.Access is Access.Owner or Access.ReadWrite)
+            .Select(b => b.Id)
+            .ToHashSet();
+        var groups = containers?.Groups ?? [];
         var isMember = (ContactGroupDto group) => group.Members?.Any(m => m.ContactId == id) == true;
 
         return TypedResults.Ok(new ContactContextDto
         {
             MemberOf = [.. groups.Where(isMember).Select(Ref)],
-            Joinable = [.. groups.Where(g => !isMember(g)).Select(Ref)],
+            Joinable = [.. groups.Where(g => !isMember(g) && writable.Contains(g.AddressBookId)).Select(Ref)],
             EmergencyContacts = await namesTask,
         });
     }

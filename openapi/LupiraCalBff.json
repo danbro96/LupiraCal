@@ -3079,7 +3079,7 @@
         "tags": [
           "contact"
         ],
-        "summary": "The caller's resolved local identity (JIT-provisioned on first login).",
+        "summary": "The caller's resolved local identity (JIT-provisioned on first login). While no contact is linked, one carrying the login email in a readable book is linked.",
         "operationId": "GetMe",
         "responses": {
           "200": {
@@ -3128,7 +3128,7 @@
         "tags": [
           "contact"
         ],
-        "summary": "Idempotently ensure the caller has a personal address book; returns all accessible books.",
+        "summary": "Idempotently ensure the caller has a personal address book and a linked contact of its own (one carrying the login email in a readable book, else a new one in the personal book); returns all accessible books.",
         "operationId": "ContactBootstrapMe",
         "responses": {
           "200": {
@@ -4149,6 +4149,106 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/contact-api/contacts/{id}/move": {
+      "post": {
+        "tags": [
+          "contact"
+        ],
+        "summary": "Move a contact to another address book, keeping its id (so relations, group memberships and links to it survive), content and ETag. Needs write access to both books; moving it to its current book is a no-op. The sync feed reports it deleted to readers of the old book and changed to readers of the new one.",
+        "operationId": "MoveContact",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveContactRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -12788,6 +12888,19 @@
           "Cycle",
           "Vehicle"
         ]
+      },
+      "MoveContactRequest": {
+        "required": [
+          "addressBookId"
+        ],
+        "type": "object",
+        "properties": {
+          "addressBookId": {
+            "type": "string",
+            "description": "The address book to move the contact into.",
+            "format": "uuid"
+          }
+        }
       },
       "MoveItemRequest": {
         "required": [

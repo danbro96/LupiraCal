@@ -132,6 +132,7 @@ export * from './mergeItemMetadataParams';
 export * from './messageSource';
 export * from './modelTier';
 export * from './motionActivity';
+export * from './moveContactRequest';
 export * from './moveItemRequest';
 export * from './occurrenceOrigin';
 export * from './occurrenceOverride';

@@ -36,7 +36,8 @@ export function GroupDetailPane() {
   const navigate = useNavigate();
   const invalidate = useInvalidateContacts();
   const group = useGroup(bookId || undefined, groupId);
-  const { data: bookContacts } = useSearchContacts({ addressBookId: bookId || undefined }, { query: { enabled: !!bookId } });
+  // Members can live in any book you can read — the group only belongs to one.
+  const { data: readable } = useSearchContacts({});
 
   const rename = useRenameContactGroup({ mutation: { onSuccess: invalidate } });
   const del = useDeleteContactGroup({ mutation: { onSuccess: () => { invalidate(); navigate('/contacts'); } } });
@@ -54,9 +55,10 @@ export function GroupDetailPane() {
     );
   }
 
-  const members = (bookContacts ?? []).filter((c) => group.members.some((m) => m.contactId === c.id));
-  const nonMembers = (bookContacts ?? []).filter((c) => !group.members.some((m) => m.contactId === c.id));
-  const backSearch = `?book=${bookId}`;
+  const memberIds = new Set(group.members.map((m) => m.contactId));
+  const members = (readable ?? []).filter((c) => memberIds.has(c.id));
+  const nonMembers = (readable ?? []).filter((c) => !memberIds.has(c.id));
+  const unreadable = readable ? group.members.length - members.length : 0;
 
   return (
     <DetailPane>
@@ -72,7 +74,9 @@ export function GroupDetailPane() {
             }}
           />
         </h2>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }}>{group.members.length} members</Typography>
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+          {group.members.length} members{unreadable > 0 && ` · ${unreadable} in books you can't open`}
+        </Typography>
       </PageHead>
 
       <DrawerSection title="Members">
@@ -81,7 +85,7 @@ export function GroupDetailPane() {
             <Avatar sx={{ width: 30, height: 30, fontSize: 12, fontWeight: 700, color: 'common.white' }} style={{ background: avatarColor(c.id) }}>
               {initialsOf(c.displayName)}
             </Avatar>
-            <MuiLink component={Link} sx={{ flex: 1 }} to={{ pathname: `/contacts/${c.id}`, search: backSearch }}>
+            <MuiLink component={Link} sx={{ flex: 1 }} to={{ pathname: `/contacts/${c.id}`, search: `?book=${c.addressBookId}` }}>
               {c.displayName}
             </MuiLink>
             <Tooltip title="Remove from group">

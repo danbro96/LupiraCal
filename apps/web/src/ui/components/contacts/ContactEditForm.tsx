@@ -137,7 +137,8 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
   const setEmergency = useSetEmergencyContacts();
   const markDeceased = useMarkContactDeceased();
   const clearDeceased = useClearContactDeceased();
-  const { data: bookContacts } = useSearchContacts({ addressBookId: contact.addressBookId });
+  // Emergency contacts may live in any book you can read.
+  const { data: readable } = useSearchContacts({});
 
   const yearKnownInitial = contact.birthday == null || contact.birthday.year != null;
   const {
@@ -184,7 +185,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
   const deceased = watch('deceased');
 
   const id = contact.id;
-  const nameOf = (cid: string) => bookContacts?.find((c) => c.id === cid)?.displayName ?? cid.slice(0, 8);
+  const nameOf = (cid: string) => readable?.find((c) => c.id === cid)?.displayName ?? cid.slice(0, 8);
 
   const save = handleSubmit(async (v) => {
     clearErrors('root');
@@ -502,7 +503,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
           name="emergency"
           control={control}
           render={({ field }) => {
-            const emergencyPickable = (bookContacts ?? []).filter((c) => c.id !== id && !field.value.includes(c.id));
+            const emergencyPickable = (readable ?? []).filter((c) => c.id !== id && !field.value.includes(c.id));
             return (
               <>
                 {field.value.map((cid, i) => (

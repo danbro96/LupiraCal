@@ -15,6 +15,7 @@ import {
   useAddContactGroupMember,
   useDeleteContact,
   useGetContact,
+  useMoveContact,
   useRemoveContactGroupMember,
   useSetMyContact,
 } from '@lupira/cal-api/query/contact';
@@ -23,6 +24,7 @@ import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
 import { addressMeta, withResidency } from '@lupira/cal-domain/residents';
 import { fmtDate } from '@lupira/cal-domain/time';
+import { addressBookLabel, useAddressBooks } from '../../../state/useAddressBooks';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { CompletenessBadge } from '../drawer/CompletenessBadge';
 import { errText } from '../../errText';
@@ -58,6 +60,16 @@ export function ContactDetailPane() {
   const removeMember = useRemoveContactGroupMember({ mutation: { onSuccess: invalidate, onError } });
   const del = useDeleteContact({ mutation: { onSuccess: () => { invalidate(); navigate('/contacts'); }, onError } });
   const setMe = useSetMyContact({ mutation: { onSuccess: invalidate, onError } });
+  const { addressBooks } = useAddressBooks();
+  const move = useMoveContact({
+    mutation: {
+      onSuccess: (moved) => {
+        invalidate();
+        navigate({ pathname: `/contacts/${moved.id}`, search: `?book=${moved.addressBookId}` });
+      },
+      onError,
+    },
+  });
   const [groupId, setGroupId] = useState('');
   const [editing, setEditing] = useState(false);
   const [showCircles, setShowCircles] = useState(false);
@@ -252,10 +264,25 @@ export function ContactDetailPane() {
           {contact.createdAt && ` · added ${fmtDate(new Date(contact.createdAt))}`}
         </Typography>
       )}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <Button variant="text" disabled={setMe.isPending} onClick={() => setMe.mutate({ data: { contactId: contact.id } })}>
           This is me
         </Button>
+        <TextField
+          select
+          label="Address book"
+          value={contact.addressBookId}
+          disabled={move.isPending || !addressBooks.some((b) => b.id === contact.addressBookId && writable(b.access))}
+          onChange={(e) => move.mutate({ id: contact.id, data: { addressBookId: e.target.value } })}
+        >
+          {addressBooks
+            .filter((b) => b.id === contact.addressBookId || writable(b.access))
+            .map((b) => (
+              <MenuItem key={b.id} value={b.id}>
+                {addressBookLabel(b)}
+              </MenuItem>
+            ))}
+        </TextField>
         <Button variant="outlined" color="error" onClick={() => del.mutate({ id: contact.id })} disabled={del.isPending}>
           Delete contact
         </Button>
@@ -263,6 +290,8 @@ export function ContactDetailPane() {
     </DetailPane>
   );
 }
+
+const writable = (access: string) => access === 'Owner' || access === 'ReadWrite';
 
 function CopyButton({ onCopy }: { onCopy: () => void }) {
   return (

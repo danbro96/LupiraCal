@@ -1,5 +1,5 @@
 {
-  "descriptionHash": "F8E038F9FBA05C8A7601FFDD7C14AA0CDDE54C537E30FC5276FAE8AB4AD555AFFE6AD57940414EE1FF5F8041EB448E9CE2AF45D1BC9A434F5B90D87675F7631B",
+  "descriptionHash": "71CF9B1227F55EF94CA662D4C034C2AB8EFDFC0AB7747E637F48EE214B241CFBD702F6834B39726833B95E44F21CC8253DE17E88C0FFF3AE9B127FD310BB3239",
   "descriptionLocation": "../../upstream-normalized/LupiraContactApi.json",
   "lockFileVersion": "1.0.0",
   "kiotaVersion": "1.34.1",
@@ -30,7 +30,7 @@
   ],
   "includePatterns": [
     "/contacts/{id}",
-    "/address-books/{addressBookId}/groups"
+    "/sync/containers"
   ],
   "excludePatterns": [],
   "disabledValidationRules": [],

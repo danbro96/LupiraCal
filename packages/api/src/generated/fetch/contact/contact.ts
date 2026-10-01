@@ -24,6 +24,7 @@ import type {
   GrantOwnerRequest,
   ListContactRelationsParams,
   MeDto,
+  MoveContactRequest,
   ProblemDetails,
   RemoveContactRelationParams,
   RenameContactGroupParams,
@@ -76,7 +77,7 @@ export const getGetMeUrl = () => {
 }
 
 /**
- * @summary The caller's resolved local identity (JIT-provisioned on first login).
+ * @summary The caller's resolved local identity (JIT-provisioned on first login). While no contact is linked, one carrying the login email in a readable book is linked.
  */
 export const getMe = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getMeResponse> => {
 
@@ -123,7 +124,7 @@ export const getContactBootstrapMeUrl = () => {
 }
 
 /**
- * @summary Idempotently ensure the caller has a personal address book; returns all accessible books.
+ * @summary Idempotently ensure the caller has a personal address book and a linked contact of its own (one carrying the login email in a readable book, else a new one in the personal book); returns all accessible books.
  */
 export const contactBootstrapMe = async ( options?: Parameters<typeof apiRequest>[1]): Promise<contactBootstrapMeResponse> => {
 
@@ -957,6 +958,83 @@ export const deleteContact = async (id: string, options?: Parameters<typeof apiR
     method: 'DELETE'
 
 
+  }
+);}
+
+
+export type moveContactResponse200 = {
+  data: ContactDto
+  status: 200
+}
+
+export type moveContactResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type moveContactResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type moveContactResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type moveContactResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type moveContactResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type moveContactResponseSuccess = (moveContactResponse200) & {
+  headers: Headers;
+};
+export type moveContactResponseError = (moveContactResponse400 | moveContactResponse401 | moveContactResponse403 | moveContactResponse404 | moveContactResponse500) & {
+  headers: Headers;
+};
+
+export type moveContactResponse = (moveContactResponseSuccess | moveContactResponseError)
+
+export const getMoveContactUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/contacts/${id}/move`
+}
+
+/**
+ * @summary Move a contact to another address book, keeping its id (so relations, group memberships and links to it survive), content and ETag. Needs write access to both books; moving it to its current book is a no-op. The sync feed reports it deleted to readers of the old book and changed to readers of the new one.
+ */
+export const moveContact = async (id: string,
+    moveContactRequest: MoveContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<moveContactResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<moveContactResponse>(getMoveContactUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(moveContactRequest)
   }
 );}
 

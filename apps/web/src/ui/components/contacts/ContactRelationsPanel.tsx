@@ -49,7 +49,8 @@ export function ContactRelationsPanel({ contact }: { contact: ContactDto }) {
   const invalidate = useInvalidateContacts();
   const [showExtended, setShowExtended] = useState(false);
   const { data: relations } = useListContactRelations(contact.id, { includeInferred: showExtended });
-  const { data: candidates } = useSearchContacts({ addressBookId: contact.addressBookId });
+  // Relations may point into any book you can read.
+  const { data: candidates } = useSearchContacts({});
   const showSnack = useSnackbar();
   const onError = (e: unknown) => showSnack(errText(e) ?? 'Request failed.');
   const add = useAddContactRelation({ mutation: { onSuccess: invalidate, onError } });

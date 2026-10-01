@@ -59,6 +59,7 @@
       "POST /address-books/{addressBookId}/groups",
       "POST /address-books/{addressBookId}/owners",
       "POST /contacts",
+      "POST /contacts/{id}/move",
       "POST /contacts/{id}/relations",
       "POST /contacts/{id}/relations/{toContactId}/end",
       "POST /groups/{groupId}/members",
