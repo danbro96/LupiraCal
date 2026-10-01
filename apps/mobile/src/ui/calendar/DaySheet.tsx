@@ -24,7 +24,8 @@ const LOW = 0.38;
 const HIGH = 0.78;
 const CEILING = 0.85;
 const CLOSE_BELOW = 0.2;
-const SPRING = { damping: 22, stiffness: 220 };
+// Critically damped. Reanimated 4 defaults mass to 4, so mass must be explicit or this rings.
+const SPRING = { mass: 1, damping: 30, stiffness: 220 };
 
 /** The selected day's agenda over the month grid. Opens at the low snap; the handle drags it between
  *  snaps, and releasing it low closes it. Stays mounted (and keeps its height) while the day changes. */

@@ -77,7 +77,8 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                 style={[
                   styles.cell,
                   { borderColor: c.divider },
-                  today && { backgroundColor: c.primary + '14' },
+                  !inMonth && { backgroundColor: c.surface },
+                  today &&{ backgroundColor: c.primary + '14' },
                   selected && [styles.cellSelected, { borderColor: c.primary }],
                 ]}
                 onPress={() => onSelectDay(key)}

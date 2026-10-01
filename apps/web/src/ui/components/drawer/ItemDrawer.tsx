@@ -66,6 +66,7 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
 
   const zone = eventZone(item.startTimezone);
   const browserZone = deviceTimeZone();
+  const zoneAt = item.startsAt ? new Date(item.startsAt) : undefined;
   const zoneOptions = [...new Set([browserZone, zone, ...COMMON_TIME_ZONES])].filter(isValidTimeZone);
   const zonePatch = (z: string): UpdateCalendarItemRequest => ({
     startTimezone: z, startTimezoneProvided: true, endTimezone: z, endTimezoneProvided: true,
@@ -174,7 +175,7 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
               >
                 {zoneOptions.map((z) => (
                   <MenuItem key={z} value={z}>
-                    {`${zoneCity(z)} · ${fmtZoneOffset(z)}${z === browserZone ? ' · this browser' : ''}`}
+                    {`${zoneCity(z)} · ${fmtZoneOffset(z, zoneAt)}${z === browserZone ? ' · this browser' : ''}`}
                   </MenuItem>
                 ))}
               </TextField>

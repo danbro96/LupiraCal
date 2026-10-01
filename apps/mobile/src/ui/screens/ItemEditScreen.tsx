@@ -1,5 +1,5 @@
 import { describeRrule } from '@lupira/cal-domain/rrule';
-import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
+import { deviceTimeZone, wallToInstant } from '@lupira/cal-domain/zonedTime';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -193,6 +193,7 @@ export function ItemEditScreen() {
   const cancelled = form.status === 'Cancelled';
   const noEnd = form.isAllDay ? 'Same day' : 'No end';
   const otherZone = !form.isAllDay && !!form.timeZone && form.timeZone !== deviceTimeZone();
+  const zoneAt = form.timeZone && form.startDay && form.startTime ? wallToInstant(form.startDay, form.startTime, form.timeZone) : undefined;
   const legacyLocation = !form.place ? state?.doc.locationLabel : null;
 
   return (
@@ -247,7 +248,7 @@ export function ItemEditScreen() {
             </View>
           )}
         </View>
-        {otherZone && <Text style={[styles.muted, styles.zoneNote, { color: c.textMuted }]}>Times in {zoneSummary(form.timeZone)}</Text>}
+        {otherZone && <Text style={[styles.muted, styles.zoneNote, { color: c.textMuted }]}>Times in {zoneSummary(form.timeZone, zoneAt)}</Text>}
 
         <List.Item
           title={form.place?.label || 'Add place'}
@@ -284,7 +285,7 @@ export function ItemEditScreen() {
         />
         <MoreRow icon={ICONS.group} title="People" value={people} onPress={() => setSheet('people')} />
         {!form.isAllDay && !!form.timeZone && (
-          <MoreRow icon={ICONS.public} title="Time zone" value={zoneSummary(form.timeZone)} onPress={() => setSheet('zone')} />
+          <MoreRow icon={ICONS.public} title="Time zone" value={zoneSummary(form.timeZone, zoneAt)} onPress={() => setSheet('zone')} />
         )}
         {!cancelled && (
           <List.Item
@@ -314,7 +315,7 @@ export function ItemEditScreen() {
       {sheet === 'repeat' && (
         <RepeatSheet value={form.recurrenceRule} onPick={(v) => set('recurrenceRule', v)} onDismiss={() => setSheet(null)} />
       )}
-      {sheet === 'zone' && <TimeZoneSheet value={form.timeZone} onPick={(v) => set('timeZone', v)} onDismiss={() => setSheet(null)} />}
+      {sheet === 'zone' && <TimeZoneSheet value={form.timeZone} at={zoneAt} onPick={(v) => set('timeZone', v)} onDismiss={() => setSheet(null)} />}
       {sheet === 'place' && (
         <PlaceSheet
           hasPlace={!!form.place}
