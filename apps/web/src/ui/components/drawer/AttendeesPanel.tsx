@@ -8,9 +8,12 @@ import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
+import { Link as RouterLink } from 'react-router-dom';
 import CheckIcon from '@mui/icons-material/Check';
 import ClearIcon from '@mui/icons-material/Clear';
 import CloseIcon from '@mui/icons-material/Close';
+import PersonAddIcon from '@mui/icons-material/PersonAddOutlined';
 import {
   useConfirmAttendance,
   useGetParticipationSummary,
@@ -23,8 +26,11 @@ import type { CalendarItemDto } from '@lupira/cal-api/models';
 import { useSearchContacts } from '@lupira/cal-api/query/contact';
 import { initialsOf } from '@lupira/cal-domain/contactNames';
 import { rankByInteraction } from '@lupira/cal-domain/contactRank';
+import { attendeeSummary, roleLabel, rsvpLabel } from '@lupira/cal-domain/participation';
 import { avatarColor } from '@lupira/cal-tokens/kinds';
 import { useInvalidateItems } from '../../../state/useInvalidate';
+import { useJoinItem } from '../../../state/useJoinItem';
+import { useMyContactId } from '../../../state/useMe';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
 import { WrapRow } from '../WrapRow';
@@ -37,13 +43,6 @@ const ROLE_OPTIONS = [
   { value: 'non-participant', label: 'FYI' },
 ];
 
-const ROLE_LABELS: Record<string, string> = {
-  Chair: 'chair',
-  RequiredParticipant: 'required',
-  OptionalParticipant: 'optional',
-  NonParticipant: 'fyi',
-};
-
 /** RSVP colour comes from the palette slots added for it, not a per-status class. */
 const STATUS_COLOR: Record<string, string> = {
   Accepted: 'success.main',
@@ -51,19 +50,18 @@ const STATUS_COLOR: Record<string, string> = {
   Tentative: 'warning.main',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  NeedsAction: 'invited',
-  Accepted: 'accepted',
-  Declined: 'declined',
-  Tentative: 'tentative',
-  Delegated: 'delegated',
-};
-
-/** Invitees + RSVP state, with invite/respond/attend/leave/remove riding the participation events. */
+/** Invitees + RSVP state, with invite/respond/attend/leave/remove riding the participation events. A name
+ *  opens that contact; you are never ranked among the invitable — while you're not on the event, Join and a
+ *  pinned "You" put you on it, already going. */
 export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
   const invalidate = useInvalidateItems();
-  const { data: contacts } = useSearchContacts();
-  const contactName = (id?: string) => contacts?.find((c) => c.id === id)?.displayName ?? (id ?? '?').slice(0, 8);
+  const me = useMyContactId();
+  const join = useJoinItem();
+  const { data: contacts } = useSearchContacts({});
+  const known = (id: string) => !!contacts?.some((c) => c.id === id);
+  const contactName = (id?: string) =>
+    id && id === me ? 'You' : contacts?.find((c) => c.id === id)?.displayName ?? (id ?? '?').slice(0, 8);
+  const attending = !!me && item.attendees.some((a) => a.contactId === me);
 
   const showSnack = useSnackbar();
   const opts = { mutation: { onSuccess: invalidate, onError: (e: unknown) => showSnack(errText(e) ?? 'Request failed.') } };
@@ -79,13 +77,25 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
   // Most-met contacts first; fail-open — while the summary loads (or errors) the list stays alphabetical.
   const { data: summary } = useGetParticipationSummary();
   const invitable = rankByInteraction(
-    (contacts ?? []).filter((c) => !item.attendees.some((a) => a.contactId === c.id)),
+    (contacts ?? []).filter((c) => c.id !== me && !item.attendees.some((a) => a.contactId === c.id)),
     summary,
   );
+  const joinSelf = () => {
+    if (me) join(item.id, me).catch((e: unknown) => showSnack(errText(e) ?? 'Could not join.'));
+  };
 
   return (
     <DrawerSection title="Attendees">
-      {item.attendees.length === 0 && <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">No attendees yet.</Typography>}
+      <WrapRow>
+        <Typography variant="caption" sx={{ color: 'text.secondary', flex: 1 }}>
+          {item.attendees.length === 0 ? 'No attendees yet.' : attendeeSummary(item.attendees.map((a) => ({ status: a.status ?? 'NeedsAction' })))}
+        </Typography>
+        {me && !attending && (
+          <Button size="small" variant="outlined" startIcon={<PersonAddIcon />} onClick={joinSelf}>
+            Join
+          </Button>
+        )}
+      </WrapRow>
       {item.attendees.map((a) => {
         const pid = a.participationId ?? '';
         const status = a.status ?? 'NeedsAction';
@@ -95,10 +105,16 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
               {initialsOf(contactName(a.contactId))}
             </Avatar>
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-              <span>{contactName(a.contactId)}</span>
+              {known(a.contactId) ? (
+                <Link component={RouterLink} to={`/contacts/${a.contactId}`} underline="hover" color="inherit">
+                  {contactName(a.contactId)}
+                </Link>
+              ) : (
+                <span>{contactName(a.contactId)}</span>
+              )}
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {ROLE_LABELS[a.role ?? ''] ?? a.role} · <Box component="b" sx={{ color: STATUS_COLOR[status] }}>
-                  {STATUS_LABELS[status] ?? status}
+                {roleLabel(a.role)} · <Box component="b" sx={{ color: STATUS_COLOR[status] }}>
+                  {rsvpLabel(status)}
                 </Box>
                 {a.attendedAt ? ' · attended' : ''}
                 {a.leftAt ? ' · left' : ''}
@@ -140,6 +156,7 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
       <WrapRow>
         <TextField select value={contactId} onChange={(e) => setContactId(e.target.value)} slotProps={{ select: { displayEmpty: true } }}>
           <MenuItem value="">Invite a contact…</MenuItem>
+          {me && !attending && <MenuItem value={me}>You</MenuItem>}
           {invitable.map((c) => (
             <MenuItem key={c.id} value={c.id}>
               {c.displayName}
@@ -157,7 +174,8 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
           variant="outlined"
           disabled={!contactId || invite.isPending}
           onClick={() => {
-            invite.mutate({ id: item.id, params: { contactId, role } });
+            if (contactId === me) joinSelf();
+            else invite.mutate({ id: item.id, params: { contactId, role } });
             setContactId('');
           }}
         >

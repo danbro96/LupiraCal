@@ -12,6 +12,7 @@ import {
   type IconName,
 } from '@lupira/cal-tokens/icons';
 import type { SvgIconComponent } from '@mui/icons-material';
+import { RSVP_LABELS } from '@lupira/cal-domain/participation';
 import * as Icons from '../icons';
 
 // Re-typing the token records against the generated enums is the drift tripwire: when the API adds a
@@ -53,10 +54,4 @@ export function calendarColor(c: ContainerDto): string {
   return tokenCalendarColor(c);
 }
 
-export const PARTICIPATION_STATUS_LABELS: Record<ParticipationStatus, string> = {
-  NeedsAction: 'invited',
-  Accepted: 'accepted',
-  Declined: 'declined',
-  Tentative: 'tentative',
-  Delegated: 'delegated',
-};
+export const PARTICIPATION_STATUS_LABELS: Record<ParticipationStatus, string> = RSVP_LABELS;

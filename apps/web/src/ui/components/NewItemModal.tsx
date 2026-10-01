@@ -13,12 +13,15 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCreateItem } from '@lupira/cal-api/query/cal';
-import { AvailabilityStatus, type CreateCalendarItemRequest } from '@lupira/cal-api/models';
+import type { CreateCalendarItemRequest } from '@lupira/cal-api/models';
 import { RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { ymd } from '@lupira/cal-domain/time';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
+import { useJoinItem } from '../../state/useJoinItem';
+import { readPref, writePref } from '../../state/localPrefs';
+import { useMyContactId } from '../../state/useMe';
 import { localInputToIso } from './drawer/inputs';
 import { PlacePicker } from './places/PlacePicker';
 import { errText } from '../errText';
@@ -36,21 +39,29 @@ type FormValues = {
   endDate: string;
   placeId: string;
   rrule: string;
-  availability: '' | AvailabilityStatus;
+  attending: boolean;
   tags: string;
   description: string;
 };
 
-/** Quick-create: title, calendar, when (timed or all-day), place, recurrence, kind/availability, tags. */
+const LAST_CALENDAR = 'newItem.calendarId';
+
+/** Quick-create: title, calendar, when (timed or all-day), place, recurrence, tags — and you, already going,
+ *  unless unticked. Starts on the calendar the last event went to. Availability has its own form. */
 export function NewItemModal({ onClose }: { onClose: () => void }) {
   const isPhone = useIsPhone();
-  const { calendars } = useContainers();
+  const { calendars: allCalendars } = useContainers();
+  const calendars = allCalendars.filter((c) => c.kind !== 'Availability');
+  const me = useMyContactId();
+  const join = useJoinItem();
   const invalidate = useInvalidateItems();
   const [, setSearchParams] = useSearchParams();
   const showSnack = useSnackbar();
   const create = useCreateItem({
     mutation: {
-      onSuccess: (created) => {
+      onSuccess: async (created, { data }) => {
+        writePref(LAST_CALENDAR, data.calendarId ?? null);
+        if (me && attending) await join(created.id, me).catch((e: unknown) => showSnack(errText(e) ?? 'Created, but could not add you.'));
         invalidate();
         onClose();
         setSearchParams((prev) => {
@@ -63,7 +74,8 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
     },
   });
 
-  const defaultCalendar = calendars.find((c) => c.kind === 'Personal') ?? calendars[0];
+  const remembered = readPref(LAST_CALENDAR);
+  const defaultCalendar = calendars.find((c) => c.id === remembered) ?? calendars.find((c) => c.kind === 'Personal') ?? calendars[0];
   const { control, handleSubmit, watch } = useForm<FormValues>({
     defaultValues: {
       title: '',
@@ -75,18 +87,14 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       endDate: '',
       placeId: '',
       rrule: '',
-      availability: '',
+      attending: true,
       tags: '',
       description: '',
     },
   });
   const isAllDay = watch('isAllDay');
   const startDate = watch('startDate');
-  const calendarId = watch('calendarId');
-  const availability = watch('availability');
-
-  const selectedCalendar = calendars.find((c) => c.id === calendarId);
-  const isAvailabilityCalendar = selectedCalendar?.kind === 'Availability';
+  const attending = watch('attending');
 
   const submit = handleSubmit((v) => {
     const body: CreateCalendarItemRequest = {
@@ -102,7 +110,6 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       startDate: v.isAllDay ? v.startDate || null : null,
       endDate: v.isAllDay ? v.endDate || null : null,
       recurrenceRule: v.rrule || null,
-      availability: v.availability || null,
       tags: v.tags
         ? v.tags
             .split(',')
@@ -213,24 +220,15 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
               </TextField>
             )}
           />
-          {(isAvailabilityCalendar || availability) && (
+          {me && (
             <Controller
-              name="availability"
+              name="attending"
               control={control}
               render={({ field }) => (
-                <TextField
-                  select
-                  label="Availability"
-                  {...field}
-                  slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-                >
-                  <MenuItem value="">(status…)</MenuItem>
-                  {Object.values(AvailabilityStatus).map((s) => (
-                    <MenuItem key={s} value={s}>
-                      {s}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                <FormControlLabel
+                  control={<Checkbox size="small" checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                  label="I'm attending"
+                />
               )}
             />
           )}
