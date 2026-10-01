@@ -35,6 +35,7 @@ export function CalendarScreen() {
   const { view, date, weeks, days, range, title, setView, setDate, navigate, openDay } = useCalendarRange({
     defaultView: isPhone ? 'day' : 'week',
     weekDayCount: isPhone ? 3 : 7,
+    rememberAs: isPhone ? 'phone' : 'desktop',
   });
   const tag = searchParams.get('tag') ?? '';
   const q = searchParams.get('q') ?? '';

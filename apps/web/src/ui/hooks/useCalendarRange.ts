@@ -13,14 +13,25 @@ import {
   startOfWeek,
   ymd,
 } from '@lupira/cal-domain/time';
+import { readPref, writePref } from '../../state/localPrefs';
 
 export type CalendarView = 'month' | 'week' | 'day';
+const VIEWS: readonly string[] = ['month', 'week', 'day'];
+const isView = (v: string | null): v is CalendarView => v != null && VIEWS.includes(v);
 
-/** URL-backed (?view, ?d) calendar view state shared by desktop and phone layouts.
- *  A 7-day week anchors on Monday; fewer days anchor on the date itself so Today is column 1. */
-export function useCalendarRange({ defaultView, weekDayCount }: { defaultView: CalendarView; weekDayCount: number }) {
+/** URL-backed (?view, ?d) calendar view state shared by desktop and phone layouts. A view you pick is
+ *  remembered per layout (`rememberAs`) and used whenever the URL names none; drilling into a day is not a
+ *  pick. A 7-day week anchors on Monday; fewer days anchor on the date itself so Today is column 1. */
+export function useCalendarRange({ defaultView, weekDayCount, rememberAs }: {
+  defaultView: CalendarView;
+  weekDayCount: number;
+  rememberAs: string;
+}) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const view = (searchParams.get('view') as CalendarView) ?? defaultView;
+  const memoryKey = `calendar.view.${rememberAs}`;
+  const urlView = searchParams.get('view');
+  const storedView = readPref(memoryKey);
+  const view: CalendarView = isView(urlView) ? urlView : isView(storedView) ? storedView : defaultView;
   const dateParam = searchParams.get('d');
   // Midnight-normalized: day/3-day ranges start at the day boundary, not the current instant.
   const date = useMemo(() => (dateParam ? parseYmd(dateParam) : startOfDay(new Date())), [dateParam]);
@@ -69,7 +80,10 @@ export function useCalendarRange({ defaultView, weekDayCount }: { defaultView: C
     days,
     range,
     title,
-    setView: (v: CalendarView) => setParam('view', v),
+    setView: (v: CalendarView) => {
+      writePref(memoryKey, v);
+      setParam('view', v);
+    },
     setDate: (d: Date | null) => setParam('d', d ? ymd(d) : null),
     navigate,
     openDay,

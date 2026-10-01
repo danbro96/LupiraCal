@@ -183,6 +183,9 @@ function AllDayStrip({
         borderBottom: 1,
         borderColor: 'divider',
         minHeight: 28,
+        // However many lanes are shown, the timed grid below stays reachable.
+        maxHeight: '30vh',
+        overflowY: 'auto',
       }}
     >
       <Box sx={{ gridColumn: 1, gridRow: allRows, display: 'flex', alignItems: 'flex-start', fontSize: 12, color: 'text.secondary' }}>
