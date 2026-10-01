@@ -27,6 +27,7 @@ import { KindDetailsCard } from './KindDetailsCard';
 import { MetadataPanel } from './MetadataPanel';
 import { PayloadPanel } from './PayloadPanel';
 import { PlacePicker } from '../places/PlacePicker';
+import { PlaceTile } from '../places/PlaceTile';
 import { ItemPhotosPanel } from './ItemPhotosPanel';
 import { RelationsPanel } from './RelationsPanel';
 import { errText } from '../../errText';
@@ -96,6 +97,7 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
   const [description, setDescription] = useState(item.description ?? '');
   const [rrule, setRrule] = useState(item.recurrenceRule ?? '');
   const [newTag, setNewTag] = useState('');
+  const [editingPlace, setEditingPlace] = useState(false);
 
   return (
     <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
@@ -212,14 +214,37 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
       </DrawerSection>
 
       <DrawerSection title="Where">
-        <PlacePicker
-          placeId={item.placeId ?? null}
-          attendeeIds={item.attendees.map((a) => a.contactId)}
-          day={itemDay(item)}
-          initialText={!item.placeId ? (item.locationLabel ?? '') : ''}
-          placeholder="Search or type an address…"
-          onChange={(placeId) => (placeId ? patch({ placeId, placeIdProvided: true }) : patch({ placeId: null, placeIdProvided: true }))}
-        />
+        {item.placeId && !editingPlace ? (
+          <PlaceTile placeId={item.placeId} onEdit={() => setEditingPlace(true)} />
+        ) : (
+          <PlacePicker
+            placeId={editingPlace ? null : item.placeId ?? null}
+            autoFocus={editingPlace}
+            attendeeIds={item.attendees.map((a) => a.contactId)}
+            day={itemDay(item)}
+            initialText={!item.placeId ? (item.locationLabel ?? '') : ''}
+            placeholder="Search or type an address…"
+            onChange={(placeId) => {
+              setEditingPlace(false);
+              patch({ placeId: placeId ?? null, placeIdProvided: true });
+            }}
+          />
+        )}
+        {editingPlace && (
+          <WrapRow>
+            <Button size="small" onClick={() => setEditingPlace(false)}>Cancel</Button>
+            <Button
+              size="small"
+              color="error"
+              onClick={() => {
+                setEditingPlace(false);
+                patch({ placeId: null, placeIdProvided: true });
+              }}
+            >
+              Remove place
+            </Button>
+          </WrapRow>
+        )}
         {!item.placeId && item.locationLabel && (
           <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">“{item.locationLabel}” from calendar text</Typography>
         )}
@@ -236,12 +261,20 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
         />
       </DrawerSection>
 
+      <KindDetailsCard details={item.details} />
+      <PayloadPanel item={item} />
+      <AttendeesPanel item={item} />
+      <CalendarsPanel item={item} />
+      <HierarchyPanel item={item} />
+      <ItemPhotosPanel itemId={item.id} item={item} />
+      <RelationsPanel itemId={item.id} />
       <DrawerSection title="Tags">
         <WrapRow>
           {(item.tags ?? []).map((t) => (
-            <Chip key={t} label={t} onDelete={() => patch({ tags: (item.tags ?? []).filter((x) => x !== t) })} />
+            <Chip key={t} size="small" variant="outlined" label={`#${t}`} onDelete={() => patch({ tags: (item.tags ?? []).filter((x) => x !== t) })} />
           ))}
           <TextField
+            size="small"
             placeholder="+ tag"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
@@ -255,13 +288,6 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
         </WrapRow>
       </DrawerSection>
 
-      <KindDetailsCard details={item.details} />
-      <PayloadPanel item={item} />
-      <AttendeesPanel item={item} />
-      <CalendarsPanel item={item} />
-      <HierarchyPanel item={item} />
-      <ItemPhotosPanel itemId={item.id} item={item} />
-      <RelationsPanel itemId={item.id} />
       <MetadataPanel itemId={item.id} metadata={item.metadata} />
 
       <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

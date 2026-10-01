@@ -21,18 +21,14 @@ import {
 import { useGetContactContext } from '@lupira/cal-api/query/bff-contacts';
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
-import { fmtResidencyPeriod, residencyStatus, type FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
-
-function residencySuffix(movedIn: FuzzyDate | null | undefined, movedOut: FuzzyDate | null | undefined): string {
-  const status = residencyStatus(movedIn, movedOut);
-  return status === 'former' ? ' (former)' : status === 'future' ? ' (upcoming)' : '';
-}
+import { addressMeta, withResidency } from '@lupira/cal-domain/residents';
 import { fmtDate } from '@lupira/cal-domain/time';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { CompletenessBadge } from '../drawer/CompletenessBadge';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
-import { PlaceLabel } from '../places/PlaceLabel';
+import { PlaceTile } from '../places/PlaceTile';
+import { useCopy } from '../../hooks/useCopy';
 import { ContactCircles } from './ContactCircles';
 import { ContactEditForm } from './ContactEditForm';
 import { ContactEventsPanel } from './ContactEventsPanel';
@@ -42,7 +38,7 @@ import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';
 import { PageHead } from '../Page';
 import { DetailPane } from './panes';
-import { BusinessIcon, CakeIcon, GroupIcon, PlaceIcon, StarIcon } from '../../icons';
+import { BusinessIcon, CakeIcon, CopyIcon, GroupIcon, StarIcon } from '../../icons';
 
 const linkSx: SxProps<Theme> = { fontSize: 13, fontWeight: 600, p: '2px', whiteSpace: 'nowrap', '@media (pointer: coarse)': { p: '6px 2px' } };
 
@@ -65,10 +61,15 @@ export function ContactDetailPane() {
   const [groupId, setGroupId] = useState('');
   const [editing, setEditing] = useState(false);
   const [showCircles, setShowCircles] = useState(false);
+  const [showOtherAddresses, setShowOtherAddresses] = useState(false);
+  const copy = useCopy();
 
   if (isLoading) return <DetailPane><Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Loading…</Typography></DetailPane>;
   if (!contact) return <DetailPane><Typography component="p" sx={{ textAlign: 'center', color: 'text.subtle', mt: 6 }}>Contact not found.</Typography></DetailPane>;
 
+  const addresses = contact.addresses.filter((a) => a.placeId).map((a) => withResidency(a));
+  const current = addresses.filter((a) => a.status === 'active');
+  const other = addresses.filter((a) => a.status !== 'active');
   const memberOf = context?.memberOf ?? [];
   const joinable = context?.joinable ?? [];
   const groupSearch = `?book=${contact.addressBookId}`;
@@ -128,17 +129,7 @@ export function ContactDetailPane() {
                   <MuiLink underline="hover" sx={linkSx} href={reachLink(c.medium, c.value) ?? undefined}>
                     {c.value}
                   </MuiLink>
-                </dd>
-              </div>
-            ))}
-            {contact.addresses.filter((a) => a.placeId).map((a, i) => (
-              <div key={i}>
-                <dt>{a.type} address</dt>
-                <dd>
-                  <PlaceIcon fontSize="small" sx={{ verticalAlign: -5, mr: 0.5 }} /> <PlaceLabel placeId={a.placeId} link />
-                  {(a.movedIn || a.movedOut) && (
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}> · {fmtResidencyPeriod(a.movedIn, a.movedOut)}{residencySuffix(a.movedIn, a.movedOut)}</Typography>
-                  )}
+                  <CopyButton onCopy={() => copy(c.value, c.medium)} />
                 </dd>
               </div>
             ))}
@@ -156,17 +147,24 @@ export function ContactDetailPane() {
                   ) : (
                     p.handle
                   )}
+                  <CopyButton onCopy={() => copy(p.handle, p.service)} />
                 </dd>
               </div>
             ))}
           </Box>
 
-          {visibleTags(contact.tags).length > 0 && (
-            <WrapRow>
-              {visibleTags(contact.tags).map((t) => (
-                <Chip key={t} label={t} />
-              ))}
-            </WrapRow>
+          {addresses.length > 0 && (
+            <DrawerSection title="Addresses">
+              {current.map((a, i) => <PlaceTile key={`now-${i}`} placeId={a.placeId} meta={addressMeta(a)} />)}
+              {other.length > 0 && (
+                <>
+                  <Button variant="text" size="small" onClick={() => setShowOtherAddresses((v) => !v)}>
+                    {showOtherAddresses ? 'Hide' : 'Show'} previous & upcoming ({other.length})
+                  </Button>
+                  {showOtherAddresses && other.map((a, i) => <PlaceTile key={`other-${i}`} placeId={a.placeId} meta={addressMeta(a)} muted />)}
+                </>
+              )}
+            </DrawerSection>
           )}
 
           {contact.emergencyContactIds.length > 0 && (
@@ -243,6 +241,11 @@ export function ContactDetailPane() {
         {showCircles && <ContactCircles focusId={contact.id} />}
       </DrawerSection>
 
+      {visibleTags(contact.tags).length > 0 && (
+        <Typography variant="caption" component="p" sx={{ color: 'text.subtle', mt: 2 }}>
+          {visibleTags(contact.tags).map((t) => `#${t}`).join('   ')}
+        </Typography>
+      )}
       {contact.updatedAt && (
         <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">
           Updated {fmtDate(new Date(contact.updatedAt))}
@@ -260,3 +263,14 @@ export function ContactDetailPane() {
     </DetailPane>
   );
 }
+
+function CopyButton({ onCopy }: { onCopy: () => void }) {
+  return (
+    <Tooltip title="Copy">
+      <IconButton size="small" onClick={onCopy} sx={{ ml: 0.5, p: '2px' }}>
+        <CopyIcon sx={{ fontSize: 14 }} />
+      </IconButton>
+    </Tooltip>
+  );
+}
+
