@@ -34,6 +34,8 @@ export { default as ExpandFullIcon } from '@mui/icons-material/OpenInFullOutline
 export { default as ExpandIcon } from '@mui/icons-material/ExpandMoreOutlined';
 export { default as CopyIcon } from '@mui/icons-material/ContentCopyOutlined';
 export { default as EditIcon } from '@mui/icons-material/EditOutlined';
+export { default as HomeIcon } from '@mui/icons-material/HomeOutlined';
+export { default as WorkIcon } from '@mui/icons-material/WorkOutlineOutlined';
 export { default as ExpandLessIcon } from '@mui/icons-material/ExpandLessOutlined';
 export { default as FilterIcon } from '@mui/icons-material/FilterListOutlined';
 export { default as FolderIcon } from '@mui/icons-material/FolderOpenOutlined';

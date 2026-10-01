@@ -10,8 +10,9 @@ export const MAP_SINCE_LABELS: Record<MapSince, string> = { week: 'Week', month:
 const SINCE_DAYS: Record<Exclude<MapSince, 'all'>, number> = { week: 7, month: 30, year: 365 };
 export const MAP_FUTURE_DAYS = 180;
 const DAY_MS = 86_400_000;
-// "All" still needs a start for the location API; nothing was recorded before the estate existed.
-const ALL_FROM = new Date('2000-01-01T00:00:00Z');
+/** "All" still needs a start for APIs that require one; nothing was recorded before the estate existed. */
+export const MAP_ALL_FROM_YMD = '2000-01-01';
+const ALL_FROM = new Date(`${MAP_ALL_FROM_YMD}T00:00:00Z`);
 const MIN_BUCKET_S = 30;
 const MAX_BUCKET_S = 3600;
 const TRACK_POINTS = 21_000;

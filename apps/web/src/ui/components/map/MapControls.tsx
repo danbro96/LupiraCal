@@ -4,18 +4,21 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { MAP_ALL_FROM_YMD } from '@lupira/cal-domain/mapWindow';
 import { addDays, startOfDay, ymd } from '@lupira/cal-domain/time';
 import { ACTIVITY_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
-
-export type LayerKey = 'events' | 'movement' | 'contacts' | 'saved' | 'photos' | 'hotspots';
-export const DEFAULT_LAYERS: LayerKey[] = ['events', 'movement', 'contacts'];
+import { LAYERS, LAYER_KEYS, type LayerKey } from '@lupira/cal-tokens/mapLayers';
 
 const PRESETS = [
   { key: 'today', label: 'Today', days: 1 },
   { key: 'yesterday', label: 'Yesterday', days: 1, offset: -1 },
   { key: '7d', label: '7 days', days: 7 },
   { key: '30d', label: '30 days', days: 30 },
+  { key: 'year', label: 'Year', days: 365 },
+  { key: 'all', label: 'All', days: null },
 ] as const;
+
+export const DEFAULT_PRESET = '30d';
 
 export interface DateRange {
   /** Inclusive local date (YYYY-MM-DD). */
@@ -23,25 +26,26 @@ export interface DateRange {
   toYmd: string;
 }
 
-export function defaultRange(): DateRange {
-  const today = ymd(startOfDay(new Date()));
-  return { fromYmd: today, toYmd: today };
-}
-
 export function presetRange(key: string): DateRange | null {
   const preset = PRESETS.find((p) => p.key === key);
   if (!preset) return null;
   const offset = 'offset' in preset ? preset.offset : 0;
   const end = addDays(startOfDay(new Date()), offset);
-  return { fromYmd: ymd(addDays(end, -(preset.days - 1))), toYmd: ymd(end) };
+  return { fromYmd: preset.days == null ? MAP_ALL_FROM_YMD : ymd(addDays(end, -(preset.days - 1))), toYmd: ymd(end) };
 }
 
-/** Preset chips + custom from/to, URL-param-backed; shared by the events and movement layers. */
-export function TimeRangeBar({ range, onChange }: { range: DateRange; onChange: (r: DateRange) => void }) {
-  const activeKey = PRESETS.find((p) => {
+/** The preset a range is, if any — what gets remembered between visits. */
+export function presetOf(range: DateRange): string | undefined {
+  return PRESETS.find((p) => {
     const r = presetRange(p.key);
     return r && r.fromYmd === range.fromYmd && r.toYmd === range.toYmd;
   })?.key;
+}
+
+/** Preset chips + custom from/to, URL-param-backed; one range for every dated layer — events, photos,
+ *  hotspots and movement. */
+export function TimeRangeBar({ range, onChange }: { range: DateRange; onChange: (r: DateRange) => void }) {
+  const activeKey = presetOf(range);
 
   return (
     <Paper elevation={2} sx={{
@@ -85,14 +89,7 @@ export function LayerToggles({ active, onToggle, theme, unmappableCount, showHis
   showHistory: boolean;
   onToggleHistory: () => void;
 }) {
-  const toggles: { key: LayerKey; label: string }[] = [
-    { key: 'events', label: 'Events' },
-    { key: 'movement', label: 'Movement' },
-    { key: 'contacts', label: 'Contacts' },
-    { key: 'saved', label: 'Saved' },
-    { key: 'photos', label: 'Photos' },
-    { key: 'hotspots', label: 'Hotspots' },
-  ];
+  const toggles = LAYER_KEYS.map((key) => ({ key, label: LAYERS[key].label }));
   const activities = ACTIVITY_COLORS[theme];
 
   return (

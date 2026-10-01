@@ -1,11 +1,13 @@
 import type { FeatureCollection, Point } from 'geojson';
 import { useEffect, useRef } from 'react';
 import { bboxOf, mapViewport, padBbox, type GeoPoint, type MapViewport } from '@lupira/cal-domain/geo';
+import { placeSpanM, zoomForSpan } from '@lupira/cal-domain/mapZoom';
 import { useGeoPlace } from '../../../state/usePlaces';
 import { useMap } from './MapCanvas';
 
-/** Fly to the selected gazetteer place whenever ?place= changes. */
-export function FlyToPlace({ placeId }: { placeId: string | undefined }) {
+/** Fly to the selected gazetteer place whenever ?place= changes, framed by the kind of place, and say where
+ *  it is so the screen can pin it. */
+export function FlyToPlace({ placeId, onLocated }: { placeId: string | undefined; onLocated: (point: [number, number]) => void }) {
   const map = useMap();
   const { data: place } = useGeoPlace(placeId);
   const flownTo = useRef<string>(undefined);
@@ -14,8 +16,10 @@ export function FlyToPlace({ placeId }: { placeId: string | undefined }) {
     if (!placeId) { flownTo.current = undefined; return; }
     if (!place || place.latitude == null || place.longitude == null || flownTo.current === placeId) return;
     flownTo.current = placeId;
-    map.flyTo({ center: [place.longitude, place.latitude], zoom: Math.max(map.getZoom(), 13) });
-  }, [map, placeId, place]);
+    const zoom = zoomForSpan(placeSpanM(place), map.getContainer().clientWidth, place.latitude);
+    map.flyTo({ center: [place.longitude, place.latitude], zoom });
+    onLocated([place.longitude, place.latitude]);
+  }, [map, placeId, place, onLocated]);
   return null;
 }
 

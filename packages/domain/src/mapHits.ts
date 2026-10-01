@@ -21,7 +21,7 @@ export type MapHit =
     }
   | { kind: 'photo'; key: string; point: HitPoint; photoId: string; takenAt: string; placeLabel: string | null; thumbUrl: string | null }
   | { kind: 'photoCell'; key: string; point: HitPoint; count: number; bounds: Bbox }
-  | { kind: 'saved'; key: string; point: HitPoint; label: string; placeId: string | null }
+  | { kind: 'saved'; key: string; point: HitPoint; label: string; placeId: string | null; icon: string | null }
   | {
       kind: 'hotspot'; key: string; point: HitPoint; label: string | null; placeId: string | null;
       activeDays: number; eventCount: number; photoCount: number; firstDay: string; lastDay: string;
@@ -92,7 +92,10 @@ export function hitsFromFeatures(features: readonly Feature[]): MapHit[] {
         break;
       }
       case 'saved':
-        hits.push({ kind: 'saved', key: `saved:${str(p.savedPlaceId) ?? str(p.label)}`, point, label: str(p.label) ?? 'Saved place', placeId: str(p.placeId) });
+        hits.push({
+          kind: 'saved', key: `saved:${str(p.savedPlaceId) ?? str(p.label)}`, point, label: str(p.label) ?? 'Saved place',
+          placeId: str(p.placeId), icon: str(p.icon),
+        });
         break;
       case 'hotspot':
         hits.push({

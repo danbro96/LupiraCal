@@ -15,14 +15,16 @@ import { useSearchContacts } from '@lupira/cal-api/query/contact';
 import { useListSavedPlaces } from '@lupira/cal-api/query/geo';
 import { useGetPhotoMap } from '@lupira/cal-api/query/photo';
 import type { LocationTripDto } from '@lupira/cal-api/models';
+import { useGetHotspots } from '@lupira/cal-api/query/cal';
+import { trackBucketSeconds } from '@lupira/cal-domain/mapWindow';
 import { useContainers } from './useContainers';
-import { useHotspots } from './useHotspots';
 import { useCurrentFixes, useThinnedTrack, useTrips, useVisits } from './useMovement';
 import { usePlaceCoords } from './usePlaceLookup';
 import { useRangeOccurrences } from './useRangeOccurrences';
 
 /** A recording hole longer than this breaks the drawn track (tracker off, retention edge). */
 const TRACK_MAX_GAP_S = 10 * 60;
+const HOTSPOT_STALE_MS = 10 * 60_000;
 
 export interface EventFeaturesResult {
   features: FeatureCollection;
@@ -107,7 +109,7 @@ export interface MovementFeaturesResult {
 export function useMovementFeatures(from: string, to: string, enabled: boolean): MovementFeaturesResult {
   const visitsQ = useVisits(from, to, enabled);
   const tripsQ = useTrips(from, to, enabled);
-  const trackQ = useThinnedTrack(from, to, enabled);
+  const trackQ = useThinnedTrack(from, to, enabled, trackBucketSeconds(new Date(from), new Date(to)));
   const currentQ = useCurrentFixes(enabled);
 
   return useMemo(() => ({
@@ -132,10 +134,13 @@ export function useSavedPlaceFeatures(enabled: boolean): { features: FeatureColl
   }), [savedQ.data, savedQ.isLoading, enabled]);
 }
 
-/** Geotagged photos in the current viewport, clustered by the server for its zoom, so panning refetches
- *  instead of holding the whole library; thumbnail URLs are presigned. */
-export function usePhotoFeatures(viewport: MapViewport | null, enabled: boolean): { features: FeatureCollection; isLoading: boolean } {
-  const photosQ = useGetPhotoMap(viewport ?? { bbox: '' }, { query: { enabled: enabled && viewport !== null } });
+/** Geotagged photos taken in [from, to) in the current viewport, clustered by the server for its zoom, so
+ *  panning refetches instead of holding the whole library; thumbnail URLs are presigned. */
+export function usePhotoFeatures(viewport: MapViewport | null, from: string, to: string, enabled: boolean): { features: FeatureCollection; isLoading: boolean } {
+  const photosQ = useGetPhotoMap(
+    { ...(viewport ?? { bbox: '' }), from, to },
+    { query: { enabled: enabled && viewport !== null } },
+  );
 
   return useMemo(() => ({
     features: photoFeatures(photosQ.data?.features ?? []),
@@ -143,9 +148,10 @@ export function usePhotoFeatures(viewport: MapViewport | null, enabled: boolean)
   }), [photosQ.data, photosQ.isLoading, enabled]);
 }
 
-/** Where events and photos concentrate, all-time. The server clusters and ranks, so one fetch serves every viewport. */
-export function useHotspotFeatures(enabled: boolean): { features: FeatureCollection; isLoading: boolean } {
-  const hotspotsQ = useHotspots(enabled);
+/** Where events and photos concentrated in [from, to). The server clusters and ranks, so one fetch serves
+ *  every viewport. Its own cache entry: the place picker keeps the all-time list. */
+export function useHotspotFeatures(from: string, to: string, enabled: boolean): { features: FeatureCollection; isLoading: boolean } {
+  const hotspotsQ = useGetHotspots({ from, to }, { query: { enabled, staleTime: HOTSPOT_STALE_MS } });
 
   return useMemo(() => ({
     features: hotspotFeatures(hotspotsQ.data ?? []),

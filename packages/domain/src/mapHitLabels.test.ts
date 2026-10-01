@@ -19,7 +19,7 @@ describe('describeHit', () => {
 });
 
 describe('hitActions', () => {
-  const saved: MapHit = { kind: 'saved', key: 's', point, label: 'Gym', placeId: 'pl' };
+  const saved: MapHit = { kind: 'saved', key: 's', point, label: 'Gym', placeId: 'pl', icon: null };
 
   it('offers the full screen each kind has', () => {
     expect(hitActions({ kind: 'photo', key: 'p', point, photoId: 'p', takenAt: '2026-09-01T10:00:00Z', placeLabel: null, thumbUrl: null }).map((a) => a.action))

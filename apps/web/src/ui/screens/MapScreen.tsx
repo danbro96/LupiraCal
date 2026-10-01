@@ -1,10 +1,21 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { Marker, type GeoJSONSource, type MapGeoJSONFeature, type MapMouseEvent } from 'maplibre-gl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import Typography from '@mui/material/Typography';
+import { useTheme } from '@mui/material/styles';
 import ViewListIcon from '@mui/icons-material/ViewList';
-import { hotspotStats } from '@lupira/cal-domain/mapFeatures';
-import type { MapViewport } from '@lupira/cal-domain/geo';
-import { addDays, fmtDate, fmtTime, parseYmd, ymd } from '@lupira/cal-domain/time';
+import type { Bbox, MapViewport } from '@lupira/cal-domain/geo';
+import { photoCellBounds } from '@lupira/cal-domain/mapFeatures';
+import type { HitAction } from '@lupira/cal-domain/mapHitLabels';
+import { hitsFromFeatures, type MapHit } from '@lupira/cal-domain/mapHits';
+import { zoomForSpan } from '@lupira/cal-domain/mapZoom';
+import type { QuickPlace } from '@lupira/cal-domain/quickPlaces';
+import { addDays, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { DEFAULT_LAYERS, LAYER_KEYS, isLayerKey, type LayerKey } from '@lupira/cal-tokens/mapLayers';
+import { readPref, writePref } from '../../state/localPrefs';
 import {
   useContactFeatures,
   useEventFeatures,
@@ -13,15 +24,17 @@ import {
   usePhotoFeatures,
   useSavedPlaceFeatures,
 } from '../../state/useMapData';
+import { useQuickPlaces } from '../../state/useQuickPlaces';
 import { MapCanvas, useMap, useMapTheme } from '../components/map/MapCanvas';
 import {
-  DEFAULT_LAYERS,
+  DEFAULT_PRESET,
   LayerToggles,
   TimeRangeBar,
-  defaultRange,
+  presetOf,
+  presetRange,
   type DateRange,
-  type LayerKey,
 } from '../components/map/MapControls';
+import { MapHitsCard } from '../components/map/MapHitsCard';
 import { MapIndexPanel, type IndexGroup } from '../components/map/MapIndexPanel';
 import { MapPopover } from '../components/map/MapPopover';
 import { MapSearch, type SearchTarget } from '../components/map/MapSearch';
@@ -31,29 +44,37 @@ import {
   EventsLayer,
   FormerContactsLayer,
   HotspotsLayer,
+  INTERACTIVE_LAYER_IDS,
   MovementLayer,
   PhotosLayer,
   SavedPlacesLayer,
-  type PinSelection,
 } from '../components/map/layers';
 import { FitToData, FlyToPlace, ViewportReporter } from '../components/map/mapEffects';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import { Row, RowName } from '../components/Rows';
-import { WrapRow } from '../components/WrapRow';
-import Button from '@mui/material/Button';
-import { useInvalidatePlaces } from '../../state/useInvalidate';
-import { useCreatePlaceAtPin } from '../../state/usePlaces';
-import { useSnackbar } from '../components/SnackbarHost';
-import { errText } from '../errText';
+import { EventIcon, HomeIcon, WorkIcon } from '../icons';
 
 const SELECTION_KEYS = ['place', 'item', 'at'];
+const LAYERS_PREF = 'map.layers';
+const RANGE_PREF = 'map.range';
+const DEFAULT_ACTIVE = LAYER_KEYS.filter((k) => DEFAULT_LAYERS[k]);
+/** Street level: the block a point is on, not the city it's in. */
+const TARGET_ZOOM = 16;
+/** Past this the clustered sources stop clustering (useGeoJsonLayer) — a cluster that still expands beyond it
+ *  is pins sharing one spot, which no zoom separates. */
+const CLUSTER_MAX_ZOOM = 14;
+const CLUSTER_LEAVES = 50;
+/** A click this close to a pin counts as on it. */
+const HIT_RADIUS = 10;
 
-/** The map over everything located: events, GPS movement, contacts, saved places. Route stays
- * /locations so ?place=/?q= deep links keep working; state rides the URL (?from ?to ?layers). */
+/** Where to take the camera: a point at a zoom, a point framed by ground span, or a photo cell's bounds. */
+type FlyTarget = { center: [number, number]; zoom?: number; spanM?: number; bounds?: Bbox };
+
+/** The map over everything located: events, GPS movement, contacts, saved places, photos, hotspots. Route stays
+ * /locations so ?place=/?q= deep links keep working; state rides the URL (?from ?to ?layers), and the layers and
+ * range you pick are remembered for when it names none. A click lists everything under it; the strip under the
+ * controls jumps to your home, work and next events. */
 export default function MapScreen() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const theme = useMapTheme();
   const selectedPlaceId = params.get('place') ?? undefined;
 
@@ -78,25 +99,31 @@ export default function MapScreen() {
   const range: DateRange = useMemo(() => {
     const from = params.get('from');
     const to = params.get('to');
-    return from && to ? { fromYmd: from, toYmd: to } : defaultRange();
+    if (from && to) return { fromYmd: from, toYmd: to };
+    return presetRange(readPref(RANGE_PREF) ?? DEFAULT_PRESET) ?? presetRange(DEFAULT_PRESET)!;
   }, [params]);
-  const setRange = (r: DateRange) =>
+  const setRange = (r: DateRange) => {
+    writePref(RANGE_PREF, presetOf(r) ?? null);
     setParams((prev) => {
       const next = new URLSearchParams(prev);
       next.set('from', r.fromYmd);
       next.set('to', r.toYmd);
       return next;
     }, { replace: true });
+  };
 
+  // 'none' is a choice, not an absence — without it, turning the last layer off would bring the defaults back.
   const activeLayers: LayerKey[] = useMemo(() => {
-    const raw = params.get('layers');
-    return raw ? (raw.split(',').filter(Boolean) as LayerKey[]) : DEFAULT_LAYERS;
+    const raw = params.get('layers') ?? readPref(LAYERS_PREF);
+    if (raw === 'none') return [];
+    const keys = raw?.split(',').filter(isLayerKey);
+    return keys?.length ? keys : DEFAULT_ACTIVE;
   }, [params]);
   const toggleLayer = (key: LayerKey) => {
-    const next = activeLayers.includes(key)
-      ? activeLayers.filter((k) => k !== key)
-      : [...activeLayers, key];
-    setParam('layers', next.join(','));
+    const next = activeLayers.includes(key) ? activeLayers.filter((k) => k !== key) : [...activeLayers, key];
+    const value = next.length ? next.join(',') : 'none';
+    writePref(LAYERS_PREF, value);
+    setParam('layers', value);
   };
 
   // Inclusive local dates → half-open UTC instants for the APIs.
@@ -107,36 +134,86 @@ export default function MapScreen() {
   const movement = useMovementFeatures(fromIso, toIso, activeLayers.includes('movement'));
   const contacts = useContactFeatures(activeLayers.includes('contacts'));
   const saved = useSavedPlaceFeatures(activeLayers.includes('saved'));
-  // Photos are viewport-scoped rather than range-scoped: the server clusters them for the bbox and zoom.
   const [viewport, setViewport] = useState<MapViewport | null>(null);
-  const photos = usePhotoFeatures(viewport, activeLayers.includes('photos'));
-  const hotspots = useHotspotFeatures(activeLayers.includes('hotspots'));
+  const photos = usePhotoFeatures(viewport, fromIso, toIso, activeLayers.includes('photos'));
+  const hotspots = useHotspotFeatures(fromIso, toIso, activeLayers.includes('hotspots'));
+  const [now] = useState(() => new Date(Math.floor(Date.now() / 60_000) * 60_000).toISOString());
+  const quickPlaces = useQuickPlaces(now);
 
-  const [popover, setPopover] = useState<PinSelection>();
-  const onSelect = useCallback((selection: PinSelection) => setPopover(selection), []);
-  const openItem = useCallback((itemId: string) => select('item', itemId), [select]);
+  const [hits, setHits] = useState<{ list: MapHit[]; at: [number, number] }>();
+  const [selected, setSelected] = useState<[number, number]>();
+  const [flyTarget, setFlyTarget] = useState<FlyTarget>();
+  const popoverAnchor = useMemo(() => (hits ? { lngLat: hits.at } : undefined), [hits]);
+  const closeHits = useCallback(() => {
+    setHits(undefined);
+    setSelected(undefined);
+  }, []);
   const openPlace = useCallback((placeId: string) => {
-    setPopover(undefined);
+    setHits(undefined);
     select('place', placeId);
   }, [select]);
+  const onHits = useCallback((list: MapHit[]) => {
+    if (list.length === 0) {
+      closeHits();
+      return;
+    }
+    const point: [number, number] = [list[0].point.lon, list[0].point.lat];
+    setSelected(point);
+    setHits({ list, at: point });
+  }, [closeHits]);
+
+  const onHitAction = (hit: MapHit, action: HitAction) => {
+    if (action === 'zoom' && hit.kind === 'photoCell') {
+      closeHits();
+      setFlyTarget({ center: [hit.point.lon, hit.point.lat], bounds: hit.bounds });
+      return;
+    }
+    if (action === 'day' && (hit.kind === 'photo' || hit.kind === 'visit')) {
+      const day = ymd(new Date(hit.kind === 'photo' ? hit.takenAt : hit.arriveTs));
+      navigate(`/photos?from=${day}&to=${day}`);
+      return;
+    }
+    if (action === 'place' && (hit.kind === 'saved' || hit.kind === 'hotspot') && hit.placeId) {
+      openPlace(hit.placeId);
+      return;
+    }
+    if (action !== 'open') return;
+    setHits(undefined);
+    if (hit.kind === 'event') select('item', hit.itemId);
+    else if (hit.kind === 'contact') navigate(`/contacts/${hit.contactId}`);
+    else if (hit.kind === 'photo') navigate(`/photos?photo=${hit.photoId}`);
+  };
+
+  const onQuickPick = (p: QuickPlace) => {
+    if (!p.point) return;
+    const center: [number, number] = [p.point.lon, p.point.lat];
+    setFlyTarget({ center, spanM: p.spanM });
+    setSelected(center);
+    setHits(p.event
+      ? { list: [{ kind: 'event', key: p.key, point: p.point, ...p.event }], at: center }
+      : undefined);
+  };
 
   const onSearchPick = (target: SearchTarget) => {
     select('place', target.placeId);
-    setFlyTarget([target.lon, target.lat]);
+    setFlyTarget({ center: [target.lon, target.lat] });
   };
-  const [flyTarget, setFlyTarget] = useState<[number, number]>();
 
-  // ?at=lon,lat centres the map on one point — how the gallery hands a photo over.
+  // ?at=lon,lat flies to one point and pins it — how the gallery hands a photo over.
   const atParam = params.get('at');
   useEffect(() => {
     const at = parseAt(atParam);
-    if (at) setFlyTarget(at);
+    if (!at) return;
+    setFlyTarget({ center: at, zoom: TARGET_ZOOM });
+    setSelected(at);
   }, [atParam]);
 
   const fitCollections = useMemo(
     () => [events.features, movement.visits, contacts.features, saved.features],
     [events.features, movement.visits, contacts.features, saved.features],
   );
+  // A deep link already aimed the camera; turning a layer on later must not pull it away.
+  const deepLinked = !!selectedPlaceId || !!atParam || !!params.get('item');
   const anyLoading = events.isLoading || movement.isLoading || contacts.isLoading || saved.isLoading || photos.isLoading
     || hotspots.isLoading;
 
@@ -145,7 +222,7 @@ export default function MapScreen() {
   const indexGroups = useMemo<IndexGroup[]>(() => {
     const flyTo = (feature: GeoJSON.Feature, placeId?: unknown) => () => {
       const [lon, lat] = (feature.geometry as GeoJSON.Point).coordinates;
-      setFlyTarget([lon, lat]);
+      setFlyTarget({ center: [lon, lat] });
       if (typeof placeId === 'string' && placeId) select('place', placeId);
     };
 
@@ -184,7 +261,7 @@ export default function MapScreen() {
         secondary: p.placeName as string,
         onClick: () => {
           const [lon, lat] = (f.geometry as GeoJSON.Point).coordinates;
-          setFlyTarget([lon, lat]);
+          setFlyTarget({ center: [lon, lat] });
           select('item', p.itemId as string);
         },
       };
@@ -215,34 +292,24 @@ export default function MapScreen() {
   return (
     <Box sx={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex' }}>
       <MapCanvas>
-        {activeLayers.includes('hotspots') && (
-          <HotspotsLayer theme={theme} features={hotspots.features} onSelect={onSelect} onOpenPlace={openPlace} />
-        )}
+        {activeLayers.includes('hotspots') && <HotspotsLayer theme={theme} features={hotspots.features} />}
         {activeLayers.includes('movement') && (
-          <MovementLayer theme={theme} visits={movement.visits} track={movement.track} current={movement.current} onSelect={onSelect} />
+          <MovementLayer theme={theme} visits={movement.visits} track={movement.track} current={movement.current} />
         )}
-        {activeLayers.includes('events') && (
-          <EventsLayer theme={theme} features={events.features} onOpenItem={openItem} />
-        )}
-        {activeLayers.includes('contacts') && showHistory && (
-          <FormerContactsLayer theme={theme} features={contacts.former} onSelect={onSelect} />
-        )}
-        {activeLayers.includes('contacts') && (
-          <ContactsLayer theme={theme} features={contacts.features} onSelect={onSelect} />
-        )}
-        {activeLayers.includes('saved') && (
-          <SavedPlacesLayer theme={theme} features={saved.features} onSelect={onSelect} onOpenPlace={openPlace} />
-        )}
-        {activeLayers.includes('photos') && (
-          <PhotosLayer theme={theme} features={photos.features} onSelect={onSelect} />
-        )}
+        {activeLayers.includes('events') && <EventsLayer theme={theme} features={events.features} />}
+        {activeLayers.includes('contacts') && showHistory && <FormerContactsLayer theme={theme} features={contacts.former} />}
+        {activeLayers.includes('contacts') && <ContactsLayer theme={theme} features={contacts.features} />}
+        {activeLayers.includes('saved') && <SavedPlacesLayer theme={theme} features={saved.features} />}
+        {activeLayers.includes('photos') && <PhotosLayer theme={theme} features={photos.features} />}
         {activeLayers.includes('photos') && <ViewportReporter onChange={setViewport} />}
-        <FlyToPlace placeId={selectedPlaceId} />
-        <FlyTo target={flyTarget} />
-        <FitToData collections={fitCollections} skip={!!selectedPlaceId} />
-        {popover && (
-          <MapPopover anchor={{ lngLat: popover.lngLat }} onClose={() => setPopover(undefined)}>
-            <PopoverBody selection={popover} onOpenPlace={openPlace} />
+        <MapClicks onHits={onHits} />
+        <SelectionMarker point={selected} />
+        <FlyToPlace placeId={selectedPlaceId} onLocated={setSelected} />
+        {flyTarget && <FlyToPoint target={flyTarget} />}
+        <FitToData collections={fitCollections} skip={deepLinked} />
+        {hits && popoverAnchor && (
+          <MapPopover anchor={popoverAnchor} onClose={closeHits}>
+            <MapHitsCard hits={hits.list} theme={theme} onAction={onHitAction} onOpenPlace={openPlace} />
           </MapPopover>
         )}
       </MapCanvas>
@@ -280,120 +347,103 @@ export default function MapScreen() {
           label="List"
         />
         {anyLoading && <Typography variant="caption" sx={{ color: 'text.secondary' }}>Loading…</Typography>}
+        <QuickPlacesBar places={quickPlaces} onPick={onQuickPick} />
       </Box>
 
       {showIndex && <MapIndexPanel groups={indexGroups} onClose={() => setParam('index', undefined)} />}
 
       {selectedPlaceId && (
-        <PlaceDetailPanel placeId={selectedPlaceId} onClose={() => setParam('place', undefined)} />
+        <PlaceDetailPanel
+          placeId={selectedPlaceId}
+          onClose={() => {
+            setParam('place', undefined);
+            setSelected(undefined);
+          }}
+        />
       )}
     </Box>
   );
 }
 
-function PopoverBody({ selection, onOpenPlace }: { selection: PinSelection; onOpenPlace: (placeId: string) => void }) {
-  const { kind, props } = selection;
-  if (kind === 'hotspot') return <HotspotSummary props={props} onSaved={onOpenPlace} />;
-  if (kind === 'contact' || kind === 'contact-former') {
-    const names = (props.names as string[]) ?? [];
-    const ids = (props.contactIds as string[]) ?? [];
-    const periods = (props.periods as string[]) ?? [];
-    return (
-      <>
-        {props.placeName != null && <h4>{String(props.placeName)}</h4>}
-        {names.map((name, i) => (
-          <Row component={Link} key={ids[i] ?? name} to={`/contacts/${ids[i]}`}>
-            <RowName>{name}</RowName>
-            {kind === 'contact-former' && periods[i] && <Typography variant="caption" sx={{ color: 'text.secondary' }}>{periods[i]}</Typography>}
-          </Row>
-        ))}
-      </>
-    );
-  }
-  if (kind === 'visit') {
-    const arrive = props.arriveTs ? fmtTime(new Date(String(props.arriveTs))) : '';
-    const depart = props.departTs ? fmtTime(new Date(String(props.departTs))) : '';
-    return (
-      <>
-        <h4>{String(props.placeLabel ?? 'Stay')}</h4>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">{arrive}–{depart} · {String(props.durationMin)} min</Typography>
-      </>
-    );
-  }
-  if (kind === 'current') {
-    return (
-      <>
-        <h4>Current position</h4>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">
-          {props.ts ? fmtTime(new Date(String(props.ts))) : ''}
-          {props.batteryPct != null ? ` · ${String(props.batteryPct)}%` : ''}
-        </Typography>
-      </>
-    );
-  }
-  if (kind === 'photo') {
-    return (
-      <>
-        {props.thumbUrl != null && (
-          <Box
-            component="img"
-            src={String(props.thumbUrl)}
-            alt=""
-            loading="lazy"
-            sx={{ display: 'block', width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: '6px', mb: 1 }}
+/** Jump targets — your home and work, then what's coming up; scrolls sideways when they don't fit. */
+function QuickPlacesBar({ places, onPick }: { places: QuickPlace[]; onPick: (p: QuickPlace) => void }) {
+  if (places.length === 0) return null;
+  return (
+    <Box sx={{ flexBasis: '100%', display: 'flex', gap: 0.5, overflowX: 'auto', pb: 0.5, scrollbarWidth: 'none' }}>
+      {places.map((p) => {
+        const Icon = p.kind === 'home' ? HomeIcon : p.kind === 'work' ? WorkIcon : EventIcon;
+        return (
+          <Chip
+            key={p.key}
+            label={p.label}
+            disabled={!p.point}
+            onClick={() => onPick(p)}
+            icon={<Icon style={p.event?.color ? { color: p.event.color } : undefined} />}
+            sx={{ flex: 'none', bgcolor: 'background.paper', boxShadow: 1 }}
           />
-        )}
-        <h4>{String(props.placeLabel ?? 'Unknown place')}</h4>
-        <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">
-          {props.takenAt ? new Date(String(props.takenAt)).toLocaleString() : ''}
-          {props.kind === 'Video' ? ' · video' : ''}
-        </Typography>
-        <WrapRow>
-          <Button size="small" component={Link} to={`/photos?photo=${String(props.photoId)}`}>Open photo</Button>
-          {props.takenAt != null && (
-            <Button
-              size="small"
-              component={Link}
-              to={`/photos?from=${ymd(new Date(String(props.takenAt)))}&to=${ymd(new Date(String(props.takenAt)))}`}
-            >
-              All from this day
-            </Button>
-          )}
-        </WrapRow>
-      </>
-    );
-  }
-  return <h4>{props.icon ? `${String(props.icon)} ` : ''}{String(props.label ?? 'Saved place')}</h4>;
+        );
+      })}
+    </Box>
+  );
 }
 
-/** An unanchored hotspot: its weight, span, and a way to promote it to a gazetteer place. */
-function HotspotSummary({ props, onSaved }: { props: Record<string, unknown>; onSaved: (placeId: string) => void }) {
-  const create = useCreatePlaceAtPin();
-  const invalidatePlaces = useInvalidatePlaces();
-  const showSnack = useSnackbar();
-  const [lon, lat] = props.center as [number, number];
-  const label = props.label == null ? 'Unnamed spot' : String(props.label);
-  const save = () => create.mutate({ name: label, lat, lon }, {
-    onSuccess: (place) => {
-      invalidatePlaces();
-      onSaved(place.id);
-    },
-    onError: (e) => showSnack(errText(e) ?? 'Request failed.'),
-  });
-  return (
-    <>
-      <h4>{label}</h4>
-      <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">
-        {hotspotStats({ activeDays: props.activeDays as number, eventCount: props.eventCount as number, photoCount: props.photoCount as number })}
-      </Typography>
-      <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">
-        {fmtDate(parseYmd(String(props.firstDay)))} – {fmtDate(parseYmd(String(props.lastDay)))}
-      </Typography>
-      <WrapRow>
-        <Button size="small" onClick={save} disabled={create.isPending}>Save as place</Button>
-      </WrapRow>
-    </>
-  );
+/** Every click resolves against all interactive layers at once, so stacked pins answer as one list. A
+ *  cluster that can still split zooms in; one that can't (pins on one spot) lists its members; a lone photo
+ *  cell zooms to its photos. */
+function MapClicks({ onHits }: { onHits: (hits: MapHit[]) => void }) {
+  const map = useMap();
+  useEffect(() => {
+    const onClick = async (e: MapMouseEvent) => {
+      const { x, y } = e.point;
+      const layers = INTERACTIVE_LAYER_IDS.filter((id) => map.getLayer(id));
+      const features: MapGeoJSONFeature[] = layers.length === 0 ? [] : map.queryRenderedFeatures(
+        [[x - HIT_RADIUS, y - HIT_RADIUS], [x + HIT_RADIUS, y + HIT_RADIUS]],
+        { layers },
+      );
+      const found: GeoJSON.Feature[] = [];
+      let expand: { feature: GeoJSON.Feature; zoom: number } | undefined;
+      for (const f of features) {
+        if (!f.properties?.cluster) {
+          found.push(f);
+          continue;
+        }
+        const source = map.getSource(f.source) as GeoJSONSource;
+        const clusterId = f.properties.cluster_id as number;
+        const zoom = await source.getClusterExpansionZoom(clusterId);
+        if (zoom <= CLUSTER_MAX_ZOOM) expand ??= { feature: f, zoom };
+        else found.push(...(await source.getClusterLeaves(clusterId, CLUSTER_LEAVES, 0)));
+      }
+
+      const hits = hitsFromFeatures(found);
+      if (hits.length === 0 && expand) {
+        const [lon, lat] = (expand.feature.geometry as GeoJSON.Point).coordinates;
+        map.easeTo({ center: [lon, lat], zoom: expand.zoom });
+        return;
+      }
+      if (hits.length === 1 && hits[0].kind === 'photoCell') {
+        map.fitBounds(photoCellBounds(hits[0].bounds), { padding: 48, duration: 400 });
+        return;
+      }
+      onHits(hits);
+    };
+    const handler = (e: MapMouseEvent) => void onClick(e);
+    map.on('click', handler);
+    return () => { map.off('click', handler); };
+  }, [map, onHits]);
+  return null;
+}
+
+/** A pin over what is selected — the dot clicked, or the point or place a link sent you to. */
+function SelectionMarker({ point }: { point: [number, number] | undefined }) {
+  const map = useMap();
+  const color = useTheme().palette.primary.main;
+  const [lon, lat] = point ?? [];
+  useEffect(() => {
+    if (lon == null || lat == null) return;
+    const marker = new Marker({ color }).setLngLat([lon, lat]).addTo(map);
+    return () => { marker.remove(); };
+  }, [map, lon, lat, color]);
+  return null;
 }
 
 function parseAt(raw: string | null): [number, number] | undefined {
@@ -401,14 +451,18 @@ function parseAt(raw: string | null): [number, number] | undefined {
   return Number.isFinite(lon) && Number.isFinite(lat) ? [lon, lat] : undefined;
 }
 
-function FlyTo({ target }: { target: [number, number] | undefined }) {
-  return target ? <FlyToPoint target={target} /> : null;
-}
-
-function FlyToPoint({ target }: { target: [number, number] }) {
+function FlyToPoint({ target }: { target: FlyTarget }) {
   const map = useMap();
   useEffect(() => {
-    map.flyTo({ center: target, zoom: Math.max(map.getZoom(), 13) });
+    if (target.bounds) {
+      map.fitBounds(photoCellBounds(target.bounds), { padding: 48, duration: 400 });
+      return;
+    }
+    const [lon, lat] = target.center;
+    const zoom = target.spanM != null
+      ? zoomForSpan(target.spanM, map.getContainer().clientWidth, lat)
+      : target.zoom ?? Math.max(map.getZoom(), 13);
+    map.flyTo({ center: [lon, lat], zoom });
   }, [map, target]);
   return null;
 }

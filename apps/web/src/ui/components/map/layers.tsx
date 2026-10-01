@@ -1,23 +1,26 @@
 import type { FeatureCollection } from 'geojson';
-import type { GeoJSONSource, MapGeoJSONFeature } from 'maplibre-gl';
 import { useMemo } from 'react';
 import type { LocationTripDto } from '@lupira/cal-api/models';
 import { useMap } from './MapCanvas';
-import type { Bbox } from '@lupira/cal-domain/geo';
-import { photoCellBounds } from '@lupira/cal-domain/mapFeatures';
 import { ACTIVITY_COLORS, activityColorExpression, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
-import { featureProp, useGeoJsonLayer, type LayerSpecSansSource } from './useGeoJsonLayer';
+import { useGeoJsonLayer, type LayerSpecSansSource } from './useGeoJsonLayer';
 
-/** What a pin click surfaces — MapScreen renders the popover / navigates. */
-export interface PinSelection {
-  lngLat: [number, number];
-  kind: 'contact' | 'contact-former' | 'visit' | 'saved' | 'current' | 'photo' | 'hotspot';
-  props: Record<string, unknown>;
-}
+/** The layers a click resolves against, by source (MapScreen queries them all at once). */
+const INTERACTIVE = {
+  events: ['events-pins', 'events-clusters'],
+  contacts: ['contacts-pins', 'contacts-clusters'],
+  'contacts-former': ['contacts-former-pins'],
+  visits: ['visits-circles'],
+  current: ['current-dot'],
+  saved: ['saved-pins'],
+  hotspots: ['hotspots-halo'],
+  photos: ['photos-pins', 'photos-clusters'],
+} as const;
+
+export const INTERACTIVE_LAYER_IDS: readonly string[] = Object.values(INTERACTIVE).flat();
 
 interface CommonLayerProps {
   theme: MapTheme;
-  onSelect: (selection: PinSelection) => void;
 }
 
 const CLUSTER_TEXT: LayerSpecSansSource['layout'] = {
@@ -26,23 +29,8 @@ const CLUSTER_TEXT: LayerSpecSansSource['layout'] = {
   'text-size': 12,
 };
 
-function expandCluster(map: ReturnType<typeof useMap>, sourceId: string) {
-  return (feature: MapGeoJSONFeature) => {
-    const clusterId = feature.properties?.cluster_id as number;
-    const source = map.getSource(sourceId) as GeoJSONSource;
-    void source.getClusterExpansionZoom(clusterId).then((zoom) => {
-      const [lon, lat] = (feature.geometry as GeoJSON.Point).coordinates;
-      map.easeTo({ center: [lon, lat], zoom });
-    });
-  };
-}
-
-/** Event pins colored by source calendar; click opens the shared ?item= drawer. */
-export function EventsLayer({ theme, features, onOpenItem }: {
-  theme: MapTheme;
-  features: FeatureCollection;
-  onOpenItem: (itemId: string) => void;
-}) {
+/** Event pins colored by source calendar. */
+export function EventsLayer({ theme, features }: { theme: MapTheme; features: FeatureCollection }) {
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
@@ -75,19 +63,13 @@ export function EventsLayer({ theme, features, onOpenItem }: {
 
   useGeoJsonLayer(map, 'events', features, layers, {
     cluster: true,
-    onClick: useMemo(() => ({
-      'events-pins': (f: MapGeoJSONFeature) => {
-        const itemId = featureProp<string>(f, 'itemId');
-        if (itemId) onOpenItem(itemId);
-      },
-      'events-clusters': expandCluster(map, 'events'),
-    }), [map, onOpenItem]),
+    interactive: INTERACTIVE.events,
   });
   return null;
 }
 
-/** Contact pins (household-deduped); click → popover with per-contact links. */
-export function ContactsLayer({ theme, features, onSelect }: CommonLayerProps & { features: FeatureCollection }) {
+/** Contact pins, a household merged into one. */
+export function ContactsLayer({ theme, features }: CommonLayerProps & { features: FeatureCollection }) {
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
@@ -134,25 +116,13 @@ export function ContactsLayer({ theme, features, onSelect }: CommonLayerProps & 
 
   useGeoJsonLayer(map, 'contacts', features, layers, {
     cluster: true,
-    onClick: useMemo(() => ({
-      'contacts-pins': (f: MapGeoJSONFeature, e) => onSelect({
-        lngLat: [e.lngLat.lng, e.lngLat.lat],
-        kind: 'contact',
-        props: {
-          names: featureProp<string[]>(f, 'names') ?? [],
-          contactIds: featureProp<string[]>(f, 'contactIds') ?? [],
-          placeId: featureProp<string>(f, 'placeId'),
-          placeName: featureProp<string>(f, 'placeName'),
-        },
-      }),
-      'contacts-clusters': expandCluster(map, 'contacts'),
-    }), [map, onSelect]),
+    interactive: INTERACTIVE.contacts,
   });
   return null;
 }
 
 /** Former residencies: hollow faded pins beneath the current contact pins; no clustering (few entries). */
-export function FormerContactsLayer({ theme, features, onSelect }: CommonLayerProps & { features: FeatureCollection }) {
+export function FormerContactsLayer({ theme, features }: CommonLayerProps & { features: FeatureCollection }) {
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
@@ -183,25 +153,13 @@ export function FormerContactsLayer({ theme, features, onSelect }: CommonLayerPr
   ], [colors]);
 
   useGeoJsonLayer(map, 'contacts-former', features, layers, {
-    onClick: useMemo(() => ({
-      'contacts-former-pins': (f: MapGeoJSONFeature, e) => onSelect({
-        lngLat: [e.lngLat.lng, e.lngLat.lat],
-        kind: 'contact-former',
-        props: {
-          names: featureProp<string[]>(f, 'names') ?? [],
-          contactIds: featureProp<string[]>(f, 'contactIds') ?? [],
-          periods: featureProp<string[]>(f, 'periods') ?? [],
-          placeId: featureProp<string>(f, 'placeId'),
-          placeName: featureProp<string>(f, 'placeName'),
-        },
-      }),
-    }), [onSelect]),
+    interactive: INTERACTIVE['contacts-former'],
   });
   return null;
 }
 
 /** Visits (dwell-sized circles), activity-colored track lines with a surface casing, live position. */
-export function MovementLayer({ theme, visits, track, current, onSelect }: CommonLayerProps & {
+export function MovementLayer({ theme, visits, track, current }: CommonLayerProps & {
   visits: FeatureCollection;
   track: FeatureCollection;
   current: FeatureCollection;
@@ -244,18 +202,7 @@ export function MovementLayer({ theme, visits, track, current, onSelect }: Commo
     },
   ], [colors]);
   useGeoJsonLayer(map, 'visits', visits, visitLayers, {
-    onClick: useMemo(() => ({
-      'visits-circles': (f: MapGeoJSONFeature, e) => onSelect({
-        lngLat: [e.lngLat.lng, e.lngLat.lat],
-        kind: 'visit',
-        props: {
-          placeLabel: featureProp<string>(f, 'placeLabel'),
-          arriveTs: featureProp<string>(f, 'arriveTs'),
-          departTs: featureProp<string>(f, 'departTs'),
-          durationMin: featureProp<number>(f, 'durationMin'),
-        },
-      }),
-    }), [onSelect]),
+    interactive: INTERACTIVE.visits,
   });
 
   const currentLayers = useMemo<LayerSpecSansSource[]>(() => [
@@ -274,22 +221,13 @@ export function MovementLayer({ theme, visits, track, current, onSelect }: Commo
     },
   ], [colors]);
   useGeoJsonLayer(map, 'current', current, currentLayers, {
-    onClick: useMemo(() => ({
-      'current-dot': (f: MapGeoJSONFeature, e) => onSelect({
-        lngLat: [e.lngLat.lng, e.lngLat.lat],
-        kind: 'current',
-        props: { ts: featureProp<string>(f, 'ts'), batteryPct: featureProp<number>(f, 'batteryPct') },
-      }),
-    }), [onSelect]),
+    interactive: INTERACTIVE.current,
   });
   return null;
 }
 
-/** Saved-place pins; a gazetteer-linked one opens the place panel, a raw pin gets a popover. */
-export function SavedPlacesLayer({ theme, features, onSelect, onOpenPlace }: CommonLayerProps & {
-  features: FeatureCollection;
-  onOpenPlace: (placeId: string) => void;
-}) {
+/** Saved-place pins. */
+export function SavedPlacesLayer({ theme, features }: CommonLayerProps & { features: FeatureCollection }) {
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
@@ -306,26 +244,13 @@ export function SavedPlacesLayer({ theme, features, onSelect, onOpenPlace }: Com
   ], [colors]);
 
   useGeoJsonLayer(map, 'saved', features, layers, {
-    onClick: useMemo(() => ({
-      'saved-pins': (f: MapGeoJSONFeature, e) => {
-        const placeId = featureProp<string>(f, 'placeId');
-        if (placeId) onOpenPlace(placeId);
-        else onSelect({
-          lngLat: [e.lngLat.lng, e.lngLat.lat],
-          kind: 'saved',
-          props: { label: featureProp<string>(f, 'label'), icon: featureProp<string>(f, 'icon') },
-        });
-      },
-    }), [onSelect, onOpenPlace]),
+    interactive: INTERACTIVE.saved,
   });
   return null;
 }
 
-/** Hotspot halos sized by active days, drawn beneath the pins; an anchored one opens the place panel. */
-export function HotspotsLayer({ theme, features, onSelect, onOpenPlace }: CommonLayerProps & {
-  features: FeatureCollection;
-  onOpenPlace: (placeId: string) => void;
-}) {
+/** Hotspot halos sized by active days, drawn beneath the pins. */
+export function HotspotsLayer({ theme, features }: CommonLayerProps & { features: FeatureCollection }) {
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
@@ -355,34 +280,13 @@ export function HotspotsLayer({ theme, features, onSelect, onOpenPlace }: Common
 
   useGeoJsonLayer(map, 'hotspots', features, layers, {
     beneathData: true,
-    onClick: useMemo(() => ({
-      'hotspots-halo': (f: MapGeoJSONFeature, e) => {
-        // Every layer under the pointer fires; a click on a pin inside the halo belongs to the pin.
-        if (!map.queryRenderedFeatures(e.point)[0]?.layer.id.startsWith('hotspots-')) return;
-        const placeId = featureProp<string>(f, 'placeId');
-        if (placeId) onOpenPlace(placeId);
-        else onSelect({
-          lngLat: [e.lngLat.lng, e.lngLat.lat],
-          kind: 'hotspot',
-          props: {
-            center: (f.geometry as GeoJSON.Point).coordinates,
-            label: featureProp<string>(f, 'label'),
-            activeDays: featureProp<number>(f, 'activeDays'),
-            eventCount: featureProp<number>(f, 'eventCount'),
-            photoCount: featureProp<number>(f, 'photoCount'),
-            firstDay: featureProp<string>(f, 'firstDay'),
-            lastDay: featureProp<string>(f, 'lastDay'),
-          },
-        });
-      },
-    }), [map, onSelect, onOpenPlace]),
+    interactive: INTERACTIVE.hotspots,
   });
   return null;
 }
 
-/** Photo pins and the server's cell bubbles (not client clusters); a pin surfaces its thumbnail in the
- *  popover, a bubble zooms to its photos. */
-export function PhotosLayer({ theme, features, onSelect }: CommonLayerProps & { features: FeatureCollection }) {
+/** Photo pins and the server's cell bubbles (not client clusters). */
+export function PhotosLayer({ theme, features }: CommonLayerProps & { features: FeatureCollection }) {
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
@@ -414,23 +318,7 @@ export function PhotosLayer({ theme, features, onSelect }: CommonLayerProps & { 
   ], [colors]);
 
   useGeoJsonLayer(map, 'photos', features, layers, {
-    onClick: useMemo(() => ({
-      'photos-pins': (f: MapGeoJSONFeature, e) => onSelect({
-        lngLat: [e.lngLat.lng, e.lngLat.lat],
-        kind: 'photo',
-        props: {
-          photoId: featureProp<string>(f, 'photoId'),
-          kind: featureProp<string>(f, 'kind'),
-          takenAt: featureProp<string>(f, 'takenAt'),
-          placeLabel: featureProp<string>(f, 'placeLabel'),
-          thumbUrl: featureProp<string>(f, 'thumbUrl'),
-        },
-      }),
-      'photos-clusters': (f: MapGeoJSONFeature) => {
-        const bounds = featureProp<Bbox>(f, 'bounds');
-        if (bounds) map.fitBounds(photoCellBounds(bounds), { padding: 48, duration: 400 });
-      },
-    }), [map, onSelect]),
+    interactive: INTERACTIVE.photos,
   });
   return null;
 }

@@ -1,5 +1,5 @@
 import type { FeatureCollection } from 'geojson';
-import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap, MapGeoJSONFeature, MapMouseEvent } from 'maplibre-gl';
+import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap, MapGeoJSONFeature } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
 
 export type LayerSpecSansSource = Omit<LayerSpecification, 'source'>;
@@ -8,8 +8,9 @@ interface GeoJsonLayerOptions {
   cluster?: boolean;
   /** Insert under the other GeoJSON layers, so area marks never cover the pins. */
   beneathData?: boolean;
-  /** layerId → click handler. Bound layers also get a pointer cursor. */
-  onClick?: Record<string, (feature: MapGeoJSONFeature, e: MapMouseEvent) => void>;
+  /** Layers a click means something on — they get a pointer cursor. The screen resolves the click itself,
+   *  across layers (MapScreen), so stacked pins answer as one list rather than racing handlers. */
+  interactive?: readonly string[];
 }
 
 /**
@@ -66,30 +67,22 @@ export function useGeoJsonLayer(
     (map.getSource(sourceId) as GeoJSONSource | undefined)?.setData(data);
   }, [map, sourceId, data]);
 
-  const clicks = options?.onClick;
+  const interactive = options?.interactive;
   useEffect(() => {
-    if (!clicks) return;
-    const bound: [string, (e: MapMouseEvent) => void][] = [];
+    if (!interactive?.length) return;
     const enter = () => { map.getCanvas().style.cursor = 'pointer'; };
     const leave = () => { map.getCanvas().style.cursor = ''; };
-    for (const [layerId, handler] of Object.entries(clicks)) {
-      const onClick = (e: MapMouseEvent) => {
-        const feature = (e as MapMouseEvent & { features?: MapGeoJSONFeature[] }).features?.[0];
-        if (feature) handler(feature, e);
-      };
-      map.on('click', layerId, onClick);
+    for (const layerId of interactive) {
       map.on('mouseenter', layerId, enter);
       map.on('mouseleave', layerId, leave);
-      bound.push([layerId, onClick]);
     }
     return () => {
-      for (const [layerId, onClick] of bound) {
-        map.off('click', layerId, onClick);
+      for (const layerId of interactive) {
         map.off('mouseenter', layerId, enter);
         map.off('mouseleave', layerId, leave);
       }
     };
-  }, [map, clicks]);
+  }, [map, interactive]);
 }
 
 function firstDataLayerId(map: MapLibreMap, ownSourceId: string): string | undefined {
