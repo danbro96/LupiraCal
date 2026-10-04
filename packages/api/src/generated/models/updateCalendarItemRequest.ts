@@ -67,10 +67,12 @@ export interface UpdateCalendarItemRequest {
   startPrecision?: null | DatePrecision;
   endPrecision?: null | DatePrecision;
   /**
-     * Re-nest under a parent item (or set for the first time). Must exist and be accessible; omitted ⇒ kept.
+     * Re-nest under a parent item (or set for the first time). Must exist, be accessible and not be the item
+     *             itself; omitted ⇒ kept. Set bool UpdateCalendarItemRequest.ParentItemIdProvided with a null value to clear.
      * @nullable
      */
   parentItemId?: string | null;
+  parentItemIdProvided?: boolean;
   /**
      * Reclassify the item (enum name). Changing the category drops the previous details.
      * @nullable
