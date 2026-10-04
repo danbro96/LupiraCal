@@ -14,8 +14,8 @@ import { useSyncStatus } from './syncStatus';
 /** Push side of the engine. Enqueue = ONE exclusive transaction covering the optimistic mirror write, the
  *  occurrence re-materialization, and the outbox insert — all-or-nothing (the tasks app's non-exclusive
  *  enqueue is the defect this design exists to fix). Drain = serialized, single-flight, with queue-level
- *  backoff (next_attempt_at), park-after-N, and the causal hold (a parked op blocks later ops on the same
- *  aggregate so a dead create can't 404-cascade its children). */
+ *  backoff (next_attempt_at), park-after-N, and the causal hold (a parked or backed-off op blocks later ops on
+ *  the same aggregate so a failed create can't 404-cascade its children). */
 
 export type OutboxDeps = {
   replay: (op: ClientOp) => Promise<void>;
@@ -74,16 +74,7 @@ export function drain(db: Db, deps: Partial<OutboxDeps> = {}): Promise<void> {
 
 async function runDrain(db: Db, deps: OutboxDeps): Promise<void> {
   for (;;) {
-    const row = await db.first<mirror.OutboxRow | null>(
-      `SELECT * FROM outbox o
-       WHERE o.status = 'pending'
-         AND (o.next_attempt_at IS NULL OR o.next_attempt_at <= ?)
-         AND NOT EXISTS (
-           SELECT 1 FROM outbox p
-           WHERE p.aggregate_id = o.aggregate_id AND p.status = 'parked' AND p.seq < o.seq)
-       ORDER BY o.seq LIMIT 1`,
-      [deps.now().toISOString()],
-    );
+    const row = await mirror.nextEligibleOp(db, deps.now().toISOString());
     if (!row) break;
 
     const op = mirror.opOfRow(row);

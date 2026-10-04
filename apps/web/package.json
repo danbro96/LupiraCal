@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.29.7",
+    "@danbro96/lupira-config-eslint": "0.2.0",
     "@rolldown/plugin-babel": "0.2.4",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.2",

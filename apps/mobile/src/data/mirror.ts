@@ -382,18 +382,20 @@ export async function insertOp(tx: Tx, op: ClientOp): Promise<void> {
   );
 }
 
-/** The next op the drain may replay: oldest pending row that is due AND has no earlier parked sibling on the
- *  same aggregate — a parked create must hold back the revisions behind it instead of guaranteeing their 404s. */
+/** The next op the drain may replay: oldest pending row that is due AND not behind an earlier parked or
+ *  backed-off op of the same aggregate — a failed create must hold back the revisions behind it instead of
+ *  letting them overtake it into a 404. */
 export async function nextEligibleOp(tx: Tx, nowIso: string): Promise<OutboxRow | null> {
   return tx.first<OutboxRow>(
     `SELECT * FROM outbox o
      WHERE o.status = 'pending'
        AND (o.next_attempt_at IS NULL OR o.next_attempt_at <= ?)
        AND NOT EXISTS (
-         SELECT 1 FROM outbox p
-         WHERE p.aggregate_id = o.aggregate_id AND p.status = 'parked' AND p.seq < o.seq)
+         SELECT 1 FROM outbox h
+         WHERE h.aggregate_id = o.aggregate_id AND h.seq < o.seq
+           AND (h.status = 'parked' OR (h.status = 'pending' AND h.next_attempt_at > ?)))
      ORDER BY o.seq LIMIT 1`,
-    [nowIso],
+    [nowIso, nowIso],
   );
 }
 

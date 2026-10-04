@@ -29,6 +29,8 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 
 `sync/pull.ts`: both `/sync/changes` cursors are opaque and scoped to the caller's readable containers — a grant/revoke answers `reset`, which makes the run a full sync. A full sync that never completed restarts (`getResumeCursor`): its prune needs every id. The container pull seeds a missing standard set (`@lupira/cal-domain/bootstrap`, shared with web). Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
 
+`sync/outbox.ts` replays ops in `seq` order through `mirror.nextEligibleOp`: an op waits while an earlier op of the same aggregate is parked or still inside its backoff window, so a revise never overtakes a create that failed transiently. Other aggregates proceed; the held op is due once the earlier one succeeds, is retried (`retryOne`) or is discarded.
+
 ## Event editor
 
 `ItemEditScreen`:

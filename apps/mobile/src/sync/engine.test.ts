@@ -174,6 +174,94 @@ describe('outbox', () => {
   });
 });
 
+describe('outbox causal hold', () => {
+  const T0 = new Date('2026-07-01T13:00:00Z');
+  const aggregates = async () => (await db.all<{ aggregate_id: string; status: string }>('SELECT aggregate_id, status FROM outbox ORDER BY seq'));
+
+  function harness(failFirst: (op: ClientOp) => ApiError | null) {
+    const state = { now: T0, replayed: [] as string[], failing: failFirst };
+    const replay = async (op: ClientOp) => {
+      const err = state.failing(op);
+      if (err) throw err;
+      state.replayed.push(op.commandId);
+    };
+    return { state, deps: { replay, now: () => state.now, rand: () => 0.5 } };
+  }
+
+  async function backedOffCreate() {
+    const h = harness((op) => (op.commandId === cmd(1) ? new ApiError(503, 'down') : null));
+    await enqueue(db, [createOp('item-a', 1), reviseOp('item-a', 'v2', 2), createOp('item-b', 3)], horizon, h.deps);
+    await drain(db, h.deps);   // a transient failure stops the run; the next one skips the backed-off aggregate
+    await drain(db, h.deps);
+    return h;
+  }
+
+  it('a backed-off op holds the later ops of its aggregate, while another aggregate proceeds', async () => {
+    const { state } = await backedOffCreate();
+
+    expect(state.replayed).toEqual([cmd(3)]);
+    expect(await aggregates()).toEqual([
+      { aggregate_id: 'item-a', status: 'pending' },
+      { aggregate_id: 'item-a', status: 'pending' },
+    ]);
+  });
+
+  it('replays the held op after the backoff elapses, behind the op that held it', async () => {
+    const { state, deps } = await backedOffCreate();
+    expect(state.replayed).toEqual([cmd(3)]);
+
+    state.failing = () => null;
+    state.now = new Date(T0.getTime() + 60 * 60_000);
+    await drain(db, deps);
+
+    expect(state.replayed).toEqual([cmd(3), cmd(1), cmd(2)]);
+    expect(await mirror.outboxCounts(db)).toEqual({ pending: 0, parked: 0 });
+  });
+
+  it('keeps holding behind a parked op until it is retried', async () => {
+    const h = harness((op) => (op.commandId === cmd(1) ? new ApiError(422, 'rejected') : null));
+    await enqueue(db, [createOp('item-a', 1), reviseOp('item-a', 'v2', 2)], horizon, h.deps);
+    await drain(db, h.deps);
+    h.state.now = new Date(T0.getTime() + 24 * 60 * 60_000);
+    await drain(db, h.deps);
+    expect(h.state.replayed).toEqual([]);
+    expect(await mirror.outboxCounts(db)).toEqual({ pending: 1, parked: 1 });
+
+    h.state.failing = () => null;
+    const { retryOne } = await import('./outbox');
+    await retryOne(db, (await mirror.listParked(db))[0].seq, h.deps);
+    await drain(db, h.deps);
+
+    expect(h.state.replayed).toEqual([cmd(1), cmd(2)]);
+  });
+
+  it('retrying a backed-off op clears its backoff so the held op follows it at once', async () => {
+    const { state, deps } = await backedOffCreate();
+    state.failing = () => null;
+
+    const { retryOne } = await import('./outbox');
+    const [create] = await db.all<mirror.OutboxRow>("SELECT * FROM outbox WHERE op_id = ?", [cmd(1)]);
+    await retryOne(db, create.seq, deps);
+    await drain(db, deps);
+
+    expect(state.replayed).toEqual([cmd(3), cmd(1), cmd(2)]);
+  });
+
+  it.each([['parked', 422], ['backed-off', 503]])('discarding a %s op releases the later ops of its aggregate', async (_label, status) => {
+    const h = harness((op) => (op.commandId === cmd(1) ? new ApiError(status, 'failed') : null));
+    await enqueue(db, [createOp('item-a', 1), reviseOp('item-a', 'v2', 2)], horizon, h.deps);
+    await drain(db, h.deps);
+    expect(h.state.replayed).toEqual([]);
+
+    const { discardParked } = await import('./outbox');
+    const [create] = await db.all<mirror.OutboxRow>('SELECT * FROM outbox WHERE op_id = ?', [cmd(1)]);
+    await discardParked(db, create.seq);
+    await drain(db, h.deps);
+
+    expect(h.state.replayed).toEqual([cmd(2)]);
+  });
+});
+
 describe('pull', () => {
   it('reads the cursor, pages while hasMore, and persists per page', async () => {
     const deps = pagesDeps([

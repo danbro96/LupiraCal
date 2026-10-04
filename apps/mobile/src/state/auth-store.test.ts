@@ -78,13 +78,43 @@ describe('refreshIfNeeded', () => {
     expect(refreshTokensMock).not.toHaveBeenCalled();
   });
 
+  it('coalesces concurrent forced refreshes and lets a late 401 on the old token skip rotation', async () => {
+    seedSession(3_600_000);
+    let release!: (v: unknown) => void;
+    refreshTokensMock.mockReturnValue(new Promise((r) => { release = r; }));
+
+    const a = useAuth.getState().refreshIfNeeded({ force: true, sentToken: 'tok-1' });
+    const b = useAuth.getState().refreshIfNeeded({ force: true, sentToken: 'tok-1' });
+    release({ accessToken: 'tok-2', refreshToken: 'rt-2', expiresIn: 3600 });
+    expect(await a).toBe('tok-2');
+    expect(await b).toBe('tok-2');
+
+    expect(await useAuth.getState().refreshIfNeeded({ force: true, sentToken: 'tok-1' })).toBe('tok-2');
+    expect(refreshTokensMock).toHaveBeenCalledTimes(1);
+    expect(refreshTokensMock).toHaveBeenCalledWith('rt-1');
+  });
+
   it('clears the session on a definitive failure', async () => {
     seedSession(10_000);
+    await useAuth.getState().setSession({ accessToken: 'tok-1', refreshToken: 'rt-1', expiresIn: 10 });
     refreshTokensMock.mockRejectedValue(new RefreshError(true, 'invalid_grant'));
 
     expect(await useAuth.getState().refreshIfNeeded({ force: true })).toBeNull();
     expect(useAuth.getState().token).toBeNull();
     expect(useAuth.getState().refreshToken).toBeNull();
+    expect(useAuth.getState().user).toBeNull();
+    expect([...store.keys()]).toEqual([]);
+  });
+
+  it('signs out on a forced refresh with no refresh token, but not on a proactive one', async () => {
+    seedSession(10_000);
+    useAuth.setState({ refreshToken: null });
+
+    expect(await useAuth.getState().refreshIfNeeded()).toBe('tok-1');
+    expect(useAuth.getState().token).toBe('tok-1');
+    expect(await useAuth.getState().refreshIfNeeded({ force: true })).toBeNull();
+    expect(useAuth.getState().token).toBeNull();
+    expect(refreshTokensMock).not.toHaveBeenCalled();
   });
 
   it('keeps the session on a transient failure and returns the same token', async () => {
@@ -93,6 +123,17 @@ describe('refreshIfNeeded', () => {
 
     expect(await useAuth.getState().refreshIfNeeded({ force: true })).toBe('tok-1');
     expect(useAuth.getState().token).toBe('tok-1');
+    expect(useAuth.getState().refreshToken).toBe('rt-1');
+  });
+
+  it('allows a new refresh after a failed one settles', async () => {
+    seedSession(10_000);
+    refreshTokensMock.mockRejectedValueOnce(new RefreshError(false, '503'));
+    refreshTokensMock.mockResolvedValueOnce({ accessToken: 'tok-2', refreshToken: 'rt-2', expiresIn: 3600 });
+
+    expect(await useAuth.getState().refreshIfNeeded({ force: true })).toBe('tok-1');
+    expect(await useAuth.getState().refreshIfNeeded({ force: true })).toBe('tok-2');
+    expect(refreshTokensMock).toHaveBeenCalledTimes(2);
   });
 
   it('sends nothing in dev auto-auth mode', async () => {
@@ -103,6 +144,20 @@ describe('refreshIfNeeded', () => {
 });
 
 describe('session persistence', () => {
+  it('stores the session under the lupira.calendar keys', async () => {
+    useAuth.setState({ loaded: true, authMode: 'oidc' });
+    await useAuth.getState().setSession({ accessToken: 'tok-9', refreshToken: 'rt-9', expiresIn: 3600 });
+
+    expect([...store.keys()].sort()).toEqual([
+      'lupira.calendar.expiresAt',
+      'lupira.calendar.refreshToken',
+      'lupira.calendar.token',
+      'lupira.calendar.userSub',
+    ]);
+    expect(store.get('lupira.calendar.token')).toBe('tok-9');
+    expect(store.get('lupira.calendar.refreshToken')).toBe('rt-9');
+  });
+
   it('round-trips a session through the secure store', async () => {
     useAuth.setState({ loaded: true, authMode: 'oidc' });
     await useAuth.getState().setSession({ accessToken: 'tok-9', refreshToken: 'rt-9', expiresIn: 3600 });
