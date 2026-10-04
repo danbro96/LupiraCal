@@ -14,7 +14,10 @@ export interface CreateCalendarRequest {
   type: string;
   /** @nullable */
   color?: string | null;
-  /** @nullable */
+  /**
+     * IANA zone id for items written without one; omitted = the server default.
+     * @nullable
+     */
   defaultTimezone?: string | null;
   class?: null | CalendarClass;
   kind?: null | CalendarKind;

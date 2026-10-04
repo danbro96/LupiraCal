@@ -6,6 +6,7 @@
  */
 import type {
   AcceptItemIntoCalendarParams,
+  BootstrapRequest,
   CalendarItemDto,
   CalendarItemOccurrenceDto,
   ClearItemActionParams,
@@ -50,6 +51,11 @@ export type bootstrapMeResponse200 = {
   status: 200
 }
 
+export type bootstrapMeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
 export type bootstrapMeResponse401 = {
   data: ProblemDetails
   status: 401
@@ -63,7 +69,7 @@ export type bootstrapMeResponse500 = {
 export type bootstrapMeResponseSuccess = (bootstrapMeResponse200) & {
   headers: Headers;
 };
-export type bootstrapMeResponseError = (bootstrapMeResponse401 | bootstrapMeResponse500) & {
+export type bootstrapMeResponseError = (bootstrapMeResponse400 | bootstrapMeResponse401 | bootstrapMeResponse500) & {
   headers: Headers;
 };
 
@@ -78,16 +84,30 @@ export const getBootstrapMeUrl = () => {
 }
 
 /**
- * @summary Idempotently ensure the caller has the standard calendar set; returns it.
+ * @summary Idempotently ensure the caller has the standard calendar set; returns it. Calendars it creates get the optional body's DefaultTimezone (IANA id), else the server default; existing calendars are unchanged.
  */
-export const bootstrapMe = async ( options?: Parameters<typeof apiRequest>[1]): Promise<bootstrapMeResponse> => {
+export const bootstrapMe = async (nullBootstrapRequest?: null | BootstrapRequest, options?: Parameters<typeof apiRequest>[1]): Promise<bootstrapMeResponse> => {
 
-  return apiRequest<bootstrapMeResponse>(getBootstrapMeUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<bootstrapMeResponse>(getBootstrapMeUrl(),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(nullBootstrapRequest)
   }
 );}
 
@@ -198,6 +218,11 @@ export type createCalendarResponse200 = {
   status: 200
 }
 
+export type createCalendarResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
 export type createCalendarResponse401 = {
   data: ProblemDetails
   status: 401
@@ -211,7 +236,7 @@ export type createCalendarResponse500 = {
 export type createCalendarResponseSuccess = (createCalendarResponse200) & {
   headers: Headers;
 };
-export type createCalendarResponseError = (createCalendarResponse401 | createCalendarResponse500) & {
+export type createCalendarResponseError = (createCalendarResponse400 | createCalendarResponse401 | createCalendarResponse500) & {
   headers: Headers;
 };
 
@@ -226,7 +251,7 @@ export const getCreateCalendarUrl = () => {
 }
 
 /**
- * @summary Create a calendar. (Address books are managed by LupiraContactApi.)
+ * @summary Create a calendar. DefaultTimezone (IANA id) defaults to the server default. (Address books are managed by LupiraContactApi.)
  */
 export const createCalendar = async (createCalendarRequest: CreateCalendarRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createCalendarResponse> => {
 

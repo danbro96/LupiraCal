@@ -25,6 +25,7 @@ import type {
 
 import type {
   AcceptItemIntoCalendarParams,
+  BootstrapRequest,
   CalendarItemDto,
   CalendarItemOccurrenceDto,
   ClearItemActionParams,
@@ -97,16 +98,30 @@ export const getBootstrapMeUrl = () => {
 }
 
 /**
- * @summary Idempotently ensure the caller has the standard calendar set; returns it.
+ * @summary Idempotently ensure the caller has the standard calendar set; returns it. Calendars it creates get the optional body's DefaultTimezone (IANA id), else the server default; existing calendars are unchanged.
  */
-export const bootstrapMe = async ( options?: Parameters<typeof apiRequest>[1]): Promise<ContainerDto[]> => {
+export const bootstrapMe = async (nullBootstrapRequest?: null | BootstrapRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContainerDto[]> => {
 
-  return apiRequest<ContainerDto[]>(getBootstrapMeUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ContainerDto[]>(getBootstrapMeUrl(),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(nullBootstrapRequest)
   }
 );}
 
@@ -117,8 +132,8 @@ export const bootstrapMe = async ( options?: Parameters<typeof apiRequest>[1]): 
 export const getBootstrapMeMutationKey = () => ['bootstrapMe'] as const;
 
 export const getBootstrapMeMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapMe>>, TError,void, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof bootstrapMe>>, TError,void, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapMe>>, TError,BootstrapMeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof bootstrapMe>>, TError,BootstrapMeMutationVariables, TContext> => {
 
 const mutationKey = getBootstrapMeMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -130,10 +145,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bootstrapMe>>, void> = () => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bootstrapMe>>, BootstrapMeMutationVariables> = (props) => {
+          const {data} = props ?? {};
 
-
-          return  bootstrapMe(requestOptions)
+          return  bootstrapMe(data,requestOptions)
         }
 
 
@@ -144,19 +159,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type BootstrapMeMutationResult = NonNullable<Awaited<ReturnType<typeof bootstrapMe>>>
-
+    export type BootstrapMeMutationBody = null | BootstrapRequest | undefined
     export type BootstrapMeMutationError = ProblemDetails
-
+    export type BootstrapMeMutationVariables = {data?: null | BootstrapRequest}
 
     /**
- * @summary Idempotently ensure the caller has the standard calendar set; returns it.
+ * @summary Idempotently ensure the caller has the standard calendar set; returns it. Calendars it creates get the optional body's DefaultTimezone (IANA id), else the server default; existing calendars are unchanged.
  */
 export const useBootstrapMe = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapMe>>, TError,void, TContext>, request?: SecondParameter<typeof apiRequest>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapMe>>, TError,BootstrapMeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bootstrapMe>>,
         TError,
-        void,
+        BootstrapMeMutationVariables,
         TContext
       > => {
       return useMutation(getBootstrapMeMutationOptions(options), queryClient);
@@ -377,7 +392,7 @@ export const getCreateCalendarUrl = () => {
 }
 
 /**
- * @summary Create a calendar. (Address books are managed by LupiraContactApi.)
+ * @summary Create a calendar. DefaultTimezone (IANA id) defaults to the server default. (Address books are managed by LupiraContactApi.)
  */
 export const createCalendar = async (createCalendarRequest: CreateCalendarRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContainerDto> => {
 
@@ -443,7 +458,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateCalendarMutationVariables = {data: CreateCalendarRequest}
 
     /**
- * @summary Create a calendar. (Address books are managed by LupiraContactApi.)
+ * @summary Create a calendar. DefaultTimezone (IANA id) defaults to the server default. (Address books are managed by LupiraContactApi.)
  */
 export const useCreateCalendar = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCalendar>>, TError,CreateCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}

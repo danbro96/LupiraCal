@@ -64,8 +64,24 @@
         "tags": [
           "cal"
         ],
-        "summary": "Idempotently ensure the caller has the standard calendar set; returns it.",
+        "summary": "Idempotently ensure the caller has the standard calendar set; returns it. Calendars it creates get the optional body's DefaultTimezone (IANA id), else the server default; existing calendars are unchanged.",
         "operationId": "BootstrapMe",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/BootstrapRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -76,6 +92,16 @@
                   "items": {
                     "$ref": "#/components/schemas/ContainerDto"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -242,7 +268,7 @@
         "tags": [
           "cal"
         ],
-        "summary": "Create a calendar. (Address books are managed by LupiraContactApi.)",
+        "summary": "Create a calendar. DefaultTimezone (IANA id) defaults to the server default. (Address books are managed by LupiraContactApi.)",
         "operationId": "CreateCalendar",
         "requestBody": {
           "content": {
@@ -261,6 +287,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ContainerDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -10778,6 +10814,18 @@
         },
         "description": "A reservation/confirmation attached to any category (a booked meal, a ticketed outing, a hotel, a flight).\n            `ProviderContactId` reuses a `Contact` (airline, hotel, restaurant, venue); `PartySize` covers a\n            table/seat reservation; `Amount`/`Currency` the paid cost."
       },
+      "BootstrapRequest": {
+        "type": "object",
+        "properties": {
+          "defaultTimezone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "`DefaultTimezone` (an IANA zone id) is given to the calendars bootstrap creates; omitted = the server\n        default. Calendars that already exist keep their zone."
+      },
       "CalendarClass": {
         "enum": [
           "Agenda",
@@ -12274,7 +12322,8 @@
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "IANA zone id for items written without one; omitted = the server default."
           },
           "class": {
             "oneOf": [

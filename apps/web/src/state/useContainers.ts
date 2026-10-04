@@ -26,7 +26,7 @@ export function useEnsureBootstrap() {
   useEffect(() => {
     if (isSuccess && needsCalendarBootstrap(calendars) && !started.current) {
       started.current = true;
-      mutate();
+      mutate({});
     }
   }, [isSuccess, calendars, mutate]);
 

@@ -19,6 +19,7 @@ export * from './assetKind';
 export * from './assetStatus';
 export * from './availabilityStatus';
 export * from './bookingDetail';
+export * from './bootstrapRequest';
 export * from './calendarClass';
 export * from './calendarEntryStatus';
 export * from './calendarItemDto';
