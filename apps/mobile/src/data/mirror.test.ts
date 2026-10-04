@@ -1,4 +1,4 @@
-import type { StoredRelation } from '@lupira/cal-domain/contactRelations';
+import type { RelationshipRecord } from '@lupira/cal-domain/contactRelations';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ItemDoc } from '../domain/docTypes';
 import { emptyContactGuards, emptyItemGuards } from '../domain/docTypes';
@@ -6,7 +6,7 @@ import type { OccurrenceRow } from '../domain/materialize';
 import { openNodeDb } from './db/nodeDb';
 import { migrate } from './db/schema';
 import type { Db } from './db/types';
-import { mapEventRowsBetween, relationCopiesOf, replaceContainers, saveContact, saveItem, searchItems, upcomingPlacedEvents } from './mirror';
+import { mapEventRowsBetween, relationshipsOf, removeRelationships, replaceContainers, saveContact, saveItem, saveRelationships, searchItems, upcomingPlacedEvents } from './mirror';
 
 let db: Db;
 
@@ -144,21 +144,34 @@ describe('searchItems', () => {
   });
 });
 
-describe('relationCopiesOf', () => {
-  const put = (id: string, givenName: string, relations: StoredRelation[] = [], deleted = false) =>
-    db.exclusive((tx) => saveContact(tx, { doc: { id, addressBookId: 'ab', givenName, relations }, guards: emptyContactGuards(), deleted }, []));
+describe('relationshipsOf', () => {
+  const person = (id: string, givenName: string, deleted = false) =>
+    db.exclusive((tx) => saveContact(tx, { doc: { id, addressBookId: 'ab', givenName }, guards: emptyContactGuards(), deleted }, []));
+  const rel = (id: string, lowId: string, highId: string, kind: RelationshipRecord['kind']): RelationshipRecord => ({ id, lowId, highId, kind });
 
-  it("returns both sides' copies with the other contact's name, and none whose other side is deleted", async () => {
-    await put('y', 'Yara', [{ toContactId: 'x', kind: 'Parent', label: 'dad' }, { toContactId: 'gone', kind: 'Friend' }]);
-    await put('x', 'Xavier', [{ toContactId: 'y', kind: 'Child', label: 'kiddo' }]);
-    await put('z', 'Zoe', [{ toContactId: 'y', kind: 'Friend' }, { toContactId: 'x', kind: 'Friend' }]);
-    await put('gone', 'Gone', [{ toContactId: 'y', kind: 'Friend' }], true);
+  it("returns a contact's relationships from either end with the other's name, and none whose other is deleted", async () => {
+    await person('x', 'Xavier');
+    await person('y', 'Yara');
+    await person('z', 'Zoe');
+    await person('gone', 'Gone', true);
+    await db.exclusive((tx) => saveRelationships(tx, [
+      rel('xy', 'x', 'y', 'Child'), rel('yz', 'y', 'z', 'Friend'), rel('gy', 'gone', 'y', 'Friend'), rel('xz', 'x', 'z', 'Friend'),
+    ]));
 
-    const rows = await relationCopiesOf(db, 'y');
-    expect(rows.map((r) => [r.holderId, r.edge.toContactId, r.otherId, r.otherName]).sort()).toEqual([
-      ['x', 'y', 'x', 'Xavier'],
-      ['y', 'x', 'x', 'Xavier'],
-      ['z', 'y', 'z', 'Zoe'],
+    const rows = await relationshipsOf(db, 'y');
+    expect(rows.map((r) => [r.record.id, r.otherId, r.otherName]).sort()).toEqual([
+      ['xy', 'x', 'Xavier'],
+      ['yz', 'z', 'Zoe'],
     ]);
+  });
+
+  it('forgets removed relationships', async () => {
+    await person('x', 'Xavier');
+    await person('y', 'Yara');
+    await db.exclusive(async (tx) => {
+      await saveRelationships(tx, [rel('xy', 'x', 'y', 'Friend')]);
+      await removeRelationships(tx, ['xy']);
+    });
+    expect(await relationshipsOf(db, 'y')).toEqual([]);
   });
 });

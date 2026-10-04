@@ -29,6 +29,7 @@ export function useInvalidateContacts() {
         // `/api/contacts/...` is the BFF's own contact surface — a group add/remove changes what it
         // returns, and it does not share the upstream prefix.
         return key.startsWith('/contact-api/contacts')
+          || key.startsWith('/contact-api/relationships')
           || key.startsWith('/api/contacts')
           || key.includes('/groups');
       },

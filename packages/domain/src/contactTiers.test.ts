@@ -10,12 +10,12 @@ const c = (id: string, extra: Partial<TierableContact> = {}): TierableContact =>
   ...extra,
 });
 
-const opts = { now: NOW, graceDays: 30 };
+const opts = { now: NOW, graceDays: 30, relatedIds: new Set(['rel', 'a']) };
 
 describe('partitionByActivity', () => {
   it('activates on any single signal and collapses pure edge contacts', () => {
     const interacted = c('int');
-    const related = c('rel', { relations: [{}] });
+    const related = c('rel');
     const pinned = c('pin', { tags: [PINNED_TAG] });
     const recent = c('new', { createdAt: daysAgo(3) });
     const edge = c('edge');
@@ -33,7 +33,7 @@ describe('partitionByActivity', () => {
   it('floats pinned to the top, then orders the rest by interaction', () => {
     const { active } = partitionByActivity(
       [
-        c('a', { relations: [{}] }),
+        c('a'),
         c('busy'),
         c('pinned', { tags: [PINNED_TAG] }),
       ],
@@ -48,7 +48,7 @@ describe('partitionByActivity', () => {
 
   it('with no summary, only relation/pin/recency rescue contacts', () => {
     const { active, dormant } = partitionByActivity(
-      [c('rel', { relations: [{}] }), c('edge'), c('recent', { createdAt: daysAgo(5) })],
+      [c('rel'), c('edge'), c('recent', { createdAt: daysAgo(5) })],
       undefined,
       opts,
     );

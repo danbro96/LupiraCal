@@ -173,14 +173,6 @@ namespace LupiraCalBff.Upstream.Contact.Models
 #else
         public string Pronouns { get; set; }
 #endif
-        /// <summary>Raw outgoing edges (unfiltered; targets may be deleted or unreadable). The `/relations` sub-resource is the resolved two-way view.</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public List<global::LupiraCalBff.Upstream.Contact.Models.ContactRelationDto>? Relations { get; set; }
-#nullable restore
-#else
-        public List<global::LupiraCalBff.Upstream.Contact.Models.ContactRelationDto> Relations { get; set; }
-#endif
         /// <summary>The tags property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -251,7 +243,6 @@ namespace LupiraCalBff.Upstream.Contact.Models
                 { "notes", n => { Notes = n.GetStringValue(); } },
                 { "profiles", n => { Profiles = n.GetCollectionOfObjectValues<global::LupiraCalBff.Upstream.Contact.Models.ContactSocialProfileDto>(global::LupiraCalBff.Upstream.Contact.Models.ContactSocialProfileDto.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "pronouns", n => { Pronouns = n.GetStringValue(); } },
-                { "relations", n => { Relations = n.GetCollectionOfObjectValues<global::LupiraCalBff.Upstream.Contact.Models.ContactRelationDto>(global::LupiraCalBff.Upstream.Contact.Models.ContactRelationDto.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "tags", n => { Tags = n.GetCollectionOfPrimitiveValues<string>()?.AsList(); } },
                 { "updatedAt", n => { UpdatedAt = n.GetDateTimeOffsetValue(); } },
                 { "updatedBy", n => { UpdatedBy = n.GetStringValue(); } },
@@ -290,7 +281,6 @@ namespace LupiraCalBff.Upstream.Contact.Models
             writer.WriteStringValue("notes", Notes);
             writer.WriteCollectionOfObjectValues<global::LupiraCalBff.Upstream.Contact.Models.ContactSocialProfileDto>("profiles", Profiles);
             writer.WriteStringValue("pronouns", Pronouns);
-            writer.WriteCollectionOfObjectValues<global::LupiraCalBff.Upstream.Contact.Models.ContactRelationDto>("relations", Relations);
             writer.WriteCollectionOfPrimitiveValues<string>("tags", Tags);
             writer.WriteDateTimeOffsetValue("updatedAt", UpdatedAt);
             writer.WriteStringValue("updatedBy", UpdatedBy);

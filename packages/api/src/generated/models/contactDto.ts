@@ -8,7 +8,6 @@ import type { CompletenessScore } from './completenessScore';
 import type { ContactKind } from './contactKind';
 import type { ContactPostalAddress } from './contactPostalAddress';
 import type { ContactReachChannel } from './contactReachChannel';
-import type { ContactRelationDto } from './contactRelationDto';
 import type { ContactSocialProfileDto } from './contactSocialProfileDto';
 import type { DisplayNameFormat } from './displayNameFormat';
 import type { JsonNode } from './jsonNode';
@@ -49,8 +48,6 @@ export interface ContactDto {
   profiles: ContactSocialProfileDto[];
   /** Ordered designation (first = highest priority) — who to call about this person, not a kinship. */
   emergencyContactIds: string[];
-  /** Raw outgoing edges (unfiltered; targets may be deleted or unreadable). The `/relations` sub-resource is the resolved two-way view. */
-  relations: ContactRelationDto[];
   metadata?: null | JsonNode;
   completeness?: null | CompletenessScore;
   createdAt?: string;

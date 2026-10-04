@@ -5,11 +5,6 @@
  * OpenAPI spec version: v1
  */
 
-/**
- * Kind of a contact-to-contact edge: the related (To) contact's role relative to the owning contact ("To is my Kind").
- *             The extended-family kinds are storable for when the linking relative isn't a contact (a deceased parent, say); the same
- *             kinds are also produced by KinshipInference from the parent/child graph, distinguished on read by RelationProvenance.
- */
 export type ContactRelationKind = typeof ContactRelationKind[keyof typeof ContactRelationKind];
 
 

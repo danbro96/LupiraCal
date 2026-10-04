@@ -1,4 +1,4 @@
-import type { RelationCopy, StoredRelation } from '@lupira/cal-domain/contactRelations';
+import type { RelationshipRecord } from '@lupira/cal-domain/contactRelations';
 import type { ContactGuards, ItemGuards } from '../domain/docTypes';
 import type { ContactDoc, ItemDoc } from '../domain/docTypes';
 import type { OccurrenceRow } from '../domain/materialize';
@@ -283,27 +283,34 @@ export async function mapContactAddresses(tx: Tx): Promise<MapContactRow[]> {
   );
 }
 
-export type RelationCopyRow = RelationCopy & { otherId: string; otherName: string };
+export type ContactRelationshipRow = { record: RelationshipRecord; otherId: string; otherName: string };
 
-/** Every stored copy of a relationship touching `contactId`: the ones its own doc holds and the ones
- *  other contacts hold about it, with the other contact's name. Copies whose other side is deleted or
- *  absent from the mirror are dropped, as the server's listing drops them. */
-export async function relationCopiesOf(tx: Tx, contactId: string): Promise<RelationCopyRow[]> {
-  const rows = await tx.all<{ holder_id: string; edge: string; other_id: string; other_name: string }>(
-    `SELECT c.id AS holder_id, r.value AS edge, o.id AS other_id, o.display_name AS other_name
-     FROM contacts c
-     JOIN json_each(json_extract(c.doc, '$.relations')) r
-     JOIN contacts o ON o.deleted = 0
-       AND o.id = CASE WHEN c.id = ? THEN json_extract(r.value, '$.toContactId') ELSE c.id END
-     WHERE c.id = ? OR (c.deleted = 0 AND json_extract(r.value, '$.toContactId') = ?)`,
+/** A contact's relationships with the other contact's name. Those whose other contact is deleted or absent from the
+ *  mirror are dropped, as the server's listing drops them. */
+export async function relationshipsOf(tx: Tx, contactId: string): Promise<ContactRelationshipRow[]> {
+  const rows = await tx.all<{ doc: string; other_id: string; other_name: string }>(
+    `SELECT r.doc, o.id AS other_id, o.display_name AS other_name
+     FROM relationships r
+     JOIN contacts o ON o.deleted = 0 AND o.id = CASE WHEN r.low_id = ? THEN r.high_id ELSE r.low_id END
+     WHERE r.low_id = ? OR r.high_id = ?`,
     [contactId, contactId, contactId],
   );
-  return rows.map((r) => ({
-    holderId: r.holder_id,
-    edge: JSON.parse(r.edge) as StoredRelation,
-    otherId: r.other_id,
-    otherName: r.other_name,
-  }));
+  return rows.map((r) => ({ record: JSON.parse(r.doc) as RelationshipRecord, otherId: r.other_id, otherName: r.other_name }));
+}
+
+export async function saveRelationships(tx: Tx, records: RelationshipRecord[]): Promise<void> {
+  for (const r of records) {
+    await tx.run('INSERT OR REPLACE INTO relationships (id, low_id, high_id, doc) VALUES (?, ?, ?, ?)',
+      [r.id, r.lowId, r.highId, JSON.stringify(r)]);
+  }
+}
+
+export async function removeRelationships(tx: Tx, ids: string[]): Promise<void> {
+  for (const id of ids) await tx.run('DELETE FROM relationships WHERE id = ?', [id]);
+}
+
+export async function clearRelationships(tx: Tx): Promise<void> {
+  await tx.run('DELETE FROM relationships');
 }
 
 export type ContactListRow = { id: string; displayName: string; doc: ContactDoc };
@@ -405,19 +412,21 @@ export async function pendingCreateAggregates(tx: Tx): Promise<Set<string>> {
   return new Set(rows.map((r) => r.aggregate_id));
 }
 
-export async function getCursor(tx: Tx, scope: 'cal' | 'contact'): Promise<string | null> {
+export type SyncScope = 'cal' | 'contact' | 'relationship';
+
+export async function getCursor(tx: Tx, scope: SyncScope): Promise<string | null> {
   const row = await tx.first<{ cursor: string | null }>('SELECT cursor FROM sync_state WHERE scope = ?', [scope]);
   return row?.cursor ?? null;
 }
 
 /** Null while a full sync is incomplete: its prune needs every id, so an interrupted one restarts. */
-export async function getResumeCursor(tx: Tx, scope: 'cal' | 'contact'): Promise<string | null> {
+export async function getResumeCursor(tx: Tx, scope: SyncScope): Promise<string | null> {
   const row = await tx.first<{ cursor: string | null; last_full_sync_at: string | null }>(
     'SELECT cursor, last_full_sync_at FROM sync_state WHERE scope = ?', [scope]);
   return row?.last_full_sync_at ? row.cursor : null;
 }
 
-export async function setCursor(tx: Tx, scope: 'cal' | 'contact', cursor: string, inFullSync: boolean, nowIso: string): Promise<void> {
+export async function setCursor(tx: Tx, scope: SyncScope, cursor: string, inFullSync: boolean, nowIso: string): Promise<void> {
   await tx.run(
     `INSERT INTO sync_state (scope, cursor, last_full_sync_at, last_delta_at) VALUES (?, ?, NULL, ?)
      ON CONFLICT(scope) DO UPDATE SET cursor=excluded.cursor,
@@ -427,7 +436,7 @@ export async function setCursor(tx: Tx, scope: 'cal' | 'contact', cursor: string
   );
 }
 
-export async function completeFullSync(tx: Tx, scope: 'cal' | 'contact', nowIso: string): Promise<void> {
+export async function completeFullSync(tx: Tx, scope: SyncScope, nowIso: string): Promise<void> {
   await tx.run('UPDATE sync_state SET last_full_sync_at = ? WHERE scope = ?', [nowIso, scope]);
 }
 

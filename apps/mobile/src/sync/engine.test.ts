@@ -10,8 +10,8 @@ import { emptyItemGuards } from '../domain/docTypes';
 import type { Horizon } from '../domain/materialize';
 import type { ClientOp } from '../domain/ops';
 import { drain, enqueue } from './outbox';
-import type { ChangesPage, ContactChange, ItemChange, PullDeps } from './pull';
-import { pullCal, pullContainers, pullContacts } from './pull';
+import type { ChangesPage, ContactChange, ItemChange, PullDeps, RelationshipChanges } from './pull';
+import { pullCal, pullContainers, pullContacts, pullRelationships } from './pull';
 
 vi.mock('../debug/log', () => ({ logDebug: vi.fn() }));
 
@@ -469,5 +469,28 @@ describe('calendar visibility filter', () => {
 
     const found = await mirror.searchItems(db, 'item', '2026-07-01', { calendarIds: ['cal-2'], birthdays: true });
     expect(found.map((r) => r.id)).toEqual(['item-2']);
+  });
+});
+
+describe('pullRelationships', () => {
+  const rel = (id: string, kind: 'Friend' | 'Sibling' = 'Friend') => ({ id, lowId: 'a', highId: 'b', kind });
+  const ids = async () => (await db.all<{ id: string }>('SELECT id FROM relationships ORDER BY id')).map((r) => r.id);
+
+  it('replaces the table on a reset, then applies deltas and hands the cursor back', async () => {
+    const pages: RelationshipChanges[] = [
+      { cursor: '5.s', reset: true, changed: [rel('r1'), rel('r2')], deleted: [] },
+      { cursor: '9.s', reset: false, changed: [rel('r3')], deleted: ['r1'] },
+      { cursor: '9.s', reset: false, changed: [], deleted: [] },
+    ];
+    const since: (string | null)[] = [];
+    const deps = { ...pagesDeps([]), relationshipChanges: async (s: string | null) => { since.push(s); return pages[since.length - 1]; } };
+    await db.exclusive((tx) => mirror.saveRelationships(tx, [rel('stale')]));
+
+    expect(await pullRelationships(db, deps)).toBe(true);
+    expect(await ids()).toEqual(['r1', 'r2']);
+    expect(await pullRelationships(db, deps)).toBe(true);
+    expect(await ids()).toEqual(['r2', 'r3']);
+    expect(await pullRelationships(db, deps)).toBe(false);
+    expect(since).toEqual([null, '5.s', '9.s']);
   });
 });

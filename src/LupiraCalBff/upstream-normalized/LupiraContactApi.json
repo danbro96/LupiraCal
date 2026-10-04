@@ -3502,6 +3502,55 @@
         ]
       }
     },
+    "/relationships": {
+      "get": {
+        "tags": [
+          "Relationships"
+        ],
+        "summary": "Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact.",
+        "operationId": "ListRelationships",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RelationshipDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/sync/changes": {
       "get": {
         "tags": [
@@ -3533,6 +3582,71 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SyncChangesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/sync/relationships": {
+      "get": {
+        "tags": [
+          "Sync"
+        ],
+        "summary": "Delta feed of relationships for offline mirrors: those whose two contacts the caller can read that changed past the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.",
+        "operationId": "GetRelationshipChanges",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelationshipChangesResponse"
                 }
               }
             }
@@ -3878,7 +3992,6 @@
           "addresses",
           "profiles",
           "emergencyContactIds",
-          "relations",
           "version",
           "etag"
         ],
@@ -3994,13 +4107,6 @@
               "format": "uuid"
             },
             "description": "Ordered designation (first = highest priority) \u2014 who to call about this person, not a kinship."
-          },
-          "relations": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ContactRelationDto"
-            },
-            "description": "Raw outgoing edges (unfiltered; targets may be deleted or unreadable). The \u0060/relations\u0060 sub-resource is the resolved two-way view."
           },
           "metadata": {
             "$ref": "#/components/schemas/JsonNode"
@@ -4202,57 +4308,6 @@
         },
         "description": "A lightweight contact reference (id \u002B display name) \u2014 a resolve candidate."
       },
-      "ContactRelationDto": {
-        "required": [
-          "toContactId",
-          "kind",
-          "label",
-          "since",
-          "note",
-          "ended",
-          "until"
-        ],
-        "type": "object",
-        "properties": {
-          "toContactId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "kind": {
-            "$ref": "#/components/schemas/ContactRelationKind"
-          },
-          "label": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "since": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date"
-          },
-          "note": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "ended": {
-            "type": "boolean"
-          },
-          "until": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date"
-          }
-        },
-        "description": "A relation copy this contact\u0027s own record holds: \u0022the \u0060ToContactId\u0060 contact is my \u0060Kind\u0060\u0022. Storage, not the\n            relationship \u2014 the other side may hold a copy too, so render \u0060GET /contacts/{id}/relations\u0060, which merges both.\n            \u0060Ended\u0060/\u0060Until\u0060 mark a relationship that ran its course."
-      },
       "ContactRelationEntryDto": {
         "required": [
           "contactId",
@@ -4325,8 +4380,7 @@
           "AuntUncle",
           "NieceNephew",
           "Cousin"
-        ],
-        "description": "Kind of a contact-to-contact edge: the related (To) contact\u0027s role relative to the owning contact (\u0022To is my Kind\u0022).\n            The extended-family kinds are storable for when the linking relative isn\u0027t a contact (a deceased parent, say); the same\n            kinds are also produced by KinshipInference from the parent/child graph, distinguished on read by RelationProvenance."
+        ]
       },
       "ContactSocialProfileDto": {
         "required": [
@@ -4857,6 +4911,107 @@
         ],
         "description": "Whether a resolved relation was stored explicitly or derived from the kinship graph."
       },
+      "RelationshipChangesResponse": {
+        "required": [
+          "cursor",
+          "reset",
+          "changed",
+          "deleted"
+        ],
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string"
+          },
+          "reset": {
+            "type": "boolean",
+            "description": "Stream restarted (no \u0060since\u0060, or readable address books changed): a full sync from here."
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelationshipDto"
+            }
+          },
+          "deleted": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids removed, or no longer visible (a contact deleted or moved out of reach). Unknown ids are safe to ignore."
+          }
+        },
+        "description": "Relationships changed past the cursor. \u0060Cursor\u0060 is opaque \u2014 hand it back as \u0060?since=\u0060. A full sync\n            (no \u0060since\u0060, or a \u0060Reset\u0060) lists every visible relationship and suppresses tombstones \u2014 the client replaces its\n            mirror wholesale."
+      },
+      "RelationshipDto": {
+        "required": [
+          "id",
+          "lowId",
+          "highId",
+          "kind",
+          "labelFromLow",
+          "labelFromHigh",
+          "since",
+          "note",
+          "ended",
+          "until"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lowId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "highId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ContactRelationKind"
+          },
+          "labelFromLow": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "labelFromHigh": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "since": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ended": {
+            "type": "boolean"
+          },
+          "until": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        },
+        "description": "A relationship between two contacts: \u0022\u0060HighId\u0060 is \u0060LowId\u0060\u0027s \u0060Kind\u0060\u0022. Low/High is the ids\u0027 ordinal\n            order, not which side stated it. Each side has its own label (its word for the other); the rest is shared."
+      },
       "ResolveContactsByNameRequest": {
         "required": [
           "names"
@@ -5286,6 +5441,9 @@
     },
     {
       "name": "ContactGroups"
+    },
+    {
+      "name": "Relationships"
     },
     {
       "name": "Sync"

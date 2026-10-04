@@ -11,7 +11,6 @@ export const PINNED_TAG = '⭐';
 export interface TierableContact {
   id?: string;
   tags?: readonly string[] | null;
-  relations?: readonly unknown[] | null;
   createdAt?: string;
 }
 
@@ -20,6 +19,8 @@ export interface TierOptions {
   now?: number;
   /** A contact added within this many days stays Active regardless of other signals. */
   graceDays?: number;
+  /** Contacts on at least one relationship (from either side). */
+  relatedIds?: ReadonlySet<string>;
 }
 
 export function isPinned(c: TierableContact): boolean {
@@ -54,7 +55,7 @@ export function partitionByActivity<T extends TierableContact>(
 
   const isActive = (c: T): boolean =>
     interacted.has(c.id ?? '') ||
-    (c.relations?.length ?? 0) > 0 ||
+    (opts.relatedIds?.has(c.id ?? '') ?? false) ||
     isPinned(c) ||
     recentlyAdded(c.createdAt, now, graceMs);
 

@@ -18,7 +18,7 @@ import { toContactDoc, toItemDoc } from './docAdapters';
 import { discardParked, drain } from './outbox';
 import { runPhotoBackup } from './photoUploader';
 import type { PullDeps } from './pull';
-import { pullCal, pullContacts, pullContainers, pullMe, realPullDeps } from './pull';
+import { pullCal, pullContacts, pullContainers, pullMe, pullRelationships, realPullDeps } from './pull';
 import { invalidateContacts, invalidateContainers, invalidateItems, invalidateMe, invalidateMonthKeys } from './reactivity';
 import { useSyncStatus } from './syncStatus';
 
@@ -60,9 +60,10 @@ async function run(dbOverride: Db | undefined, deps: PullDeps): Promise<void> {
     const cal = await pullCal(db, horizon, deps);
     status.setPhase('contacts');
     const contacts = await pullContacts(db, horizon, deps);
+    const relationships = await pullRelationships(db, deps);
     // Only what the pull touched: an empty delta (most resumes) must not refetch every mounted query.
     invalidateMonthKeys([...cal.monthKeys, ...contacts.monthKeys]);
-    if (contacts.changed) invalidateContacts();
+    if (contacts.changed || relationships) invalidateContacts();
     if (cal.changed) invalidateItems();
 
     await maintainHorizon(db, horizon);

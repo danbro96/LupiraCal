@@ -94,33 +94,19 @@ export function isSymmetric(kind: RelationKind): boolean {
   return INVERSE[kind] === kind;
 }
 
-/** A relation copy as one contact stores it (ContactRelationDto; the mobile mirror doc's `relations`):
- *  "toContactId is my kind". Storage, not the relationship — the other side may hold a copy too. */
-export interface StoredRelation {
-  toContactId: string;
+/** A relationship as the API serves it (structurally == RelationshipDto): "highId is lowId's kind". Low/high is the
+ *  ids' order, not which side stated it; each side has its own label, the rest is shared. */
+export interface RelationshipRecord {
+  id: string;
+  lowId: string;
+  highId: string;
   kind: RelationKind;
-  label?: string | null;
+  labelFromLow?: string | null;
+  labelFromHigh?: string | null;
   since?: string | null;
   note?: string | null;
   ended?: boolean;
   until?: string | null;
-}
-
-export interface RelationCopy {
-  holderId: string;
-  edge: StoredRelation;
-}
-
-/** Side-independent identity of a relationship: "high is low's kind", ids ordered as strings. */
-export interface RelationshipKey {
-  low: string;
-  high: string;
-  kind: RelationKind;
-}
-
-/** The key of "otherId is selfId's kind" — the same whichever side states it. */
-export function relationshipKey(selfId: string, otherId: string, kind: RelationKind): RelationshipKey {
-  return selfId <= otherId ? { low: selfId, high: otherId, kind } : { low: otherId, high: selfId, kind: INVERSE[kind] };
 }
 
 /** A relationship as seen from one of its contacts: `kind` is the other's role, `label` the viewer's own word. */
@@ -134,37 +120,20 @@ export interface ResolvedRelation {
   until: string | null;
 }
 
-/**
- * Merge stored copies into relationships seen from `viewerId`, the way LupiraContactApi's
- * RelationResolver does, so an offline read agrees with `GET /contacts/{id}/relations`: the label
- * comes from the viewer's own copy; since/note/until from the low contact's copy, falling back to
- * the other; ended only when every copy is.
- */
-export function resolveRelations(viewerId: string, copies: Iterable<RelationCopy>): ResolvedRelation[] {
-  const groups = new Map<string, { key: RelationshipKey; copies: RelationCopy[] }>();
-  for (const c of copies) {
-    if ((c.holderId === viewerId) === (c.edge.toContactId === viewerId)) continue; // someone else's, or a self-loop
-    const key = relationshipKey(c.holderId, c.edge.toContactId, c.edge.kind);
-    const id = `${key.low}|${key.high}|${key.kind}`;
-    const group = groups.get(id);
-    if (group) group.copies.push(c);
-    else groups.set(id, { key, copies: [c] });
-  }
-  return [...groups.values()].map(({ key, copies: held }) => {
-    const edges = [...held].sort((a, b) => Number(a.holderId !== key.low) - Number(b.holderId !== key.low)).map((c) => c.edge);
-    const first = (field: 'since' | 'note' | 'until') => edges.find((e) => e[field] != null)?.[field] ?? null;
-    const ended = edges.every((e) => e.ended === true);
-    const viewerIsLow = key.low === viewerId;
-    return {
-      otherId: viewerIsLow ? key.high : key.low,
-      kind: viewerIsLow ? key.kind : INVERSE[key.kind],
-      label: held.find((c) => c.holderId === viewerId)?.edge.label ?? null,
-      since: first('since'),
-      note: first('note'),
-      ended,
-      until: ended ? first('until') : null,
-    };
-  });
+/** The relationship as `viewerId` sees it — the client twin of LupiraContactApi's `Relationship.ViewFrom`, so an offline
+ *  read agrees with `GET /contacts/{id}/relations`. */
+export function viewRelationship(viewerId: string, r: RelationshipRecord): ResolvedRelation {
+  const fromLow = r.lowId === viewerId;
+  const ended = r.ended === true;
+  return {
+    otherId: fromLow ? r.highId : r.lowId,
+    kind: fromLow ? r.kind : INVERSE[r.kind],
+    label: (fromLow ? r.labelFromLow : r.labelFromHigh) ?? null,
+    since: r.since ?? null,
+    note: r.note ?? null,
+    ended,
+    until: ended ? (r.until ?? null) : null,
+  };
 }
 
 /** One relationship as seen from a viewing contact (structurally == ContactRelationEntryDto): `kind` is the

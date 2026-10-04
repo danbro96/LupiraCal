@@ -115,6 +115,17 @@ export const MIGRATIONS: string[] = [
   );
   CREATE INDEX idx_location_queue_due ON location_fix_queue (next_attempt_at, seq);
   `,
+  // v4: relationships between contacts, a mirror of /sync/relationships (read-only here: no outbox ops).
+  `
+  CREATE TABLE relationships (
+    id TEXT PRIMARY KEY,
+    low_id TEXT NOT NULL,
+    high_id TEXT NOT NULL,
+    doc TEXT NOT NULL
+  );
+  CREATE INDEX idx_relationships_low ON relationships (low_id);
+  CREATE INDEX idx_relationships_high ON relationships (high_id);
+  `,
 ];
 
 // Single-flight per db handle: bridge-store init and the first runSync both migrate on app start —

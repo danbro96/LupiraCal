@@ -40,11 +40,14 @@ import type {
   CreateContactRequest,
   EndContactRelationRequest,
   GetContactCirclesParams,
+  GetRelationshipChangesParams,
   GrantOwnerRequest,
   ListContactRelationsParams,
   MeDto,
   MoveContactRequest,
   ProblemDetails,
+  RelationshipChangesResponse,
+  RelationshipDto,
   RemoveContactRelationParams,
   RenameContactGroupParams,
   ReviseContactRequest,
@@ -3096,7 +3099,107 @@ export const useRemoveContactGroupMember = <TError = ProblemDetails,
       > => {
       return useMutation(getRemoveContactGroupMemberMutationOptions(options), queryClient);
     }
-    export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
+    export const getListRelationshipsUrl = () => {
+
+
+
+
+  return `/contact-api/relationships`
+}
+
+/**
+ * @summary Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact.
+ */
+export const listRelationships = async ( options?: Parameters<typeof apiRequest>[1]): Promise<RelationshipDto[]> => {
+
+  return apiRequest<RelationshipDto[]>(getListRelationshipsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRelationshipsQueryKey = () => {
+    return [
+    `/contact-api/relationships`
+    ] as const;
+    }
+
+
+export const getListRelationshipsQueryOptions = <TData = Awaited<ReturnType<typeof listRelationships>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRelationshipsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRelationships>>> = ({ signal }) => listRelationships({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListRelationshipsQueryResult = NonNullable<Awaited<ReturnType<typeof listRelationships>>>
+export type ListRelationshipsQueryError = ProblemDetails
+
+
+export function useListRelationships<TData = Awaited<ReturnType<typeof listRelationships>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRelationships>>,
+          TError,
+          Awaited<ReturnType<typeof listRelationships>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRelationships<TData = Awaited<ReturnType<typeof listRelationships>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRelationships>>,
+          TError,
+          Awaited<ReturnType<typeof listRelationships>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRelationships<TData = Awaited<ReturnType<typeof listRelationships>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact.
+ */
+
+export function useListRelationships<TData = Awaited<ReturnType<typeof listRelationships>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListRelationshipsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -3192,6 +3295,113 @@ export function useContactGetChanges<TData = Awaited<ReturnType<typeof contactGe
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getContactGetChangesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetRelationshipChangesUrl = (params?: GetRelationshipChangesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/contact-api/sync/relationships?${stringifiedParams}` : `/contact-api/sync/relationships`
+}
+
+/**
+ * @summary Delta feed of relationships for offline mirrors: those whose two contacts the caller can read that changed past the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ */
+export const getRelationshipChanges = async (params?: GetRelationshipChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<RelationshipChangesResponse> => {
+
+  return apiRequest<RelationshipChangesResponse>(getGetRelationshipChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRelationshipChangesQueryKey = (params?: GetRelationshipChangesParams,) => {
+    return [
+    `/contact-api/sync/relationships`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetRelationshipChangesQueryOptions = <TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(params?: GetRelationshipChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRelationshipChangesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRelationshipChanges>>> = ({ signal }) => getRelationshipChanges(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetRelationshipChangesQueryResult = NonNullable<Awaited<ReturnType<typeof getRelationshipChanges>>>
+export type GetRelationshipChangesQueryError = ProblemDetails
+
+
+export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(
+ params: undefined |  GetRelationshipChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRelationshipChanges>>,
+          TError,
+          Awaited<ReturnType<typeof getRelationshipChanges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(
+ params?: GetRelationshipChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRelationshipChanges>>,
+          TError,
+          Awaited<ReturnType<typeof getRelationshipChanges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(
+ params?: GetRelationshipChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Delta feed of relationships for offline mirrors: those whose two contacts the caller can read that changed past the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ */
+
+export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(
+ params?: GetRelationshipChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetRelationshipChangesQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

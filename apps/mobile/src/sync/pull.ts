@@ -1,6 +1,7 @@
 import { getChanges as calGetChanges } from '@lupira/cal-api/fetch/cal';
 import { bootstrapMe as calBootstrap, getSyncContainers as calGetContainers } from '@lupira/cal-api/fetch/cal';
-import { contactBootstrapMe, contactGetChanges, contactGetSyncContainers as contactGetContainers, getMe } from '@lupira/cal-api/fetch/contact';
+import { contactBootstrapMe, contactGetChanges, contactGetSyncContainers as contactGetContainers, getMe, getRelationshipChanges } from '@lupira/cal-api/fetch/contact';
+import type { RelationshipRecord } from '@lupira/cal-domain/contactRelations';
 import { needsAddressBookBootstrap, needsCalendarBootstrap } from '@lupira/cal-domain/bootstrap';
 import type { Db, Tx } from '../data/db/types';
 import { saveMyContactId } from '../data/me';
@@ -24,10 +25,14 @@ export type ItemChange = { item: ItemDoc; guards: ItemGuards };
 export type ContactChange = { contact: ContactDoc; guards: ContactGuards };
 /** `reset`: the server restarted from zero — a full sync from that page on. */
 export type ChangesPage<TChange> = { cursor: string; hasMore: boolean; reset: boolean; changed: TChange[]; deleted: string[] };
+/** Unpaged: one response carries every change. */
+export type RelationshipChanges = { cursor: string; reset: boolean; changed: RelationshipRecord[]; deleted: string[] };
 
 export type PullDeps = {
   calChanges(since: string | null): Promise<ChangesPage<ItemChange>>;
   contactChanges(since: string | null): Promise<ChangesPage<ContactChange>>;
+  /** Absent in harnesses that don't model relationships. */
+  relationshipChanges?(since: string | null): Promise<RelationshipChanges>;
   calContainers(): Promise<{ id: string; kind?: string | null }[]>;
   contactContainers(): Promise<{ addressBooks: { id: string; isPersonal: boolean }[]; groups: { id: string }[] }>;
   /** Seed the caller's standard containers; absent in harnesses that don't model it. */
@@ -48,6 +53,11 @@ export const realPullDeps: PullDeps = {
     const r = await contactGetChanges(since ? { since } : undefined);
     if (r.status !== 200) throw new ApiError(r.status, 'changes failed');
     return toContactChangesPage(r.data);
+  },
+  relationshipChanges: async (since) => {
+    const r = await getRelationshipChanges(since ? { since } : undefined);
+    if (r.status !== 200) throw new ApiError(r.status, 'relationship changes failed');
+    return r.data;
   },
   calContainers: async () => {
     const r = await calGetContainers();
@@ -206,6 +216,20 @@ export async function pullContacts(db: Db, horizon: Horizon, deps: PullDeps): Pr
     });
   }
   return { monthKeys, changed };
+}
+
+/** Relationships are read-only here (no outbox ops), so the server's view is applied as is; a reset replaces the
+ *  table. Returns whether anything changed. */
+export async function pullRelationships(db: Db, deps: PullDeps): Promise<boolean> {
+  if (!deps.relationshipChanges) return false;
+  const page = await deps.relationshipChanges(await mirror.getCursor(db, 'relationship'));
+  return db.exclusive(async (tx) => {
+    if (page.reset) await mirror.clearRelationships(tx);
+    await mirror.saveRelationships(tx, page.changed);
+    await mirror.removeRelationships(tx, page.deleted);
+    await mirror.setCursor(tx, 'relationship', page.cursor, false, deps.now().toISOString());
+    return page.reset || page.changed.length > 0 || page.deleted.length > 0;
+  });
 }
 
 /** Server truth + pending local ops replayed through the reducer twin = the state the server will converge

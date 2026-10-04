@@ -21,11 +21,14 @@ import type {
   CreateContactRequest,
   EndContactRelationRequest,
   GetContactCirclesParams,
+  GetRelationshipChangesParams,
   GrantOwnerRequest,
   ListContactRelationsParams,
   MeDto,
   MoveContactRequest,
   ProblemDetails,
+  RelationshipChangesResponse,
+  RelationshipDto,
   RemoveContactRelationParams,
   RenameContactGroupParams,
   ReviseContactRequest,
@@ -2262,6 +2265,53 @@ export const removeContactGroupMember = async (groupId: string,
 );}
 
 
+export type listRelationshipsResponse200 = {
+  data: RelationshipDto[]
+  status: 200
+}
+
+export type listRelationshipsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type listRelationshipsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type listRelationshipsResponseSuccess = (listRelationshipsResponse200) & {
+  headers: Headers;
+};
+export type listRelationshipsResponseError = (listRelationshipsResponse401 | listRelationshipsResponse500) & {
+  headers: Headers;
+};
+
+export type listRelationshipsResponse = (listRelationshipsResponseSuccess | listRelationshipsResponseError)
+
+export const getListRelationshipsUrl = () => {
+
+
+
+
+  return `/contact-api/relationships`
+}
+
+/**
+ * @summary Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact.
+ */
+export const listRelationships = async ( options?: Parameters<typeof apiRequest>[1]): Promise<listRelationshipsResponse> => {
+
+  return apiRequest<listRelationshipsResponse>(getListRelationshipsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
 export type contactGetChangesResponse200 = {
   data: ContactSyncChangesResponse
   status: 200
@@ -2312,6 +2362,65 @@ export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
 export const contactGetChanges = async (params?: ContactGetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<contactGetChangesResponse> => {
 
   return apiRequest<contactGetChangesResponse>(getContactGetChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type getRelationshipChangesResponse200 = {
+  data: RelationshipChangesResponse
+  status: 200
+}
+
+export type getRelationshipChangesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getRelationshipChangesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getRelationshipChangesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getRelationshipChangesResponseSuccess = (getRelationshipChangesResponse200) & {
+  headers: Headers;
+};
+export type getRelationshipChangesResponseError = (getRelationshipChangesResponse400 | getRelationshipChangesResponse401 | getRelationshipChangesResponse500) & {
+  headers: Headers;
+};
+
+export type getRelationshipChangesResponse = (getRelationshipChangesResponseSuccess | getRelationshipChangesResponseError)
+
+export const getGetRelationshipChangesUrl = (params?: GetRelationshipChangesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/contact-api/sync/relationships?${stringifiedParams}` : `/contact-api/sync/relationships`
+}
+
+/**
+ * @summary Delta feed of relationships for offline mirrors: those whose two contacts the caller can read that changed past the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ */
+export const getRelationshipChanges = async (params?: GetRelationshipChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getRelationshipChangesResponse> => {
+
+  return apiRequest<getRelationshipChangesResponse>(getGetRelationshipChangesUrl(params),
   {
     ...options,
     method: 'GET'
