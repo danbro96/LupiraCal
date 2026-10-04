@@ -10,6 +10,17 @@ import type { JsonObject } from '@lupira/cal-api/models';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { DrawerSection } from '../DrawerSection';
 
+// React Compiler can't compile value blocks inside try/catch, so parsing stays out of the component.
+function parsePatch(text: string): JsonObject | string {
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return 'Patch must be valid JSON.';
+  }
+  return typeof data === 'object' && data !== null && !Array.isArray(data) ? (data as JsonObject) : 'Patch must be a JSON object.';
+}
+
 /** The item's free-form JSON metadata, with a merge editor (POST /items/{id}/metadata merges keys). */
 export function MetadataPanel({ itemId, metadata }: { itemId: string; metadata: JsonObject }) {
   const [open, setOpen] = useState(false);
@@ -55,17 +66,13 @@ export function MetadataPanel({ itemId, metadata }: { itemId: string; metadata: 
             variant="outlined"
             disabled={!patch || merge.isPending}
             onClick={() => {
-              try {
-                const data: unknown = JSON.parse(patch);
-                if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-                  setJsonError('Patch must be a JSON object.');
-                  return;
-                }
-                setJsonError(null);
-                merge.mutate({ id: itemId, data: data as JsonObject });
-              } catch {
-                setJsonError('Patch must be valid JSON.');
+              const parsed = parsePatch(patch);
+              if (typeof parsed === 'string') {
+                setJsonError(parsed);
+                return;
               }
+              setJsonError(null);
+              merge.mutate({ id: itemId, data: parsed });
             }}
           >
             Merge
