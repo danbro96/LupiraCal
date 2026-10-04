@@ -4,7 +4,7 @@
  * LupiraCal BFF
  * OpenAPI spec version: v1
  */
-import type { JsonNode } from './jsonNode';
+import type { JsonObject } from './jsonObject';
 import type { PersonRef } from './personRef';
 import type { TasksItemStatus } from './tasksItemStatus';
 
@@ -40,5 +40,5 @@ export interface ItemDto {
   createdBy?: null | PersonRef;
   createdAt: string;
   updatedAt: string;
-  metadata?: null | JsonNode;
+  metadata?: null | JsonObject;
 }

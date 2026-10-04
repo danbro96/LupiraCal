@@ -6,11 +6,12 @@ import Box from '@mui/material/Box';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useMergeItemMetadata } from '@lupira/cal-api/query/cal';
+import type { JsonObject } from '@lupira/cal-api/models';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { DrawerSection } from '../DrawerSection';
 
 /** The item's free-form JSON metadata, with a merge editor (POST /items/{id}/metadata merges keys). */
-export function MetadataPanel({ itemId, metadata }: { itemId: string; metadata: unknown }) {
+export function MetadataPanel({ itemId, metadata }: { itemId: string; metadata: JsonObject }) {
   const [open, setOpen] = useState(false);
   const [patch, setPatch] = useState('');
   const [jsonError, setJsonError] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export function MetadataPanel({ itemId, metadata }: { itemId: string; metadata: 
     },
   });
 
-  const isEmpty = !metadata || (typeof metadata === 'object' && Object.keys(metadata as object).length === 0);
+  const isEmpty = Object.keys(metadata).length === 0;
 
   return (
     <DrawerSection
@@ -55,9 +56,13 @@ export function MetadataPanel({ itemId, metadata }: { itemId: string; metadata: 
             disabled={!patch || merge.isPending}
             onClick={() => {
               try {
-                const data = JSON.parse(patch);
+                const data: unknown = JSON.parse(patch);
+                if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+                  setJsonError('Patch must be a JSON object.');
+                  return;
+                }
                 setJsonError(null);
-                merge.mutate({ id: itemId, data });
+                merge.mutate({ id: itemId, data: data as JsonObject });
               } catch {
                 setJsonError('Patch must be valid JSON.');
               }

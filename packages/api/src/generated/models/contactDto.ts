@@ -9,7 +9,7 @@ import type { ContactKind } from './contactKind';
 import type { ContactReachChannel } from './contactReachChannel';
 import type { ContactSocialProfileDto } from './contactSocialProfileDto';
 import type { DisplayNameFormat } from './displayNameFormat';
-import type { JsonNode } from './jsonNode';
+import type { JsonObject } from './jsonObject';
 import type { PartialDate } from './partialDate';
 
 export interface ContactDto {
@@ -46,7 +46,7 @@ export interface ContactDto {
   profiles: ContactSocialProfileDto[];
   /** Ordered designation (first = highest priority) — who to call about this person, not a kinship. */
   emergencyContactIds: string[];
-  metadata?: null | JsonNode;
+  metadata: JsonObject;
   completeness?: null | CompletenessScore;
   createdAt?: string;
   /** @nullable */

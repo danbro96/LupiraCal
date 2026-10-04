@@ -6,15 +6,12 @@ import type { ChangesPage, ContactChange, ItemChange } from './pull';
 /** Wire DTO → mirror doc. Assignment is unasserted so a spec change that drops or retypes a field the
  *  mirror reads fails to compile here. */
 
-/** Arbitrary JSON, which orval renders as the structurally-empty `JsonNode`. */
-const metadataOf = (m: unknown) => m as Record<string, unknown> | null | undefined;
-
 export function toItemDoc(dto: CalendarItemDto): ItemDoc {
-  return { ...dto, metadata: metadataOf(dto.metadata) };
+  return { ...dto };
 }
 
 export function toContactDoc(dto: ContactDto): ContactDoc {
-  return { ...dto, metadata: metadataOf(dto.metadata) };
+  return { ...dto };
 }
 
 export function toItemChangesPage(dto: CalChangesDto): ChangesPage<ItemChange> {

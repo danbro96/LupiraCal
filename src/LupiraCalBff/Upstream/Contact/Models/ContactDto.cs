@@ -120,10 +120,10 @@ namespace LupiraCalBff.Upstream.Contact.Models
         /// <summary>The metadata property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public global::LupiraCalBff.Upstream.Contact.Models.JsonNode? Metadata { get; set; }
+        public global::LupiraCalBff.Upstream.Contact.Models.JsonObject? Metadata { get; set; }
 #nullable restore
 #else
-        public global::LupiraCalBff.Upstream.Contact.Models.JsonNode Metadata { get; set; }
+        public global::LupiraCalBff.Upstream.Contact.Models.JsonObject Metadata { get; set; }
 #endif
         /// <summary>The middleName property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -228,7 +228,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
                 { "givenName", n => { GivenName = n.GetStringValue(); } },
                 { "id", n => { Id = n.GetGuidValue(); } },
                 { "kind", n => { Kind = n.GetEnumValue<global::LupiraCalBff.Upstream.Contact.Models.ContactKind>(); } },
-                { "metadata", n => { Metadata = n.GetObjectValue<global::LupiraCalBff.Upstream.Contact.Models.JsonNode>(global::LupiraCalBff.Upstream.Contact.Models.JsonNode.CreateFromDiscriminatorValue); } },
+                { "metadata", n => { Metadata = n.GetObjectValue<global::LupiraCalBff.Upstream.Contact.Models.JsonObject>(global::LupiraCalBff.Upstream.Contact.Models.JsonObject.CreateFromDiscriminatorValue); } },
                 { "middleName", n => { MiddleName = n.GetStringValue(); } },
                 { "nickname", n => { Nickname = n.GetStringValue(); } },
                 { "notes", n => { Notes = n.GetStringValue(); } },
@@ -265,7 +265,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
             writer.WriteStringValue("givenName", GivenName);
             writer.WriteGuidValue("id", Id);
             writer.WriteEnumValue<global::LupiraCalBff.Upstream.Contact.Models.ContactKind>("kind", Kind);
-            writer.WriteObjectValue<global::LupiraCalBff.Upstream.Contact.Models.JsonNode>("metadata", Metadata);
+            writer.WriteObjectValue<global::LupiraCalBff.Upstream.Contact.Models.JsonObject>("metadata", Metadata);
             writer.WriteStringValue("middleName", MiddleName);
             writer.WriteStringValue("nickname", Nickname);
             writer.WriteStringValue("notes", Notes);

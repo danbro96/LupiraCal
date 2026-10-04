@@ -7,7 +7,7 @@
 
 /**
  * A date known to year, year-month, or full-day precision — the precision itself carries the certainty
- *             ("2015" means "sometime in 2015"). Used for residency boundaries on ContactPostalAddress.
+ *             ("2015" means "sometime in 2015"). Used for residency boundaries.
  *             int FuzzyDate.Year is always present; int? FuzzyDate.Day requires int? FuzzyDate.Month. Distinct from
  *             PartialDate, which models the opposite case (year unknown, month-day known).
  */

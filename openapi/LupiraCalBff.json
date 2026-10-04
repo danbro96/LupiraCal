@@ -1089,7 +1089,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/JsonNode"
+                "$ref": "#/components/schemas/JsonObject"
               }
             }
           },
@@ -1108,6 +1108,16 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1544,6 +1554,16 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -10845,6 +10865,7 @@
           "id",
           "externalId",
           "isAllDay",
+          "metadata",
           "attendees",
           "calendars",
           "etag",
@@ -11020,14 +11041,7 @@
             }
           },
           "metadata": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/JsonNode"
-              }
-            ]
+            "$ref": "#/components/schemas/JsonObject"
           },
           "prompt": {
             "oneOf": [
@@ -11494,6 +11508,7 @@
           "channels",
           "profiles",
           "emergencyContactIds",
+          "metadata",
           "version",
           "etag"
         ],
@@ -11612,14 +11627,7 @@
             "description": "Ordered designation (first = highest priority) — who to call about this person, not a kinship."
           },
           "metadata": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/JsonNode"
-              }
-            ]
+            "$ref": "#/components/schemas/JsonObject"
           },
           "completeness": {
             "oneOf": [
@@ -12549,7 +12557,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/JsonNode"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ]
           }
@@ -12986,7 +12994,7 @@
             "format": "int32"
           }
         },
-        "description": "A date known to year, year-month, or full-day precision — the precision itself carries the certainty\n            (\"2015\" means \"sometime in 2015\"). Used for residency boundaries on ContactPostalAddress.\n            int FuzzyDate.Year is always present; int? FuzzyDate.Day requires int? FuzzyDate.Month. Distinct from\n            PartialDate, which models the opposite case (year unknown, month-day known)."
+        "description": "A date known to year, year-month, or full-day precision — the precision itself carries the certainty\n            (\"2015\" means \"sometime in 2015\"). Used for residency boundaries.\n            int FuzzyDate.Year is always present; int? FuzzyDate.Day requires int? FuzzyDate.Month. Distinct from\n            PartialDate, which models the opposite case (year unknown, month-day known)."
       },
       "GapSeverity": {
         "enum": [
@@ -13500,7 +13508,7 @@
               },
               {
                 "description": "Free-form JSON for agent/server bookkeeping. Server-side only — never in the public share DTO.",
-                "$ref": "#/components/schemas/JsonNode"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ]
           }
@@ -13578,7 +13586,6 @@
           "Cancelled"
         ]
       },
-      "JsonNode": { },
       "JsonObject": {
         "type": "object"
       },
@@ -15535,7 +15542,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/JsonNode"
+                "$ref": "#/components/schemas/JsonObject"
               }
             ]
           }

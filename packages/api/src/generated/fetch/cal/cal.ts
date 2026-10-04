@@ -25,7 +25,7 @@ import type {
   GrantOwnerRequest,
   HotspotDto,
   InviteParticipantParams,
-  JsonNode,
+  JsonObject,
   LeaveItemParams,
   ListRelationEdgesParams,
   MergeItemMetadataParams,
@@ -780,6 +780,11 @@ export type mergeItemMetadataResponse200 = {
   status: 200
 }
 
+export type mergeItemMetadataResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
 export type mergeItemMetadataResponse401 = {
   data: ProblemDetails
   status: 401
@@ -798,7 +803,7 @@ export type mergeItemMetadataResponse500 = {
 export type mergeItemMetadataResponseSuccess = (mergeItemMetadataResponse200) & {
   headers: Headers;
 };
-export type mergeItemMetadataResponseError = (mergeItemMetadataResponse401 | mergeItemMetadataResponse404 | mergeItemMetadataResponse500) & {
+export type mergeItemMetadataResponseError = (mergeItemMetadataResponse400 | mergeItemMetadataResponse401 | mergeItemMetadataResponse404 | mergeItemMetadataResponse500) & {
   headers: Headers;
 };
 
@@ -824,7 +829,7 @@ export const getMergeItemMetadataUrl = (id: string,
  * @summary Merge arbitrary JSON metadata into a calendar item. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe, last-writer-wins merges.
  */
 export const mergeItemMetadata = async (id: string,
-    jsonNode: JsonNode,
+    jsonObject: JsonObject,
     params?: MergeItemMetadataParams, options?: Parameters<typeof apiRequest>[1]): Promise<mergeItemMetadataResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
@@ -846,7 +851,7 @@ return apiRequest<mergeItemMetadataResponse>(getMergeItemMetadataUrl(id,params),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(jsonNode)
+    body: JSON.stringify(jsonObject)
   }
 );}
 
@@ -1122,6 +1127,11 @@ export type createItemRelationResponse200 = {
   status: 200
 }
 
+export type createItemRelationResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
 export type createItemRelationResponse401 = {
   data: ProblemDetails
   status: 401
@@ -1140,7 +1150,7 @@ export type createItemRelationResponse500 = {
 export type createItemRelationResponseSuccess = (createItemRelationResponse200) & {
   headers: Headers;
 };
-export type createItemRelationResponseError = (createItemRelationResponse401 | createItemRelationResponse404 | createItemRelationResponse500) & {
+export type createItemRelationResponseError = (createItemRelationResponse400 | createItemRelationResponse401 | createItemRelationResponse404 | createItemRelationResponse500) & {
   headers: Headers;
 };
 

@@ -44,7 +44,7 @@ import type {
   GrantOwnerRequest,
   HotspotDto,
   InviteParticipantParams,
-  JsonNode,
+  JsonObject,
   LeaveItemParams,
   ListRelationEdgesParams,
   MergeItemMetadataParams,
@@ -1215,7 +1215,7 @@ export const getMergeItemMetadataUrl = (id: string,
  * @summary Merge arbitrary JSON metadata into a calendar item. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe, last-writer-wins merges.
  */
 export const mergeItemMetadata = async (id: string,
-    jsonNode: JsonNode,
+    jsonObject: JsonObject,
     params?: MergeItemMetadataParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
@@ -1237,7 +1237,7 @@ return apiRequest<CalendarItemDto>(getMergeItemMetadataUrl(id,params),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(jsonNode)
+    body: JSON.stringify(jsonObject)
   }
 );}
 
@@ -1275,9 +1275,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type MergeItemMetadataMutationResult = NonNullable<Awaited<ReturnType<typeof mergeItemMetadata>>>
-    export type MergeItemMetadataMutationBody = JsonNode
+    export type MergeItemMetadataMutationBody = JsonObject
     export type MergeItemMetadataMutationError = ProblemDetails
-    export type MergeItemMetadataMutationVariables = {id: string;data: JsonNode;params?: MergeItemMetadataParams}
+    export type MergeItemMetadataMutationVariables = {id: string;data: JsonObject;params?: MergeItemMetadataParams}
 
     /**
  * @summary Merge arbitrary JSON metadata into a calendar item. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe, last-writer-wins merges.

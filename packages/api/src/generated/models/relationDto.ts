@@ -4,7 +4,7 @@
  * LupiraCal BFF
  * OpenAPI spec version: v1
  */
-import type { JsonNode } from './jsonNode';
+import type { JsonObject } from './jsonObject';
 
 export interface RelationDto {
   id: string;
@@ -13,5 +13,5 @@ export interface RelationDto {
   toKind: string;
   toRef: string;
   relationType: string;
-  metadata?: null | JsonNode;
+  metadata?: null | JsonObject;
 }

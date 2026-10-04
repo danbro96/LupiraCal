@@ -4,11 +4,11 @@
  * LupiraCal BFF
  * OpenAPI spec version: v1
  */
-import type { JsonNode } from './jsonNode';
+import type { JsonObject } from './jsonObject';
 
 export interface CreateRelationRequest {
   toKind: string;
   toRef: string;
   relationType: string;
-  metadata?: null | JsonNode;
+  metadata?: null | JsonObject;
 }

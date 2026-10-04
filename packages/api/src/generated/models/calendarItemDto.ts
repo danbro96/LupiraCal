@@ -13,7 +13,7 @@ import type { ItemCategory } from './itemCategory';
 import type { ItemDetails } from './itemDetails';
 import type { ItemPrompt } from './itemPrompt';
 import type { ItemStatus } from './itemStatus';
-import type { JsonNode } from './jsonNode';
+import type { JsonObject } from './jsonObject';
 import type { OccurrenceOverride } from './occurrenceOverride';
 
 export interface CalendarItemDto {
@@ -64,7 +64,7 @@ export interface CalendarItemDto {
   parentItemId?: string | null;
   /** @nullable */
   tags?: string[] | null;
-  metadata?: null | JsonNode;
+  metadata: JsonObject;
   prompt?: null | ItemPrompt;
   action?: null | ItemAction;
   completeness?: null | CompletenessScore;

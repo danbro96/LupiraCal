@@ -110,7 +110,6 @@ export * from './itemDetailsRequest';
 export * from './itemDto';
 export * from './itemPrompt';
 export * from './itemStatus';
-export * from './jsonNode';
 export * from './jsonObject';
 export * from './leaveItemParams';
 export * from './listContactRelationsParams';
