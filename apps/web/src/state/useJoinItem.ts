@@ -7,13 +7,21 @@ export function useJoinItem() {
   const invalidate = useInvalidateItems();
   const invite = useInviteParticipant();
   const respond = useRespondToInvitation();
-  return async (itemId: string, contactId: string): Promise<void> => {
-    try {
-      const item = await invite.mutateAsync({ id: itemId, params: { contactId } });
-      const participationId = participationIdOf(item, contactId);
-      if (participationId) await respond.mutateAsync({ id: itemId, participationId, params: { status: 'accepted' } });
-    } finally {
-      invalidate();
-    }
-  };
+  return (itemId: string, contactId: string): Promise<void> => joinItem(invite, respond, invalidate, itemId, contactId);
+}
+
+async function joinItem(
+  invite: ReturnType<typeof useInviteParticipant>,
+  respond: ReturnType<typeof useRespondToInvitation>,
+  invalidate: () => unknown,
+  itemId: string,
+  contactId: string,
+): Promise<void> {
+  try {
+    const item = await invite.mutateAsync({ id: itemId, params: { contactId } });
+    const participationId = participationIdOf(item, contactId);
+    if (participationId) await respond.mutateAsync({ id: itemId, participationId, params: { status: 'accepted' } });
+  } finally {
+    invalidate();
+  }
 }

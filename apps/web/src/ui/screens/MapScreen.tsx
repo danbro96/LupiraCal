@@ -408,7 +408,7 @@ function MapClicks({ onHits }: { onHits: (hits: MapHit[]) => void }) {
         const source = map.getSource(f.source) as GeoJSONSource;
         const clusterId = f.properties.cluster_id as number;
         const zoom = await source.getClusterExpansionZoom(clusterId);
-        if (zoom <= PIN_CLUSTERS.maxZoom) expand ??= { feature: f, zoom };
+        if (zoom <= PIN_CLUSTERS.maxZoom) expand = expand ?? { feature: f, zoom };
         else found.push(...(await source.getClusterLeaves(clusterId, PIN_CLUSTERS.leaves, 0)));
       }
 

@@ -25,28 +25,7 @@ export function LoginScreen({ navigation }: NativeStackScreenProps<RootStackPara
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const signIn = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      // createTask:false keeps the browser in our Android task — otherwise the redirect lands in a
-      // separate task and the prompt resolves 'dismiss' (expo/expo#23781).
-      const result = await promptAsync({ createTask: false });
-      if (result.type !== 'success') {
-        logDebug('auth', `sign-in ${result.type}`);
-        if (result.type === 'error') setError(result.error?.message ?? 'Sign-in failed.');
-        return;
-      }
-      const tokens = await exchangeAuthCode(result.params.code, redirectUri, request!.codeVerifier!);
-      await useAuth.getState().setSession(tokens);
-      logDebug('auth', 'signed in');
-    } catch (e) {
-      logDebug('auth', `sign-in failed: ${String(e)}`);
-      setError(String(e));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const signIn = () => signInWith(request, promptAsync, setBusy, setError);
 
   return (
     <View style={styles.container}>
@@ -64,6 +43,36 @@ export function LoginScreen({ navigation }: NativeStackScreenProps<RootStackPara
         </Button>
     </View>
   );
+}
+
+type AuthRequestState = ReturnType<typeof AuthSession.useAuthRequest>;
+
+async function signInWith(
+  request: AuthRequestState[0],
+  promptAsync: AuthRequestState[2],
+  setBusy: (busy: boolean) => void,
+  setError: (error: string | null) => void,
+) {
+  setBusy(true);
+  setError(null);
+  try {
+    // createTask:false keeps the browser in our Android task — otherwise the redirect lands in a
+    // separate task and the prompt resolves 'dismiss' (expo/expo#23781).
+    const result = await promptAsync({ createTask: false });
+    if (result.type !== 'success') {
+      logDebug('auth', `sign-in ${result.type}`);
+      if (result.type === 'error') setError(result.error?.message ?? 'Sign-in failed.');
+      return;
+    }
+    const tokens = await exchangeAuthCode(result.params.code, redirectUri, request!.codeVerifier!);
+    await useAuth.getState().setSession(tokens);
+    logDebug('auth', 'signed in');
+  } catch (e) {
+    logDebug('auth', `sign-in failed: ${String(e)}`);
+    setError(String(e));
+  } finally {
+    setBusy(false);
+  }
 }
 
 const styles = StyleSheet.create({

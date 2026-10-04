@@ -7,9 +7,10 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useLayoutEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Chip, HelperText, IconButton, List, Switch, Text } from 'react-native-paper';
-import type { ReachChannel, SocialProfile } from '../../domain/docTypes';
+import type { ContactDoc, ReachChannel, SocialProfile } from '../../domain/docTypes';
 import { REACH_KINDS } from '../../domain/reach';
 import type { ContactForm } from '../../domain/editors';
+import type { ContactCore } from '../../domain/ops';
 import { parseList } from '@lupira/cal-domain/itemForm';
 import { CHANNEL_TYPES as SHARED_CHANNEL_TYPES } from '@lupira/cal-domain/reach';
 import { contactCoreFromForm, contactFormFromDoc, emptyContactForm } from '../../domain/editors';
@@ -94,22 +95,7 @@ export function ContactEditScreen() {
     const cleanProfiles = profiles.filter((p) => p.service.trim() && p.handle.trim());
     const tags = withPinPreserved(parseList(tagsCsv), contactId ? state?.doc.tags : null);
 
-    try {
-      if (!contactId) {
-        const id = await createContact(bookId, { ...r.value, channels: cleanChannels, tags });
-        if (cleanProfiles.length > 0) await setContactProfiles(id, cleanProfiles);
-      } else {
-        const doc = state?.doc;
-        await reviseContact(contactId, r.value);
-        if (JSON.stringify(cleanChannels) !== JSON.stringify(doc?.channels ?? [])) await setContactChannels(contactId, cleanChannels);
-        if (JSON.stringify(tags) !== JSON.stringify(doc?.tags ?? [])) await setContactTags(contactId, tags);
-        if (JSON.stringify(cleanProfiles) !== JSON.stringify(doc?.profiles ?? [])) await setContactProfiles(contactId, cleanProfiles);
-      }
-      return true;
-    } catch (e) {
-      setError(errorText(e));
-      return false;
-    }
+    return saveContact(contactId, bookId, r.value, cleanChannels, cleanProfiles, tags, state?.doc, setError);
   };
 
   const guard = useUnsavedGuard(dirty, {
@@ -310,4 +296,31 @@ const styles = StyleSheet.create({
 
 function snapshot(form: ContactForm, channels: ReachChannel[], profiles: SocialProfile[], tagsCsv: string): string {
   return JSON.stringify([form, channels, profiles, tagsCsv.trim()]);
+}
+
+async function saveContact(
+  contactId: string | undefined,
+  bookId: string,
+  core: ContactCore,
+  cleanChannels: ReachChannel[],
+  cleanProfiles: SocialProfile[],
+  tags: string[],
+  doc: ContactDoc | undefined,
+  setError: (error: string | null) => void,
+): Promise<boolean> {
+  try {
+    if (!contactId) {
+      const id = await createContact(bookId, { ...core, channels: cleanChannels, tags });
+      if (cleanProfiles.length > 0) await setContactProfiles(id, cleanProfiles);
+    } else {
+      await reviseContact(contactId, core);
+      if (JSON.stringify(cleanChannels) !== JSON.stringify(doc?.channels ?? [])) await setContactChannels(contactId, cleanChannels);
+      if (JSON.stringify(tags) !== JSON.stringify(doc?.tags ?? [])) await setContactTags(contactId, tags);
+      if (JSON.stringify(cleanProfiles) !== JSON.stringify(doc?.profiles ?? [])) await setContactProfiles(contactId, cleanProfiles);
+    }
+    return true;
+  } catch (e) {
+    setError(errorText(e));
+    return false;
+  }
 }

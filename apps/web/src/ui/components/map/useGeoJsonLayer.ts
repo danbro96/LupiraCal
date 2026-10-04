@@ -26,23 +26,7 @@ export function useGeoJsonLayer(
   layers: readonly LayerSpecSansSource[],
   options?: GeoJsonLayerOptions,
 ) {
-  const ensure = useEffectEvent(() => {
-    try {
-      if (!map.getSource(sourceId)) {
-        map.addSource(sourceId, {
-          type: 'geojson',
-          data,
-          ...(options?.cluster ? { cluster: true, clusterMaxZoom: PIN_CLUSTERS.maxZoom, clusterRadius: PIN_CLUSTERS.radius } : {}),
-        });
-      }
-      const beforeId = options?.beneathData ? firstDataLayerId(map, sourceId) : undefined;
-      for (const spec of layers) {
-        if (!map.getLayer(spec.id)) map.addLayer({ ...spec, source: sourceId } as LayerSpecification, beforeId);
-      }
-    } catch {
-      // Style mid-transition — the next styledata tick retries.
-    }
-  });
+  const ensure = useEffectEvent(() => ensureGeoJsonLayer(map, sourceId, data, layers, options));
 
   useEffect(() => {
     const onStyle = () => ensure();
@@ -52,12 +36,7 @@ export function useGeoJsonLayer(
     return () => {
       map.off('load', onStyle);
       map.off('styledata', onStyle);
-      try {
-        for (const spec of layers) if (map.getLayer(spec.id)) map.removeLayer(spec.id);
-        if (map.getSource(sourceId)) map.removeSource(sourceId);
-      } catch {
-        // Map already removed.
-      }
+      removeGeoJsonLayer(map, sourceId, layers);
     };
   }, [map, sourceId, layers]);
 
@@ -81,6 +60,39 @@ export function useGeoJsonLayer(
       }
     };
   }, [map, interactive]);
+}
+
+function ensureGeoJsonLayer(
+  map: MapLibreMap,
+  sourceId: string,
+  data: FeatureCollection,
+  layers: readonly LayerSpecSansSource[],
+  options?: GeoJsonLayerOptions,
+) {
+  try {
+    if (!map.getSource(sourceId)) {
+      map.addSource(sourceId, {
+        type: 'geojson',
+        data,
+        ...(options?.cluster ? { cluster: true, clusterMaxZoom: PIN_CLUSTERS.maxZoom, clusterRadius: PIN_CLUSTERS.radius } : {}),
+      });
+    }
+    const beforeId = options?.beneathData ? firstDataLayerId(map, sourceId) : undefined;
+    for (const spec of layers) {
+      if (!map.getLayer(spec.id)) map.addLayer({ ...spec, source: sourceId } as LayerSpecification, beforeId);
+    }
+  } catch {
+    // Style mid-transition — the next styledata tick retries.
+  }
+}
+
+function removeGeoJsonLayer(map: MapLibreMap, sourceId: string, layers: readonly LayerSpecSansSource[]) {
+  try {
+    for (const spec of layers) if (map.getLayer(spec.id)) map.removeLayer(spec.id);
+    if (map.getSource(sourceId)) map.removeSource(sourceId);
+  } catch {
+    // Map already removed.
+  }
 }
 
 function firstDataLayerId(map: MapLibreMap, ownSourceId: string): string | undefined {

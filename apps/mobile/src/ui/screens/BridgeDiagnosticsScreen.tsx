@@ -31,15 +31,7 @@ export function BridgeDiagnosticsScreen() {
     void refresh();
   }, [refresh]);
 
-  const run = (label: string, fn: () => Promise<unknown>) => async () => {
-    try {
-      const result = await fn();
-      append(`${label}: ${result === undefined ? 'ok' : JSON.stringify(result)}`);
-    } catch (e) {
-      append(`${label} FAILED: ${String(e)}`);
-    }
-    await refresh();
-  };
+  const run = (label: string, fn: () => Promise<unknown>) => () => runLogged(label, fn, append, refresh);
 
   const requestPermissions = run('permissions', () =>
     PermissionsAndroid.requestMultiple([
@@ -110,6 +102,16 @@ export function BridgeDiagnosticsScreen() {
       {log.map((l, i) => <Text key={i} style={styles.mono}>{l}</Text>)}
     </ScrollView>
   );
+}
+
+async function runLogged(label: string, fn: () => Promise<unknown>, append: (line: string) => void, refresh: () => Promise<void>) {
+  try {
+    const result = await fn();
+    append(`${label}: ${result === undefined ? 'ok' : JSON.stringify(result)}`);
+  } catch (e) {
+    append(`${label} FAILED: ${String(e)}`);
+  }
+  await refresh();
 }
 
 const styles = StyleSheet.create({

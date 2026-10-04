@@ -5,6 +5,15 @@ import * as Updates from 'expo-updates';
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
+async function fetchAvailableUpdate(): Promise<void> {
+  try {
+    const result = await Updates.checkForUpdateAsync();
+    if (result.isAvailable) await Updates.fetchUpdateAsync();
+  } catch (e) {
+    Sentry.addBreadcrumb({ category: 'updates', level: 'warning', message: String(e) });
+  }
+}
+
 export function useAutoUpdate(): void {
   const { isUpdatePending } = Updates.useUpdates();
   const busy = useRef(false);
@@ -22,14 +31,8 @@ export function useAutoUpdate(): void {
       if (busy.current || now - lastCheck.current < CHECK_INTERVAL_MS) return;
       busy.current = true;
       lastCheck.current = now;
-      try {
-        const result = await Updates.checkForUpdateAsync();
-        if (result.isAvailable) await Updates.fetchUpdateAsync();
-      } catch (e) {
-        Sentry.addBreadcrumb({ category: 'updates', level: 'warning', message: String(e) });
-      } finally {
-        busy.current = false;
-      }
+      await fetchAvailableUpdate();
+      busy.current = false;
     };
 
     void check();

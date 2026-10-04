@@ -16,6 +16,8 @@ import {
 import {
   acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc,
 } from '../../domain/editors';
+import type { ItemDoc } from '../../domain/docTypes';
+import type { ItemCore } from '../../domain/ops';
 import { saveItem } from '../../state/actions';
 import { usePrefs } from '../../state/prefs-store';
 import { useContactList } from '../../state/useContactList';
@@ -134,19 +136,7 @@ export function ItemEditScreen() {
       return false;
     }
     setError(null);
-    try {
-      await saveItem(itemId, {
-        core: r.value,
-        ...filingChanges(state?.doc.calendars ?? [], calendarIds),
-        ...attendeeChanges(state?.doc.attendees ?? [], attendeeIds),
-        accept: me ? [me] : [],
-      });
-      if (!itemId) void usePrefs.getState().setLastCalendarIds(calendarIds);
-      return true;
-    } catch (e) {
-      setError(String(e));
-      return false;
-    }
+    return persistItem(itemId, r.value, state?.doc, calendarIds, attendeeIds, me, setError);
   };
   const guard = useUnsavedGuard(dirty, {
     message: 'Save this event before leaving?',
@@ -348,6 +338,30 @@ function MoreRow({ icon, title, value, onPress }: { icon: string; title: string;
       onPress={onPress}
     />
   );
+}
+
+async function persistItem(
+  itemId: string | undefined,
+  core: ItemCore,
+  doc: ItemDoc | undefined,
+  calendarIds: string[],
+  attendeeIds: string[],
+  me: string | null,
+  setError: (error: string | null) => void,
+): Promise<boolean> {
+  try {
+    await saveItem(itemId, {
+      core,
+      ...filingChanges(doc?.calendars ?? [], calendarIds),
+      ...attendeeChanges(doc?.attendees ?? [], attendeeIds),
+      accept: me ? [me] : [],
+    });
+    if (!itemId) void usePrefs.getState().setLastCalendarIds(calendarIds);
+    return true;
+  } catch (e) {
+    setError(String(e));
+    return false;
+  }
 }
 
 const styles = StyleSheet.create({

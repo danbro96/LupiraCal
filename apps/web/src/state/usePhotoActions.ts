@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { createItemRelationsBatch, deleteItemRelationsBatch } from '@lupira/cal-api/query/cal';
 import { deletePhoto, emptyPhotoTrash, restorePhoto, trashPhoto } from '@lupira/cal-api/query/photo';
 import { PHOTO_LINK } from '@lupira/cal-domain/photoFormat';
@@ -13,21 +13,9 @@ export function usePhotoActions() {
   const invalidate = useInvalidatePhotos();
   const [pending, setPending] = useState(0);
 
-  const track = async (run: () => Promise<Outcome>): Promise<Outcome> => {
-    setPending((n) => n + 1);
-    try {
-      return await run();
-    } finally {
-      setPending((n) => n - 1);
-      void invalidate();
-    }
-  };
+  const track = (run: () => Promise<Outcome>): Promise<Outcome> => trackPending(run, setPending, invalidate);
 
-  const each = (ids: readonly string[], call: (id: string) => Promise<unknown>) => track(async () => {
-    let failed = 0;
-    for (const id of ids) await call(id).catch(() => { failed++; });
-    return { done: ids.length - failed, failed };
-  });
+  const each = (ids: readonly string[], call: (id: string) => Promise<unknown>) => track(() => settleEach(ids, call));
 
   const once = (call: () => Promise<unknown>, count: number) => track(() =>
     call().then(() => ({ done: count, failed: 0 }), () => ({ done: 0, failed: count })));
@@ -43,4 +31,24 @@ export function usePhotoActions() {
       once(() => deleteItemRelationsBatch(itemId, { ...PHOTO_LINK, toRefs: [...photoIds] }), photoIds.length),
     busy: pending > 0,
   };
+}
+
+async function trackPending(
+  run: () => Promise<Outcome>,
+  setPending: Dispatch<SetStateAction<number>>,
+  invalidate: () => Promise<void>,
+): Promise<Outcome> {
+  setPending((n) => n + 1);
+  try {
+    return await run();
+  } finally {
+    setPending((n) => n - 1);
+    void invalidate();
+  }
+}
+
+async function settleEach(ids: readonly string[], call: (id: string) => Promise<unknown>): Promise<Outcome> {
+  let failed = 0;
+  for (const id of ids) await call(id).catch(() => { failed++; });
+  return { done: ids.length - failed, failed };
 }

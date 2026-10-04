@@ -45,16 +45,7 @@ export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
     onDismiss();
   };
 
-  const create = async (hit: GeocodeResultDto) => {
-    setCreating(true);
-    try {
-      pick(await createPlaceFromHit(hit, addressQuery));
-    } catch {
-      toastError('Could not create that place.');
-    } finally {
-      setCreating(false);
-    }
-  };
+  const create = (hit: GeocodeResultDto) => createAndPick(hit, addressQuery, pick, setCreating);
 
   return (
     <Sheet anchor="top" onDismiss={onDismiss}>
@@ -105,6 +96,21 @@ export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
   );
 }
 
+async function createAndPick(
+  hit: GeocodeResultDto,
+  addressQuery: string,
+  pick: (place: PlaceOption) => void,
+  setCreating: (creating: boolean) => void,
+) {
+  setCreating(true);
+  try {
+    pick(await createPlaceFromHit(hit, addressQuery));
+  } catch {
+    toastError('Could not create that place.');
+  } finally {
+    setCreating(false);
+  }
+}
 
 /** A current resident outranks everything else the row could say, so it gets the icon and the colour. */
 function PlaceRow({ place, onPress }: { place: PickerPlace; onPress: () => void }) {

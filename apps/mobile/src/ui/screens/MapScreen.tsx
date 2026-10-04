@@ -188,7 +188,7 @@ export function MapScreen() {
         }
         const clusterId = f.properties.cluster_id as number;
         const zoom = await source.current?.getClusterExpansionZoom(clusterId);
-        if (zoom != null && zoom <= PIN_CLUSTERS.maxZoom) expand ??= { feature: f, zoom };
+        if (zoom != null && zoom <= PIN_CLUSTERS.maxZoom) expand = expand ?? { feature: f, zoom };
         else found.push(...((await source.current?.getClusterLeaves(clusterId, PIN_CLUSTERS.leaves, 0)) ?? []));
       }
     }

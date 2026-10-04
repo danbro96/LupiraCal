@@ -2,8 +2,8 @@ import { useQueryClient } from '@tanstack/react-query';
 
 /**
  * Invalidation helpers over the orval-generated query keys, which are the BFF's own paths — every
- * one carries its route prefix, so `/api/items` (cal) and `/tasks-api/items` (tasks) no longer
- * collide and a prefix match can no longer sweep the wrong API's queries.
+ * one carries its route prefix, so `/api/items` (cal) and `/tasks-api/items` (tasks) never
+ * collide and a prefix match can't sweep the wrong API's queries.
  *
  * Match on the prefixed path. A bare `/items` matches nothing.
  */

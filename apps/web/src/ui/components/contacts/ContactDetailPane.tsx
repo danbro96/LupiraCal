@@ -57,7 +57,7 @@ export function ContactDetailPane() {
   const navigate = useNavigate();
   const { data: contact, isLoading } = useGetContact(contactId ?? '', { query: { enabled: !!contactId } });
   // One BFF call, fired alongside the contact rather than after it: it resolves the address book id
-  // server-side, so the groups and the emergency-contact names no longer wait a round trip.
+  // server-side, so the groups and the emergency-contact names don't wait a round trip.
   const { data: context } = useGetContactContext(contactId ?? '', { query: { enabled: !!contactId } });
   const invalidate = useInvalidateContacts();
   const showSnack = useSnackbar();

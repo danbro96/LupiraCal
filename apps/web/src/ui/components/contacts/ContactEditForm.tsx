@@ -215,9 +215,7 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
       return;
     }
 
-    // Parse before the first write. This used to sit between the name write and the address write,
-    // so an unparseable residency date returned with the rename already committed — the user saw a
-    // validation error and no sign that half the form had saved.
+    // Parse before the first write, so an unparseable residency date can't leave the form half-saved.
     const cleanAddresses: (AddressValues & { id: string | null })[] = [];
     for (const a of v.addresses) {
       if (!a.placeId) continue;
@@ -231,43 +229,9 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
     }
 
     try {
-      const rev: ReviseContactRequest = {};
-      if (norm(v.givenName) !== norm(contact.givenName)) rev.givenName = v.givenName;
-      if (norm(v.middleName) !== norm(contact.middleName)) rev.middleName = v.middleName;
-      if (norm(v.familyName) !== norm(contact.familyName)) rev.familyName = v.familyName;
-      if (norm(v.nickname) !== norm(contact.nickname)) rev.nickname = v.nickname;
-      if (v.displayNameFormat !== (contact.displayNameFormat ?? DisplayNameFormat.Full)) rev.displayNameFormat = v.displayNameFormat;
-      const nextBirthday = birthdayFromFields({
-        yearKnown: v.birthdayYearKnown, date: v.birthday, month: v.birthdayMonth, day: v.birthdayDay,
+      await persistContact(v, contact, residencies, cleanAddresses, {
+        revise, setChannels, setTags, addResidency, reviseResidency, removeResidency, setProfiles, setEmergency, markDeceased, clearDeceased,
       });
-      if (partialDateKey(nextBirthday) !== partialDateKey(contact.birthday)) rev.birthday = nextBirthday;
-      if (Object.keys(rev).length > 0) await revise.mutateAsync({ id, data: rev });
-
-      const cleanChannels = v.channels.filter((c) => c.value.trim()).map((c) => ({ ...c, value: c.value.trim() }));
-      if (JSON.stringify(cleanChannels) !== JSON.stringify(contact.channels)) await setChannels.mutateAsync({ id, data: { channels: cleanChannels } });
-      const nextTags = withPinPreserved(v.tags, contact.tags);
-      if (!sameList(nextTags, contact.tags ?? [])) await setTags.mutateAsync({ id, data: { tags: nextTags } });
-
-      const kept = new Set(cleanAddresses.flatMap((a) => (a.id ? [a.id] : [])));
-      for (const r of residencies.filter((x) => !kept.has(x.id))) await removeResidency.mutateAsync({ id: r.id });
-      for (const { id: residencyId, ...data } of cleanAddresses) {
-        if (!residencyId) await addResidency.mutateAsync({ id, data });
-        else if (residencyKey(data) !== residencyKey(residencies.find((r) => r.id === residencyId)!))
-          await reviseResidency.mutateAsync({ id: residencyId, data });
-      }
-
-      const cleanProfiles = v.profiles.filter((p) => norm(p.service) && norm(p.handle));
-      if (JSON.stringify(cleanProfiles) !== JSON.stringify(contact.profiles))
-        await setProfiles.mutateAsync({ id, data: { profiles: cleanProfiles } });
-
-      if (!sameList(v.emergency, contact.emergencyContactIds))
-        await setEmergency.mutateAsync({ id, data: { contactIds: v.emergency } });
-
-      if (v.deceased !== !!contact.deceased || (v.deceased && v.deathDate !== (contact.deathDate ?? ''))) {
-        if (v.deceased) await markDeceased.mutateAsync({ id, data: { deathDate: v.deathDate || null } });
-        else await clearDeceased.mutateAsync({ id });
-      }
-
       invalidate();
       onDone();
     } catch (e) {
@@ -614,5 +578,64 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
  *  an edit must not silently drop what an import wrote. */
 function withCurrent(options: readonly string[], current: string | null | undefined): string[] {
   return current && !options.includes(current) ? [...options, current] : [...options];
+}
+
+type ContactWrites = {
+  revise: ReturnType<typeof useReviseContact>;
+  setChannels: ReturnType<typeof useSetContactChannels>;
+  setTags: ReturnType<typeof useSetContactTags>;
+  addResidency: ReturnType<typeof useAddResidency>;
+  reviseResidency: ReturnType<typeof useReviseResidency>;
+  removeResidency: ReturnType<typeof useRemoveResidency>;
+  setProfiles: ReturnType<typeof useSetContactProfiles>;
+  setEmergency: ReturnType<typeof useSetEmergencyContacts>;
+  markDeceased: ReturnType<typeof useMarkContactDeceased>;
+  clearDeceased: ReturnType<typeof useClearContactDeceased>;
+};
+
+async function persistContact(
+  v: ContactFormValues,
+  contact: ContactDto,
+  residencies: ResidencyDto[],
+  cleanAddresses: (AddressValues & { id: string | null })[],
+  writes: ContactWrites,
+): Promise<void> {
+  const id = contact.id;
+  const rev: ReviseContactRequest = {};
+  if (norm(v.givenName) !== norm(contact.givenName)) rev.givenName = v.givenName;
+  if (norm(v.middleName) !== norm(contact.middleName)) rev.middleName = v.middleName;
+  if (norm(v.familyName) !== norm(contact.familyName)) rev.familyName = v.familyName;
+  if (norm(v.nickname) !== norm(contact.nickname)) rev.nickname = v.nickname;
+  if (v.displayNameFormat !== (contact.displayNameFormat ?? DisplayNameFormat.Full)) rev.displayNameFormat = v.displayNameFormat;
+  const nextBirthday = birthdayFromFields({
+    yearKnown: v.birthdayYearKnown, date: v.birthday, month: v.birthdayMonth, day: v.birthdayDay,
+  });
+  if (partialDateKey(nextBirthday) !== partialDateKey(contact.birthday)) rev.birthday = nextBirthday;
+  if (Object.keys(rev).length > 0) await writes.revise.mutateAsync({ id, data: rev });
+
+  const cleanChannels = v.channels.filter((c) => c.value.trim()).map((c) => ({ ...c, value: c.value.trim() }));
+  if (JSON.stringify(cleanChannels) !== JSON.stringify(contact.channels)) await writes.setChannels.mutateAsync({ id, data: { channels: cleanChannels } });
+  const nextTags = withPinPreserved(v.tags, contact.tags);
+  if (!sameList(nextTags, contact.tags ?? [])) await writes.setTags.mutateAsync({ id, data: { tags: nextTags } });
+
+  const kept = new Set(cleanAddresses.flatMap((a) => (a.id ? [a.id] : [])));
+  for (const r of residencies.filter((x) => !kept.has(x.id))) await writes.removeResidency.mutateAsync({ id: r.id });
+  for (const { id: residencyId, ...data } of cleanAddresses) {
+    if (!residencyId) await writes.addResidency.mutateAsync({ id, data });
+    else if (residencyKey(data) !== residencyKey(residencies.find((r) => r.id === residencyId)!))
+      await writes.reviseResidency.mutateAsync({ id: residencyId, data });
+  }
+
+  const cleanProfiles = v.profiles.filter((p) => norm(p.service) && norm(p.handle));
+  if (JSON.stringify(cleanProfiles) !== JSON.stringify(contact.profiles))
+    await writes.setProfiles.mutateAsync({ id, data: { profiles: cleanProfiles } });
+
+  if (!sameList(v.emergency, contact.emergencyContactIds))
+    await writes.setEmergency.mutateAsync({ id, data: { contactIds: v.emergency } });
+
+  if (v.deceased !== !!contact.deceased || (v.deceased && v.deathDate !== (contact.deathDate ?? ''))) {
+    if (v.deceased) await writes.markDeceased.mutateAsync({ id, data: { deathDate: v.deathDate || null } });
+    else await writes.clearDeceased.mutateAsync({ id });
+  }
 }
 
