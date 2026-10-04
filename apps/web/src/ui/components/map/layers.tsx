@@ -3,6 +3,10 @@ import { useMemo } from 'react';
 import type { LocationTripDto } from '@lupira/cal-api/models';
 import { useMap } from './MapCanvas';
 import { ACTIVITY_COLORS, activityColorExpression, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
+import {
+  CLUSTER, CLUSTER_COUNT_LAYOUT, CURRENT_FIX, HOTSPOT, PIN, PIN_LABEL_HALO_WIDTH, PIN_LABEL_LAYOUT, TRACK, VISIT, clusterRadius,
+  hotspotRadius,
+} from '@lupira/cal-tokens/mapPaint';
 import { useGeoJsonLayer, type LayerSpecSansSource } from './useGeoJsonLayer';
 
 /** The layers a click resolves against, by source (MapScreen queries them all at once). */
@@ -23,11 +27,7 @@ interface CommonLayerProps {
   theme: MapTheme;
 }
 
-const CLUSTER_TEXT: LayerSpecSansSource['layout'] = {
-  'text-field': ['get', 'point_count_abbreviated'],
-  'text-font': ['Noto Sans Medium'],
-  'text-size': 12,
-};
+const CLUSTER_TEXT = { ...CLUSTER_COUNT_LAYOUT, 'text-field': ['get', 'point_count_abbreviated'] } as LayerSpecSansSource['layout'];
 
 /** Event pins colored by source calendar. */
 export function EventsLayer({ theme, features }: { theme: MapTheme; features: FeatureCollection }) {
@@ -38,10 +38,10 @@ export function EventsLayer({ theme, features }: { theme: MapTheme; features: Fe
     {
       id: 'events-clusters', type: 'circle', filter: ['has', 'point_count'],
       paint: {
-        'circle-radius': ['step', ['get', 'point_count'], 12, 10, 16, 50, 22],
+        'circle-radius': clusterRadius('pointer') as never,
         'circle-color': colors.eventFallback,
-        'circle-opacity': 0.85,
-        'circle-stroke-width': 2,
+        'circle-opacity': CLUSTER.opacity,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.ring,
       },
     },
@@ -53,9 +53,9 @@ export function EventsLayer({ theme, features }: { theme: MapTheme; features: Fe
     {
       id: 'events-pins', type: 'circle', filter: ['!', ['has', 'point_count']],
       paint: {
-        'circle-radius': 7,
+        'circle-radius': PIN.event,
         'circle-color': ['coalesce', ['get', 'color'], colors.eventFallback],
-        'circle-stroke-width': 2,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.ring,
       },
     },
@@ -77,10 +77,10 @@ export function ContactsLayer({ theme, features }: CommonLayerProps & { features
     {
       id: 'contacts-clusters', type: 'circle', filter: ['has', 'point_count'],
       paint: {
-        'circle-radius': ['step', ['get', 'point_count'], 11, 10, 15],
+        'circle-radius': clusterRadius('pointer') as never,
         'circle-color': colors.contact,
-        'circle-opacity': 0.85,
-        'circle-stroke-width': 2,
+        'circle-opacity': CLUSTER.opacity,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.ring,
       },
     },
@@ -92,25 +92,17 @@ export function ContactsLayer({ theme, features }: CommonLayerProps & { features
     {
       id: 'contacts-pins', type: 'circle', filter: ['!', ['has', 'point_count']],
       paint: {
-        'circle-radius': 6,
+        'circle-radius': PIN.contact,
         'circle-color': colors.contact,
-        'circle-stroke-width': 2,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.ring,
       },
     },
     {
       id: 'contacts-labels', type: 'symbol', filter: ['!', ['has', 'point_count']],
-      layout: {
-        'text-field': ['get', 'label'],
-        'text-font': ['Noto Sans Regular'],
-        'text-size': 11.5,
-        'text-anchor': 'top',
-        'text-offset': [0, 0.8],
-        'text-max-width': 14,
-        'text-optional': true,
-      },
+      layout: { ...PIN_LABEL_LAYOUT, 'text-field': ['get', 'label'] } as LayerSpecSansSource['layout'],
       // Text wears ink, never the series color; the halo is the surface ring.
-      paint: { 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': 1.2 },
+      paint: { 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': PIN_LABEL_HALO_WIDTH },
     },
   ], [colors]);
 
@@ -130,25 +122,17 @@ export function FormerContactsLayer({ theme, features }: CommonLayerProps & { fe
     {
       id: 'contacts-former-pins', type: 'circle',
       paint: {
-        'circle-radius': 6,
+        'circle-radius': PIN.contact,
         'circle-opacity': 0,
-        'circle-stroke-width': 2,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.contact,
         'circle-stroke-opacity': 0.55,
       },
     },
     {
       id: 'contacts-former-labels', type: 'symbol',
-      layout: {
-        'text-field': ['get', 'label'],
-        'text-font': ['Noto Sans Regular'],
-        'text-size': 11,
-        'text-anchor': 'top',
-        'text-offset': [0, 0.8],
-        'text-max-width': 14,
-        'text-optional': true,
-      },
-      paint: { 'text-color': colors.ink, 'text-opacity': 0.6, 'text-halo-color': colors.ring, 'text-halo-width': 1.2 },
+      layout: { ...PIN_LABEL_LAYOUT, 'text-field': ['get', 'label'] } as LayerSpecSansSource['layout'],
+      paint: { 'text-color': colors.ink, 'text-opacity': 0.6, 'text-halo-color': colors.ring, 'text-halo-width': PIN_LABEL_HALO_WIDTH },
     },
   ], [colors]);
 
@@ -171,20 +155,20 @@ export function MovementLayer({ theme, visits, track, current }: CommonLayerProp
     {
       id: 'track-casing', type: 'line',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': colors.ring, 'line-width': 6, 'line-opacity': 0.9 },
+      paint: { 'line-color': colors.ring, 'line-width': TRACK.casingWidth, 'line-opacity': TRACK.casingOpacity },
     },
     {
       id: 'track-line', type: 'line',
       filter: ['!=', ['get', 'activity'], 'Unknown'],
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': activityColorExpression(theme) as never, 'line-width': 3 },
+      paint: { 'line-color': activityColorExpression(theme) as never, 'line-width': TRACK.width },
     },
     {
       // Dashed, never a fifth hue — its own layer because line-dasharray takes no data expression.
       id: 'track-line-unknown', type: 'line',
       filter: ['==', ['get', 'activity'], 'Unknown'],
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': ACTIVITY_COLORS[theme].Unknown, 'line-width': 3, 'line-dasharray': [2, 2] },
+      paint: { 'line-color': ACTIVITY_COLORS[theme].Unknown, 'line-width': TRACK.width, 'line-dasharray': [...TRACK.unknownDash] },
     },
   ], [theme, colors]);
   useGeoJsonLayer(map, 'track', track, trackLayers);
@@ -193,10 +177,10 @@ export function MovementLayer({ theme, visits, track, current }: CommonLayerProp
     {
       id: 'visits-circles', type: 'circle',
       paint: {
-        'circle-radius': ['interpolate', ['linear'], ['get', 'durationMin'], 5, 5, 480, 16],
+        'circle-radius': VISIT.radius as never,
         'circle-color': colors.visitFill,
-        'circle-opacity': 0.35,
-        'circle-stroke-width': 2,
+        'circle-opacity': VISIT.opacity,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.visitFill,
       },
     },
@@ -208,14 +192,14 @@ export function MovementLayer({ theme, visits, track, current }: CommonLayerProp
   const currentLayers = useMemo<LayerSpecSansSource[]>(() => [
     {
       id: 'current-halo', type: 'circle',
-      paint: { 'circle-radius': 14, 'circle-color': colors.currentFill, 'circle-opacity': 0.2 },
+      paint: { 'circle-radius': CURRENT_FIX.haloRadius, 'circle-color': colors.currentFill, 'circle-opacity': CURRENT_FIX.haloOpacity },
     },
     {
       id: 'current-dot', type: 'circle',
       paint: {
-        'circle-radius': 6,
+        'circle-radius': CURRENT_FIX.dotRadius,
         'circle-color': colors.currentFill,
-        'circle-stroke-width': 2.5,
+        'circle-stroke-width': CURRENT_FIX.dotStrokeWidth,
         'circle-stroke-color': colors.ring,
       },
     },
@@ -235,9 +219,9 @@ export function SavedPlacesLayer({ theme, features }: CommonLayerProps & { featu
     {
       id: 'saved-pins', type: 'circle',
       paint: {
-        'circle-radius': ['case', ['get', 'isFavorite'], 8, 6],
+        'circle-radius': PIN.saved as never,
         'circle-color': colors.saved,
-        'circle-stroke-width': 2,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.ring,
       },
     },
@@ -258,23 +242,17 @@ export function HotspotsLayer({ theme, features }: CommonLayerProps & { features
     {
       id: 'hotspots-halo', type: 'circle',
       paint: {
-        'circle-radius': ['interpolate', ['linear'], ['sqrt', ['get', 'activeDays']], 1.7, 12, 10, 34],
+        'circle-radius': hotspotRadius('pointer') as never,
         'circle-color': colors.hotspot,
-        'circle-opacity': 0.22,
-        'circle-stroke-width': 2,
+        'circle-opacity': HOTSPOT.opacity,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.hotspot,
       },
     },
     {
-      id: 'hotspots-labels', type: 'symbol', minzoom: 12,
-      layout: {
-        'text-field': ['coalesce', ['get', 'label'], ''],
-        'text-font': ['Noto Sans Regular'],
-        'text-size': 11.5,
-        'text-max-width': 14,
-        'text-optional': true,
-      },
-      paint: { 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': 1.2 },
+      id: 'hotspots-labels', type: 'symbol', minzoom: HOTSPOT.labelMinZoom,
+      layout: { ...PIN_LABEL_LAYOUT, 'text-field': ['coalesce', ['get', 'label'], ''] } as LayerSpecSansSource['layout'],
+      paint: { 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': PIN_LABEL_HALO_WIDTH },
     },
   ], [colors]);
 
@@ -294,10 +272,10 @@ export function PhotosLayer({ theme, features }: CommonLayerProps & { features: 
     {
       id: 'photos-clusters', type: 'circle', filter: ['>', ['get', 'count'], 1],
       paint: {
-        'circle-radius': ['step', ['get', 'count'], 12, 10, 16, 50, 22],
+        'circle-radius': clusterRadius('pointer', 'count') as never,
         'circle-color': colors.photo,
-        'circle-opacity': 0.85,
-        'circle-stroke-width': 2,
+        'circle-opacity': CLUSTER.opacity,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.ring,
       },
     },
@@ -309,9 +287,9 @@ export function PhotosLayer({ theme, features }: CommonLayerProps & { features: 
     {
       id: 'photos-pins', type: 'circle', filter: ['==', ['get', 'count'], 1],
       paint: {
-        'circle-radius': 6,
+        'circle-radius': PIN.photo,
         'circle-color': colors.photo,
-        'circle-stroke-width': 2,
+        'circle-stroke-width': PIN.strokeWidth,
         'circle-stroke-color': colors.ring,
       },
     },

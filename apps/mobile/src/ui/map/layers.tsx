@@ -13,6 +13,10 @@ import { StyleSheet, View, type NativeSyntheticEvent } from 'react-native';
 import { Icon } from 'react-native-paper';
 import type { LivePosition } from '../../sync/livePosition';
 import { ACTIVITY_COLORS, MAP_COLORS, activityColorExpression, type MapTheme } from '@lupira/cal-tokens/map';
+import {
+  CLUSTER, CLUSTER_COUNT_LAYOUT, CURRENT_FIX, HOTSPOT, PIN, PIN_LABEL_HALO_WIDTH, PIN_LABEL_LAYOUT, TRACK, VISIT, clusterRadius,
+  hotspotRadius,
+} from '@lupira/cal-tokens/mapPaint';
 import { PIN_CLUSTERS } from '@lupira/cal-domain/mapZoom';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
@@ -24,12 +28,8 @@ type PressHandler = (e: NativeSyntheticEvent<PressEventWithFeatures>) => void;
 
 /** Explicit or MapLibre falls back to `Open Sans Regular,Arial Unicode MS Regular`, which geo-api's
  *  Noto glyph set 404s. Same stacks as the web layers.tsx. */
-const CLUSTER_TEXT: SymbolLayerSpecification['layout'] = {
-  'text-field': ['get', 'point_count_abbreviated'],
-  'text-font': ['Noto Sans Medium'],
-  'text-size': 12,
-  'text-allow-overlap': true,
-};
+const CLUSTER_TEXT = { ...CLUSTER_COUNT_LAYOUT, 'text-field': ['get', 'point_count_abbreviated'] } as SymbolLayerSpecification['layout'];
+const LABEL = { ...PIN_LABEL_LAYOUT, 'text-field': ['get', 'label'] } as SymbolLayerSpecification['layout'];
 
 
 /** Cluster circle + count, shared by every clustered layer so the ramps stay identical. */
@@ -42,10 +42,10 @@ function ClusterLayers({ id, color, ring }: { id: string; color: string; ring: s
         filter={['has', 'point_count']}
         paint={{
           'circle-color': color,
-          'circle-opacity': 0.85,
-          'circle-radius': ['step', ['get', 'point_count'], 14, 10, 18, 50, 24],
+          'circle-opacity': CLUSTER.opacity,
+          'circle-radius': clusterRadius('touch') as never,
           'circle-stroke-color': ring,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': PIN.strokeWidth,
         }}
       />
       <Layer
@@ -81,9 +81,9 @@ export function EventsLayer({ theme, features, sourceRef, onPress }: {
         paint={{
           // Falls back when the source calendar has no colour of its own.
           'circle-color': ['coalesce', ['get', 'color'], colors.eventFallback],
-          'circle-radius': 7,
+          'circle-radius': PIN.event,
           'circle-stroke-color': colors.ring,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': PIN.strokeWidth,
         }}
       />
     </GeoJSONSource>
@@ -103,10 +103,10 @@ export function PhotosLayer({ theme, features, onPress }: {
         filter={['>', ['get', 'count'], 1]}
         paint={{
           'circle-color': colors.photo,
-          'circle-opacity': 0.85,
-          'circle-radius': ['step', ['get', 'count'], 14, 10, 18, 50, 24],
+          'circle-opacity': CLUSTER.opacity,
+          'circle-radius': clusterRadius('touch', 'count') as never,
           'circle-stroke-color': colors.ring,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': PIN.strokeWidth,
         }}
       />
       <Layer
@@ -122,9 +122,9 @@ export function PhotosLayer({ theme, features, onPress }: {
         filter={['==', ['get', 'count'], 1]}
         paint={{
           'circle-color': colors.photo,
-          'circle-radius': 6,
+          'circle-radius': PIN.photo,
           'circle-stroke-color': colors.ring,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': PIN.strokeWidth,
         }}
       />
     </GeoJSONSource>
@@ -152,24 +152,17 @@ export function ContactsLayer({ theme, features, sourceRef, onPress }: {
         filter={['!', ['has', 'point_count']]}
         paint={{
           'circle-color': colors.contact,
-          'circle-radius': 6,
+          'circle-radius': PIN.contact,
           'circle-stroke-color': colors.ring,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': PIN.strokeWidth,
         }}
       />
       <Layer
         id="contact-labels"
         type="symbol"
         filter={['!', ['has', 'point_count']]}
-        layout={{
-          'text-field': ['get', 'label'],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': 11,
-          'text-offset': [0, 1.2],
-          'text-anchor': 'top',
-          'text-optional': true,
-        }}
-        paint={{ 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': 1 }}
+        layout={LABEL}
+        paint={{ 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': PIN_LABEL_HALO_WIDTH }}
       />
     </GeoJSONSource>
   );
@@ -184,23 +177,16 @@ export function SavedPlacesLayer({ theme, features }: { theme: MapTheme; feature
         type="circle"
         paint={{
           'circle-color': colors.saved,
-          'circle-radius': ['case', ['get', 'isFavorite'], 8, 6],
+          'circle-radius': PIN.saved as never,
           'circle-stroke-color': colors.ring,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': PIN.strokeWidth,
         }}
       />
       <Layer
         id="saved-labels"
         type="symbol"
-        layout={{
-          'text-field': ['get', 'label'],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': 11,
-          'text-offset': [0, 1.2],
-          'text-anchor': 'top',
-          'text-optional': true,
-        }}
-        paint={{ 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': 1 }}
+        layout={LABEL}
+        paint={{ 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': PIN_LABEL_HALO_WIDTH }}
       />
     </GeoJSONSource>
   );
@@ -217,26 +203,19 @@ export function HotspotsLayer({ theme, features, onPress }: {
         type="circle"
         paint={{
           // sqrt so the halo's area, not its radius, tracks active days.
-          'circle-radius': ['interpolate', ['linear'], ['sqrt', ['get', 'activeDays']], 1.7, 10, 10, 28],
+          'circle-radius': hotspotRadius('touch') as never,
           'circle-color': colors.hotspot,
-          'circle-opacity': 0.22,
+          'circle-opacity': HOTSPOT.opacity,
           'circle-stroke-color': colors.hotspot,
-          'circle-stroke-width': 2,
+          'circle-stroke-width': PIN.strokeWidth,
         }}
       />
       <Layer
         id="hotspot-labels"
         type="symbol"
-        minzoom={12}
-        layout={{
-          'text-field': ['get', 'label'],
-          'text-font': ['Noto Sans Regular'],
-          'text-size': 11,
-          'text-offset': [0, 1.2],
-          'text-anchor': 'top',
-          'text-optional': true,
-        }}
-        paint={{ 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': 1 }}
+        minzoom={HOTSPOT.labelMinZoom}
+        layout={LABEL}
+        paint={{ 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': PIN_LABEL_HALO_WIDTH }}
       />
     </GeoJSONSource>
   );
@@ -258,14 +237,14 @@ export function MovementLayer({ theme, visits, track, current, onVisitPress }: {
           id="track-casing"
           type="line"
           layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-          paint={{ 'line-color': colors.ring, 'line-width': 6, 'line-opacity': 0.9 }}
+          paint={{ 'line-color': colors.ring, 'line-width': TRACK.casingWidth, 'line-opacity': TRACK.casingOpacity }}
         />
         <Layer
           id="track-line"
           type="line"
           filter={['!=', ['get', 'activity'], 'Unknown']}
           layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-          paint={{ 'line-color': activityColorExpression(theme) as never, 'line-width': 3 }}
+          paint={{ 'line-color': activityColorExpression(theme) as never, 'line-width': TRACK.width }}
         />
         {/* Dashed, never a fifth hue — its own layer because line-dasharray takes no data expression. */}
         <Layer
@@ -273,7 +252,7 @@ export function MovementLayer({ theme, visits, track, current, onVisitPress }: {
           type="line"
           filter={['==', ['get', 'activity'], 'Unknown']}
           layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-          paint={{ 'line-color': ACTIVITY_COLORS[theme].Unknown, 'line-width': 3, 'line-dasharray': [2, 2] }}
+          paint={{ 'line-color': ACTIVITY_COLORS[theme].Unknown, 'line-width': TRACK.width, 'line-dasharray': [...TRACK.unknownDash] }}
         />
       </GeoJSONSource>
 
@@ -283,11 +262,11 @@ export function MovementLayer({ theme, visits, track, current, onVisitPress }: {
           type="circle"
           paint={{
             // A five-minute stop reads small, an eight-hour stay reads large.
-            'circle-radius': ['interpolate', ['linear'], ['get', 'durationMin'], 5, 5, 480, 16],
+            'circle-radius': VISIT.radius as never,
             'circle-color': colors.visitFill,
-            'circle-opacity': 0.35,
+            'circle-opacity': VISIT.opacity,
             'circle-stroke-color': colors.visitFill,
-            'circle-stroke-width': 2,
+            'circle-stroke-width': PIN.strokeWidth,
           }}
         />
       </GeoJSONSource>
@@ -296,16 +275,16 @@ export function MovementLayer({ theme, visits, track, current, onVisitPress }: {
         <Layer
           id="current-halo"
           type="circle"
-          paint={{ 'circle-radius': 14, 'circle-color': colors.currentFill, 'circle-opacity': 0.2 }}
+          paint={{ 'circle-radius': CURRENT_FIX.haloRadius, 'circle-color': colors.currentFill, 'circle-opacity': CURRENT_FIX.haloOpacity }}
         />
         <Layer
           id="current-dot"
           type="circle"
           paint={{
-            'circle-radius': 6,
+            'circle-radius': CURRENT_FIX.dotRadius,
             'circle-color': colors.currentFill,
             'circle-stroke-color': colors.ring,
-            'circle-stroke-width': 2.5,
+            'circle-stroke-width': CURRENT_FIX.dotStrokeWidth,
           }}
         />
       </GeoJSONSource>
@@ -339,7 +318,7 @@ export function LivePuck({ theme, position }: { theme: MapTheme; position: LiveP
   );
 }
 
-const PIN = 40;
+const SELECTION_PIN = 40;
 
 /** A pin over whatever is selected — the dot you tapped, or the place another screen sent you to. A native
  *  view, not a style layer: the basemap sprite has no pin, and a view needs none. The ring glyph behind
@@ -349,14 +328,14 @@ export function SelectionPin({ point }: { point: { lon: number; lat: number } })
   return (
     <Marker id="selection" lngLat={[point.lon, point.lat]} anchor="bottom">
       <View pointerEvents="none" style={styles.pin}>
-        <View style={styles.pinRing}><Icon source={ICONS.place} size={PIN + 4} color={c.onPrimary} /></View>
-        <Icon source={ICONS.place} size={PIN} color={c.primary} />
+        <View style={styles.pinRing}><Icon source={ICONS.place} size={SELECTION_PIN + 4} color={c.onPrimary} /></View>
+        <Icon source={ICONS.place} size={SELECTION_PIN} color={c.primary} />
       </View>
     </Marker>
   );
 }
 
 const styles = StyleSheet.create({
-  pin: { width: PIN + 4, height: PIN + 4, alignItems: 'center', justifyContent: 'flex-end' },
+  pin: { width: SELECTION_PIN + 4, height: SELECTION_PIN + 4, alignItems: 'center', justifyContent: 'flex-end' },
   pinRing: { position: 'absolute', top: 0, left: 0 },
 });
