@@ -20,6 +20,7 @@ import { registerBackgroundSync } from './src/sync/backgroundTask';
 import { queryClient } from './src/sync/reactivity';
 import { startSync } from './src/sync/sync';
 import { RootStack } from './src/ui/navigation/RootStack';
+import { useAutoUpdate } from './src/ui/hooks/useAutoUpdate';
 import type { RootStackParamList } from './src/ui/navigation/types';
 import { paperSettings } from './src/ui/theme/paperSettings';
 import { APP_VERSION, SENTRY_DSN } from './src/config';
@@ -35,6 +36,7 @@ Sentry.init({
 });
 
 export default function App() {
+  useAutoUpdate();
   const scheme = useColorScheme();
   const loaded = useAuth((s) => s.loaded);
   const authed = useAuth((s) => s.authMode === 'dev' || s.token !== null);
