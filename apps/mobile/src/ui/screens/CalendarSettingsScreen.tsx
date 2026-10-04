@@ -1,4 +1,4 @@
-import { isCalendarShown } from '@lupira/cal-domain/calendars';
+import { calendarLabel, isCalendarShown } from '@lupira/cal-domain/calendars';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { List, Switch } from 'react-native-paper';
 import { ALL_DAY_ROW_OPTIONS, usePrefs } from '../../state/prefs-store';
@@ -57,7 +57,7 @@ function CalendarGroup({ title, calendars }: { title: string; calendars: Calenda
       {calendars.map((c) => (
         <List.Item
           key={c.id}
-          title={c.displayName || c.slug}
+          title={calendarLabel(c)}
           description={ACCESS_LABELS[c.access ?? ''] ?? c.access}
           left={(p) => <View style={[p.style, styles.dot, { backgroundColor: colorOf(c.id) }]} />}
           right={() => (

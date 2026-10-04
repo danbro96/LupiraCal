@@ -7,10 +7,13 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, List, Switch, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { ItemForm, ScheduleField } from '../../domain/editors';
+import { calendarLabel, defaultCalendarIds } from '@lupira/cal-domain/calendars';
+import { attendeeName } from '@lupira/cal-domain/contactNames';
 import {
-  acceptedCalendarIds, attendeeChanges, categoryAllDayDefault, emptyItemForm, filingChanges, itemCoreFromForm,
-  itemFormFromDoc, withAllDay, withSchedule,
+  categoryAllDayDefault, emptyItemForm, withAllDay, withSchedule, type ItemForm, type ScheduleField,
+} from '@lupira/cal-domain/itemForm';
+import {
+  acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc,
 } from '../../domain/editors';
 import { saveItem } from '../../state/actions';
 import { usePrefs } from '../../state/prefs-store';
@@ -85,9 +88,7 @@ export function ItemEditScreen() {
   const lastCalendarIds = usePrefs((p) => p.lastCalendarIds);
   useEffect(() => {
     if (itemId || calendarIds.length > 0 || !prefsLoaded) return;
-    const selectable = selectableCalendars(calendars);
-    const remembered = lastCalendarIds.filter((id) => selectable.some((cal) => cal.id === id));
-    const initial = remembered.length > 0 ? remembered : selectable.slice(0, 1).map((cal) => cal.id);
+    const initial = defaultCalendarIds(selectableCalendars(calendars), lastCalendarIds);
     if (initial.length === 0) return;
     setCalendarIds(initial);
     baseline.current = { ...baseline.current, calendars: JSON.stringify(initial) };
@@ -185,8 +186,11 @@ export function ItemEditScreen() {
     );
   }
 
-  const calendarName = (id: string) => calendars?.find((cal) => cal.id === id)?.displayName ?? id;
-  const contactName = (id: string) => (id === me ? 'You' : contacts?.find((row) => row.id === id)?.displayName ?? 'Unknown contact');
+  const calendarName = (id: string) => {
+    const cal = calendars?.find((x) => x.id === id);
+    return cal ? calendarLabel(cal) : id;
+  };
+  const contactName = (id: string) => attendeeName(id, me, (x) => contacts?.find((row) => row.id === x)?.displayName);
   const people = attendeeIds.length === 0
     ? 'Nobody invited'
     : attendeeIds.slice(0, 2).map(contactName).join(', ') + (attendeeIds.length > 2 ? ` +${attendeeIds.length - 2}` : '');

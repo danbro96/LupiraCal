@@ -6,6 +6,11 @@ export function ymd(d: Date): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+/** 'HH:mm' on the local clock — the time half of a datetime input. */
+export function hhmm(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 export function parseYmd(s: string): Date {
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d);

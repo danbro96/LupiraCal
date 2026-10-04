@@ -1,6 +1,6 @@
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { fmtDate, parseYmd } from '@lupira/cal-domain/time';
-import { localDay } from '../../domain/editors';
+import { ymd } from '@lupira/cal-domain/time';
 import { PickerButton } from './PickerButton';
 
 /** Android system picker writing back the editors' string form ('yyyy-MM-dd'). `weekday` suits event days
@@ -17,7 +17,7 @@ export function DateField({ value, onChange, placeholder = 'Set date', weekday =
       ...(nullLabel && value ? { neutralButton: { label: nullLabel } } : {}),
       onChange: (e, d) => {
         if (e.type === 'neutralButtonPressed') onChange('');
-        else if (e.type === 'set' && d) onChange(localDay(d));
+        else if (e.type === 'set' && d) onChange(ymd(d));
       },
     });
   return (

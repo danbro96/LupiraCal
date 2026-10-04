@@ -1,4 +1,6 @@
-import { clampToDay, foldLanes, hiddenPerColumn, layoutColumns, packLanes, type Positioned } from '@lupira/cal-domain/occurrences';
+import {
+  clampToDay, drawnEnd, foldLanes, hiddenPerColumn, inAllDayStrip, lastDayOf, layoutColumns, packLanes, type Positioned,
+} from '@lupira/cal-domain/occurrences';
 import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { addDays, daysFrom, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, parseYmd, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
@@ -12,7 +14,6 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import type { PlaceDto } from '@lupira/cal-api/models';
 import type { GridRow } from '../../data/mirror';
-import { isMultiDayTimed, lastDayOf } from '../../domain/occurrenceDays';
 import { isTaskRow } from '../../domain/taskRows';
 import { usePrefs } from '../../state/prefs-store';
 import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrences';
@@ -37,7 +38,6 @@ const colPct = (col: number) => `${(col / 7) * 100}%` as const;
 const dayIndex = (d: Date) => Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS);
 
 const slotTime = (slot: number) => `${String(Math.floor(slot / 2)).padStart(2, '0')}:${slot % 2 ? '30' : '00'}`;
-const DEFAULT_END_MIN = 30;   // open-ended timed occurrences render as a half-hour block
 const MAX_STRIP_SHARE = 0.3;
 const LEAD_HOURS = 2;         // "now" opens this far below the top of the lanes
 const HEADER_H = 24;
@@ -101,13 +101,13 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
   const timedByDay = new Map<string, GridRow[]>();
   const availByDay = new Map<string, (string | null)[]>();
   for (const r of [...rows, ...taskRows]) {
-    const end = lastDayOf(r);
+    const end = lastDayOf(r.start_day, r.end_utc, r.all_day === 1);
     if (r.is_availability === 1) {
       // Renders as the column tint, never a chip.
       for (const k of dayKeys) if (k >= r.start_day && k <= end) addStatus(availByDay, k, r.avail_status);
       continue;
     }
-    if (r.all_day === 1 || isMultiDayTimed(r)) {
+    if (inAllDayStrip({ isAllDay: r.all_day === 1, start: new Date(r.start_utc), end: r.end_utc ? new Date(r.end_utc) : null })) {
       // Split per week: each week packs its own lanes, the way a paged calendar shows a long span.
       weekKeys.forEach((keys, w) => {
         const first = keys[0];
@@ -232,7 +232,7 @@ const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, sl
   const day = parseYmd(dayKey);
   const spans = rows.flatMap((r) => {
     const start = new Date(r.start_utc);
-    const end = r.end_utc ? new Date(r.end_utc) : new Date(start.getTime() + DEFAULT_END_MIN * 60_000);
+    const end = drawnEnd(start, r.end_utc ? new Date(r.end_utc) : null);
     const span = clampToDay(start, end, day);
     return span ? [{ ...span, item: { row: r, when: fmtBlockTime(start, end, day) } }] : [];
   });

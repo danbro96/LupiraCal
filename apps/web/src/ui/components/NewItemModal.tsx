@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import Button from '@mui/material/Button';
@@ -17,13 +18,13 @@ import type { CreateCalendarItemRequest } from '@lupira/cal-api/models';
 import { RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { ymd } from '@lupira/cal-domain/time';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
-import { canWriteCalendar } from '@lupira/cal-domain/calendars';
+import { defaultCalendarIds, isSelectableCalendar } from '@lupira/cal-domain/calendars';
+import { emptyItemForm, parseList, scheduleFromForm, withSchedule, type ItemForm } from '@lupira/cal-domain/itemForm';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
 import { useJoinItem } from '../../state/useJoinItem';
 import { readPref, writePref } from '../../state/localPrefs';
 import { useMyContactId } from '../../state/useMe';
-import { localInputToIso } from './drawer/inputs';
 import { PlacePicker } from './places/PlacePicker';
 import { errText } from '../errText';
 import { useSnackbar } from './SnackbarHost';
@@ -52,7 +53,7 @@ const LAST_CALENDAR = 'newItem.calendarId';
 export function NewItemModal({ onClose }: { onClose: () => void }) {
   const isPhone = useIsPhone();
   const { calendars: allCalendars } = useContainers();
-  const calendars = allCalendars.filter((c) => c.kind !== 'Availability' && canWriteCalendar(c));
+  const calendars = allCalendars.filter(isSelectableCalendar);
   const me = useMyContactId();
   const join = useJoinItem();
   const invalidate = useInvalidateItems();
@@ -76,15 +77,15 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
   });
 
   const remembered = readPref(LAST_CALENDAR);
-  const defaultCalendar = calendars.find((c) => c.id === remembered) ?? calendars.find((c) => c.kind === 'Personal') ?? calendars[0];
-  const { control, handleSubmit, watch } = useForm<FormValues>({
+  const [initial] = useState(() => emptyItemForm(ymd(new Date())));
+  const { control, handleSubmit, watch, getValues, setValue } = useForm<FormValues>({
     defaultValues: {
       title: '',
-      calendarId: defaultCalendar?.id ?? '',
+      calendarId: defaultCalendarIds(calendars, remembered ? [remembered] : [])[0] ?? '',
       isAllDay: false,
-      start: '',
-      end: '',
-      startDate: ymd(new Date()),
+      start: `${initial.startDay}T${initial.startTime}`,
+      end: `${initial.endDay}T${initial.endTime}`,
+      startDate: initial.startDay,
       endDate: '',
       placeId: '',
       rrule: '',
@@ -97,26 +98,32 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
   const startDate = watch('startDate');
   const attending = watch('attending');
 
+  // Moving the start carries the end along, as on the phone (`@lupira/cal-domain/itemForm`).
+  const moveStart = (field: 'start' | 'startDate', value: string) => {
+    const form = toItemForm(getValues());
+    const moved = field === 'startDate'
+      ? withSchedule(form, 'startDay', value)
+      : withSchedule(withSchedule(form, 'startDay', value.slice(0, 10)), 'startTime', value.slice(11, 16));
+    setValue(field, value);
+    if (form.isAllDay) setValue('endDate', moved.endDay);
+    else if (moved.endDay) setValue('end', `${moved.endDay}T${moved.endTime}`);
+  };
+
   const submit = handleSubmit((v) => {
+    const schedule = scheduleFromForm(toItemForm(v));
+    if (!schedule.ok) {
+      showSnack(schedule.error);
+      return;
+    }
+    const tags = parseList(v.tags);
     const body: CreateCalendarItemRequest = {
       calendarId: v.calendarId || null,
       title: v.title || null,
       description: v.description || null,
       placeId: v.placeId || null,
-      isAllDay: v.isAllDay,
-      startsAt: v.isAllDay ? null : localInputToIso(v.start),
-      endsAt: v.isAllDay ? null : localInputToIso(v.end),
-      // Typed in the browser's zone, so a repeating event keeps that local time across DST.
-      startTimezone: v.isAllDay ? null : deviceTimeZone(),
-      startDate: v.isAllDay ? v.startDate || null : null,
-      endDate: v.isAllDay ? v.endDate || null : null,
+      ...schedule.value,
       recurrenceRule: v.rrule || null,
-      tags: v.tags
-        ? v.tags
-            .split(',')
-            .map((t) => t.trim())
-            .filter(Boolean)
-        : null,
+      tags: tags.length ? tags : null,
     };
     create.mutate({ data: body });
   });
@@ -158,7 +165,6 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
                 {calendars.map((c) => (
                   <MenuItem key={c.id} value={c.id}>
                     {calendarLabel(c)}
-                    {c.class === 'System' ? ' (system)' : ''}
                   </MenuItem>
                 ))}
                 <MenuItem value="">(unfiled → curation)</MenuItem>
@@ -181,7 +187,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
             <Controller
               name="startDate"
               control={control}
-              render={({ field }) => <TextField type="date" {...field} required />}
+              render={({ field }) => <TextField type="date" {...field} onChange={(e) => moveStart('startDate', e.target.value)} required />}
             />
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>→</Typography>
             <Controller
@@ -195,7 +201,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
             <Controller
               name="start"
               control={control}
-              render={({ field }) => <TextField type="datetime-local" {...field} required />}
+              render={({ field }) => <TextField type="datetime-local" {...field} onChange={(e) => moveStart('start', e.target.value)} required />}
             />
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>→</Typography>
             <Controller name="end" control={control} render={({ field }) => <TextField type="datetime-local" {...field} />} />
@@ -264,3 +270,19 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
     </Dialog>
   );
 }
+
+/** The modal's fields as the shared event form. Typed in the browser's zone, so a repeating event keeps that
+ *  local time across DST. */
+function toItemForm(v: FormValues): ItemForm {
+  return {
+    ...emptyItemForm(),
+    isAllDay: v.isAllDay,
+    startDay: v.isAllDay ? v.startDate : v.start.slice(0, 10),
+    startTime: v.isAllDay ? '' : v.start.slice(11, 16),
+    endDay: v.isAllDay ? v.endDate : v.end.slice(0, 10),
+    endTime: v.isAllDay ? '' : v.end.slice(11, 16),
+    recurrenceRule: v.rrule,
+    timeZone: deviceTimeZone() ?? '',
+  };
+}
+

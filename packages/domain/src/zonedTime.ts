@@ -134,3 +134,29 @@ export const COMMON_TIME_ZONES: readonly string[] = [
 const DAY_MS = 86_400_000;
 
 const pad = (n: number) => String(n).padStart(2, '0');
+
+/** The zone an event's wall-clock fields are read in: its own start zone, or this device's when it has none
+ *  (or one this runtime can't resolve). */
+export function eventZone(startTimezone: string | null | undefined): string | null {
+  return isValidTimeZone(startTimezone) ? startTimezone : deviceTimeZone();
+}
+
+// The device's own zone goes through Date's local arithmetic, so the common case never needs Intl zone data.
+const isDeviceZone = (zone: string | null | undefined) => !zone || zone === deviceTimeZone();
+
+/** An instant as the wall clock of `zone` ({day:'yyyy-MM-dd', time:'HH:mm'}). */
+export function isoToWall(iso: string, zone: string | null | undefined): { day: string; time: string } {
+  if (!isDeviceZone(zone)) return instantToWall(iso, zone!);
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return { day: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
+}
+
+/** A wall-clock day + time in `zone` as an ISO instant. */
+export function wallToIso(day: string, time: string, zone: string | null | undefined): string {
+  if (!isDeviceZone(zone)) return wallToInstant(day, time, zone!).toISOString();
+  const [y, m, d] = day.split('-').map(Number);
+  const [hh, mm] = time.split(':').map(Number);
+  return new Date(y, m - 1, d, hh, mm).toISOString();
+}
+

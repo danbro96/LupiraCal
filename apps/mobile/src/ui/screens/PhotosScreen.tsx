@@ -8,6 +8,7 @@ import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import { daysLeft, fmtDuration, outcomeMessage, photoCount } from '@lupira/cal-domain/photoFormat';
 import { fmtPhotoRange, photoTimeline, yearRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
+import { photoEmptyText } from '@lupira/cal-domain/photoFilter';
 import { hapticSelection } from '../../feedback/haptics';
 import { toast, toastError } from '../../feedback/toast';
 import { usePhotoBackup } from '../../state/photo-backup-store';
@@ -215,13 +216,7 @@ export function PhotosScreen() {
   if (isLoading) return <Centered text="Loading…" />;
   if (items.length === 0 && (offline || error)) return <Centered text="Photos need a connection." />;
 
-  const onlyEvent = filters.event && !filters.kind && filters.located === undefined && !filters.place
-    && !filters.status && !filters.from;
-  const emptyText = filters.trashed
-    ? 'Trash is empty.'
-    : onlyEvent
-    ? 'No photos linked to this event yet.'
-    : filterSummary ? 'No photos match these filters.' : 'No photos yet.';
+  const emptyText = photoEmptyText(filters);
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>

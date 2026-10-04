@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getListContainersQueryKey, useBootstrapMe, useListContainers } from '@lupira/cal-api/query/cal';
-import type { ContainerDto } from '@lupira/cal-api/models';
 import { needsCalendarBootstrap } from '@lupira/cal-domain/bootstrap';
 
 export function useContainers() {
@@ -34,6 +33,4 @@ export function useEnsureBootstrap() {
   return bootstrap.isPending;
 }
 
-export function calendarLabel(c: ContainerDto): string {
-  return c.displayName || c.slug;
-}
+export { calendarLabel } from '@lupira/cal-domain/calendars';

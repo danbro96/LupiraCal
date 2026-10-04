@@ -12,6 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useCreateItem } from '@lupira/cal-api/query/cal';
 import { AvailabilityStatus, type CreateCalendarItemRequest } from '@lupira/cal-api/models';
 import { ymd } from '@lupira/cal-domain/time';
+import { availabilityCalendar, availabilityEntry } from '@lupira/cal-domain/availability';
 import { useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
 import { errText } from '../errText';
@@ -19,7 +20,7 @@ import { useSnackbar } from './SnackbarHost';
 import { WrapRow } from './WrapRow';
 
 type FormValues = {
-  status: AvailabilityStatus;
+  status: AvailabilityStatus | '';
   startDate: string;
   endDate: string;
 };
@@ -43,22 +44,20 @@ export function AvailabilityModal({ onClose }: { onClose: () => void }) {
     },
   });
 
-  const availabilityCalendar = calendars.find((c) => c.kind === 'Availability');
+  const calendar = availabilityCalendar(calendars);
   const { control, handleSubmit, watch } = useForm<FormValues>({
-    defaultValues: { status: AvailabilityStatus.Office, startDate: ymd(new Date()), endDate: '' },
+    defaultValues: { status: '', startDate: ymd(new Date()), endDate: '' },
   });
   const startDate = watch('startDate');
 
   const submit = handleSubmit((values) => {
-    if (!availabilityCalendar) return;
-    const body: CreateCalendarItemRequest = {
-      calendarId: availabilityCalendar.id,
-      title: values.status,
-      isAllDay: true,
-      startDate: values.startDate,
-      endDate: values.endDate || null,
-      availability: values.status,
-    };
+    if (!calendar) return;
+    const entry = availabilityEntry({ status: values.status, startDay: values.startDate, endDay: values.endDate });
+    if (!entry.ok) {
+      showSnack(entry.error);
+      return;
+    }
+    const body: CreateCalendarItemRequest = { calendarId: calendar.id, ...entry.value, availability: values.status as AvailabilityStatus };
     create.mutate({ data: body });
   });
 
@@ -72,13 +71,14 @@ export function AvailabilityModal({ onClose }: { onClose: () => void }) {
       </DialogTitle>
       <form onSubmit={submit}>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 0 }}>
-          {!availabilityCalendar && <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">No availability calendar — bootstrap the standard set first.</Typography>}
+          {!calendar && <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">No availability calendar — bootstrap the standard set first.</Typography>}
         <WrapRow>
           <Controller
             name="status"
             control={control}
             render={({ field }) => (
-              <TextField select label="Status" {...field}>
+              <TextField select label="Status" {...field} slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}>
+                <MenuItem value="">Pick a status…</MenuItem>
                 {Object.values(AvailabilityStatus).map((s) => (
                   <MenuItem key={s} value={s}>
                     {s}
@@ -117,7 +117,7 @@ export function AvailabilityModal({ onClose }: { onClose: () => void }) {
           <Button variant="outlined" type="button" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="contained" type="submit" disabled={!availabilityCalendar || create.isPending}>
+          <Button variant="contained" type="submit" disabled={!calendar || create.isPending}>
             Save
           </Button>
         </DialogActions>

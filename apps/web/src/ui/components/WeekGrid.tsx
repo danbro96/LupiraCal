@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import IconButton from '@mui/material/IconButton';
 import type { AvailabilitySegment } from '../../state/useAvailability';
-import { clampToDay, foldLanes, hiddenPerColumn, isDayLong, layoutColumns, packLanes } from '@lupira/cal-domain/occurrences';
+import { clampToDay, drawnEnd, foldLanes, hiddenPerColumn, inAllDayStrip, layoutColumns, packLanes } from '@lupira/cal-domain/occurrences';
 import { type DayRail, familyKey, railsForDay } from '@lupira/cal-domain/family';
 import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
@@ -53,7 +53,7 @@ type FamOf = (key: string | undefined) => Fam;
 
 /** A timed item of a day or more is a span, so it joins the all-day strip — unless it is a parent,
  *  which keeps its rail and header in the lanes. */
-const inStrip = (e: GridEntry) => e.isAllDay || (e.childCount === 0 && isDayLong(e.start, e.end));
+const inStrip = (e: GridEntry) => inAllDayStrip(e, e.childCount > 0);
 
 /** Timed week/day lanes: hour rows, an all-day strip, availability tint, and column-packed events. */
 export function WeekGrid({ days, entries, segments, onOpenItem, selectedFamilyKey }: Props) {
@@ -299,7 +299,7 @@ function DayColumn({
     const spans = timed
       .filter((e) => !railIds.has(e.itemId))
       .flatMap((e) => {
-        const span = clampToDay(e.start, e.end ?? new Date(e.start.getTime() + 30 * 60000), day);
+        const span = clampToDay(e.start, drawnEnd(e.start, e.end), day);
         return span ? [{ ...span, item: e }] : [];
       });
     return layoutColumns(spans, MIN_BLOCK_MINUTES);
@@ -510,7 +510,7 @@ function DayColumn({
               {p.item.title}
             </Box>
             <Box component="span" sx={{ fontSize: 11, opacity: 0.85 }}>
-              {fmtBlockTime(p.item.start, p.item.end ?? new Date(p.item.start.getTime() + 30 * 60000), day)}
+              {fmtBlockTime(p.item.start, drawnEnd(p.item.start, p.item.end), day)}
               {p.item.ghost ? ' · proposed' : ''}
             </Box>
             {p.item.place && (

@@ -2,7 +2,7 @@ import { addDays, addMonths, parseYmd, startOfMonth, ymd } from '@lupira/cal-dom
 import { useQueries } from '@tanstack/react-query';
 import { getDb } from '../data/db/expoDb';
 import { gridRowsBetween, type CalendarFilter, type GridRow } from '../data/mirror';
-import { lastDayOf } from '../domain/occurrenceDays';
+import { lastDayOf } from '@lupira/cal-domain/occurrences';
 import type { TaskDeadlineRow } from '../domain/taskRows';
 import { useCalendarFilter } from './useContainers';
 
@@ -32,7 +32,7 @@ export function useOverlappingOccurrences(dayKeys: string[]): { rows: GridRow[];
   const results = useQueries({ queries: monthKeys.map((k) => monthQuery(k, filter)) });
   const rows = results
     .flatMap((r) => r.data ?? [])
-    .filter((r) => r.start_day <= last && lastDayOf(r) >= first)
+    .filter((r) => r.start_day <= last && lastDayOf(r.start_day, r.end_utc, r.all_day === 1) >= first)
     .sort((a, b) => (a.start_utc < b.start_utc ? -1 : a.start_utc > b.start_utc ? 1 : 0));
   return { rows, loading: results.some((r) => r.isLoading) };
 }

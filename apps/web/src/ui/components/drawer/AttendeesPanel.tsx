@@ -28,6 +28,7 @@ import { initialsOf } from '@lupira/cal-domain/contactNames';
 import { rankByInteraction } from '@lupira/cal-domain/contactRank';
 import { attendeeSummary, roleLabel, rsvpLabel } from '@lupira/cal-domain/participation';
 import { avatarColor } from '@lupira/cal-tokens/kinds';
+import { attendeeName } from '@lupira/cal-domain/contactNames';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { useJoinItem } from '../../../state/useJoinItem';
 import { useMyContactId } from '../../../state/useMe';
@@ -60,7 +61,7 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
   const { data: contacts } = useSearchContacts({});
   const known = (id: string) => !!contacts?.some((c) => c.id === id);
   const contactName = (id?: string) =>
-    id && id === me ? 'You' : contacts?.find((c) => c.id === id)?.displayName ?? (id ?? '?').slice(0, 8);
+    attendeeName(id ?? '', me, (x) => contacts?.find((c) => c.id === x)?.displayName);
   const attending = !!me && item.attendees.some((a) => a.contactId === me);
 
   const showSnack = useSnackbar();

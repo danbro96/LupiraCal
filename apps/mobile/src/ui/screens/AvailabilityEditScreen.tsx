@@ -2,6 +2,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
+import { availabilityCalendar, availabilityEntry } from '@lupira/cal-domain/availability';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { createItem } from '../../state/actions';
@@ -24,7 +25,7 @@ export function AvailabilityEditScreen() {
   const route = useRoute<RouteProp<RootStackParamList, 'AvailabilityEdit'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { data: calendars } = useCalendars();
-  const availabilityCal = (calendars ?? []).find((c) => c.kind === 'Availability');
+  const availabilityCal = availabilityCalendar(calendars);
 
   const [status, setStatus] = useState('');
   const [startDay, setStartDay] = useState(route.params?.day ?? '');
@@ -33,19 +34,14 @@ export function AvailabilityEditScreen() {
 
   const save = () => {
     if (!availabilityCal) return setError('No availability calendar in the mirror yet — sync first.');
-    if (!status) return setError('Pick a status');
-    if (!startDay) return setError('Pick a start date');
-    if (endDay && endDay < startDay) return setError('End date is before the start date');
+    const entry = availabilityEntry({ status, startDay, endDay });
+    if (!entry.ok) return setError(entry.error);
     setError(null);
     void createItem(availabilityCal.id, {
-      title: status,
+      ...entry.value,
       description: null, status: null, category: null, tags: null, parentItemId: null,
-      isAllDay: true,
       startsAt: null, endsAt: null,
-      startDate: startDay,
-      endDate: endDay || null,
       startTimezone: null, endTimezone: null, recurrenceRule: null,
-      availability: status,
     }).then(() => navigation.goBack());
   };
 

@@ -35,3 +35,15 @@ export function filterPhotos<T extends PhotoFilterable>(items: readonly T[], c: 
   const direction = c.sort === 'TakenAtAsc' ? 1 : -1;
   return kept.sort((a, b) => direction * (Date.parse(a.takenAt) - Date.parse(b.takenAt)));
 }
+
+/** What an empty grid says. An event filter on its own is a question about that event's photos; with other
+ *  filters it is just one more constraint. `located: false` (the unplaced photos) is a filter too. */
+export function photoEmptyText(f: {
+  trashed?: boolean; event?: string | null; kind?: string | null; located?: boolean | null;
+  place?: string | null; status?: string | null; from?: string | null;
+}): string {
+  if (f.trashed) return 'Trash is empty.';
+  const others = !!f.kind || f.located != null || !!f.place || !!f.status || !!f.from;
+  if (f.event && !others) return 'No photos linked to this event yet.';
+  return f.event || others ? 'No photos match these filters.' : 'No photos yet.';
+}

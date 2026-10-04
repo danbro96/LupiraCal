@@ -1,5 +1,5 @@
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { localTime } from '../../domain/editors';
+import { hhmm } from '@lupira/cal-domain/time';
 import { PickerButton } from './PickerButton';
 
 /** Android system picker writing back the editors' string form ('HH:MM'). */
@@ -17,7 +17,7 @@ export function TimeField({ value, onChange, placeholder = 'Set time', clearable
       ...(nullLabel && value ? { neutralButton: { label: nullLabel } } : {}),
       onChange: (e, d) => {
         if (e.type === 'neutralButtonPressed') onChange('');
-        else if (e.type === 'set' && d) onChange(localTime(d));
+        else if (e.type === 'set' && d) onChange(hhmm(d));
       },
     });
   };

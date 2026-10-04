@@ -5,7 +5,7 @@ import { textOn } from '@lupira/cal-tokens/contrast';
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import { lastDayOf } from '../../domain/occurrenceDays';
+import { lastDayOf } from '@lupira/cal-domain/occurrences';
 import { isTaskRow } from '../../domain/taskRows';
 import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrences';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
@@ -41,7 +41,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
   const availByDay = new Map<string, (string | null)[]>();
   const merged: CalRow[] = [...rows, ...taskRows].sort((a, b) => compareDayEntries(orderKey(a), orderKey(b)));
   for (const r of merged) {
-    const end = lastDayOf(r);
+    const end = lastDayOf(r.start_day, r.end_utc, r.all_day === 1);
     for (const k of dayKeys) {
       if (k < r.start_day || k > end) continue;
       if (r.is_availability === 1) {

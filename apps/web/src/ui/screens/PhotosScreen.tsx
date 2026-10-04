@@ -15,6 +15,7 @@ import { useGetItem } from '@lupira/cal-api/query/cal';
 import { daysLeft, fmtDays, fmtDuration, outcomeMessage, photoCount } from '@lupira/cal-domain/photoFormat';
 import { fmtPhotoRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
+import { photoEmptyText } from '@lupira/cal-domain/photoFilter';
 import { usePhotoActions } from '../../state/usePhotoActions';
 import { errText } from '../errText';
 import { CalendarIcon, CheckboxBlankIcon, CheckboxIcon, CloseIcon, DeleteIcon, PlaceIcon } from '../icons';
@@ -183,13 +184,9 @@ export default function PhotosScreen() {
     return () => observer.disconnect();
   }, [hasNextPage, loadMore]);
 
-  const emptyText = inTrash
-    ? 'Trash is empty.'
-    : filters.event && !isFetching && items.length === 0
-    ? 'No photos linked to this event yet.'
-    : filters.event || filters.from || filters.kind || filters.located || filters.place || filters.status
-      ? 'No photos match these filters.'
-      : 'No photos yet.';
+  const emptyText = photoEmptyText({
+    ...filters, trashed: inTrash, located: filters.located === '' ? null : filters.located === 'true',
+  });
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', p: { xs: 2, md: '16px 24px' } }}>

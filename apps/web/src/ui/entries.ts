@@ -1,5 +1,6 @@
 import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto, ItemStatus, OccurrenceOrigin } from '@lupira/cal-api/models';
 import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { lastDayOf } from '@lupira/cal-domain/occurrences';
 import { isOverdue } from '@lupira/cal-domain/tasks';
 import { parseYmd, sameDay, ymd } from '@lupira/cal-domain/time';
 import type { OpenTask } from '../state/useTaskDeadlines';
@@ -103,7 +104,8 @@ export interface DayRange {
 /** An all-day occurrence's days from its instants: the server sends each day as 00:00Z and the end as the
  *  inclusive last day, so the date part is the day in every time zone. */
 export function isoDayRange(start: string, end?: string | null): DayRange {
-  return { first: start.slice(0, 10), last: (end ?? start).slice(0, 10) };
+  const first = start.slice(0, 10);
+  return { first, last: lastDayOf(first, end, true) };
 }
 
 /** Whether an entry covers a day. All-day spans compare dates; timed ones overlap the local day. */

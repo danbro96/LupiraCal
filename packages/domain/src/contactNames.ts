@@ -13,3 +13,15 @@ export const DISPLAY_NAME_FORMAT_LABELS = {
   FirstLast: 'First & last',
   NickName: 'Nickname',
 } as const;
+
+export const UNKNOWN_CONTACT = 'Unknown contact';
+
+/** Why a contact can't be saved by its names, or null when it can. */
+export function contactNameError(c: { givenName?: string | null; familyName?: string | null; nickname?: string | null }): string | null {
+  return c.givenName?.trim() || c.familyName?.trim() || c.nickname?.trim() ? null : 'A contact needs at least a name or nickname';
+}
+
+/** How an attendee reads: you as "You", anyone else by name, someone outside your address books as unknown. */
+export function attendeeName(contactId: string, me: string | null, nameOf: (id: string) => string | null | undefined): string {
+  return contactId === me ? 'You' : nameOf(contactId) || UNKNOWN_CONTACT;
+}

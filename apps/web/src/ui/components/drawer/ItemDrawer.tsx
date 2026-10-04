@@ -14,7 +14,8 @@ import {
 } from '@lupira/cal-api/models';
 import { describeRrule, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { fmtDate, parseYmd, ymd } from '@lupira/cal-domain/time';
-import { COMMON_TIME_ZONES, deviceTimeZone, fmtZoneOffset, isValidTimeZone, zoneCity } from '@lupira/cal-domain/zonedTime';
+import { COMMON_TIME_ZONES, deviceTimeZone, eventZone, fmtZoneOffset, isValidTimeZone, zoneCity } from '@lupira/cal-domain/zonedTime';
+import { movedEnd } from '@lupira/cal-domain/itemForm';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { CategoryIcon } from '../KindIcon';
 import { AttendeesPanel } from './AttendeesPanel';
@@ -22,7 +23,7 @@ import { CalendarsPanel } from './CalendarsPanel';
 import { DetailDrawer } from './DetailDrawer';
 import { CompletenessBadge } from './CompletenessBadge';
 import { HierarchyPanel } from './HierarchyPanel';
-import { eventZone, isoToLocalInput, localInputToIso } from './inputs';
+import { isoToLocalInput, localInputToIso } from './inputs';
 import { KindDetailsCard } from './KindDetailsCard';
 import { MetadataPanel } from './MetadataPanel';
 import { PayloadPanel } from './PayloadPanel';
@@ -74,13 +75,11 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
   // A zoneless item takes the zone its times were just edited in, as the mobile editor does on save.
   const stampZone: UpdateCalendarItemRequest = item.startTimezone || !zone ? {} : zonePatch(zone);
 
-  // Moving the start carries the end along, keeping the duration.
+  // Moving the start carries the end along, keeping the duration on the event's own clock.
   const moveStart = (value: string) => {
     const startsAt = localInputToIso(value, zone);
     if (!startsAt || startsAt === item.startsAt) return;
-    const endsAt = item.startsAt && item.endsAt
-      ? new Date(Date.parse(item.endsAt) + Date.parse(startsAt) - Date.parse(item.startsAt)).toISOString()
-      : undefined;
+    const endsAt = item.startsAt && item.endsAt ? movedEnd(item.startsAt, item.endsAt, startsAt, zone) : undefined;
     patch({ startsAt, ...(endsAt ? { endsAt } : {}), ...stampZone });
   };
   const moveEnd = (value: string) => {

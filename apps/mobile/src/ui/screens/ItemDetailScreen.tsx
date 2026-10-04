@@ -8,6 +8,8 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, HelperText, List, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { calendarLabel } from '@lupira/cal-domain/calendars';
+import { attendeeName } from '@lupira/cal-domain/contactNames';
 import type { CalendarMembership, ItemDoc } from '../../domain/docTypes';
 import { coreOfDoc, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
 import { copyText } from '../../feedback/copy';
@@ -53,7 +55,7 @@ export function ItemDetailScreen() {
   const end = doc.isAllDay ? doc.endDate : doc.endsAt;
   const cancelled = doc.status === 'Cancelled';
   const attendees = doc.attendees ?? [];
-  const contactName = (id: string) => (id === me ? 'You' : contacts?.find((row) => row.id === id)?.displayName ?? 'Unknown contact');
+  const contactName = (id: string) => attendeeName(id, me, (x) => contacts?.find((row) => row.id === x)?.displayName);
   // Only people the mirror has: a contact outside your address books would open to "not in the offline mirror".
   const openContact = (contactId: string) => {
     if (contacts?.some((row) => row.id === contactId)) navigation.navigate('ContactDetail', { contactId });
@@ -158,7 +160,10 @@ function CalendarsPanel({ itemId, memberships }: { itemId: string; memberships: 
   const c = useColors();
   const { data: calendars } = useCalendars();
   const colorOf = useCalendarColors();
-  const nameOf = (id: string) => calendars?.find((cal) => cal.id === id)?.displayName ?? id;
+  const nameOf = (id: string) => {
+    const cal = calendars?.find((x) => x.id === id);
+    return cal ? calendarLabel(cal) : id;
+  };
   const accepted = memberships.filter((m) => m.status === 'Accepted');
   const proposed = memberships.filter((m) => m.status === 'Proposed');
 

@@ -1,4 +1,4 @@
-import { canWriteCalendar, isCalendarShown } from '@lupira/cal-domain/calendars';
+import { isSelectableCalendar, isCalendarShown } from '@lupira/cal-domain/calendars';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { getDb } from '../data/db/expoDb';
@@ -17,12 +17,8 @@ export type CalendarContainer = {
   kind?: string | null;
 };
 
-/** Calendars a user may deliberately put items into: writable, never System-class scaffolding, never the
- *  synthesized Birthdays calendar (the API 400s on it), never Availability (its entries go through
- *  the dedicated quick-add, not the event editor). */
 export function selectableCalendars(calendars: CalendarContainer[] | undefined): CalendarContainer[] {
-  return (calendars ?? []).filter((c) =>
-    canWriteCalendar(c) && c.class !== 'System' && c.kind !== 'Birthdays' && c.kind !== 'Availability');
+  return (calendars ?? []).filter(isSelectableCalendar);
 }
 
 export function useCalendars() {

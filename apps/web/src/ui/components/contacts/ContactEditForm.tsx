@@ -35,7 +35,8 @@ import { PlacePicker } from '../places/PlacePicker';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
 import { fuzzyToInput, parseFuzzyInput, residencyStatus } from '@lupira/cal-domain/fuzzyDate';
-import { inputToPartialDate, partialDateKey, partialDateToInput } from '@lupira/cal-domain/partialDate';
+import { birthdayFields, birthdayFromFields, partialDateKey } from '@lupira/cal-domain/partialDate';
+import { contactNameError } from '@lupira/cal-domain/contactNames';
 import { WrapRow } from '../WrapRow';
 
 // placeId stays null in drafts until a place is picked; save filters those rows out.
@@ -140,7 +141,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
   // Emergency contacts may live in any book you can read.
   const { data: readable } = useSearchContacts({});
 
-  const yearKnownInitial = contact.birthday == null || contact.birthday.year != null;
+  const birthday = birthdayFields(contact.birthday);
   const {
     control,
     handleSubmit,
@@ -157,10 +158,10 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
       familyName: contact.familyName ?? '',
       nickname: contact.nickname ?? '',
       displayNameFormat: contact.displayNameFormat ?? DisplayNameFormat.Full,
-      birthdayYearKnown: yearKnownInitial,
-      birthday: yearKnownInitial ? partialDateToInput(contact.birthday) : '',
-      birthdayMonth: !yearKnownInitial && contact.birthday ? String(Number(contact.birthday.month)) : '',
-      birthdayDay: !yearKnownInitial && contact.birthday ? String(Number(contact.birthday.day)) : '',
+      birthdayYearKnown: birthday.yearKnown,
+      birthday: birthday.date,
+      birthdayMonth: birthday.month,
+      birthdayDay: birthday.day,
       channels: contact.channels.map((c) => ({ ...c })),
       tags: visibleTags(contact.tags),
       // Residency dates are edited as text ("2015", "2015-06", "2015-06-12" — precision = certainty) and
@@ -189,6 +190,11 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
 
   const save = handleSubmit(async (v) => {
     clearErrors('root');
+    const nameError = contactNameError(v);
+    if (nameError) {
+      setError('root', { message: nameError });
+      return;
+    }
 
     // Parse before the first write. This used to sit between the name write and the address write,
     // so an unparseable residency date returned with the rename already committed — the user saw a
@@ -212,9 +218,9 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
       if (norm(v.familyName) !== norm(contact.familyName)) rev.familyName = v.familyName;
       if (norm(v.nickname) !== norm(contact.nickname)) rev.nickname = v.nickname;
       if (v.displayNameFormat !== (contact.displayNameFormat ?? DisplayNameFormat.Full)) rev.displayNameFormat = v.displayNameFormat;
-      const nextBirthday = v.birthdayYearKnown
-        ? inputToPartialDate(v.birthday, true)
-        : (v.birthdayMonth && v.birthdayDay ? { year: null, month: Number(v.birthdayMonth), day: Number(v.birthdayDay) } : null);
+      const nextBirthday = birthdayFromFields({
+        yearKnown: v.birthdayYearKnown, date: v.birthday, month: v.birthdayMonth, day: v.birthdayDay,
+      });
       if (partialDateKey(nextBirthday) !== partialDateKey(contact.birthday)) rev.birthday = nextBirthday;
       if (Object.keys(rev).length > 0) await revise.mutateAsync({ id, data: rev });
 

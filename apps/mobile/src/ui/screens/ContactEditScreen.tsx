@@ -10,7 +10,8 @@ import { Button, Chip, HelperText, IconButton, List, Switch, Text } from 'react-
 import type { ReachChannel, SocialProfile } from '../../domain/docTypes';
 import { REACH_KINDS } from '../../domain/reach';
 import type { ContactForm } from '../../domain/editors';
-import { contactCoreFromForm, contactFormFromDoc, emptyContactForm, parseCsv } from '../../domain/editors';
+import { parseList } from '@lupira/cal-domain/itemForm';
+import { contactCoreFromForm, contactFormFromDoc, emptyContactForm } from '../../domain/editors';
 import { createContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '../../state/actions';
 import { useAddressBooks } from '../../state/useAddressBooks';
 import { useContactState } from '../../state/useContactList';
@@ -100,7 +101,7 @@ export function ContactEditScreen() {
 
     const cleanChannels = channels.filter((ch) => ch.value.trim());
     const cleanProfiles = profiles.filter((p) => p.service.trim() && p.handle.trim());
-    const tags = withPinPreserved(parseCsv(tagsCsv), contactId ? state?.doc.tags : null);
+    const tags = withPinPreserved(parseList(tagsCsv), contactId ? state?.doc.tags : null);
 
     try {
       if (!contactId) {

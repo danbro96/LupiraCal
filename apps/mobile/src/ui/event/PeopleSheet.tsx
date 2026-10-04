@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { List } from 'react-native-paper';
 import { rankByInteraction } from '@lupira/cal-domain/contactRank';
 import { rsvpLabel } from '@lupira/cal-domain/participation';
+import { attendeeName } from '@lupira/cal-domain/contactNames';
 import type { ItemAttendee } from '../../domain/docTypes';
 import { useContactList } from '../../state/useContactList';
 import { useParticipationSummary } from '../../state/useParticipationSummary';
@@ -47,7 +48,7 @@ export function PeopleSheet({ selected, attendees, me, onChange, onDismiss }: {
         {selected.map((id) => (
           <List.Item
             key={id}
-            title={id === me ? 'You' : byId.get(id)?.displayName ?? 'Unknown contact'}
+            title={attendeeName(id, me, (x) => byId.get(x)?.displayName)}
             description={statusOf.has(id) ? rsvpLabel(statusOf.get(id)) : id === me ? 'Going' : 'Invited when you save'}
             left={(p) => <List.Icon {...p} icon={ICONS.person} />}
             right={() => <List.Icon icon={ICONS.check} color={c.primary} />}

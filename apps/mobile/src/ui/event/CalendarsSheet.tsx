@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { List, Text } from 'react-native-paper';
+import { calendarLabel } from '@lupira/cal-domain/calendars';
 import type { CalendarMembership } from '../../domain/docTypes';
 import type { CalendarContainer } from '../../state/useContainers';
 import { Sheet } from '../components/Sheet';
@@ -32,7 +33,7 @@ export function CalendarsSheet({ calendars, memberships, selected, onChange, onD
           return (
             <List.Item
               key={cal.id}
-              title={cal.displayName ?? cal.id}
+              title={calendarLabel(cal)}
               description={!on && proposed.has(cal.id) ? 'Proposed — select to accept' : undefined}
               left={() => <View style={[styles.dot, { backgroundColor: colorOf(cal.id) }]} />}
               right={() => (on ? <List.Icon icon={ICONS.check} color={c.primary} /> : null)}

@@ -21,7 +21,9 @@ import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { useTieredContacts } from '../../../state/useTieredContacts';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
-import { inputToPartialDate, partialDateBadge } from '@lupira/cal-domain/partialDate';
+import { birthdayFromFields, partialDateBadge } from '@lupira/cal-domain/partialDate';
+import { contactNameError } from '@lupira/cal-domain/contactNames';
+import { parseList } from '@lupira/cal-domain/itemForm';
 import { useGroup } from './useGroup';
 import { WrapRow } from '../WrapRow';
 import { SidePane } from './panes';
@@ -29,11 +31,7 @@ import { CakeIcon, StarIcon } from '../../icons';
 
 /** Split a comma-separated input into reach channels of one medium (create-form convenience). */
 function toChannels(raw: string, medium: ReachMedium): ContactReachChannel[] {
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((value) => ({ medium, value, type: null, preferred: false }));
+  return parseList(raw).map((value) => ({ medium, value, type: null, preferred: false }));
 }
 
 /** Middle pane: search + the contact rows, filtered by the selected book (?book) and, when a
@@ -221,6 +219,11 @@ function NewContactForm({ defaultBookId, onDone }: { defaultBookId?: string; onD
     <Paper variant="outlined" component="form" sx={{ p: '12px 16px', my: 1.5 }}
       onSubmit={(e) => {
         e.preventDefault();
+        const nameError = contactNameError(form);
+        if (nameError) {
+          showSnack(nameError);
+          return;
+        }
         const channels = [...toChannels(form.emails, ReachMedium.Email), ...toChannels(form.phones, ReachMedium.Phone)];
         create.mutate({
           data: {
@@ -229,11 +232,9 @@ function NewContactForm({ defaultBookId, onDone }: { defaultBookId?: string; onD
             familyName: form.familyName || null,
             nickname: form.nickname || null,
             channels: channels.length ? channels : null,
-            birthday: form.birthdayYearKnown
-              ? inputToPartialDate(form.birthday, true)
-              : (form.birthdayMonth && form.birthdayDay
-                ? { year: null, month: Number(form.birthdayMonth), day: Number(form.birthdayDay) }
-                : null),
+            birthday: birthdayFromFields({
+              yearKnown: form.birthdayYearKnown, date: form.birthday, month: form.birthdayMonth, day: form.birthdayDay,
+            }),
           },
         });
       }}

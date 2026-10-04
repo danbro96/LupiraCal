@@ -42,3 +42,22 @@ export function partialDateKey(b: PartialDate | null | undefined): string {
   if (!b) return '';
   return `${b.year ?? ''}-${b.month}-${b.day}`;
 }
+
+/** The birthday editor's fields: a known year edits as one date input; an unknown year as month + day, so no
+ *  fake year ever reaches the data. */
+export type BirthdayFields = { yearKnown: boolean; date: string; month: string; day: string };
+
+export function birthdayFields(b: PartialDate | null | undefined): BirthdayFields {
+  const yearKnown = b ? b.year != null : true;
+  return {
+    yearKnown,
+    date: yearKnown ? partialDateToInput(b) : '',
+    month: !yearKnown && b ? String(Number(b.month)) : '',
+    day: !yearKnown && b ? String(Number(b.day)) : '',
+  };
+}
+
+export function birthdayFromFields(f: BirthdayFields): PartialDate | null {
+  if (f.yearKnown) return inputToPartialDate(f.date, true);
+  return f.month && f.day ? { year: null, month: Number(f.month), day: Number(f.day) } : null;
+}

@@ -1,3 +1,5 @@
+import { ymd } from './time';
+
 // Placement math for the week/day grids: timed lanes and the all-day strip.
 
 export interface DaySpan {
@@ -83,6 +85,28 @@ const DAY_MS = 86_400_000;
  *  rather than as a full-height block on every day. */
 export function isDayLong(start: Date, end: Date | null): boolean {
   return end !== null && end.getTime() - start.getTime() >= DAY_MS;
+}
+
+/** Whether an occurrence draws in the all-day strip: all-day ones, and timed ones of a day or more. A grid
+ *  that draws a parent's family rail in the lanes keeps such a parent there (`keepsRail`). */
+export function inAllDayStrip(e: { isAllDay: boolean; start: Date; end: Date | null }, keepsRail = false): boolean {
+  return e.isAllDay || (!keepsRail && isDayLong(e.start, e.end));
+}
+
+/** An open-ended timed occurrence draws as a block this long. */
+export const OPEN_ENDED_MIN = 30;
+
+export function drawnEnd(start: Date, end: Date | null): Date {
+  return end ?? new Date(start.getTime() + OPEN_ENDED_MIN * 60_000);
+}
+
+/** The last day ('yyyy-MM-dd') an occurrence covers, inclusive, never before its start day. An all-day end is
+ *  the inclusive end date at UTC midnight (its date part is the day in every zone); a timed end is an
+ *  exclusive instant, so an evening ending at midnight stays on its day. */
+export function lastDayOf(startDay: string, endIso: string | null | undefined, allDay: boolean): string {
+  if (!endIso) return startDay;
+  const last = allDay ? endIso.slice(0, 10) : ymd(new Date(Date.parse(endIso) - 1));
+  return last > startDay ? last : startDay;
 }
 
 /** An all-day strip under a row cap: every lane when they fit, otherwise `maxRows - 1` lanes of bars and a
