@@ -1,4 +1,4 @@
-import { linkedMessage, linkPhotosTitle, unlinkedPhotoIds } from '@lupira/cal-domain/photoFormat';
+import { linkedMessage, linkPhotosTitle, PHOTO_TEXT, unlinkedPhotoIds } from '@lupira/cal-domain/photoFormat';
 import { useState } from 'react';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -10,6 +10,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import { fmtWhen } from '@lupira/cal-domain/time';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { usePhotoActions } from '../../../state/usePhotoActions';
 import { useLinkCandidates, usePhotoEventLinks } from '../../../state/usePhotoLibrary';
 import { useSnackbar } from '../SnackbarHost';
@@ -54,12 +55,12 @@ export function LinkEventDialog({ photos, onClose, onLinked }: {
       <DialogContent sx={{ px: 1 }}>
         {isLoading && <Typography variant="body2" sx={{ px: 2, color: 'text.subtle' }}>Looking…</Typography>}
         {!isLoading && (candidates ?? []).length === 0 && (
-          <Typography variant="body2" sx={{ px: 2, color: 'text.subtle' }}>No events around this time.</Typography>
+          <Typography variant="body2" sx={{ px: 2, color: 'text.subtle' }}>{PHOTO_TEXT.noEventsAround}</Typography>
         )}
         <List dense>
           {(candidates ?? []).map((item) => (
             <ListItemButton key={item.id} disabled={busy} onClick={() => void onPick(item.id)}>
-              <ListItemText primary={item.title ?? 'Untitled event'} secondary={fmtWhen(item.start, item.isAllDay)} />
+              <ListItemText primary={displayTitle(item.title)} secondary={fmtWhen(item.start, item.isAllDay)} />
             </ListItemButton>
           ))}
         </List>

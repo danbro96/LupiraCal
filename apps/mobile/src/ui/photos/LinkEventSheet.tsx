@@ -1,8 +1,9 @@
-import { linkedMessage, linkPhotosTitle } from '@lupira/cal-domain/photoFormat';
+import { linkedMessage, linkPhotosTitle, PHOTO_TEXT } from '@lupira/cal-domain/photoFormat';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { List, Portal, Text } from 'react-native-paper';
 import { fmtWhen } from '@lupira/cal-domain/time';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { toast, toastError } from '../../feedback/toast';
 import { linkPhotosToEvent, unlinkPhotosFromEvent, useLinkCandidates, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
 import { useColors } from '../theme';
@@ -44,12 +45,12 @@ export function LinkEventSheet({ photos, onDismiss, onLinked }: {
             </Text>
             {isLoading && <Text style={[styles.muted, { color: c.textMuted }]}>Looking…</Text>}
             {!isLoading && (candidates ?? []).length === 0 && (
-              <Text style={[styles.muted, { color: c.textMuted }]}>No events around this time.</Text>
+              <Text style={[styles.muted, { color: c.textMuted }]}>{PHOTO_TEXT.noEventsAround}</Text>
             )}
             {(candidates ?? []).map((item) => (
               <List.Item
                 key={item.id}
-                title={item.title ?? 'Untitled event'}
+                title={displayTitle(item.title)}
                 description={fmtWhen(item.start, item.isAllDay)}
                 left={(props) => <List.Icon {...props} icon={ICONS.calendar} />}
                 disabled={busy}

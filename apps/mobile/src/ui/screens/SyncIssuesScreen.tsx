@@ -13,6 +13,7 @@ import { useConfirm } from '../components/ConfirmDialog';
 import { Button } from '../components/Button';
 import { IndeterminateBar } from '../components/IndeterminateBar';
 import { useColors, spacing } from '../theme';
+import { plural } from '@lupira/cal-domain/wording';
 
 /** The review surface for offline writes: parked ops (gave up after backoff or hit a definitive rejection)
  *  get per-row retry / discard — discard also rolls the optimistic mirror write back to server truth. */
@@ -88,7 +89,7 @@ function ParkedCard({ row }: { row: OutboxRow }) {
         <Pressable onPress={() => setExpanded(!expanded)}>
         <Text style={styles.opLabel}>{labelOf(row)}</Text>
         <Text style={[styles.muted, { color: c.textMuted }]}>
-          {new Date(row.occurred_at).toLocaleString()} · {row.attempts} attempt{row.attempts === 1 ? '' : 's'}
+          {new Date(row.occurred_at).toLocaleString()} · {plural(row.attempts, 'attempt')}
         </Text>
         {row.last_error && (
           <Text style={[styles.error, { color: c.danger }]} numberOfLines={expanded ? undefined : 2}>{row.last_error}</Text>

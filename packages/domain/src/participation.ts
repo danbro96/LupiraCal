@@ -1,6 +1,8 @@
 // Attendee wording both apps use. Keyed on cal-api's ParticipationStatus / ParticipationRole names as
 // strings so this stays free of the generated models; consumers re-type against the enums.
 
+import { plural } from './wording';
+
 export const RSVP_LABELS = {
   NeedsAction: 'Invited — no reply yet',
   Accepted: 'Going',
@@ -24,6 +26,8 @@ export function roleLabel(role: string | null | undefined): string {
   return (ROLE_LABELS as Record<string, string>)[role ?? ''] ?? role ?? '';
 }
 
+export const NO_ATTENDEES = 'Nobody invited';
+
 const SUMMARY_ORDER: [status: string, label: string][] = [
   ['Accepted', 'going'], ['Tentative', 'maybe'], ['Declined', 'not going'], ['Delegated', 'delegated'], ['NeedsAction', 'no reply'],
 ];
@@ -33,7 +37,7 @@ export function attendeeSummary(attendees: readonly { status: string }[]): strin
   const counts = new Map<string, number>();
   for (const a of attendees) counts.set(a.status, (counts.get(a.status) ?? 0) + 1);
   const replies = SUMMARY_ORDER.filter(([s]) => counts.has(s)).map(([s, label]) => `${counts.get(s)} ${label}`);
-  return [`${attendees.length} ${attendees.length === 1 ? 'person' : 'people'}`, ...replies].join(' · ');
+  return [plural(attendees.length, 'person', 'people'), ...replies].join(' · ');
 }
 
 /** The participation an invite just created — what an on-the-spot RSVP has to name. */

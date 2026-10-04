@@ -8,6 +8,7 @@ import { useCreateItemRelation } from '@lupira/cal-api/query/cal';
 import { getListRelationEdgesQueryKey } from '@lupira/cal-api/query/cal';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import type { PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
+import { PHOTO_TEXT, seeAllLinked, PHOTO_LINK } from '@lupira/cal-domain/photoFormat';
 import { useEventPhotos, useSuggestedPhotos } from '../../../state/usePhotoLibrary';
 import { DrawerSection } from '../DrawerSection';
 import { WrapRow } from '../WrapRow';
@@ -26,9 +27,9 @@ export function ItemPhotosPanel({ itemId, item }: { itemId: string; item: PhotoW
 
   const onAdd = (photoId: string) =>
     create.mutate(
-      { id: itemId, data: { toKind: 'photo', toRef: photoId, relationType: 'depicts' } },
+      { id: itemId, data: { ...PHOTO_LINK, toRef: photoId } },
       {
-        onSuccess: () => void queryClient.invalidateQueries({ queryKey: getListRelationEdgesQueryKey({ toKind: 'photo' }) }),
+        onSuccess: () => void queryClient.invalidateQueries({ queryKey: getListRelationEdgesQueryKey({ toKind: PHOTO_LINK.toKind }) }),
         onError: (e) => showSnack(e instanceof Error ? e.message : 'Could not link the photo'),
       },
     );
@@ -38,7 +39,7 @@ export function ItemPhotosPanel({ itemId, item }: { itemId: string; item: PhotoW
   return (
     <DrawerSection title="Photos">
       {linked.length === 0 && !suggesting && (
-        <Typography variant="body2" sx={{ color: 'text.subtle' }}>No photos linked.</Typography>
+        <Typography variant="body2" sx={{ color: 'text.subtle' }}>{PHOTO_TEXT.noneLinked}</Typography>
       )}
       <WrapRow>
         {linked.map((photo) => (
@@ -46,13 +47,13 @@ export function ItemPhotosPanel({ itemId, item }: { itemId: string; item: PhotoW
         ))}
       </WrapRow>
       {linked.length > 0 && !suggesting && (
-        <Button size="small" component={Link} to={`/photos?event=${itemId}`}>See all {linked.length} in Photos</Button>
+        <Button size="small" component={Link} to={`/photos?event=${itemId}`}>{seeAllLinked(linked.length)}</Button>
       )}
 
       {suggesting ? (
         <>
           <Typography variant="caption" sx={{ color: 'text.subtle' }}>
-            {isLoading ? 'Looking…' : suggestions.length === 0 ? 'No photos from this time.' : 'Taken during this event:'}
+            {isLoading ? 'Looking…' : suggestions.length === 0 ? PHOTO_TEXT.noneAround : PHOTO_TEXT.takenDuring}
           </Typography>
           <WrapRow>
             {suggestions.map((photo) => (

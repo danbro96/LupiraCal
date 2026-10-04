@@ -16,6 +16,14 @@ export function reachLink(kind: string, value: string): string | null {
   }
 }
 
+/** The reach kinds both editors offer. Channels are the API's ReachMedium; profiles are an open-string service
+ *  on the API, so the known ones are listed and anything else reads as Other. A row's kind is fixed once it
+ *  exists — changing Telegram→Signal in place would silently rewrite what the value means. */
+export const CHANNEL_MEDIUMS = ['Email', 'Phone'] as const;
+export const PROFILE_SERVICES = ['Telegram', 'Signal', 'WhatsApp', 'Web', 'Other'] as const;
+/** A channel's optional type; null = untyped. */
+export const CHANNEL_TYPES = ['Home', 'Work', 'Mobile'] as const;
+
 /** A channel's label: "Phone (Mobile)", or just the medium when it has no type. */
 export function channelLabel(medium: string, type: string | null | undefined): string {
   return type ? `${medium} (${type})` : medium;

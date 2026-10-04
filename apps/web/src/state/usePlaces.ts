@@ -9,6 +9,7 @@ import {
   useSearchPlaces as useSearchGeoPlaces,
 } from '@lupira/cal-api/query/geo';
 import { PlaceCategory, type PlaceDto, type SearchPlacesParams } from '@lupira/cal-api/models';
+import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@lupira/cal-domain/places';
 
 /** Browse/search the LupiraGeoApi gazetteer (text `q`, category, spatial `near`/`bbox`). */
 export function useSearchPlaces(params: SearchPlacesParams) {
@@ -36,8 +37,6 @@ export type GeocodeHit = {
   osmId?: number | null;
 };
 
-const isCategory = (v: string | null | undefined): v is PlaceCategory =>
-  !!v && Object.values(PlaceCategory).includes(v as PlaceCategory);
 
 function seedGetPlace(queryClient: ReturnType<typeof useQueryClient>, place: PlaceDto) {
   queryClient.setQueryData(getGetPlaceQueryKey(place.id), place);
@@ -50,19 +49,14 @@ export function useCreatePlaceFromHit() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ hit, typedName }: { hit: GeocodeHit; typedName: string }): Promise<PlaceDto> => {
-      if (hit.osmType && hit.osmId != null) {
-        const res = await createPlaceFromGeocode({ query: typedName, osmType: hit.osmType, osmId: hit.osmId });
-        if (!res.placeId) throw new Error('Geocoder unavailable — place not created.');
+      const req = placeRequestFromHit(hit, typedName, Object.values(PlaceCategory));
+      if (req.kind === 'fromGeocode') {
+        const res = await createPlaceFromGeocode(req.body);
+        if (!res.placeId) throw new Error(GEOCODER_UNAVAILABLE);
         // from-geocode returns a thin resolution; fetch the full DTO once to seed the cache.
         return getPlace(res.placeId);
       }
-      return createPlace({
-        name: typedName || hit.displayName,
-        latitude: hit.latitude,
-        longitude: hit.longitude,
-        formattedAddress: hit.displayName,
-        category: isCategory(hit.category) ? hit.category : undefined,
-      });
+      return createPlace({ ...req.body, category: req.body.category as PlaceCategory | undefined });
     },
     onSuccess: (place) => seedGetPlace(queryClient, place),
   });

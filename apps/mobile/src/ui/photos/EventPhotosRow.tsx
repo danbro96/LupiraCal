@@ -7,6 +7,7 @@ import { List, Text } from 'react-native-paper';
 import { createItemRelation } from '@lupira/cal-api/fetch/cal';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import type { PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
+import { PHOTO_TEXT, seeAllLinked, PHOTO_LINK } from '@lupira/cal-domain/photoFormat';
 import { toast, toastError } from '../../feedback/toast';
 import { useEventPhotos, useSuggestedPhotos } from '../../state/usePhotoEventLinks';
 import { invalidatePhotos } from '../../sync/reactivity';
@@ -31,7 +32,7 @@ export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWi
 
   const onAdd = async (photoId: string) => {
     setLinkingId(photoId);
-    const r = await createItemRelation(itemId, { toKind: 'photo', toRef: photoId, relationType: 'depicts' })
+    const r = await createItemRelation(itemId, { ...PHOTO_LINK, toRef: photoId })
       .catch(() => null);
     setLinkingId(null);
     if (r?.status === 200) {
@@ -46,7 +47,7 @@ export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWi
     <View>
       <List.Subheader>Photos</List.Subheader>
       {linked.length === 0 && !suggesting && (
-        <Text style={[styles.muted, { color: c.textMuted }]}>No photos linked.</Text>
+        <Text style={[styles.muted, { color: c.textMuted }]}>{PHOTO_TEXT.noneLinked}</Text>
       )}
       {linked.length > 0 && (
         <Strip>
@@ -63,7 +64,7 @@ export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWi
       )}
       {linked.length > 0 && !suggesting && (
         <Button
-          title={`See all ${linked.length} in Photos`}
+          title={seeAllLinked(linked.length)}
           variant="text"
           onPress={() => navigation.navigate('Tabs', { screen: 'Photos', params: { event: itemId } })}
         />
@@ -72,7 +73,7 @@ export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWi
       {suggesting ? (
         <>
           <Text style={[styles.muted, { color: c.textMuted }]}>
-            {isLoading ? 'Looking…' : suggestions.length === 0 ? 'No photos from this time.' : 'Taken during this event:'}
+            {isLoading ? 'Looking…' : suggestions.length === 0 ? PHOTO_TEXT.noneAround : PHOTO_TEXT.takenDuring}
           </Text>
           <Strip>
             {suggestions.map((photo) => (

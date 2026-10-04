@@ -1,6 +1,5 @@
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { fmtBytes, fmtDimensions, fmtDuration } from '@lupira/cal-domain/photoFormat';
 import { fmtDateTime } from '@lupira/cal-domain/time';
 import { Image } from 'expo-image';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
@@ -11,8 +10,8 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { scheduleOnRN } from 'react-native-worklets';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { reprocessPhoto } from '@lupira/cal-api/fetch/photo';
-import { daysLeft, fmtDays, geotagLabel, originalIsViewable } from '@lupira/cal-domain/photoFormat';
 import { formatCoords } from '@lupira/cal-domain/places';
+import { fmtBytes, fmtDimensions, fmtDuration, geotagLabel, inTrashLine, originalIsViewable, PHOTO_TEXT, purgeWarning } from '@lupira/cal-domain/photoFormat';
 import { toast, toastError } from '../../feedback/toast';
 import { purgePhotos, restorePhotos, trashPhotos } from '../../state/photoActions';
 import { DEFAULT_PHOTO_FILTERS, usePhoto, usePhotoLibrary } from '../../state/usePhotoLibrary';
@@ -69,7 +68,7 @@ export function PhotoViewerScreen() {
       toastError('Could not move the photo to trash.');
       return;
     }
-    toast('Moved to trash', { action: { label: 'Undo', onPress: () => void restorePhotos([id]) } });
+    toast(PHOTO_TEXT.movedToTrash, { action: { label: 'Undo', onPress: () => void restorePhotos([id]) } });
     navigation.goBack();
   };
 
@@ -89,7 +88,7 @@ export function PhotoViewerScreen() {
     setMenuOpen(false);
     const ok = await confirm({
       title: 'Delete for good',
-      message: 'This removes the original and its thumbnail from storage. It cannot be undone.',
+      message: purgeWarning(1),
       confirmLabel: 'Delete',
       destructive: true,
     });
@@ -98,10 +97,10 @@ export function PhotoViewerScreen() {
     const { failed } = await purgePhotos([currentId]);
     setBusy(false);
     if (failed > 0) {
-      toastError('Could not delete the photo.');
+      toastError(PHOTO_TEXT.deleteFailed);
       return;
     }
-    toast('Deleted for good');
+    toast(PHOTO_TEXT.deletedForGood);
     navigation.goBack();
   };
 
@@ -368,7 +367,7 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
       <Text style={[styles.detail, { color: c.textMuted }]}>{fmtDateTime(new Date(photo.takenAt))}</Text>
       {photo.purgesAt && (
         <Text style={[styles.detail, { color: c.warning }]}>
-          {`In trash · deleted for good in ${fmtDays(daysLeft(photo.purgesAt, new Date()))}`}
+          {inTrashLine(photo.purgesAt, new Date())}
         </Text>
       )}
 
@@ -383,7 +382,7 @@ function Metadata({ photo, onReprocess, busy }: { photo: PhotoListItemDto; onRep
       <Text style={[styles.detail, { color: c.textMuted }]}>
         {photo.latitude != null && photo.longitude != null
           ? `${formatCoords(photo.latitude, photo.longitude)} · ${geotagLabel(photo.geotagSource)}`
-          : 'No location — this photo never appears on the map.'}
+          : PHOTO_TEXT.noLocation}
       </Text>
 
       {photo.duplicateOfId != null && (

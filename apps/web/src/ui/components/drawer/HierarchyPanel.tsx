@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import { useGetItem, useSearchItems } from '@lupira/cal-api/query/cal';
 import type { CalendarItemDto } from '@lupira/cal-api/models';
 import { fmtWhen } from '@lupira/cal-domain/time';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { CategoryIcon } from '../KindIcon';
 import { DrawerSection } from '../DrawerSection';
 import { Row, RowName } from '../Rows';
@@ -29,13 +30,13 @@ export function HierarchyPanel({ item }: { item: CalendarItemDto }) {
       {parent && (
         <Row component={Link} to={itemHref(parent.id)}>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>↳ part of</Typography>
-          <RowName>{parent.title || '(untitled)'}</RowName>
+          <RowName>{displayTitle(parent.title)}</RowName>
         </Row>
       )}
       {children.map((c) => (
         <Row component={Link} key={c.id} to={itemHref(c.id)}>
           <CategoryIcon category={c.category} sx={{ fontSize: 22 }} />
-          <RowName>{c.title || '(untitled)'}</RowName>
+          <RowName>{displayTitle(c.title)}</RowName>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>{fmtWhen(c.start, c.isAllDay)}</Typography>
         </Row>
       ))}

@@ -11,6 +11,7 @@ import type { ReachChannel, SocialProfile } from '../../domain/docTypes';
 import { REACH_KINDS } from '../../domain/reach';
 import type { ContactForm } from '../../domain/editors';
 import { parseList } from '@lupira/cal-domain/itemForm';
+import { CHANNEL_TYPES as SHARED_CHANNEL_TYPES } from '@lupira/cal-domain/reach';
 import { contactCoreFromForm, contactFormFromDoc, emptyContactForm } from '../../domain/editors';
 import { createContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '../../state/actions';
 import { useAddressBooks } from '../../state/useAddressBooks';
@@ -27,7 +28,7 @@ import { ICONS } from '../icons';
 
 const KIND_OPTIONS = [{ value: 'Individual', label: 'Person' }, { value: 'Organization', label: 'Organization' }];
 const NAME_FORMAT_OPTIONS = Object.entries(DISPLAY_NAME_FORMAT_LABELS).map(([value, label]) => ({ value, label }));
-const CHANNEL_TYPES = [null, 'Home', 'Work', 'Mobile'] as const;
+const CHANNEL_TYPES = [null, ...SHARED_CHANNEL_TYPES] as const;
 
 export function ContactEditScreen() {
   const c = useColors();

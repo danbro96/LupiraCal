@@ -3,6 +3,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
 import { useGetItem } from '@lupira/cal-api/query/cal';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { usePhotoActions } from '../../../state/usePhotoActions';
 import { usePhotoEventLinks } from '../../../state/usePhotoLibrary';
 import { DrawerSection } from '../DrawerSection';
@@ -43,7 +44,7 @@ function LinkedEvent({ itemId, photoId }: { itemId: string; photoId: string }) {
 
   return (
     <WrapRow sx={{ my: 0 }}>
-      <Button size="small" component={Link} to={`/items?item=${itemId}`}>{item?.title ?? 'Untitled event'}</Button>
+      <Button size="small" component={Link} to={`/items?item=${itemId}`}>{displayTitle(item?.title)}</Button>
       <Button size="small" component={Link} to={`/photos?event=${itemId}`}>All its photos</Button>
       <Button size="small" color="inherit" onClick={() => void onRemove()} disabled={actions.busy}>Remove</Button>
     </WrapRow>

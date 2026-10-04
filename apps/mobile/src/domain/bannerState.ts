@@ -1,4 +1,5 @@
 import type { SyncPhase } from './syncPhase';
+import { plural } from '@lupira/cal-domain/wording';
 
 // Pure derivation of the sync banner from the status store, kept framework-free so it can be
 // unit-tested. Priority: in-progress sync → server reachability → parked changes → last sync error.
@@ -28,7 +29,6 @@ export interface BannerState {
  *  Routine delta syncs move a handful. */
 export const BULK_SYNC_COUNT = 100;
 
-const plural = (n: number) => (n === 1 ? '' : 's');
 
 export function bannerState(s: BannerInput, phaseLabels: Record<SyncPhase, string>): BannerState | null {
   if (s.syncing) {
@@ -42,12 +42,12 @@ export function bannerState(s: BannerInput, phaseLabels: Record<SyncPhase, strin
   if (!s.serverReachable) {
     return {
       kind: 'offline',
-      text: s.pending > 0 ? `Offline — ${s.pending} change${plural(s.pending)} queued` : 'Offline',
+      text: s.pending > 0 ? `Offline — ${plural(s.pending, 'change')} queued` : 'Offline',
       quiet: false,
     };
   }
   if (s.parked > 0) {
-    return { kind: 'parked', text: `${s.parked} change${plural(s.parked)} need${s.parked === 1 ? 's' : ''} attention`, quiet: false };
+    return { kind: 'parked', text: `${plural(s.parked, 'change')} need${s.parked === 1 ? 's' : ''} attention`, quiet: false };
   }
   if (s.lastError) {
     return { kind: 'error', text: 'Sync problem — tap for details', quiet: false };

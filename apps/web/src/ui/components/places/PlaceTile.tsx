@@ -5,6 +5,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { placeSpanM } from '@lupira/cal-domain/mapZoom';
+import { placeTitle } from '@lupira/cal-domain/places';
 import { useGeoPlace } from '../../../state/usePlaces';
 import { useCopy } from '../../hooks/useCopy';
 import { CopyIcon, EditIcon, PlaceIcon } from '../../icons';
@@ -28,7 +29,7 @@ export function PlaceTile({ placeId, label, meta, muted, onEdit }: {
 }) {
   const { data: place } = useGeoPlace(placeId ?? undefined);
   const copy = useCopy();
-  const title = label || place?.name || (placeId ? '…' : 'No place linked');
+  const title = placeTitle(label, place?.name, placeId);
   const address = place?.formattedAddress && place.formattedAddress !== title ? place.formattedAddress : null;
   const point = place?.latitude != null && place.longitude != null ? { lat: place.latitude, lon: place.longitude } : null;
 

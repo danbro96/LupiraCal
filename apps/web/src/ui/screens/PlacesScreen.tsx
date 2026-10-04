@@ -21,6 +21,7 @@ import Box from '@mui/material/Box';
 import { classifyOrphan, defaultPruneSelection, type OrphanClass } from '@lupira/cal-domain/placeCuration';
 import { useUpdatePlace } from '@lupira/cal-api/query/geo';
 import { PlaceSource, type OrphanCandidateDto, type PlaceDto } from '@lupira/cal-api/models';
+import { plural } from '@lupira/cal-domain/wording';
 import { useInvalidatePlaces } from '../../state/useInvalidate';
 import {
   isLanOnly404,
@@ -274,7 +275,7 @@ function OrphansSection({ onHistory }: { onHistory: (p: { id: string; name: stri
       onSuccess: (results) => {
         const pruned = results.filter((r) => r.status === 'Pruned').length;
         const skipped = results.length - pruned;
-        showSnack(`Pruned ${pruned} place${pruned === 1 ? '' : 's'}${skipped ? `, ${skipped} skipped` : ''}.`);
+        showSnack(`Pruned ${plural(pruned, 'place')}${skipped ? `, ${skipped} skipped` : ''}.`);
       },
       onError: (e) => showSnack(isLanOnly404(e) ? LAN_ONLY_MSG : (errText(e) ?? 'Prune failed.')),
     });
@@ -332,7 +333,7 @@ function OrphansSection({ onHistory }: { onHistory: (p: { id: string; name: stri
         </>
       )}
       <Dialog open={confirming} onClose={() => setConfirming(false)}>
-        <DialogTitle>Soft delete {selected.size} place{selected.size === 1 ? '' : 's'}?</DialogTitle>
+        <DialogTitle>Soft delete {plural(selected.size, 'place')}?</DialogTitle>
         <DialogContent>
           <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">References are re-checked at prune time; anything referenced since is left alone.</Typography>
         </DialogContent>

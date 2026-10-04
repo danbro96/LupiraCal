@@ -26,7 +26,7 @@ import type { CalendarItemDto } from '@lupira/cal-api/models';
 import { useSearchContacts } from '@lupira/cal-api/query/contact';
 import { initialsOf } from '@lupira/cal-domain/contactNames';
 import { rankByInteraction } from '@lupira/cal-domain/contactRank';
-import { attendeeSummary, roleLabel, rsvpLabel } from '@lupira/cal-domain/participation';
+import { NO_ATTENDEES, attendeeSummary, roleLabel, rsvpLabel } from '@lupira/cal-domain/participation';
 import { avatarColor } from '@lupira/cal-tokens/kinds';
 import { attendeeName } from '@lupira/cal-domain/contactNames';
 import { useInvalidateItems } from '../../../state/useInvalidate';
@@ -89,7 +89,7 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
     <DrawerSection title="Attendees">
       <WrapRow>
         <Typography variant="caption" sx={{ color: 'text.secondary', flex: 1 }}>
-          {item.attendees.length === 0 ? 'No attendees yet.' : attendeeSummary(item.attendees.map((a) => ({ status: a.status ?? 'NeedsAction' })))}
+          {item.attendees.length === 0 ? NO_ATTENDEES : attendeeSummary(item.attendees.map((a) => ({ status: a.status ?? 'NeedsAction' })))}
         </Typography>
         {me && !attending && (
           <Button size="small" variant="outlined" startIcon={<PersonAddIcon />} onClick={joinSelf}>

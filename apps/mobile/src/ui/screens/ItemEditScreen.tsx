@@ -1,4 +1,4 @@
-import { describeRrule } from '@lupira/cal-domain/rrule';
+import { describeRrule, NO_REPEAT } from '@lupira/cal-domain/rrule';
 import { deviceTimeZone, wallToInstant } from '@lupira/cal-domain/zonedTime';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import { Button, HelperText, List, Switch, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { calendarLabel, defaultCalendarIds } from '@lupira/cal-domain/calendars';
 import { attendeeName } from '@lupira/cal-domain/contactNames';
+import { NO_ATTENDEES } from '@lupira/cal-domain/participation';
 import {
   categoryAllDayDefault, emptyItemForm, withAllDay, withSchedule, type ItemForm, type ScheduleField,
 } from '@lupira/cal-domain/itemForm';
@@ -192,7 +193,7 @@ export function ItemEditScreen() {
   };
   const contactName = (id: string) => attendeeName(id, me, (x) => contacts?.find((row) => row.id === x)?.displayName);
   const people = attendeeIds.length === 0
-    ? 'Nobody invited'
+    ? NO_ATTENDEES
     : attendeeIds.slice(0, 2).map(contactName).join(', ') + (attendeeIds.length > 2 ? ` +${attendeeIds.length - 2}` : '');
   const cancelled = form.status === 'Cancelled';
   const noEnd = form.isAllDay ? 'Same day' : 'No end';
@@ -284,7 +285,7 @@ export function ItemEditScreen() {
         <MoreRow
           icon={ICONS.repeat}
           title="Repeats"
-          value={form.recurrenceRule ? describeRrule(form.recurrenceRule) : 'Never'}
+          value={form.recurrenceRule ? describeRrule(form.recurrenceRule) : NO_REPEAT}
           onPress={() => setSheet('repeat')}
         />
         <MoreRow icon={ICONS.group} title="People" value={people} onPress={() => setSheet('people')} />

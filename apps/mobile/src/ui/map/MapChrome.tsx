@@ -3,6 +3,7 @@ import { Chip, FAB, Text } from 'react-native-paper';
 import { MAP_FUTURE_DAYS, MAP_SINCE_LABELS, type MapSince } from '@lupira/cal-domain/mapWindow';
 import { ACTIVITY_COLORS, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 import { LAYERS, LAYER_KEYS, type LayerKey } from '@lupira/cal-tokens/mapLayers';
+import { unmappableLine } from '@lupira/cal-domain/mapFeatures';
 import { MAP_SINCE_OPTIONS } from '../../state/prefs-store';
 import { SegmentedPicker } from '../components/SegmentedPicker';
 import { Sheet } from '../components/Sheet';
@@ -41,7 +42,7 @@ export function LayersSheet({ theme, enabled, since, unmappableCount, onToggle, 
   const caption = [
     `Events also show the next ${Math.round(MAP_FUTURE_DAYS / 30)} months.`,
     enabled.events && unmappableCount > 0
-      ? `${unmappableCount} event${unmappableCount === 1 ? '' : 's'} with a location but no map point.`
+      ? `${unmappableLine(unmappableCount)}.`
       : null,
   ].filter(Boolean).join(' ');
 

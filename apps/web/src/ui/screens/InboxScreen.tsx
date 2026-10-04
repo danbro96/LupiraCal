@@ -6,6 +6,7 @@ import ButtonBase from '@mui/material/ButtonBase';
 import { useAcceptItemIntoCalendar, useRemoveItemFromCalendar } from '@lupira/cal-api/query/cal';
 import type { CalendarItemDto } from '@lupira/cal-api/models';
 import { fmtDate, fmtDateTime, parseYmd } from '@lupira/cal-domain/time';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
 import { useProposedByCalendar } from '../../state/useProposed';
@@ -50,7 +51,7 @@ export function InboxScreen() {
                 onClick={() => open(item.id)}
                 sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left', p: 0 }}
               >
-                <Typography component="span">{item.title || '(untitled)'}</Typography>
+                <Typography component="span">{displayTitle(item.title)}</Typography>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>{itemWhen(item)}</Typography>
               </ButtonBase>
               <Button variant="outlined" onClick={() => accept.mutate({ itemId: item.id, calendarId: calendar.id })}>

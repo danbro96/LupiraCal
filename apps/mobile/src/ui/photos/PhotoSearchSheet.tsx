@@ -4,6 +4,7 @@ import { List, Portal, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { type DayRange, matchTimeline, type TimelineYear } from '@lupira/cal-domain/photoTimeline';
 import { fmtWhen } from '@lupira/cal-domain/time';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { useEventSearch } from '../../state/usePhotoEventLinks';
 import { usePlaceSuggestions } from '../../state/usePhotoLibrary';
 import { Input } from '../components/Input';
@@ -59,7 +60,7 @@ export function PhotoSearchSheet({ timeline, onDate, onEvent, onPlace, onDismiss
             {(events ?? []).map((e) => (
               <List.Item
                 key={e.id}
-                title={e.title ?? 'Untitled event'}
+                title={displayTitle(e.title)}
                 description={fmtWhen(e.start, e.isAllDay)}
                 left={(props) => <List.Icon {...props} icon={ICONS.calendar} />}
                 onPress={() => done(() => onEvent(e.id))}

@@ -16,6 +16,11 @@ export const DISPLAY_NAME_FORMAT_LABELS = {
 
 export const UNKNOWN_CONTACT = 'Unknown contact';
 
+/** "Deceased — 2019-03-02", or just "Deceased" without a date. */
+export function deceasedLine(deathDate: string | null | undefined): string {
+  return deathDate ? `Deceased — ${deathDate}` : 'Deceased';
+}
+
 /** Why a contact can't be saved by its names, or null when it can. */
 export function contactNameError(c: { givenName?: string | null; familyName?: string | null; nickname?: string | null }): string | null {
   return c.givenName?.trim() || c.familyName?.trim() || c.nickname?.trim() ? null : 'A contact needs at least a name or nickname';

@@ -1,6 +1,6 @@
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { birthdayAgeLine, nextBirthday, turningAge } from '@lupira/cal-domain/birthday';
-import { initialsOf } from '@lupira/cal-domain/contactNames';
+import { initialsOf, deceasedLine } from '@lupira/cal-domain/contactNames';
 import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
 import { addressMeta, splitAddresses } from '@lupira/cal-domain/residents';
@@ -108,7 +108,7 @@ export function ContactDetailScreen() {
       {doc.birthday != null && <BirthdayRow birthday={doc.birthday} deceased={deceased} />}
       {deceased && (
         <Text style={[styles.inset, styles.deceased, { color: c.textMuted }]}>
-          Deceased{typeof doc.deathDate === 'string' ? ` — ${doc.deathDate}` : ''}
+          {deceasedLine(typeof doc.deathDate === 'string' ? doc.deathDate : null)}
         </Text>
       )}
 

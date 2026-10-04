@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Chip, Icon, Text } from 'react-native-paper';
-import { attendeeSummary, rsvpLabel } from '@lupira/cal-domain/participation';
+import { NO_ATTENDEES, attendeeSummary, rsvpLabel } from '@lupira/cal-domain/participation';
 import type { ItemAttendee } from '../../domain/docTypes';
 import { ICONS } from '../icons';
 import { spacing, useColors } from '../theme';
@@ -35,7 +35,7 @@ export function AttendeeChips({ attendees, nameOf, onJoin, onOpen }: {
   return (
     <View>
       <Text variant="labelMedium" style={[styles.summary, { color: c.textMuted }]}>
-        {attendees.length > 0 ? attendeeSummary(attendees) : 'Nobody invited'}
+        {attendees.length > 0 ? attendeeSummary(attendees) : NO_ATTENDEES}
       </Text>
       <View style={styles.chips}>
         {onJoin && (

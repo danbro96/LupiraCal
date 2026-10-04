@@ -12,7 +12,9 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useGetItem } from '@lupira/cal-api/query/cal';
-import { daysLeft, fmtDays, fmtDuration, outcomeMessage, photoCount } from '@lupira/cal-domain/photoFormat';
+import {
+  fmtDuration, outcomeMessage, PHOTO_TEXT, photoCount, purgeWarning, trashBadge,
+} from '@lupira/cal-domain/photoFormat';
 import { fmtPhotoRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { photoEmptyText } from '@lupira/cal-domain/photoFilter';
@@ -164,7 +166,7 @@ export default function PhotosScreen() {
       report('Deleted for good:', await actions.purge(ids));
     } else if (what === 'empty') {
       const { failed } = await actions.emptyTrash();
-      showSnack(failed > 0 ? 'Could not empty the trash' : 'Trash emptied', failed > 0 ? 'error' : 'success');
+      showSnack(failed > 0 ? PHOTO_TEXT.emptyTrashFailed : PHOTO_TEXT.trashEmptied, failed > 0 ? 'error' : 'success');
     }
   };
 
@@ -380,7 +382,7 @@ export default function PhotosScreen() {
           {confirming === 'empty' ? 'Empty the trash?' : `Delete ${photoCount(selected.size)} for good?`}
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2">This removes the originals and their thumbnails from storage. It cannot be undone.</Typography>
+          <Typography variant="body2">{confirming === 'empty' ? PHOTO_TEXT.emptyTrashWarning : purgeWarning(selected.size)}</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirming(null)}>Cancel</Button>
@@ -434,7 +436,7 @@ function PhotoTile({ item, eventId, selected, selecting, onOpen, onToggle, onSho
       )}
       {item.purgesAt && (
         <Typography variant="caption" sx={{ ...OVERLAY, left: 4, bottom: 4 }}>
-          {fmtDays(daysLeft(item.purgesAt, new Date()))} left
+          {trashBadge(item.purgesAt, new Date())}
         </Typography>
       )}
       {eventId && (

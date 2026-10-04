@@ -37,6 +37,7 @@ import { useSnackbar } from '../SnackbarHost';
 import { fuzzyToInput, parseFuzzyInput, residencyStatus } from '@lupira/cal-domain/fuzzyDate';
 import { birthdayFields, birthdayFromFields, partialDateKey } from '@lupira/cal-domain/partialDate';
 import { contactNameError } from '@lupira/cal-domain/contactNames';
+import { CHANNEL_TYPES, PROFILE_SERVICES } from '@lupira/cal-domain/reach';
 import { WrapRow } from '../WrapRow';
 
 // placeId stays null in drafts until a place is picked; save filters those rows out.
@@ -355,10 +356,14 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
               control={control}
               render={({ field }) => (
                 <TextField
-                  placeholder="type (home/work…)"
+                  select
                   value={field.value ?? ''}
                   onChange={(e) => field.onChange(e.target.value || null)}
-                />
+                  slotProps={{ select: { displayEmpty: true } }}
+                >
+                  <MenuItem value="">(no type)</MenuItem>
+                  {withCurrent(CHANNEL_TYPES, field.value).map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                </TextField>
               )}
             />
             <Controller
@@ -471,7 +476,10 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
               name={`profiles.${i}.service`}
               control={control}
               render={({ field }) => (
-                <TextField placeholder="service (telegram…)" value={field.value ?? ''} onChange={field.onChange} />
+                <TextField select value={field.value ?? ''} onChange={field.onChange} slotProps={{ select: { displayEmpty: true } }}>
+                  <MenuItem value="" disabled>Service…</MenuItem>
+                  {withCurrent(PROFILE_SERVICES, field.value).map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                </TextField>
               )}
             />
             <Controller
@@ -573,3 +581,10 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
     </Box>
   );
 }
+
+/** The shared choices, plus a value already stored that isn't one of them — the API takes free strings, and
+ *  an edit must not silently drop what an import wrote. */
+function withCurrent(options: readonly string[], current: string | null | undefined): string[] {
+  return current && !options.includes(current) ? [...options, current] : [...options];
+}
+

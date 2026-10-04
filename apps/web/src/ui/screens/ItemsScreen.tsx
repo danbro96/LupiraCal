@@ -17,9 +17,10 @@ import { useGetItem } from '@lupira/cal-api/query/cal';
 import { useGetContact } from '@lupira/cal-api/query/contact';
 import { ItemCategory, ItemStatus, OriginKind, type CalendarItemOccurrenceDto, type ContainerDto } from '@lupira/cal-api/models';
 import { groupOccurrences } from '@lupira/cal-domain/itemTree';
-import { statusBadge } from '@lupira/cal-domain/itemLabels';
+import { statusBadge, displayTitle } from '@lupira/cal-domain/itemLabels';
 import { fmtWhen } from '@lupira/cal-domain/time';
 import { RANGE_PRESETS } from '@lupira/cal-domain/searchRange';
+import { plural } from '@lupira/cal-domain/wording';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { SEARCH_PAGE_SIZE, useItemSearch } from '../../state/useItemSearch';
 import { errText } from '../errText';
@@ -310,7 +311,7 @@ function ItemRow({
         </IconButton>
       )}
       <CategoryIcon category={o.category} sx={{ fontSize: 22 }} />
-      <RowName>{o.title || '(untitled)'}</RowName>
+      <RowName>{displayTitle(o.title)}</RowName>
       {!indent && o.parentItemId && !drilled && (
         <Chip
           variant="outlined"
@@ -325,7 +326,7 @@ function ItemRow({
       {childCount > 0 && (
         <Chip
           variant="outlined"
-          label={`${childCount} sub-item${childCount === 1 ? '' : 's'}`}
+          label={plural(childCount, 'sub-item')}
           onClick={(e) => stop(e, () => onDrill?.(o.id))}
         />
       )}

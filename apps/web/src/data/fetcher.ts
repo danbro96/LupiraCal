@@ -1,5 +1,5 @@
 import { setApiTransport } from '@lupira/cal-api/transport';
-import { ApiError, problemMessage } from '@lupira/cal-domain/apiError';
+import { ApiError, NETWORK_ERROR, problemMessage } from '@lupira/cal-domain/apiError';
 
 /**
  * The SPA's transport for every generated request. Auth rides the BFF's HttpOnly cookie session
@@ -16,7 +16,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   try {
     res = await fetch(url, { credentials: 'include', ...init });
   } catch {
-    throw new ApiError(0, 'Network error — check your connection and try again.');
+    throw new ApiError(0, NETWORK_ERROR);
   }
   if (res.status === 401) {
     const returnUrl = window.location.pathname + window.location.search;

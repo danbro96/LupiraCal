@@ -2,9 +2,10 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getHotspots } from '@lupira/cal-api/fetch/cal';
 import { createPlace, createPlaceFromGeocode, forwardGeocode, listSavedPlaces, suggestPlaces } from '@lupira/cal-api/fetch/geo';
-import { SuggestionType, type GeocodeResultDto } from '@lupira/cal-api/models';
+import { PlaceCategory, SuggestionType, type GeocodeResultDto } from '@lupira/cal-api/models';
 import type { FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
 import { MIN_PLACE_QUERY, eventOrigin, pickPlaces } from '@lupira/cal-domain/placeCandidates';
+import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@lupira/cal-domain/places';
 import { getDb } from '../data/db/expoDb';
 import { mapContactAddresses, mapEventRowsBetween } from '../data/mirror';
 import { lastKnownPosition } from '../sync/livePosition';
@@ -120,18 +121,13 @@ export function useGeocodeHits(query: string) {
 /** A geocoder hit becomes a place: OSM-backed hits resolve server-side (deduped against existing places), the
  *  rest are created at their coordinates under the name that was typed. */
 export async function createPlaceFromHit(hit: GeocodeResultDto, typedName: string): Promise<PlaceOption> {
-  if (hit.osmType && hit.osmId != null) {
-    const r = await createPlaceFromGeocode({ query: typedName, osmType: hit.osmType, osmId: hit.osmId });
-    if (r.status !== 200 || !r.data.placeId) throw new Error('The geocoder is unavailable — no place was created.');
+  const req = placeRequestFromHit(hit, typedName, Object.values(PlaceCategory));
+  if (req.kind === 'fromGeocode') {
+    const r = await createPlaceFromGeocode(req.body);
+    if (r.status !== 200 || !r.data.placeId) throw new Error(GEOCODER_UNAVAILABLE);
     return { placeId: r.data.placeId, label: r.data.name };
   }
-  const r = await createPlace({
-    name: typedName || hit.displayName,
-    latitude: hit.latitude,
-    longitude: hit.longitude,
-    formattedAddress: hit.displayName,
-    category: hit.category,
-  });
+  const r = await createPlace({ ...req.body, category: req.body.category as PlaceCategory | undefined });
   if (r.status !== 200) throw new Error(`create place ${r.status}`);
   return { placeId: r.data.id, label: r.data.name };
 }

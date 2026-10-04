@@ -5,6 +5,7 @@ import { listPhotos, lookupPhotos } from '@lupira/cal-api/fetch/photo';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { PHOTO_LINK, photoEventLinks, THUMB_SAFE_STALE_MS, unlinkedPhotoIds } from '@lupira/cal-domain/photoFormat';
 import { captureWindow, eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { getDb } from '../data/db/expoDb';
 import { loadItem } from '../data/mirror';
 import { invalidatePhotos } from '../sync/reactivity';
@@ -19,7 +20,7 @@ function usePhotoEventEdges() {
     staleTime: 5 * 60_000,
     retry: 1,
     queryFn: async () => {
-      const r = await listRelationEdges({ toKind: 'photo' });
+      const r = await listRelationEdges({ toKind: PHOTO_LINK.toKind });
       if (r.status !== 200) throw new Error(`relation edges ${r.status}`);
       return r.data;
     },
@@ -103,7 +104,7 @@ export function useLinkedEvents(itemIds: string[]): LinkedEvent[] {
     })),
   });
 
-  return itemIds.map((id, i) => ({ id, title: results[i]?.data?.doc.title ?? 'Untitled event' }));
+  return itemIds.map((id, i) => ({ id, title: displayTitle(results[i]?.data?.doc.title) }));
 }
 
 /** Events around the photos' capture times — offered as link candidates, never linked automatically: a

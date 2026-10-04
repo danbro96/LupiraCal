@@ -23,6 +23,9 @@ export function problemMessage(body: string, fallback: string): string {
 }
 
 /** What to show a person for a caught error — its message, without the "Error:" prefix String() adds. */
+/** Shown when a request never reached the server. */
+export const NETWORK_ERROR = 'Network error — check your connection and try again.';
+
 export function errorText(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }

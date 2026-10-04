@@ -13,6 +13,7 @@ import { DrawerSection } from '../DrawerSection';
 import IconButton from '@mui/material/IconButton';
 import Box from '@mui/material/Box';
 import CloseIcon from '@mui/icons-material/Close';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { Row, RowName } from '../Rows';
 import { PlaceIcon } from '../../icons';
 
@@ -107,7 +108,7 @@ function ItemsPanel({ placeId }: { placeId: string }) {
           {item.category && (
             <CategoryIcon category={item.category} sx={{ fontSize: 22 }} />
           )}
-          <RowName>{item.title || '(untitled)'}</RowName>
+          <RowName>{displayTitle(item.title)}</RowName>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>{whenOf(item)}</Typography>
           {roleOf(item, placeId) && <Chip variant="outlined" label={roleOf(item, placeId)} />}
         </Row>

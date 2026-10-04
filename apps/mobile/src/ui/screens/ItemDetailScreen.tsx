@@ -10,6 +10,7 @@ import { Chip, HelperText, List, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { calendarLabel } from '@lupira/cal-domain/calendars';
 import { attendeeName } from '@lupira/cal-domain/contactNames';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import type { CalendarMembership, ItemDoc } from '../../domain/docTypes';
 import { coreOfDoc, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
 import { copyText } from '../../feedback/copy';
@@ -94,7 +95,7 @@ export function ItemDetailScreen() {
             style={[styles.h1, cancelled && styles.struck]}
             onLongPress={doc.title ? () => copyText(doc.title!, 'Event name') : undefined}
           >
-            {doc.title ?? '(untitled)'}
+            {displayTitle(doc.title)}
           </Text>
           {start && (
             <Text style={[styles.when, { color: c.textMuted }]}>

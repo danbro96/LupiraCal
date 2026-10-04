@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCreateItem } from '@lupira/cal-api/query/cal';
 import type { CreateCalendarItemRequest } from '@lupira/cal-api/models';
-import { RRULE_PRESETS } from '@lupira/cal-domain/rrule';
+import { NO_REPEAT, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { ymd } from '@lupira/cal-domain/time';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import { defaultCalendarIds, isSelectableCalendar } from '@lupira/cal-domain/calendars';
@@ -218,7 +218,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
                 {...field}
                 slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
               >
-                <MenuItem value="">never</MenuItem>
+                <MenuItem value="">{NO_REPEAT}</MenuItem>
                 {RRULE_PRESETS.map((p) => (
                   <MenuItem key={p.rrule} value={p.rrule}>
                     {p.label}

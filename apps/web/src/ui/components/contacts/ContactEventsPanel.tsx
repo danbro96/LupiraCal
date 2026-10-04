@@ -3,6 +3,7 @@ import Typography from '@mui/material/Typography';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useSearchItems } from '@lupira/cal-api/query/cal';
 import { fmtWhen } from '@lupira/cal-domain/time';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { CategoryIcon } from '../KindIcon';
 import { DrawerSection } from '../DrawerSection';
 import { Row, RowName } from '../Rows';
@@ -31,7 +32,7 @@ export function ContactEventsPanel({ contactId }: { contactId: string }) {
       {events.map((e) => (
         <Row component={Link} key={e.id} to={itemHref(e.id)}>
           <CategoryIcon category={e.category} sx={{ fontSize: 22 }} />
-          <RowName>{e.title || '(untitled)'}</RowName>
+          <RowName>{displayTitle(e.title)}</RowName>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>{fmtWhen(e.start, e.isAllDay)}</Typography>
         </Row>
       ))}

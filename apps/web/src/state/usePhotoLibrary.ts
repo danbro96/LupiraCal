@@ -2,12 +2,7 @@ import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-qu
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getListPhotosQueryKey, listPhotos, lookupPhotos, useGetPhotoStats } from '@lupira/cal-api/query/photo';
-import {
-  type DayGroup,
-  groupByDay as groupDays,
-  photoEventLinks,
-  THUMB_SAFE_STALE_MS,
-} from '@lupira/cal-domain/photoFormat';
+import { groupByDay as groupDays, photoDayLabel, photoEventLinks, THUMB_SAFE_STALE_MS, type DayGroup, PHOTO_LINK } from '@lupira/cal-domain/photoFormat';
 import { filterPhotos } from '@lupira/cal-domain/photoFilter';
 import type { ListPhotosParams, PhotoListItemDto } from '@lupira/cal-api/models';
 import { getListRelationEdgesQueryKey, listRelationEdges, useSearchItems } from '@lupira/cal-api/query/cal';
@@ -114,8 +109,8 @@ export function usePhotoStats() {
  *  event list without a request per tile. */
 export function usePhotoEventLinks() {
   const query = useQuery({
-    queryKey: getListRelationEdgesQueryKey({ toKind: 'photo' }),
-    queryFn: ({ signal }) => listRelationEdges({ toKind: 'photo' }, { signal }),
+    queryKey: getListRelationEdgesQueryKey({ toKind: PHOTO_LINK.toKind }),
+    queryFn: ({ signal }) => listRelationEdges({ toKind: PHOTO_LINK.toKind }, { signal }),
     staleTime: 5 * 60_000,
   });
 
@@ -125,13 +120,13 @@ export function usePhotoEventLinks() {
 export type PhotoDay = DayGroup<PhotoListItemDto>;
 
 export function groupByDay(items: PhotoListItemDto[]): PhotoDay[] {
-  return groupDays(items, (date) => date.toLocaleDateString(undefined, { dateStyle: 'full' }));
+  return groupDays(items, photoDayLabel);
 }
 
 function useEventPhotoQuery(itemId: string) {
   const edges = useQuery({
-    queryKey: getListRelationEdgesQueryKey({ toKind: 'photo' }),
-    queryFn: ({ signal }) => listRelationEdges({ toKind: 'photo' }, { signal }),
+    queryKey: getListRelationEdgesQueryKey({ toKind: PHOTO_LINK.toKind }),
+    queryFn: ({ signal }) => listRelationEdges({ toKind: PHOTO_LINK.toKind }, { signal }),
     staleTime: 5 * 60_000,
     enabled: !!itemId,
   });

@@ -1,9 +1,9 @@
-/** The one place reach kinds are defined: which are channels (API ReachMedium: Email|Phone) vs social
- *  profiles (open-string service — Telegram et al. live here by design), plus display icons. Once a row
- *  exists its kind is fixed: changing Telegram→Signal in place would silently rewrite what the value means. */
+import { CHANNEL_MEDIUMS, PROFILE_SERVICES } from '@lupira/cal-domain/reach';
+import { reachColor } from '@lupira/cal-tokens/reach';
 
-/** `glyph` names a FontAwesome 6 icon; `brand` marks the ones from the brands style (real service
- *  marks, drawn in the service's own color) as opposed to generic solid glyphs. */
+/** The shared reach kinds (`@lupira/cal-domain/reach`) with this app's icons. `glyph` names a FontAwesome 6
+ *  icon; `brand` marks the ones from the brands style (real service marks, drawn in the service's own colour)
+ *  as opposed to generic solid glyphs. */
 export type ReachKind = {
   key: string;
   glyph: string;
@@ -12,17 +12,22 @@ export type ReachKind = {
   channelMedium?: 'Email' | 'Phone';
 };
 
+const GLYPHS: Record<string, { glyph: string; brand?: boolean }> = {
+  Email: { glyph: 'envelope' },
+  Phone: { glyph: 'phone' },
+  Telegram: { glyph: 'telegram', brand: true },
+  Signal: { glyph: 'signal-messenger', brand: true },
+  WhatsApp: { glyph: 'whatsapp', brand: true },
+  Web: { glyph: 'globe' },
+  Other: { glyph: 'link' },
+};
+
 export const REACH_KINDS: ReachKind[] = [
-  { key: 'Email', glyph: 'envelope', color: '#64748b', channelMedium: 'Email' },
-  { key: 'Phone', glyph: 'phone', color: '#64748b', channelMedium: 'Phone' },
-  { key: 'Telegram', glyph: 'telegram', brand: true, color: '#26A5E4' },
-  { key: 'Signal', glyph: 'signal-messenger', brand: true, color: '#3A76F0' },
-  { key: 'WhatsApp', glyph: 'whatsapp', brand: true, color: '#25D366' },
-  { key: 'Web', glyph: 'globe', color: '#64748b' },
-  { key: 'Other', glyph: 'link', color: '#64748b' },
+  ...CHANNEL_MEDIUMS.map((m) => ({ key: m, ...GLYPHS[m], color: reachColor(m), channelMedium: m })),
+  ...PROFILE_SERVICES.map((s) => ({ key: s, ...GLYPHS[s], color: reachColor(s) })),
 ];
 
-const FALLBACK_GLYPH = { name: 'link', color: '#64748b', brand: false };
+const FALLBACK_GLYPH = { name: 'link', color: reachColor(null), brand: false };
 
 /** Icon spec for any reach kind — service names arrive as free strings from the API, so match loosely. */
 export function reachGlyph(key: string | null | undefined): { name: string; color: string; brand: boolean } {

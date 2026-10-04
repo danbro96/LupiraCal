@@ -9,12 +9,11 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
-import { fmtBytes, fmtDimensions, fmtDuration } from '@lupira/cal-domain/photoFormat';
 import { fmtDateTime } from '@lupira/cal-domain/time';
 import { useGetPhoto, useReprocessPhoto } from '@lupira/cal-api/query/photo';
-import { daysLeft, fmtDays, geotagLabel, originalIsViewable } from '@lupira/cal-domain/photoFormat';
 import { formatCoords } from '@lupira/cal-domain/places';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
+import { fmtBytes, fmtDimensions, fmtDuration, geotagLabel, inTrashLine, originalIsViewable, PHOTO_TEXT, purgeWarning } from '@lupira/cal-domain/photoFormat';
 import { useInvalidatePhotos } from '../../../state/useInvalidate';
 import { usePhotoActions } from '../../../state/usePhotoActions';
 import { useIsPhone } from '../../hooks/useIsPhone';
@@ -88,7 +87,7 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
     leave();
     const { failed } = await actions.trash([photoId]);
     if (failed > 0) showSnack('Could not move the photo to trash');
-    else showSnack('Moved to trash', 'success', { label: 'Undo', onPress: () => void actions.restore([photoId]) });
+    else showSnack(PHOTO_TEXT.movedToTrash, 'success', { label: 'Undo', onPress: () => void actions.restore([photoId]) });
   };
 
   const onRestore = async () => {
@@ -101,7 +100,7 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
     setConfirming(false);
     leave();
     const { failed } = await actions.purge([photoId]);
-    showSnack(failed > 0 ? 'Delete failed' : 'Deleted for good', failed > 0 ? 'error' : 'success');
+    showSnack(failed > 0 ? PHOTO_TEXT.deleteFailed : PHOTO_TEXT.deletedForGood, failed > 0 ? 'error' : 'success');
   };
 
   const onReprocess = () =>
@@ -180,7 +179,7 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
                 </Typography>
                 {photo.purgesAt && (
                   <Typography variant="body2" sx={{ color: 'warning.main', mb: 1 }}>
-                    In trash · deleted for good in {fmtDays(daysLeft(photo.purgesAt, new Date()))}
+                    {inTrashLine(photo.purgesAt, new Date())}
                   </Typography>
                 )}
 
@@ -212,7 +211,7 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
                       </Box>
                     </>
                   ) : (
-                    <Typography variant="body2" sx={{ color: 'text.subtle' }}>No location — this photo never appears on the map.</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.subtle' }}>{PHOTO_TEXT.noLocation}</Typography>
                   )}
                 </DrawerSection>
 
@@ -251,7 +250,7 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
       <Dialog open={confirming} onClose={() => setConfirming(false)}>
         <DialogTitle>Delete this photo for good?</DialogTitle>
         <DialogContent>
-          <Typography variant="body2">This removes the original and its thumbnail from storage. It cannot be undone.</Typography>
+          <Typography variant="body2">{purgeWarning(1)}</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirming(false)}>Cancel</Button>

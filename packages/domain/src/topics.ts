@@ -1,5 +1,6 @@
 // Shaping for comms topics, shared by the web pane and (later) the mobile screen.
 
+import { UNTITLED } from './itemLabels';
 import { ymd } from './time';
 
 /** comms releases a topic once it goes idle; until then it is still accruing messages. */
@@ -23,7 +24,7 @@ export interface MessageDay<T> {
  *  reads as a fragment rather than a name. */
 export function topicHeadline(topic: TopicLike): string {
   const label = topic.label.trim();
-  if (!label) return '(untitled)';
+  if (!label) return UNTITLED;
   return topic.titled ? label : `“${label}”`;
 }
 

@@ -7,6 +7,7 @@ import { useListPhotoPlaces } from '@lupira/cal-api/query/photo';
 import type { PhotoStats } from '@lupira/cal-api/models';
 import { type DayRange, matchTimeline, photoTimeline } from '@lupira/cal-domain/photoTimeline';
 import { fmtWhen } from '@lupira/cal-domain/time';
+import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { RowName } from '../Rows';
 
 type Suggestion =
@@ -40,7 +41,7 @@ export function PhotoSearch({ stats, newestFirst, onDate, onEvent, onPlace }: {
         kind: 'date' as const, key: `date:${m.range.from}:${m.range.to}`, label: m.label, detail: `${m.count}`, range: m.range,
       })),
       ...(events.data ?? []).map((e) => ({
-        kind: 'event' as const, key: `event:${e.id}`, label: e.title ?? 'Untitled event', detail: fmtWhen(e.start, e.isAllDay), id: e.id,
+        kind: 'event' as const, key: `event:${e.id}`, label: displayTitle(e.title), detail: fmtWhen(e.start, e.isAllDay), id: e.id,
       })),
       ...(places.data ?? []).map((p) => ({
         kind: 'place' as const, key: `place:${p.label}`, label: p.label, detail: `${p.count}`,

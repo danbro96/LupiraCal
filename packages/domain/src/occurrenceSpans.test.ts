@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { inAllDayStrip, lastDayOf } from './occurrences';
 
-const timedLast = (start: Date, end: Date | null) => lastDayOf('2026-09-28', end?.toISOString() ?? null, false);
+const timedLast = (_start: Date, end: Date | null) => lastDayOf('2026-09-28', end?.toISOString() ?? null, false);
 const strip = (start: Date, end: Date | null, isAllDay = false) => inAllDayStrip({ isAllDay, start, end });
 
 describe('lastDayOf', () => {

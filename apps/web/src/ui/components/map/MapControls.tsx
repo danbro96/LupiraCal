@@ -8,6 +8,7 @@ import { MAP_ALL_FROM_YMD } from '@lupira/cal-domain/mapWindow';
 import { addDays, startOfDay, ymd } from '@lupira/cal-domain/time';
 import { ACTIVITY_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 import { LAYERS, LAYER_KEYS, type LayerKey } from '@lupira/cal-tokens/mapLayers';
+import { unmappableLine } from '@lupira/cal-domain/mapFeatures';
 
 const PRESETS = [
   { key: 'today', label: 'Today', days: 1 },
@@ -114,7 +115,7 @@ export function LayerToggles({ active, onToggle, theme, unmappableCount, showHis
                 <Typography
                   variant="caption"
                   component="span"
-                  title={`${unmappableCount} occurrences have a free-text location only (no place)`}
+                  title={unmappableLine(unmappableCount)}
                 >
                   {' '}·{unmappableCount}
                 </Typography>

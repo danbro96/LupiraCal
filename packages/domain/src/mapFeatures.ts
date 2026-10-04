@@ -1,6 +1,7 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 import { type FuzzyDate, fmtFuzzyDate, fmtResidencyPeriod, residencyStatus } from './fuzzyDate';
 import { splitTrack, type Bbox, type TrackPointLike } from './geo';
+import { plural } from './wording';
 
 // Row-to-GeoJSON projection for the map, shared by web and mobile. Both read the same layers from
 // different sources — web from the API, mobile from the SQLite mirror — so only the source is
@@ -245,14 +246,13 @@ export function hotspotFeatures(hotspots: readonly HotspotPin[]): FeatureCollect
   })));
 }
 
-const counted = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
 
 /** "12 days · 3 events · 80 photos" — a zero count is left out, the day count never is. */
 export function hotspotStats(h: Pick<HotspotPin, 'activeDays' | 'eventCount' | 'photoCount'>): string {
   return [
-    counted(h.activeDays, 'day'),
-    h.eventCount > 0 ? counted(h.eventCount, 'event') : null,
-    h.photoCount > 0 ? counted(h.photoCount, 'photo') : null,
+    plural(h.activeDays, 'day'),
+    h.eventCount > 0 ? plural(h.eventCount, 'event') : null,
+    h.photoCount > 0 ? plural(h.photoCount, 'photo') : null,
   ].filter(Boolean).join(' · ');
 }
 
@@ -306,3 +306,9 @@ export function photoCellBounds([minLon, minLat, maxLon, maxLat]: Bbox): Bbox {
   const [south, north] = grow(minLat, maxLat);
   return [west, south, east, north];
 }
+
+/** Events with a free-text location that no place resolved — counted beside the map, never drawn. */
+export function unmappableLine(n: number): string {
+  return `${plural(n, 'event')} with a location but no map point`;
+}
+

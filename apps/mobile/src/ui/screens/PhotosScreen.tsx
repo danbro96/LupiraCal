@@ -5,7 +5,9 @@ import { Image } from 'expo-image';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
-import { daysLeft, fmtDuration, outcomeMessage, photoCount } from '@lupira/cal-domain/photoFormat';
+import {
+  fmtDuration, outcomeMessage, PHOTO_TEXT, photoCount, purgeWarning, trashBadge,
+} from '@lupira/cal-domain/photoFormat';
 import { fmtPhotoRange, photoTimeline, yearRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { photoEmptyText } from '@lupira/cal-domain/photoFilter';
@@ -143,7 +145,7 @@ export function PhotosScreen() {
   const onPurgeSelected = async () => {
     const ok = await confirm({
       title: `Delete ${photoCount(selectedPhotos.length)} for good`,
-      message: 'This removes the originals and their thumbnails from storage. It cannot be undone.',
+      message: purgeWarning(selectedPhotos.length),
       confirmLabel: 'Delete',
       destructive: true,
     });
@@ -152,12 +154,12 @@ export function PhotosScreen() {
   const onEmptyTrash = async () => {
     const ok = await confirm({
       title: 'Empty the trash',
-      message: 'Every photo in the trash is deleted for good. It cannot be undone.',
+      message: PHOTO_TEXT.emptyTrashWarning,
       confirmLabel: 'Empty',
       destructive: true,
     });
     if (!ok) return;
-    if (await emptyTrash()) toast('Trash emptied');
+    if (await emptyTrash()) toast(PHOTO_TEXT.trashEmptied);
     else toastError('Could not empty the trash.');
   };
 
@@ -384,7 +386,7 @@ const PhotoTile = memo(function PhotoTile({ photo, size, eventId, selecting, sel
         <Text style={styles.badge}>{fmtDuration(photo.durationSeconds)}</Text>
       )}
       {photo.purgesAt && (
-        <Text style={[styles.badge, styles.badgeBottomLeft]}>{`${daysLeft(photo.purgesAt, new Date())} d`}</Text>
+        <Text style={[styles.badge, styles.badgeBottomLeft]}>{trashBadge(photo.purgesAt, new Date())}</Text>
       )}
       {eventId && !selecting && (
         <Pressable

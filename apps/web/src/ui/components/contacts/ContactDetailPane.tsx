@@ -37,6 +37,7 @@ import { ContactEditForm } from './ContactEditForm';
 import { ContactEventsPanel } from './ContactEventsPanel';
 import { ContactRelationsPanel } from './ContactRelationsPanel';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
+import { deceasedLine } from '@lupira/cal-domain/contactNames';
 import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';
 import { PageHead } from '../Page';
@@ -97,7 +98,7 @@ export function ContactDetailPane() {
           {contact.displayName}
           {contact.nickname && contact.nickname !== contact.displayName && <Typography variant="caption" sx={{ color: 'text.secondary' }}> “{contact.nickname}”</Typography>}
           {contact.deceased && (
-            <Tooltip title={contact.deathDate ? `died ${contact.deathDate}` : 'deceased'}>
+            <Tooltip title={deceasedLine(contact.deathDate)}>
               <Chip variant="outlined" label="†" />
             </Tooltip>
           )}

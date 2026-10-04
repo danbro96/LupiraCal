@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { List, Text } from 'react-native-paper';
-import { RRULE_PRESETS, describeRrule } from '@lupira/cal-domain/rrule';
+import { RRULE_PRESETS, describeRrule, NO_REPEAT } from '@lupira/cal-domain/rrule';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Sheet } from '../components/Sheet';
@@ -27,7 +27,7 @@ export function RepeatSheet({ value, onPick, onDismiss }: {
   return (
     <Sheet title="Repeats" anchor={custom ? 'top' : 'bottom'} onDismiss={onDismiss}>
       <ScrollView keyboardShouldPersistTaps="handled">
-        <List.Item title="Never" right={check(value === '')} onPress={() => pick('')} />
+        <List.Item title={NO_REPEAT} right={check(value === '')} onPress={() => pick('')} />
         {RRULE_PRESETS.map((p) => (
           <List.Item key={p.rrule} title={p.label} right={check(value === p.rrule)} onPress={() => pick(p.rrule)} />
         ))}

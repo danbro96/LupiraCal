@@ -3,6 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { placeSpanM } from '@lupira/cal-domain/mapZoom';
+import { placeTitle } from '@lupira/cal-domain/places';
 import { copyText } from '../../feedback/copy';
 import { toastError } from '../../feedback/toast';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
@@ -32,7 +33,7 @@ export function PlaceTile({ placeId, label, meta, muted, directions }: {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const place = usePlaceCoords([placeId]).get(placeId ?? '');
   const point = place?.latitude != null && place.longitude != null ? { lat: place.latitude, lon: place.longitude } : null;
-  const title = label || place?.name || (placeId ? 'Place' : 'No place linked');
+  const title = placeTitle(label, place?.name, placeId);
   const address = place?.formattedAddress && place.formattedAddress !== title ? place.formattedAddress : null;
 
   const openMap = point

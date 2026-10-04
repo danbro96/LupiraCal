@@ -55,6 +55,9 @@ export function describeRrule(rrule: string): string {
   return text;
 }
 
+/** How an event that doesn't repeat reads in the repeat picker. */
+export const NO_REPEAT = 'Never';
+
 /** Quick-pick presets for the item editor. */
 export const RRULE_PRESETS: Array<{ label: string; rrule: string }> = [
   { label: 'Daily', rrule: 'FREQ=DAILY' },

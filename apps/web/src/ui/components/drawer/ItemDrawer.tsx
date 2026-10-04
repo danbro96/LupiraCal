@@ -12,10 +12,11 @@ import {
   type CalendarItemDto,
   type UpdateCalendarItemRequest,
 } from '@lupira/cal-api/models';
-import { describeRrule, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
+import { describeRrule, NO_REPEAT, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { fmtDate, parseYmd, ymd } from '@lupira/cal-domain/time';
 import { eventZone, zoneChoices, zoneLabel } from '@lupira/cal-domain/zonedTime';
 import { movedEnd } from '@lupira/cal-domain/itemForm';
+import { UNTITLED } from '@lupira/cal-domain/itemLabels';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { CategoryIcon } from '../KindIcon';
 import { AttendeesPanel } from './AttendeesPanel';
@@ -111,7 +112,7 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
           fullWidth
           slotProps={{ input: { sx: { fontSize: '1.35rem', fontWeight: 600 } } }}
           value={title}
-          placeholder="(untitled)"
+          placeholder={UNTITLED}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={() => title !== (item.title ?? '') && patch({ title })}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
@@ -193,7 +194,7 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
             }}
             slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
           >
-            <MenuItem value="">never</MenuItem>
+            <MenuItem value="">{NO_REPEAT}</MenuItem>
             {RRULE_PRESETS.map((p) => (
               <MenuItem key={p.rrule} value={p.rrule}>
                 {p.label}

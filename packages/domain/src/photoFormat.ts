@@ -1,5 +1,7 @@
 /** Formatters for photo metadata, shared by the web and mobile galleries. */
 
+import { plural } from './wording';
+
 const KB = 1024;
 
 /** File size for a metadata line: "842 kB", "3.7 MB". Binary units, one decimal above kB. */
@@ -98,7 +100,7 @@ export function daysLeft(purgesAt: string, now: Date): number {
 }
 
 export function photoCount(n: number): string {
-  return n === 1 ? '1 photo' : `${n} photos`;
+  return plural(n, 'photo');
 }
 
 /** A bulk action's result: "Trashed 3 photos", or "Trashed 2, 1 failed" when some failed. */
@@ -107,7 +109,7 @@ export function outcomeMessage(verb: string, { done, failed }: { done: number; f
 }
 
 export function fmtDays(n: number): string {
-  return n === 1 ? '1 day' : `${n} days`;
+  return plural(n, 'day');
 }
 
 /** HEIC originals are stored untranscoded and neither client decodes them — the thumbnail stands in. */
@@ -130,4 +132,44 @@ export function linkPhotosTitle(count: number): string {
 
 export function linkedMessage(count: number, linked: number): string {
   return count === 1 ? 'Linked to the event' : `Linked ${linked} photos`;
+}
+
+/** Photo wording both apps show. */
+export const PHOTO_TEXT = {
+  movedToTrash: 'Moved to trash',
+  trashEmptied: 'Trash emptied',
+  emptyTrashFailed: 'Could not empty the trash',
+  deletedForGood: 'Deleted for good',
+  deleteFailed: 'Could not delete the photo.',
+  emptyTrashWarning: 'Every photo in the trash is deleted for good. It cannot be undone.',
+  noLocation: 'No location — this photo never appears on the map.',
+  noneLinked: 'No photos linked.',
+  noneAround: 'No photos from this time.',
+  takenDuring: 'Taken during this event:',
+  noEventsAround: 'No events around this time.',
+} as const;
+
+export function purgeWarning(n: number): string {
+  return n === 1
+    ? 'This removes the original and its thumbnail from storage. It cannot be undone.'
+    : 'This removes the originals and their thumbnails from storage. It cannot be undone.';
+}
+
+/** "In trash · deleted for good in 3 days" */
+export function inTrashLine(purgesAt: string, now: Date): string {
+  return `In trash · deleted for good in ${fmtDays(daysLeft(purgesAt, now))}`;
+}
+
+/** The trashed tile's badge: "3 days left". */
+export function trashBadge(purgesAt: string, now: Date): string {
+  return `${fmtDays(daysLeft(purgesAt, now))} left`;
+}
+
+export function seeAllLinked(n: number): string {
+  return `See all ${n} in Photos`;
+}
+
+/** A day group's heading: "Sat 4 Oct 2026" — the weekday helps place a day, the short form fits a phone. */
+export function photoDayLabel(date: Date): string {
+  return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
