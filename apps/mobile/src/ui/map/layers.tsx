@@ -13,6 +13,7 @@ import { StyleSheet, View, type NativeSyntheticEvent } from 'react-native';
 import { Icon } from 'react-native-paper';
 import type { LivePosition } from '../../sync/livePosition';
 import { ACTIVITY_COLORS, MAP_COLORS, activityColorExpression, type MapTheme } from '@lupira/cal-tokens/map';
+import { PIN_CLUSTERS } from '@lupira/cal-domain/mapZoom';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
 
@@ -30,8 +31,6 @@ const CLUSTER_TEXT: SymbolLayerSpecification['layout'] = {
   'text-allow-overlap': true,
 };
 
-const CLUSTER_RADIUS = 48;
-const CLUSTER_MAX_ZOOM = 14;
 
 /** Cluster circle + count, shared by every clustered layer so the ramps stay identical. */
 function ClusterLayers({ id, color, ring }: { id: string; color: string; ring: string }) {
@@ -70,8 +69,8 @@ export function EventsLayer({ theme, features, sourceRef, onPress }: {
       id="events"
       data={features}
       cluster
-      clusterRadius={CLUSTER_RADIUS}
-      clusterMaxZoom={CLUSTER_MAX_ZOOM}
+      clusterRadius={PIN_CLUSTERS.radius}
+      clusterMaxZoom={PIN_CLUSTERS.maxZoom}
       onPress={onPress}
     >
       <ClusterLayers id="event" color={colors.eventFallback} ring={colors.ring} />
@@ -142,8 +141,8 @@ export function ContactsLayer({ theme, features, sourceRef, onPress }: {
       id="contacts"
       data={features}
       cluster
-      clusterRadius={CLUSTER_RADIUS}
-      clusterMaxZoom={CLUSTER_MAX_ZOOM}
+      clusterRadius={PIN_CLUSTERS.radius}
+      clusterMaxZoom={PIN_CLUSTERS.maxZoom}
       onPress={onPress}
     >
       <ClusterLayers id="contact" color={colors.contact} ring={colors.ring} />

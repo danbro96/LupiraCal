@@ -1,6 +1,7 @@
 import type { FeatureCollection } from 'geojson';
 import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap, MapGeoJSONFeature } from 'maplibre-gl';
 import { useEffect, useRef } from 'react';
+import { PIN_CLUSTERS } from '@lupira/cal-domain/mapZoom';
 
 export type LayerSpecSansSource = Omit<LayerSpecification, 'source'>;
 
@@ -35,7 +36,7 @@ export function useGeoJsonLayer(
           map.addSource(sourceId, {
             type: 'geojson',
             data: dataRef.current,
-            ...(options?.cluster ? { cluster: true, clusterMaxZoom: 14, clusterRadius: 48 } : {}),
+            ...(options?.cluster ? { cluster: true, clusterMaxZoom: PIN_CLUSTERS.maxZoom, clusterRadius: PIN_CLUSTERS.radius } : {}),
           });
         }
         const beforeId = options?.beneathData ? firstDataLayerId(map, sourceId) : undefined;

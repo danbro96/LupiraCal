@@ -5,6 +5,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useForwardGeocode, useSuggestPlaces } from '@lupira/cal-api/query/geo';
 import { SuggestionType, type PlaceSuggestionDto } from '@lupira/cal-api/models';
+import { MIN_PLACE_QUERY } from '@lupira/cal-domain/placeCandidates';
 import Box from '@mui/material/Box';
 import { RowName } from '../Rows';
 
@@ -25,8 +26,8 @@ export function MapSearch({ onPick }: { onPick: (target: SearchTarget) => void }
   const [q, setQ] = useState('');
   const [geocodeQ, setGeocodeQ] = useState<string>();
 
-  const suggestQ = useSuggestPlaces({ q }, { query: { enabled: q.trim().length >= 2 } });
-  const suggestions = q.trim().length >= 2 ? (suggestQ.data ?? []) : [];
+  const suggestQ = useSuggestPlaces({ q }, { query: { enabled: q.trim().length >= MIN_PLACE_QUERY } });
+  const suggestions = q.trim().length >= MIN_PLACE_QUERY ? (suggestQ.data ?? []) : [];
 
   const geocode = useForwardGeocode(
     { q: geocodeQ ?? '', limit: 1 },
@@ -53,7 +54,7 @@ export function MapSearch({ onPick }: { onPick: (target: SearchTarget) => void }
   const options: SearchOption[] =
     suggestions.length > 0
       ? suggestions
-      : q.trim().length >= 2 && !suggestQ.isLoading
+      : q.trim().length >= MIN_PLACE_QUERY && !suggestQ.isLoading
         ? [{ geocode: true }]
         : [];
 
@@ -63,13 +64,13 @@ export function MapSearch({ onPick }: { onPick: (target: SearchTarget) => void }
         freeSolo
         options={options}
         filterOptions={(x) => x}
-        loading={q.trim().length >= 2 && suggestQ.isLoading}
+        loading={q.trim().length >= MIN_PLACE_QUERY && suggestQ.isLoading}
         value={null}
         inputValue={q}
         onInputChange={(_, v) => setQ(v)}
         onChange={(_, value) => {
           if (typeof value === 'string') {
-            if (suggestions.length === 0 && value.trim().length >= 2) setGeocodeQ(value.trim());
+            if (suggestions.length === 0 && value.trim().length >= MIN_PLACE_QUERY) setGeocodeQ(value.trim());
           } else if (value && isFallback(value)) {
             setGeocodeQ(q.trim());
           } else if (value) {

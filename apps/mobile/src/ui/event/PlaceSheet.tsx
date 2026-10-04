@@ -4,6 +4,7 @@ import { List, Text } from 'react-native-paper';
 import type { GeocodeResultDto } from '@lupira/cal-api/models';
 import { toastError } from '../../feedback/toast';
 import type { PickerPlace } from '@lupira/cal-domain/placeCandidates';
+import { MIN_PLACE_QUERY, PLACE_SEARCH_DEBOUNCE_MS } from '@lupira/cal-domain/placeCandidates';
 import { createPlaceFromHit, type PlaceOption, useGeocodeHits, usePlaceCandidates } from '../../state/usePlaceSearch';
 import { useSyncStatus } from '../../sync/syncStatus';
 import { Input } from '../components/Input';
@@ -30,11 +31,11 @@ export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setQ(text.trim()), 250);
+    const t = setTimeout(() => setQ(text.trim()), PLACE_SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [text]);
 
-  const typing = q.length >= 2;
+  const typing = q.length >= MIN_PLACE_QUERY;
   const { places, residentsNear } = usePlaceCandidates({ query: typing ? q : '', attendeeIds, day });
   const hits = useGeocodeHits(addressQuery);
 
@@ -65,7 +66,7 @@ export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
           setAddressQuery('');
         }}
         returnKeyType="search"
-        onSubmitEditing={() => { if (text.trim().length >= 2) setAddressQuery(text.trim()); }}
+        onSubmitEditing={() => { if (text.trim().length >= MIN_PLACE_QUERY) setAddressQuery(text.trim()); }}
       />
       {!reachable && <Text style={[styles.muted, { color: c.textMuted }]}>Finding places needs a connection.</Text>}
       <ScrollView keyboardShouldPersistTaps="handled">

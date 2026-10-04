@@ -3,8 +3,8 @@ import { useGetParticipationSummary, useSearchItems } from '@lupira/cal-api/quer
 import { useSearchContacts } from '@lupira/cal-api/query/contact';
 import { useListSavedPlaces, useSuggestPlaces } from '@lupira/cal-api/query/geo';
 import { SuggestionType } from '@lupira/cal-api/models';
-import { MIN_PLACE_QUERY, eventOrigin, pickPlaces } from '@lupira/cal-domain/placeCandidates';
-import { addDays, parseYmd } from '@lupira/cal-domain/time';
+import { MIN_PLACE_QUERY, PLACE_SUGGEST_LIMIT, eventOrigin, pickPlaces } from '@lupira/cal-domain/placeCandidates';
+import { dayEndIso, dayStartIso } from '@lupira/cal-domain/time';
 import { useHotspots } from './useHotspots';
 import { usePlaceCoords } from './usePlaceLookup';
 
@@ -19,12 +19,12 @@ export function usePlaceCandidates({ query, opened, attendeeIds, day }: {
 }) {
   const q = query.trim();
   const typing = q.length >= MIN_PLACE_QUERY;
-  const suggest = useSuggestPlaces({ q, limit: 8 }, { query: { enabled: typing } });
+  const suggest = useSuggestPlaces({ q, limit: PLACE_SUGGEST_LIMIT }, { query: { enabled: typing } });
   const { data: hotspots } = useHotspots(opened);
   const { data: saved } = useListSavedPlaces({ query: { enabled: opened } });
   const { data: contacts } = useSearchContacts({}, { query: { enabled: opened } });
   const { data: summary } = useGetParticipationSummary(undefined, { query: { enabled: opened } });
-  const dayRange = day ? { from: parseYmd(day).toISOString(), to: addDays(parseYmd(day), 1).toISOString() } : undefined;
+  const dayRange = day ? { from: dayStartIso(day), to: dayEndIso(day) } : undefined;
   const { data: dayEvents } = useSearchItems(dayRange, { query: { enabled: opened && !!dayRange } });
 
   const addresses = useMemo(() => (contacts ?? []).flatMap((c) => (c.addresses ?? []).map((a) => ({

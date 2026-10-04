@@ -1,20 +1,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCurrentLocation, getThinnedTrack, listVisits } from '@lupira/cal-api/fetch/location';
-import { trackWindowFrozen } from '@lupira/cal-domain/geo';
+import { LIVE_FIX_POLL_MS, LIVE_FIX_STALE_MS, movementStaleMs } from '@lupira/cal-domain/geo';
 import { trackBucketSeconds } from '@lupira/cal-domain/mapWindow';
 import { useSyncStatus } from '../sync/syncStatus';
 
 /** GPS reads for the map, online-only. Empty until something uploads — this app's own recorder is the
  *  only producer. */
 
-const staleTimeFor = (toIso: string): number => (trackWindowFrozen(toIso) ? Infinity : 5 * 60_000);
 
 export function useVisits(fromIso: string, toIso: string, enabled: boolean) {
   const reachable = useSyncStatus((s) => s.serverReachable);
   return useQuery({
     queryKey: ['map', 'visits', fromIso, toIso],
     enabled: enabled && reachable,
-    staleTime: staleTimeFor(toIso),
+    staleTime: movementStaleMs(toIso),
     retry: 1,
     queryFn: async () => {
       const r = await listVisits({ from: fromIso, to: toIso });
@@ -29,7 +28,7 @@ export function useThinnedTrack(fromIso: string, toIso: string, enabled: boolean
   return useQuery({
     queryKey: ['map', 'track', fromIso, toIso],
     enabled: enabled && reachable,
-    staleTime: staleTimeFor(toIso),
+    staleTime: movementStaleMs(toIso),
     retry: 1,
     queryFn: async () => {
       // Raw /location/track caps at 50k points; the thinned form is one best fix per bucket.
@@ -46,8 +45,8 @@ export function useCurrentFixes(enabled: boolean, live: boolean) {
   return useQuery({
     queryKey: ['map', 'current'],
     enabled: enabled && reachable,
-    staleTime: 15_000,
-    refetchInterval: live ? 30_000 : false,
+    staleTime: LIVE_FIX_STALE_MS,
+    refetchInterval: live ? LIVE_FIX_POLL_MS : false,
     retry: 1,
     queryFn: async () => {
       const r = await getCurrentLocation();

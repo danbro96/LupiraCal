@@ -170,6 +170,9 @@ export function visitFeatures(visits: readonly VisitPin[]): FeatureCollection {
   })));
 }
 
+/** A recording hole longer than this breaks the drawn track (tracker off, retention edge). */
+export const TRACK_MAX_GAP_S = 10 * 60;
+
 export function trackFeatures(points: readonly TrackPointLike[], maxGapS: number): FeatureCollection {
   const segments = splitTrack(points, maxGapS).filter((segment) => segment.length >= 2);
   return collect(segments.map((segment): Feature<LineString> => ({

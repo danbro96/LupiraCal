@@ -9,6 +9,7 @@ import Box from '@mui/material/Box';
 import CloseIcon from '@mui/icons-material/Close';
 import { forwardGeocode } from '@lupira/cal-api/query/geo';
 import { SuggestionType, type PlaceSuggestionDto } from '@lupira/cal-api/models';
+import { ADDRESS_SEARCH_LIMIT, PLACE_SEARCH_DEBOUNCE_MS } from '@lupira/cal-domain/placeCandidates';
 import { usePlaceCandidates } from '../../../state/usePlaceCandidates';
 import { useCreatePlaceAtPin, useCreatePlaceFromHit } from '../../../state/usePlaces';
 import { errText } from '../../errText';
@@ -49,7 +50,7 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
 
   const [q, setQ] = useState('');
   useEffect(() => {
-    const t = setTimeout(() => setQ(state.text.trim()), 250);
+    const t = setTimeout(() => setQ(state.text.trim()), PLACE_SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(t);
   }, [state.text]);
   const [opened, setOpened] = useState(false);
@@ -79,7 +80,7 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
   const run = (cmd: PickerCommand) => {
     switch (cmd.kind) {
       case 'geocode':
-        forwardGeocode({ q: cmd.q, limit: 5 })
+        forwardGeocode({ q: cmd.q, limit: ADDRESS_SEARCH_LIMIT })
           .then((hits) => dispatch({ type: 'GEOCODE_OK', token: cmd.token, hits }))
           .catch((e: unknown) => dispatch({ type: 'GEOCODE_ERROR', token: cmd.token, message: errText(e) ?? undefined }));
         return;

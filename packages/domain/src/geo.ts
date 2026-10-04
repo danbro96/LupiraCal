@@ -111,3 +111,13 @@ export function trackWindowFrozen(toIso: string, now: Date = new Date()): boolea
   startOfYesterday.setDate(startOfYesterday.getDate() - 1);
   return Date.parse(toIso) < startOfYesterday.getTime();
 }
+
+/** Movement read caching: a window that ended before today never changes; one that includes today does. */
+export function movementStaleMs(toIso: string, now: Date = new Date()): number {
+  return trackWindowFrozen(toIso, now) ? Infinity : 5 * 60_000;
+}
+
+/** Each device's last fix is polled this often while the map is on screen. */
+export const LIVE_FIX_POLL_MS = 30_000;
+export const LIVE_FIX_STALE_MS = 15_000;
+

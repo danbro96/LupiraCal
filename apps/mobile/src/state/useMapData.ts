@@ -16,6 +16,7 @@ import {
   savedPlaceFeatures,
   trackFeatures,
   visitFeatures,
+  TRACK_MAX_GAP_S,
 } from '@lupira/cal-domain/mapFeatures';
 import { getDb } from '../data/db/expoDb';
 import { mapContactAddresses, mapEventRowsBetween } from '../data/mirror';
@@ -28,8 +29,6 @@ import { usePlaceCoords } from './usePlaceLookup';
  *  invalidate them; network-backed ones override the mirror-tuned defaults (staleTime Infinity /
  *  retry false) — offline the map simply lacks those layers, never an error surface. */
 
-/** A recording hole longer than this breaks the drawn track (tracker off, retention edge). */
-const TRACK_MAX_GAP_S = 10 * 60;
 
 export type EventFeatures = { features: FeatureCollection; unmappableCount: number };
 

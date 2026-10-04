@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import { useSearchItems } from '@lupira/cal-api/query/cal';
 import { useListPhotoPlaces } from '@lupira/cal-api/query/photo';
 import type { PhotoStats } from '@lupira/cal-api/models';
-import { type DayRange, matchTimeline, photoTimeline } from '@lupira/cal-domain/photoTimeline';
+import { matchTimeline, PHOTO_SEARCH, photoTimeline, type DayRange } from '@lupira/cal-domain/photoTimeline';
 import { fmtWhen } from '@lupira/cal-domain/time';
 import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { RowName } from '../Rows';
@@ -16,7 +16,6 @@ type Suggestion =
   | { kind: 'place'; key: string; label: string; detail: string };
 
 const GROUP = { date: 'Dates', event: 'Events', place: 'Places' } as const;
-const MIN_QUERY = 2;
 
 /** One box for the three ways people remember a photo: when, at what, and where. Enter on free text
  *  filters by place, as the old place field did. */
@@ -29,15 +28,15 @@ export function PhotoSearch({ stats, newestFirst, onDate, onEvent, onPlace }: {
 }) {
   const [q, setQ] = useState('');
   const term = q.trim();
-  const active = term.length >= MIN_QUERY;
+  const active = term.length >= PHOTO_SEARCH.minQuery;
 
   const timeline = useMemo(() => photoTimeline(stats?.byMonth ?? {}, newestFirst), [stats, newestFirst]);
-  const events = useSearchItems({ query: term, take: 6, desc: true }, { query: { enabled: active } });
-  const places = useListPhotoPlaces({ q: term, limit: 5 }, { query: { enabled: active } });
+  const events = useSearchItems({ query: term, take: PHOTO_SEARCH.events, desc: true }, { query: { enabled: active } });
+  const places = useListPhotoPlaces({ q: term, limit: PHOTO_SEARCH.places }, { query: { enabled: active } });
 
   const options: Suggestion[] = active
     ? [
-      ...matchTimeline(timeline, term, 4).map((m) => ({
+      ...matchTimeline(timeline, term, PHOTO_SEARCH.dates).map((m) => ({
         kind: 'date' as const, key: `date:${m.range.from}:${m.range.to}`, label: m.label, detail: `${m.count}`, range: m.range,
       })),
       ...(events.data ?? []).map((e) => ({

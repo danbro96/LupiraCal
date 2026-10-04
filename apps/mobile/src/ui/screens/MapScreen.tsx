@@ -20,7 +20,7 @@ import type { HitAction } from '@lupira/cal-domain/mapHitLabels';
 import { hitsFromFeatures, type HitPoint, type MapHit } from '@lupira/cal-domain/mapHits';
 import { photoCellBounds } from '@lupira/cal-domain/mapFeatures';
 import { mapWindow, type MapSince } from '@lupira/cal-domain/mapWindow';
-import { zoomForSpan } from '@lupira/cal-domain/mapZoom';
+import { CELL_PADDING_PX, MAP_HOME, PIN_CLUSTERS, TARGET_ZOOM, zoomForSpan } from '@lupira/cal-domain/mapZoom';
 import type { QuickPlace } from '@lupira/cal-domain/quickPlaces';
 import { ymd } from '@lupira/cal-domain/time';
 import type { MapTheme } from '@lupira/cal-tokens/map';
@@ -45,18 +45,9 @@ import { useMapAuthHeader } from '../map/useMapAuthHeader';
 import type { MapTarget, RootStackParamList, TabParamList } from '../navigation/types';
 import { ICONS } from '../icons';
 
-// Matches the web MapScreen default (Nordics, the basemap extract's home).
-const DEFAULT_CENTER: [number, number] = [18.07, 59.33];
-const DEFAULT_ZOOM = 9;
-/** Street level: the block a place is on, not the city it's in. */
-const TARGET_ZOOM = 16;
-/** Past this the clustered sources stop clustering (layers.tsx) — a cluster that still expands beyond it is
- *  pins sharing one spot, which no zoom separates. */
-const CLUSTER_MAX_ZOOM = 14;
-const CLUSTER_LEAVES = 50;
 /** Finger-sized: a tap this close to a pin counts as on it. */
 const HIT_RADIUS = 14;
-const CELL_PADDING = { top: 48, right: 48, bottom: 48, left: 48 };
+const CELL_PADDING = { top: CELL_PADDING_PX, right: CELL_PADDING_PX, bottom: CELL_PADDING_PX, left: CELL_PADDING_PX };
 
 const LAYER_IDS: Record<LayerKey, string[]> = {
   events: ['event-pins', 'event-clusters'],
@@ -121,7 +112,7 @@ export function MapScreen() {
   const at = route.params?.at;
   const [initialView] = useState(() => (at
     ? { center: [at.lon, at.lat] as [number, number], zoom: TARGET_ZOOM }
-    : { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }));
+    : { center: MAP_HOME.center, zoom: MAP_HOME.zoom }));
   const mapLoaded = useRef(false);
   const pendingTarget = useRef<MapTarget | null>(null);
   const flyTo = useCallback((t: MapTarget) => {
@@ -191,8 +182,8 @@ export function MapScreen() {
         }
         const clusterId = f.properties.cluster_id as number;
         const zoom = await source.current?.getClusterExpansionZoom(clusterId);
-        if (zoom != null && zoom <= CLUSTER_MAX_ZOOM) expand ??= { feature: f, zoom };
-        else found.push(...((await source.current?.getClusterLeaves(clusterId, CLUSTER_LEAVES, 0)) ?? []));
+        if (zoom != null && zoom <= PIN_CLUSTERS.maxZoom) expand ??= { feature: f, zoom };
+        else found.push(...((await source.current?.getClusterLeaves(clusterId, PIN_CLUSTERS.leaves, 0)) ?? []));
       }
     }
 

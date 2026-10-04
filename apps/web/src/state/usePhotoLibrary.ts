@@ -6,8 +6,8 @@ import { groupByDay as groupDays, photoDayLabel, photoEventLinks, THUMB_SAFE_STA
 import { filterPhotos } from '@lupira/cal-domain/photoFilter';
 import type { ListPhotosParams, PhotoListItemDto } from '@lupira/cal-api/models';
 import { getListRelationEdgesQueryKey, listRelationEdges, useSearchItems } from '@lupira/cal-api/query/cal';
-import { addDays, parseYmd, startOfDay } from '@lupira/cal-domain/time';
-import { captureWindow, eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
+import { dayEndIso, dayStartIso } from '@lupira/cal-domain/time';
+import { captureWindow, EVENT_CANDIDATE_LIMIT, eventPhotoWindow, PHOTO_SUGGEST_LIMIT, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
 
 /** The gallery's read model. Filters live in URL params so a view is linkable and survives a reload,
  *  exactly as useItemSearch does it. */
@@ -51,8 +51,8 @@ export function usePhotoLibrary(filters: PhotoFilters) {
     status: (filters.status || undefined) as ListPhotosParams['status'],
     located: filters.located === '' ? undefined : filters.located === 'true',
     place: filters.place || undefined,
-    from: filters.from ? startOfDay(parseYmd(filters.from)).toISOString() : undefined,
-    to: filters.to ? addDays(startOfDay(parseYmd(filters.to)), 1).toISOString() : undefined,
+    from: filters.from ? dayStartIso(filters.from) : undefined,
+    to: filters.to ? dayEndIso(filters.to) : undefined,
     trashed: filters.trashed === 'true' || undefined,
     limit: PHOTO_PAGE_SIZE,
   };
@@ -161,7 +161,7 @@ export function useEventPhotos(itemId: string) {
 export function useLinkCandidates(takenAts: readonly string[], enabled: boolean) {
   const window = useMemo(() => captureWindow(takenAts), [takenAts]);
   return useSearchItems(
-    { from: window?.fromIso, to: window?.toIso, take: 50 },
+    { from: window?.fromIso, to: window?.toIso, take: EVENT_CANDIDATE_LIMIT },
     { query: { enabled: enabled && window !== null } },
   );
 }
@@ -173,7 +173,7 @@ export function useSuggestedPhotos(item: PhotoWindowSource, exclude: readonly st
 
   const { data, isLoading } = useQuery({
     queryKey: [...getListPhotosQueryKey({ from: window?.fromIso, to: window?.toIso }), 'suggestions'],
-    queryFn: ({ signal }) => listPhotos({ from: window!.fromIso, to: window!.toIso, limit: 24 }, { signal }),
+    queryFn: ({ signal }) => listPhotos({ from: window!.fromIso, to: window!.toIso, limit: PHOTO_SUGGEST_LIMIT }, { signal }),
     enabled: enabled && window !== null,
     staleTime: THUMB_SAFE_STALE_MS,
   });

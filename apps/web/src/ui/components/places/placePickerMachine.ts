@@ -3,6 +3,8 @@
 // with; a result only applies while the machine is still in the phase that minted that token — this
 // is what makes late geocode/create responses harmless after further typing.
 
+import { MIN_PLACE_QUERY } from '@lupira/cal-domain/placeCandidates';
+
 export type PickerSuggestion = {
   id: string;
   name: string;
@@ -77,7 +79,7 @@ export function transition(state: PickerState, event: PickerEvent): PickerTransi
     case 'TYPE': {
       // Leaving geocoding/creating orphans any in-flight token (results check phase + token).
       const phase: PickerPhase =
-        event.text.trim().length >= 2 ? { kind: 'suggesting', highlight: -1 } : { kind: 'idle' };
+        event.text.trim().length >= MIN_PLACE_QUERY ? { kind: 'suggesting', highlight: -1 } : { kind: 'idle' };
       return next({ ...state, text: event.text, phase, error: null });
     }
 

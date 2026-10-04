@@ -123,3 +123,13 @@ export function fmtWhen(startIso: string, isAllDay: boolean): string {
   if (isAllDay) return fmtDate(parseYmd(startIso.slice(0, 10)));
   return fmtDateTime(new Date(startIso));
 }
+
+/** Inclusive local day bounds ('yyyy-MM-dd') as the half-open ISO instants the APIs filter on. */
+export function dayStartIso(day: string): string {
+  return parseYmd(day).toISOString();
+}
+
+export function dayEndIso(day: string): string {
+  return addDays(parseYmd(day), 1).toISOString();
+}
+

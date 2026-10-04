@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { List, Portal, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { type DayRange, matchTimeline, type TimelineYear } from '@lupira/cal-domain/photoTimeline';
+import { matchTimeline, PHOTO_SEARCH, type DayRange, type TimelineYear } from '@lupira/cal-domain/photoTimeline';
 import { fmtWhen } from '@lupira/cal-domain/time';
 import { displayTitle } from '@lupira/cal-domain/itemLabels';
 import { useEventSearch } from '../../state/usePhotoEventLinks';
@@ -24,7 +24,7 @@ export function PhotoSearchSheet({ timeline, onDate, onEvent, onPlace, onDismiss
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
   const term = q.trim();
-  const dates = term.length >= 2 ? matchTimeline(timeline, term, 4) : [];
+  const dates = term.length >= PHOTO_SEARCH.minQuery ? matchTimeline(timeline, term, PHOTO_SEARCH.dates) : [];
   const { data: events } = useEventSearch(term);
   const { data: places } = usePlaceSuggestions(term);
 

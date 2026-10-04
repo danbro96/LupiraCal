@@ -9,6 +9,10 @@ const PAD_MS = 15 * 60_000;
 /** An event with neither an end nor an all-day date covers this much. */
 const DEFAULT_SPAN_MS = 60 * 60_000;
 
+/** Photos offered as "taken during this event", and events offered as "around this photo". */
+export const PHOTO_SUGGEST_LIMIT = 24;
+export const EVENT_CANDIDATE_LIMIT = 50;
+
 export interface PhotoWindowSource {
   isAllDay?: boolean | null;
   startsAt?: string | null;

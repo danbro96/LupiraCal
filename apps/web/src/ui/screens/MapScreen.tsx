@@ -11,9 +11,9 @@ import type { Bbox, MapViewport } from '@lupira/cal-domain/geo';
 import { photoCellBounds } from '@lupira/cal-domain/mapFeatures';
 import type { HitAction } from '@lupira/cal-domain/mapHitLabels';
 import { hitsFromFeatures, type MapHit } from '@lupira/cal-domain/mapHits';
-import { zoomForSpan } from '@lupira/cal-domain/mapZoom';
+import { CELL_PADDING_PX, PIN_CLUSTERS, TARGET_ZOOM, zoomForSpan } from '@lupira/cal-domain/mapZoom';
 import type { QuickPlace } from '@lupira/cal-domain/quickPlaces';
-import { addDays, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { dayEndIso, dayStartIso, ymd } from '@lupira/cal-domain/time';
 import { DEFAULT_LAYERS, LAYER_KEYS, isLayerKey, type LayerKey } from '@lupira/cal-tokens/mapLayers';
 import { readPref, writePref } from '../../state/localPrefs';
 import {
@@ -56,12 +56,6 @@ const SELECTION_KEYS = ['place', 'item', 'at'];
 const LAYERS_PREF = 'map.layers';
 const RANGE_PREF = 'map.range';
 const DEFAULT_ACTIVE = LAYER_KEYS.filter((k) => DEFAULT_LAYERS[k]);
-/** Street level: the block a point is on, not the city it's in. */
-const TARGET_ZOOM = 16;
-/** Past this the clustered sources stop clustering (useGeoJsonLayer) — a cluster that still expands beyond it
- *  is pins sharing one spot, which no zoom separates. */
-const CLUSTER_MAX_ZOOM = 14;
-const CLUSTER_LEAVES = 50;
 /** A click this close to a pin counts as on it. */
 const HIT_RADIUS = 10;
 
@@ -127,8 +121,8 @@ export default function MapScreen() {
   };
 
   // Inclusive local dates → half-open UTC instants for the APIs.
-  const fromIso = useMemo(() => parseYmd(range.fromYmd).toISOString(), [range.fromYmd]);
-  const toIso = useMemo(() => addDays(parseYmd(range.toYmd), 1).toISOString(), [range.toYmd]);
+  const fromIso = useMemo(() => dayStartIso(range.fromYmd), [range.fromYmd]);
+  const toIso = useMemo(() => dayEndIso(range.toYmd), [range.toYmd]);
 
   const events = useEventFeatures(fromIso, toIso, activeLayers.includes('events'));
   const movement = useMovementFeatures(fromIso, toIso, activeLayers.includes('movement'));
@@ -410,8 +404,8 @@ function MapClicks({ onHits }: { onHits: (hits: MapHit[]) => void }) {
         const source = map.getSource(f.source) as GeoJSONSource;
         const clusterId = f.properties.cluster_id as number;
         const zoom = await source.getClusterExpansionZoom(clusterId);
-        if (zoom <= CLUSTER_MAX_ZOOM) expand ??= { feature: f, zoom };
-        else found.push(...(await source.getClusterLeaves(clusterId, CLUSTER_LEAVES, 0)));
+        if (zoom <= PIN_CLUSTERS.maxZoom) expand ??= { feature: f, zoom };
+        else found.push(...(await source.getClusterLeaves(clusterId, PIN_CLUSTERS.leaves, 0)));
       }
 
       const hits = hitsFromFeatures(found);
@@ -421,7 +415,7 @@ function MapClicks({ onHits }: { onHits: (hits: MapHit[]) => void }) {
         return;
       }
       if (hits.length === 1 && hits[0].kind === 'photoCell') {
-        map.fitBounds(photoCellBounds(hits[0].bounds), { padding: 48, duration: 400 });
+        map.fitBounds(photoCellBounds(hits[0].bounds), { padding: CELL_PADDING_PX, duration: 400 });
         return;
       }
       onHits(hits);
@@ -455,7 +449,7 @@ function FlyToPoint({ target }: { target: FlyTarget }) {
   const map = useMap();
   useEffect(() => {
     if (target.bounds) {
-      map.fitBounds(photoCellBounds(target.bounds), { padding: 48, duration: 400 });
+      map.fitBounds(photoCellBounds(target.bounds), { padding: CELL_PADDING_PX, duration: 400 });
       return;
     }
     const [lon, lat] = target.center;

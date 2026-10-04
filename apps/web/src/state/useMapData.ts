@@ -9,6 +9,7 @@ import {
   savedPlaceFeatures,
   trackFeatures,
   visitFeatures,
+  TRACK_MAX_GAP_S,
 } from '@lupira/cal-domain/mapFeatures';
 import type { MapViewport } from '@lupira/cal-domain/geo';
 import { useSearchContacts } from '@lupira/cal-api/query/contact';
@@ -22,8 +23,6 @@ import { useCurrentFixes, useThinnedTrack, useTrips, useVisits } from './useMove
 import { usePlaceCoords } from './usePlaceLookup';
 import { useRangeOccurrences } from './useRangeOccurrences';
 
-/** A recording hole longer than this breaks the drawn track (tracker off, retention edge). */
-const TRACK_MAX_GAP_S = 10 * 60;
 const HOTSPOT_STALE_MS = 10 * 60_000;
 
 export interface EventFeaturesResult {

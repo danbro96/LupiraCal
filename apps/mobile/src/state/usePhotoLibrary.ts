@@ -4,7 +4,8 @@ import { getPhoto, getPhotoStats, listPhotoPlaces, listPhotos } from '@lupira/ca
 import type { AssetKind, AssetStatus, ListPhotosParams, PhotoListItemDto, PhotoSort } from '@lupira/cal-api/models';
 import { filterPhotos } from '@lupira/cal-domain/photoFilter';
 import { groupByDay as groupDays, photoDayLabel, THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
-import { addDays, parseYmd, startOfDay } from '@lupira/cal-domain/time';
+import { dayEndIso, dayStartIso } from '@lupira/cal-domain/time';
+import { PHOTO_SEARCH } from '@lupira/cal-domain/photoTimeline';
 import { getDb } from '../data/db/expoDb';
 import { loadPhotoSnapshot, savePhotoSnapshot } from '../data/photoSnapshot';
 import { useSyncStatus } from '../sync/syncStatus';
@@ -38,8 +39,8 @@ export const DEFAULT_PHOTO_FILTERS: PhotoQueryFilters = { sort: 'TakenAtDesc' };
 function listParams({ from, to, event: _event, ...rest }: PhotoQueryFilters): ListPhotosParams {
   return {
     ...rest,
-    from: from ? startOfDay(parseYmd(from)).toISOString() : undefined,
-    to: to ? addDays(startOfDay(parseYmd(to)), 1).toISOString() : undefined,
+    from: from ? dayStartIso(from) : undefined,
+    to: to ? dayEndIso(to) : undefined,
   };
 }
 
@@ -166,11 +167,11 @@ export function usePlaceSuggestions(query: string) {
   const term = query.trim();
   return useQuery({
     queryKey: ['photos', 'places', term],
-    enabled: reachable && term.length >= 2,
+    enabled: reachable && term.length >= PHOTO_SEARCH.minQuery,
     staleTime: 5 * 60_000,
     retry: 1,
     queryFn: async () => {
-      const r = await listPhotoPlaces({ q: term, limit: 5 });
+      const r = await listPhotoPlaces({ q: term, limit: PHOTO_SEARCH.places });
       if (r.status !== 200) throw new Error(`photo places ${r.status}`);
       return r.data;
     },

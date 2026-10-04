@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import './maplibreSetup';
 import { fallbackStyle, loadMapStyle } from './mapStyle';
 import type { MapTheme } from '@lupira/cal-tokens/map';
+import { MAP_HOME } from '@lupira/cal-domain/mapZoom';
 import Paper from '@mui/material/Paper';
 
 const MapContext = createContext<MapLibreMap | null>(null);
@@ -26,9 +27,6 @@ export function useMapTheme(): MapTheme {
   return theme;
 }
 
-/** Nordics default view until data arrives (matches the basemap extract's coverage). */
-const DEFAULT_CENTER: [number, number] = [18.07, 59.33];
-const DEFAULT_ZOOM = 9;
 
 export function MapCanvas({ children, center, zoom }: { children?: ReactNode; center?: [number, number]; zoom?: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,7 +35,7 @@ export function MapCanvas({ children, center, zoom }: { children?: ReactNode; ce
   const theme = useMapTheme();
   const themeRef = useRef(theme);
   // Initial view only — the map owns the camera after construction.
-  const initialView = useRef({ center: center ?? DEFAULT_CENTER, zoom: zoom ?? DEFAULT_ZOOM });
+  const initialView = useRef({ center: center ?? MAP_HOME.center, zoom: zoom ?? MAP_HOME.zoom });
 
   useEffect(() => {
     const container = containerRef.current;

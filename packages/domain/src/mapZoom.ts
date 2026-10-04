@@ -50,3 +50,16 @@ const SPAN_BY_KIND: Record<string, number> = {
 export function placeSpanM(place: { kind?: string | null; category?: string | null } | null | undefined): number {
   return SPAN_BY_CATEGORY[place?.category ?? ''] ?? SPAN_BY_KIND[place?.kind ?? ''] ?? ADDRESS_SPAN_M;
 }
+
+/** Where a map opens before any data arrives: the Nordics, the basemap extract's home. */
+export const MAP_HOME = { center: [18.07, 59.33] as [number, number], zoom: 9 };
+
+/** Street level: the block a point is on, not the city it's in. */
+export const TARGET_ZOOM = 16;
+
+/** Client-side clustering of event and contact pins. Past `maxZoom` nothing clusters, so a cluster that would
+ *  still expand beyond it is pins sharing one spot — which a tap lists (up to `leaves`) instead of zooming. */
+export const PIN_CLUSTERS = { radius: 48, maxZoom: 14, leaves: 50 } as const;
+
+/** Inset when fitting the camera to a photo cell's bounds. */
+export const CELL_PADDING_PX = 48;

@@ -9,6 +9,10 @@ import { otherResidentsLine, residentsByPlace, residentsLine, withResidency, typ
 import { matchesTerms, searchTerms } from './textSearch';
 
 export const MIN_PLACE_QUERY = 2;
+/** Typing settles this long before a place search goes out. */
+export const PLACE_SEARCH_DEBOUNCE_MS = 250;
+export const PLACE_SUGGEST_LIMIT = 8;
+export const ADDRESS_SEARCH_LIMIT = 5;
 const CANDIDATE_HOTSPOTS = 30;
 const SHOWN_LIMIT = 15;
 /** A geocoder hit this close to a resident's place is taken to be that address. */

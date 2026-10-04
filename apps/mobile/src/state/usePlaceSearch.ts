@@ -4,7 +4,9 @@ import { getHotspots } from '@lupira/cal-api/fetch/cal';
 import { createPlace, createPlaceFromGeocode, forwardGeocode, listSavedPlaces, suggestPlaces } from '@lupira/cal-api/fetch/geo';
 import { PlaceCategory, SuggestionType, type GeocodeResultDto } from '@lupira/cal-api/models';
 import type { FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
-import { MIN_PLACE_QUERY, eventOrigin, pickPlaces } from '@lupira/cal-domain/placeCandidates';
+import {
+  ADDRESS_SEARCH_LIMIT, MIN_PLACE_QUERY, PLACE_SUGGEST_LIMIT, eventOrigin, pickPlaces,
+} from '@lupira/cal-domain/placeCandidates';
 import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@lupira/cal-domain/places';
 import { getDb } from '../data/db/expoDb';
 import { mapContactAddresses, mapEventRowsBetween } from '../data/mirror';
@@ -54,7 +56,7 @@ export function usePlaceCandidates({ query, attendeeIds, day }: { query: string;
     staleTime: 5 * 60_000,
     retry: 1,
     queryFn: async () => {
-      const r = await suggestPlaces({ q, limit: 8 });
+      const r = await suggestPlaces({ q, limit: PLACE_SUGGEST_LIMIT });
       if (r.status !== 200) throw new Error(`place suggest ${r.status}`);
       // A locality is a search scope, not somewhere an event can be.
       return r.data.filter((s) => s.type === SuggestionType.Place);
@@ -107,11 +109,11 @@ export function useGeocodeHits(query: string) {
   const q = query.trim();
   return useQuery({
     queryKey: ['places', 'geocode', q],
-    enabled: reachable && q.length >= 2,
+    enabled: reachable && q.length >= MIN_PLACE_QUERY,
     staleTime: 5 * 60_000,
     retry: 1,
     queryFn: async () => {
-      const r = await forwardGeocode({ q, limit: 5 });
+      const r = await forwardGeocode({ q, limit: ADDRESS_SEARCH_LIMIT });
       if (r.status !== 200) throw new Error(`geocode ${r.status}`);
       return r.data;
     },

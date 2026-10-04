@@ -97,3 +97,7 @@ export function matchTimeline(years: readonly TimelineYear[], query: string, max
   }
   return matches.slice(0, max);
 }
+
+/** The photo search box: from this many characters, offering this many of each kind. */
+export const PHOTO_SEARCH = { minQuery: 2, events: 6, places: 5, dates: 4 } as const;
+

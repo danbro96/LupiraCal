@@ -4,8 +4,9 @@ import { createItemRelationsBatch, deleteItemRelationsBatch, listRelationEdges, 
 import { listPhotos, lookupPhotos } from '@lupira/cal-api/fetch/photo';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { PHOTO_LINK, photoEventLinks, THUMB_SAFE_STALE_MS, unlinkedPhotoIds } from '@lupira/cal-domain/photoFormat';
-import { captureWindow, eventPhotoWindow, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
+import { captureWindow, EVENT_CANDIDATE_LIMIT, eventPhotoWindow, PHOTO_SUGGEST_LIMIT, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
 import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { PHOTO_SEARCH } from '@lupira/cal-domain/photoTimeline';
 import { getDb } from '../data/db/expoDb';
 import { loadItem } from '../data/mirror';
 import { invalidatePhotos } from '../sync/reactivity';
@@ -79,7 +80,7 @@ export function useSuggestedPhotos(item: PhotoWindowSource, exclude: readonly st
     staleTime: THUMB_SAFE_STALE_MS,
     retry: 1,
     queryFn: async () => {
-      const r = await listPhotos({ from: window!.fromIso, to: window!.toIso, limit: 24 });
+      const r = await listPhotos({ from: window!.fromIso, to: window!.toIso, limit: PHOTO_SUGGEST_LIMIT });
       if (r.status !== 200) throw new Error(`photos ${r.status}`);
       return r.data.items;
     },
@@ -118,7 +119,7 @@ export function useLinkCandidates(takenAts: readonly string[], enabled: boolean)
     staleTime: 60_000,
     retry: 1,
     queryFn: async () => {
-      const r = await searchItems({ from: window!.fromIso, to: window!.toIso, take: 50 });
+      const r = await searchItems({ from: window!.fromIso, to: window!.toIso, take: EVENT_CANDIDATE_LIMIT });
       if (r.status !== 200) throw new Error(`item search ${r.status}`);
       return r.data;
     },
@@ -148,11 +149,11 @@ export function useEventSearch(query: string) {
   const term = query.trim();
   return useQuery({
     queryKey: ['photos', 'event-search', term],
-    enabled: reachable && term.length >= 2,
+    enabled: reachable && term.length >= PHOTO_SEARCH.minQuery,
     staleTime: 60_000,
     retry: 1,
     queryFn: async () => {
-      const r = await searchItems({ query: term, take: 6, desc: true });
+      const r = await searchItems({ query: term, take: PHOTO_SEARCH.events, desc: true });
       if (r.status !== 200) throw new Error(`item search ${r.status}`);
       return r.data;
     },
