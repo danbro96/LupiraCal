@@ -12,7 +12,7 @@ const DATA_UP = ['data', 'sync', 'state', 'ui'];
 // downward-only — domain → nothing; data → domain; sync → data/domain; state → sync/…; ui → everything below.
 // `generated` (orval output) is its own element importable from data/sync/state/ui; the shared
 // @lupira/cal-domain package arrives as an external import, allowed everywhere (it is the bottom layer).
-// LupiraPlatform (@danbro96) packages sit at the layer their name declares: tokens/domain everywhere,
+// LupiraPlatform (@danbro96) packages sit at the layer their name declares: tokens/domain (and the pure sync-core) everywhere,
 // http from data up (domain may name its ApiError), the feedback/debug/oidc/sqlite leaves from data up,
 // the Paper kit and diagnostics screens from ui only.
 export default [
@@ -60,7 +60,7 @@ export default [
           { from: { element: { type: 'config' } }, allow: [] },
           { allow: [{ to: { module: { origin: ['external', 'core'] } } }] },
           { disallow: [platform('@danbro96/*')] },
-          { allow: [platform(['@danbro96/lupira-tokens-*', '@danbro96/lupira-domain-*'])] },
+          { allow: [platform(['@danbro96/lupira-tokens-*', '@danbro96/lupira-domain-*', '@danbro96/lupira-sync-core'])] },
           { from: { element: { type: 'domain' } }, allow: [platform('@danbro96/lupira-http', 'apiError')] },
           ...fromEach(DATA_UP, [
             platform('@danbro96/lupira-http'),

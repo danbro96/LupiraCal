@@ -14198,6 +14198,7 @@
           "Summary",
           "Question",
           "Relation",
+          "Place",
           "None"
         ],
         "description": "The ProposedAction kind a run is contracted to yield (assistant-api validates against it; cal-api only stores it)."
@@ -15451,13 +15452,14 @@
             ]
           }
         },
-        "description": "A reference the fired payload acts on. `Id` for Event/Contact/Task; `Url` for External."
+        "description": "A reference the fired payload acts on. `Id` for Event/Contact/Task/Place; `Url` for External."
       },
       "RefKind": {
         "enum": [
           "Event",
           "Contact",
           "Task",
+          "Place",
           "External"
         ],
         "description": "What a Ref points at."

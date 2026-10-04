@@ -19,5 +19,6 @@ export const OutputKind = {
   Summary: 'Summary',
   Question: 'Question',
   Relation: 'Relation',
+  Place: 'Place',
   None: 'None',
 } as const;

@@ -2,7 +2,7 @@
  *  asserted where data-layer code hands DTOs in). Unknown fields ride along untouched — the mirror stores the
  *  full server JSON and only reads/writes the fields the reducers know. */
 
-import type { SectionGuard } from '@lupira/cal-domain/lww';
+import type { SectionGuard } from '@danbro96/lupira-sync-core/lww';
 
 export type { SectionGuard };
 

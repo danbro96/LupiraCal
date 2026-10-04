@@ -5,7 +5,7 @@ import { MIGRATIONS } from '../data/db/schema';
 import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import * as mirror from '../data/mirror';
 import { ApiError } from '@danbro96/lupira-http/apiError';
-import { PARK_AFTER_ATTEMPTS } from '../domain/backoff';
+import { PARK_AFTER_ATTEMPTS } from '@danbro96/lupira-sync-core/backoff';
 import type { ItemDoc, ItemGuards } from '../domain/docTypes';
 import { emptyItemGuards } from '../domain/docTypes';
 import type { Horizon } from '../domain/materialize';

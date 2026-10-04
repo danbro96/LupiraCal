@@ -63,7 +63,7 @@ Additive only — existing routes and the legacy feed untouched; web unaffected.
 - [x] `occurredAt` optional on mutating endpoints (PUT body; `?occurredAt=` on metadata/clears/curation; payload set via body)
 - [x] Idempotency ledger port (ProcessedCommand, same-transaction insert with event append; PK violation rolls back the loser); `Idempotency-Key` header on update/delete/metadata/payload/curation. Creates need no key — `SourceKey` already pins the stream id
 - [x] PUT core totalized with `*Provided` sentinels: `startsAt/endsAt/startDate/endDate/startTimezone/endTimezone/recurrenceRule` + `isAllDay` (bool?, null = keep)
-- [x] `tools/FixtureEmitter` → `packages/domain/test/fixtures/{recurrence,lww-vectors}.json` (17 recurrence cases, 10 LWW vectors; `--from-db` mode ingests real rules)
+- [x] `tools/FixtureEmitter` (LupiraCalApi; takes an output directory) → `recurrence.json` for `packages/domain/test/fixtures/` and `lww-vectors.json` for LupiraPlatform `packages/lupira-sync-core/test/fixtures/` (17 recurrence cases, 10 LWW vectors; `--from-db` mode ingests real rules)
 - [x] `sectionGuards` on the sync DTO; OpenAPI regen → downstream `gen:api` ran
 
 ### Exit criteria
@@ -120,7 +120,7 @@ Additive only — existing routes and the legacy feed untouched; web unaffected.
 - [x] Mirror schema (items + item_calendars + occurrences + contacts + containers + outbox + sync_state + mirror_meta); append-only migration ladder on user_version; outbox never dropped (ops carry envelope_version)
 - [x] Exclusive transactions: every mirror helper takes a Tx; writes only inside Db.exclusive (expo `withExclusiveTransactionAsync` / node BEGIN IMMEDIATE + mutex)
 - [x] Outbox: per-row backoff (next_attempt_at, exp + jitter, 30 min cap), park after 8 attempts, causal hold (SQL NOT EXISTS earlier parked sibling), 429 = retry, 401 = pause untouched
-- [x] Client LWW twin: `@lupira/cal-domain/lww` passes the emitted vector suite (sub-ms ISO precision preserved — Date.parse would mis-tie .NET's 7-digit timestamps); reducers seed per-section guards from sync `sectionGuards`; rebase folds pending AND parked ops over the server base
+- [x] Client LWW twin: `@danbro96/lupira-sync-core/lww` passes the emitted vector suite (sub-ms ISO precision preserved — Date.parse would mis-tie .NET's 7-digit timestamps); reducers seed per-section guards from sync `sectionGuards`; rebase folds pending AND parked ops over the server base
 - [x] Paged delta pull that reads the cursor (persisted per page); a full sync (no cursor, or a server `reset`) that never completed restarts, since its prune needs every id; tombstone apply; full-sync prune keeps pending local creates; containers snapshot replace; first sync seeds missing standard containers (`@lupira/cal-domain/bootstrap`)
 - [x] TS recurrence expander in packages/domain — 17/17 parity fixtures (incl. Ical.Net's non-matching-DTSTART behavior); occurrence materialization over a −12/+24-month rolling horizon with drift re-materialization; birthday synthesis (year-less + Feb 29)
 - [x] monthKey-scoped react-query invalidation (no global revision counter); deterministic ids (MD5 + .NET Guid layout, pinned against real .NET output) so offline creates need no temp-id reconciliation

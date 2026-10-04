@@ -7,7 +7,7 @@
 import type { RefKind } from './refKind';
 
 /**
- * A reference the fired payload acts on. `Id` for Event/Contact/Task; `Url` for External.
+ * A reference the fired payload acts on. `Id` for Event/Contact/Task/Place; `Url` for External.
  */
 export interface Ref {
   kind: RefKind;

@@ -1,12 +1,12 @@
 import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import * as mirror from '../data/mirror';
-import { nextAttemptDelayMs, PARK_AFTER_ATTEMPTS } from '../domain/backoff';
+import { nextAttemptDelayMs, PARK_AFTER_ATTEMPTS } from '@danbro96/lupira-sync-core/backoff';
 import type { Horizon } from '../domain/materialize';
 import { birthdayRows, monthKeyOf, occurrenceRowsForItem } from '../domain/materialize';
 import { applyContactOp, applyItemOp } from '../domain/mirrorReducers';
 import type { ClientOp } from '../domain/ops';
 import { aggregateIdOf, domainOf } from '../domain/ops';
-import { classifyReplayError } from '../domain/replayError';
+import { classifyReplayError } from '@danbro96/lupira-sync-core/replayError';
 import { invalidateContacts, invalidateItems, invalidateMonthKeys, invalidateOutbox } from './reactivity';
 import { replayOp } from './replayOp';
 import { useSyncStatus } from './syncStatus';

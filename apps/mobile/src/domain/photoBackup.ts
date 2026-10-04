@@ -1,6 +1,6 @@
 /** Camera-roll backup queue: pure types + selection rules. Blob-shaped work, so it lives in its own
  *  table rather than the outbox (JSON ops with a causal hold), but it reuses the outbox's discipline —
- *  exponential backoff via domain/backoff.ts and parking after enough consecutive failures. */
+ *  exponential backoff via @danbro96/lupira-sync-core/backoff and parking after enough consecutive failures. */
 
 export type QueueState = 'pending' | 'uploading' | 'done' | 'parked';
 

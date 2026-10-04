@@ -8,7 +8,7 @@ import * as mirror from '../data/mirror';
 import { saveToDevice, scanAssets, uploadToPresignedUrl } from '../data/photoLibrary';
 import * as queue from '../data/photoQueue';
 import { loadBackupSettings } from '../data/photoSettings';
-import { nextAttemptDelayMs, PARK_AFTER_ATTEMPTS } from '../domain/backoff';
+import { nextAttemptDelayMs, PARK_AFTER_ATTEMPTS } from '@danbro96/lupira-sync-core/backoff';
 import type { PhotoBackupSettings, PhotoQueueRow } from '../domain/photoBackup';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { usePhotoBackupStatus } from './photoBackupStatus';

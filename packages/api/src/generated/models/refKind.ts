@@ -15,5 +15,6 @@ export const RefKind = {
   Event: 'Event',
   Contact: 'Contact',
   Task: 'Task',
+  Place: 'Place',
   External: 'External',
 } as const;

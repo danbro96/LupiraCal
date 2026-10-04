@@ -1,4 +1,4 @@
-import { wins } from '@lupira/cal-domain/lww';
+import { wins } from '@danbro96/lupira-sync-core/lww';
 import type { ContactDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, SocialProfile } from './docTypes';
 import { emptyContactGuards, emptyItemGuards } from './docTypes';
 import type { ClientOp, ContactCore, ItemCore } from './ops';
