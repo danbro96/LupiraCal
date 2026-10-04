@@ -5,6 +5,7 @@ import { Divider, List, Switch, Text } from 'react-native-paper';
 import { isCalendarShown } from '@lupira/cal-domain/calendars';
 import { fmtDateTime } from '@lupira/cal-domain/time';
 import { APP_VERSION } from '../../config';
+import { UPDATE_LABEL } from '../buildInfo';
 import { useAuth } from '../../state/auth-store';
 import { useBridge } from '../../state/bridge-store';
 import { useLocationTracking } from '../../state/location-tracking-store';
@@ -142,7 +143,7 @@ export function SettingsScreen() {
       {prefs.debugEnabled && (
         <List.Item title="Developer options" left={icon(ICONS.tune)} right={chevron} onPress={() => navigation.navigate('Developer')} />
       )}
-      <Text style={[styles.version, { color: c.textSubtle }]}>Lupira Calendar {APP_VERSION}</Text>
+      <Text style={[styles.version, { color: c.textSubtle }]}>Lupira Calendar {APP_VERSION} · {UPDATE_LABEL}</Text>
     </ScrollView>
   );
 }

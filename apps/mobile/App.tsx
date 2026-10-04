@@ -23,17 +23,18 @@ import { RootStack } from './src/ui/navigation/RootStack';
 import { useAutoUpdate } from './src/ui/hooks/useAutoUpdate';
 import type { RootStackParamList } from './src/ui/navigation/types';
 import { paperSettings } from './src/ui/theme/paperSettings';
-import { APP_VERSION, SENTRY_DSN } from './src/config';
+import { SENTRY_DSN } from './src/config';
+import { UPDATE_CHANNEL, UPDATE_ID } from './src/ui/buildInfo';
 
 Sentry.init({
   dsn: SENTRY_DSN,
   enabled: !!SENTRY_DSN,
   tracesSampleRate: 0.2,
   sendDefaultPii: false,
-  release: APP_VERSION,
-  dist: APP_VERSION,
   environment: __DEV__ ? 'development' : 'production',
 });
+Sentry.setTag('update_id', UPDATE_ID ?? 'none');
+Sentry.setTag('update_channel', UPDATE_CHANNEL ?? 'none');
 
 export default function App() {
   useAutoUpdate();

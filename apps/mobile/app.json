@@ -20,7 +20,6 @@
     "android": {
       "package": "com.lupira.calendar",
       "predictiveBackGestureEnabled": false,
-      "versionCode": 1,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
       ],

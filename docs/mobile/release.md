@@ -7,39 +7,38 @@ auto-updates the family's installs.
 ## Versioning
 
 - `eas.json` sets `cli.appVersionSource: remote` + `production.autoIncrement` — EAS bumps
-  `versionCode` per production build; `expo.version` in `app.json` is the human version.
-- Keep `APP_VERSION` in `src/config/index.ts` in lockstep with `app.json` `expo.version`.
+  `versionCode` per production build. `expo.version` in `app.json` is the only human version
+  (`APP_VERSION` reads it; `package.json` stays `0.0.0`).
+- Settings shows `<version> · dev | embedded | OTA <id>`; Sentry events carry `update_id` and
+  `update_channel` tags.
+- A rebuild is enough even if `expo.version` is unchanged (Play shows e.g. `1.0.0 (4)`). Bump it
+  when the family should see a new number.
 
-## Building
+## Native release
+
+Push to `release/android` (`.github/workflows/mobile-release.yml`): tests → `eas build --profile
+production --auto-submit` to the Play internal track → tag `android/v<version>+<versionCode>`.
 
 ```bash
-cd apps/mobile
-npx eas-cli build -p android --profile production   # AAB for Play
-npx eas-cli build -p android --profile preview      # sideloadable release APK (no Play)
+git push origin main:release/android
 ```
 
-Monorepo note: EAS archives the git root and installs the workspace; the root `.npmrc`
+Runs only when the push touches `apps/mobile/**`, `packages/**` or the lockfile. Needs an
+`EXPO_TOKEN` repo secret and the Play service-account key linked in EAS credentials. The first
+release is manual (Play's API cannot create it): create the app (`com.lupira.calendar`), upload the
+AAB from `npx eas-cli build -p android --profile production`, add testers, share the opt-in link.
+
+Sideloadable APK: `npx eas-cli build -p android --profile preview` (from `apps/mobile`).
+Monorepo: EAS archives the git root and installs the workspace; the root `.npmrc`
 (cooldown + ignore-scripts) applies on the build host.
 
-## Releasing
+## OTA update (JS-only)
 
-First time (manual, Play Console):
-1. Create the app (package `com.lupira.calendar`) in Play Console.
-2. Internal testing track → upload the AAB from the EAS build page → add the family's
-   Gmail addresses as testers → share the opt-in link.
-
-Subsequent releases: `npx eas-cli submit -p android --profile production` (uses the
-internal track from `eas.json`; needs the Play service-account key linked once), or upload
-the AAB manually.
-
-## Subsequent releases (same signing key)
-
-Play accepts a build when its `versionCode` is higher — EAS increments that remotely, so a
-rebuild is enough even if `expo.version` is unchanged (Play then shows e.g. `1.0.0 (4)`).
-Bump `expo.version` + `APP_VERSION` when the family should see a new number.
-
-Updating over a previous Play install keeps the mirror and any queued outbox ops (same key,
-no uninstall) — that is exactly the upgrade drill below.
+Run the **mobile-ota** workflow (branch `production` or `preview`, plus a message), or
+`eas update --branch production --message "…"`. Running apps check on launch and on foreground
+(max once per 5 min) and reload immediately (`useAutoUpdate`). A native change alters the
+fingerprint — those need a native release. No Sentry source maps are uploaded for builds or OTA
+(no Sentry metro/plugin config), so crash stacks are minified.
 
 ## Dev client vs release install
 
