@@ -49,9 +49,30 @@ A contact's finished topics from LupiraCommsApi (`/comms-api` BFF prefix, `@lupi
 - Ask for `status=Closed&status=Released` (`SETTLED_TOPIC_STATUSES`): the closer moves topics on within a sweep, so filtering on `Closed` alone finds nothing.
 - Labels are the opening message's first words until the titling pass runs (`titled: false` → `topicHeadline` quotes them).
 
-## Contact relationships
+## Contact relationships, residencies and door codes
 
-Relationships read the same from both contacts — never branch UI on which contact stores one. `ContactDto.relations` is storage (the copies that contact holds), not the relationship: web renders `GET /contact-api/contacts/{id}/relations` and edits from either side; mobile uses `useContactRelations` (mirror `relationCopiesOf` → `@lupira/cal-domain/contactRelations` `resolveRelations`, the same merge as contact-api's `RelationResolver`). `label` is per side (the viewed contact's word for the other); since/note/ended are shared. The follow-up move to a `Relationship` aggregate is planned in LupiraContactApi `docs/relationships.md`.
+All three live on contact-api as their own records, never on the contact. Its docs are `docs/relationships.md` and
+`docs/residencies.md`.
+
+- **Relationships read the same from both contacts.** Never branch UI on a side.
+  - Each side has its own `label` (its word for the other); since/note/ended are shared.
+  - Web renders `GET /contact-api/contacts/{id}/relations` (the view from that contact), editable from either contact.
+  - `GET /contact-api/relationships` lists them all; the activity tiers use it for `relatedIds`.
+- **Residencies are where a contact lives, holidays and works.**
+  - Types: Home, Vacation, Work, Other, plus an optional `label`.
+  - Web reads `GET /contact-api/residencies` through `state/useResidencies` (`useResidencyRows`). One fetch feeds the map,
+    the place picker, quick places and contact cards.
+  - The edit form changes residencies one at a time; `MoveDialog` tells a household move once (`POST /moves`).
+  - A vacation home draws as a ring pin (`@lupira/cal-tokens/mapPaint` `contactPinFill`) and never makes a household.
+  - "Parents' home" is derived, never stored: `@lupira/cal-domain/residents` `parentsHomes`, from Parent relationships
+    and their current Home residencies.
+- **Door codes belong to a place.**
+  - `places/EntryCodes` shows them masked, click to reveal, with copy. It appears on contact cards, the place panel
+    (editable there) and the map card.
+  - Visibility follows the residents: the API answers 404 unless you can read someone living there now.
+- **Mobile mirrors all three** via unpaged feeds (`pullRelationships`/`pullResidencies`/`pullPlaceEntries`; schema
+  v4–v5) and reads them offline. `ui/components/EntryCodes` shows codes on contact cards and the map sheet. Codes are
+  never logged.
 
 ## Known API gaps (UI works around)
 

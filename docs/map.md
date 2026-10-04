@@ -34,7 +34,7 @@ A missing basemap *sprite* is equally fatal (style stuck loading); `loadMapStyle
 - **Taps are the map's, not the sources'**: `queryRenderedFeatures` per layer under the finger → `@lupira/cal-domain/mapHits` → `MapPreviewSheet` (one hit = card with its Open, several = list); a cluster that can't split past `clusterMaxZoom` lists its leaves. The tapped or handed-over point gets `SelectionPin`.
 - An `at` target waits for `onDidFinishLoadingMap` — the map mounts after its style loads, so an early `easeTo` is silently dropped.
 - One age limit (`prefs.mapSince`, `@lupira/cal-domain/mapWindow`) bounds events, photos, hotspots and movement; layer toggles persist in `prefs.mapLayers`.
-- A jump strip under the header (`QuickPlacesStrip`, `useQuickPlaces`) lists your own contact's current Home/Work addresses, then the next placed events (`upcomingPlacedEvents`); a jump frames by place type (`@lupira/cal-domain/mapZoom`) and an event opens its preview card.
+- A jump strip under the header (`QuickPlacesStrip`, `useQuickPlaces`) lists your current Home/Work residencies and your parents' home, then the next placed events (`upcomingPlacedEvents`); a jump frames by place type (`@lupira/cal-domain/mapZoom`) and an event opens its preview card.
 
 ## Location uploader (mobile)
 

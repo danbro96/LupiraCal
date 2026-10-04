@@ -6,7 +6,6 @@
  */
 import type { CompletenessScore } from './completenessScore';
 import type { ContactKind } from './contactKind';
-import type { ContactPostalAddress } from './contactPostalAddress';
 import type { ContactReachChannel } from './contactReachChannel';
 import type { ContactSocialProfileDto } from './contactSocialProfileDto';
 import type { DisplayNameFormat } from './displayNameFormat';
@@ -44,7 +43,6 @@ export interface ContactDto {
      * @nullable
      */
   avatarRef?: string | null;
-  addresses: ContactPostalAddress[];
   profiles: ContactSocialProfileDto[];
   /** Ordered designation (first = highest priority) — who to call about this person, not a kinship. */
   emergencyContactIds: string[];

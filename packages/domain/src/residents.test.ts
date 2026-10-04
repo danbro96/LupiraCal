@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addressMeta, otherResidentsLine, residentsByPlace, residentsLine } from './residents';
+import { addressMeta, addressTypeLabel, otherResidentsLine, parentsHomes, residentsByPlace, residentsLine } from './residents';
 
 const today = new Date(2026, 8, 30);
 
@@ -39,3 +39,44 @@ describe('addressMeta', () => {
   });
 });
 
+
+describe('vacation homes and labels', () => {
+  it("names a place nobody lives at but someone holidays at", () => {
+    const byPlace = residentsByPlace([
+      { contactId: 'anna', displayName: 'Anna', placeId: 'cabin', addressType: 'Vacation' },
+      { contactId: 'erik', displayName: 'Erik', placeId: 'cabin', addressType: 'Vacation' },
+      { contactId: 'bo', displayName: 'Bo', placeId: 'flat', addressType: 'Home' },
+    ], today);
+    expect(residentsLine(byPlace.get('cabin'))).toBe("Anna and Erik's vacation home");
+    expect(residentsLine(byPlace.get('flat'))).toBe('Bo lives here');
+  });
+
+  it('shows the residency label in place of its type', () => {
+    expect(addressTypeLabel('Vacation')).toBe('Vacation home');
+    expect(addressMeta({ type: 'Vacation', label: 'Summer house', movedIn: { year: 2019 }, status: 'active' })).toBe('Summer house · since 2019');
+    expect(addressMeta({ type: 'Vacation', status: 'active' })).toBe('Vacation home');
+  });
+});
+
+describe('parentsHomes', () => {
+  const parents = [{ contactId: 'mum', displayName: 'Mum' }, { contactId: 'dad', displayName: 'Dad' }];
+
+  it("joins parents who live together as the parents' home", () => {
+    const homes = parentsHomes('me', parents, [
+      { contactId: 'mum', displayName: 'Mum', placeId: 'villa', addressType: 'Home' },
+      { contactId: 'dad', displayName: 'Dad', placeId: 'villa', addressType: 'Home' },
+      { contactId: 'mum', displayName: 'Mum', placeId: 'cabin', addressType: 'Vacation' },
+    ], today);
+    expect(homes).toEqual([{ placeId: 'villa', label: "Parents' home", contactIds: ['mum', 'dad'] }]);
+  });
+
+  it('names each parent when they live apart, and skips former homes and the one you share', () => {
+    const homes = parentsHomes('me', parents, [
+      { contactId: 'mum', displayName: 'Mum', placeId: 'flat', addressType: 'Home' },
+      { contactId: 'dad', displayName: 'Dad', placeId: 'old', addressType: 'Home', movedOut: { year: 2015 } },
+      { contactId: 'dad', displayName: 'Dad', placeId: 'shared', addressType: 'Home' },
+      { contactId: 'me', displayName: 'Me', placeId: 'shared', addressType: 'Home' },
+    ], today);
+    expect(homes).toEqual([{ placeId: 'flat', label: "Mum's home", contactIds: ['mum'] }]);
+  });
+});

@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { useGetParticipationSummary, useSearchItems } from '@lupira/cal-api/query/cal';
-import { useSearchContacts } from '@lupira/cal-api/query/contact';
 import { useListSavedPlaces, useSuggestPlaces } from '@lupira/cal-api/query/geo';
 import { SuggestionType } from '@lupira/cal-api/models';
 import { MIN_PLACE_QUERY, PLACE_SUGGEST_LIMIT, eventOrigin, pickPlaces } from '@lupira/cal-domain/placeCandidates';
 import { dayEndIso, dayStartIso } from '@lupira/cal-domain/time';
 import { useHotspots } from './useHotspots';
 import { usePlaceCoords } from './usePlaceLookup';
+import { useResidencyRows } from './useResidencies';
 
 /** The place picker's sources, fetched once it opens, ranked by `@lupira/cal-domain/placeCandidates`: saved
  *  places, hotspots, the typeahead, and contacts' addresses (by name, or because they're invited). The
@@ -22,19 +22,11 @@ export function usePlaceCandidates({ query, opened, attendeeIds, day }: {
   const suggest = useSuggestPlaces({ q, limit: PLACE_SUGGEST_LIMIT }, { query: { enabled: typing } });
   const { data: hotspots } = useHotspots(opened);
   const { data: saved } = useListSavedPlaces({ query: { enabled: opened } });
-  const { data: contacts } = useSearchContacts({}, { query: { enabled: opened } });
+  const { rows: addresses } = useResidencyRows(opened);
   const { data: summary } = useGetParticipationSummary(undefined, { query: { enabled: opened } });
   const dayRange = day ? { from: dayStartIso(day), to: dayEndIso(day) } : undefined;
   const { data: dayEvents } = useSearchItems(dayRange, { query: { enabled: opened && !!dayRange } });
 
-  const addresses = useMemo(() => (contacts ?? []).flatMap((c) => (c.addresses ?? []).map((a) => ({
-    contactId: c.id,
-    displayName: c.displayName,
-    placeId: a.placeId,
-    addressType: a.type ?? null,
-    movedIn: a.movedIn ?? null,
-    movedOut: a.movedOut ?? null,
-  }))), [contacts]);
   // Same id set as the map's contact layer, so both share one lookup.
   const { places } = usePlaceCoords(useMemo(() => addresses.map((a) => a.placeId), [addresses]));
   const { places: dayPlaces } = usePlaceCoords(useMemo(() => (dayEvents ?? []).map((o) => o.placeId), [dayEvents]));

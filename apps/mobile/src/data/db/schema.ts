@@ -126,6 +126,21 @@ export const MIGRATIONS: string[] = [
   CREATE INDEX idx_relationships_low ON relationships (low_id);
   CREATE INDEX idx_relationships_high ON relationships (high_id);
   `,
+  // v5: residencies and per-place entry codes, mirrors of /sync/residencies and /sync/place-entries (read-only here).
+  `
+  CREATE TABLE residencies (
+    id TEXT PRIMARY KEY,
+    contact_id TEXT NOT NULL,
+    place_id TEXT NOT NULL,
+    doc TEXT NOT NULL
+  );
+  CREATE INDEX idx_residencies_contact ON residencies (contact_id);
+  CREATE INDEX idx_residencies_place ON residencies (place_id);
+  CREATE TABLE place_entries (
+    place_id TEXT PRIMARY KEY,
+    doc TEXT NOT NULL
+  );
+  `,
 ];
 
 // Single-flight per db handle: bridge-store init and the first runSync both migrate on app start —

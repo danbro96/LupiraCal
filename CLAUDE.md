@@ -18,7 +18,7 @@
 
 ## Read before touching
 
-- Web UI (stack specifics, grids, `/items`, task deadlines, comms topics, contact relationships, calendar visibility, API gaps): `docs/web-ui.md`
+- Web UI (stack specifics, grids, `/items`, task deadlines, comms topics, contact relationships/residencies/door codes, calendar visibility, API gaps): `docs/web-ui.md`
 - Mobile app (UI specifics, tabs/settings/calendar gestures, sync, event editor): `docs/mobile/app.md`; program tracker `docs/mobile/milestones.md`; release `docs/mobile/release.md`
 - Map, maplibre-gl v6 worker fix, location uploader: `docs/map.md`
 - Photos: `docs/photos.md`

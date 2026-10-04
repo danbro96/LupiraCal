@@ -1,6 +1,7 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 import { type FuzzyDate, fmtFuzzyDate, fmtResidencyPeriod, residencyStatus } from './fuzzyDate';
 import { splitTrack, type Bbox, type TrackPointLike } from './geo';
+import { addressTypeLabel } from './residents';
 import { plural } from './wording';
 
 // Row-to-GeoJSON projection for the map, shared by web and mobile. Both read the same layers from
@@ -73,7 +74,7 @@ export function eventFeatures(
 /** "Astrid Park, Erik Park · Home" — households share a pin; the kind list dedupes (usually to one). */
 export function contactPinLabel(names: readonly string[], types: readonly string[]): string {
   const shown = names.length > 3 ? [...names.slice(0, 2), `+${names.length - 2}`] : [...names];
-  const kinds = [...new Set(types)];
+  const kinds = [...new Set(types.map(addressTypeLabel))];
   return kinds.length ? `${shown.join(', ')} · ${kinds.join('/')}` : shown.join(', ');
 }
 
@@ -97,11 +98,13 @@ interface Household {
 
 /**
  * Co-located contacts merge into one pin. Active pins group per place; former and future group per
- * (place, status) so a single pin never mixes two residency states.
+ * (place, status) so a single pin never mixes two residency states. A pin whose residents are all on holiday there
+ * carries `vacation`, which the layers draw as a ring. `placeLabels` names a current pin outright ("Parents' home").
  */
 export function contactFeatures(
   rows: readonly ContactAddressPin[],
   places: ReadonlyMap<string, PlacePoint>,
+  placeLabels: ReadonlyMap<string, string> = new Map(),
 ): { features: FeatureCollection; former: FeatureCollection } {
   const group = (wantActive: boolean) => {
     const byKey = new Map<string, Household>();
@@ -127,7 +130,7 @@ export function contactFeatures(
     [...byKey.values()].flatMap((entry) => {
       const place = places.get(entry.placeId);
       if (!located(place)) return [];
-      const label = contactPinLabel(entry.names, entry.types);
+      const label = (layer === 'contact' ? placeLabels.get(entry.placeId) : undefined) ?? contactPinLabel(entry.names, entry.types);
       return point(place.longitude, place.latitude, {
         layer,
         status: entry.status,
@@ -136,6 +139,7 @@ export function contactFeatures(
         names: entry.names,
         contactIds: entry.contactIds,
         addressTypes: entry.types,
+        vacation: entry.types.length > 0 && entry.types.every((t) => t === 'Vacation'),
         periods: entry.periods,
         label: layer === 'contact' ? label : `${label} · ${[...new Set(entry.periods)].join(', ')}`,
       });

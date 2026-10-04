@@ -4,10 +4,12 @@ import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import type { CalendarItemDto } from '@lupira/cal-api/models';
-import { useSearchContacts } from '@lupira/cal-api/query/contact';
+import { addressMeta, residentsByPlace } from '@lupira/cal-domain/residents';
 import { formatCoords, osmUrl } from '@lupira/cal-domain/places';
 import { fmtDate, fmtDateTime, parseYmd } from '@lupira/cal-domain/time';
 import { useGeoPlace, usePlaceItems } from '../../../state/usePlaces';
+import { useResidencyRows } from '../../../state/useResidencies';
+import { EntryCodes } from '../places/EntryCodes';
 import { CategoryIcon } from '../KindIcon';
 import { DrawerSection } from '../DrawerSection';
 import IconButton from '@mui/material/IconButton';
@@ -118,14 +120,16 @@ function ItemsPanel({ placeId }: { placeId: string }) {
 }
 
 function ContactsPanel({ placeId }: { placeId: string }) {
-  const { data: contacts } = useSearchContacts({});
-  const here = (contacts ?? []).filter((c) => (c.addresses ?? []).some((a) => a.placeId === placeId));
-  if (here.length === 0) return null;
+  const { rows } = useResidencyRows();
+  const residents = residentsByPlace(rows.filter((r) => r.placeId === placeId)).get(placeId);
+  if (!residents) return null;
   return (
     <DrawerSection title="Contacts here">
-      {here.map((c) => (
-        <Row component={Link} key={c.id} to={`/contacts/${c.id}`}>
-          <RowName>{c.displayName}</RowName>
+      <EntryCodes placeId={placeId} editable />
+      {[...residents.active, ...residents.other].map((r) => (
+        <Row component={Link} key={`${r.contactId}-${r.status}`} to={`/contacts/${r.contactId}`}>
+          <RowName>{r.displayName}</RowName>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>{addressMeta({ ...r, type: r.addressType })}</Typography>
         </Row>
       ))}
     </DrawerSection>

@@ -13,8 +13,10 @@ import {
   useClearContactDeceased,
   useMarkContactDeceased,
   useReviseContact,
+  useAddResidency,
+  useRemoveResidency,
+  useReviseResidency,
   useSearchContacts,
-  useSetContactAddresses,
   useSetContactChannels,
   useSetContactProfiles,
   useSetContactTags,
@@ -22,9 +24,10 @@ import {
 } from '@lupira/cal-api/query/contact';
 import type {
   ContactDto,
-  ContactPostalAddress,
   ContactReachChannel,
   ContactSocialProfileInput,
+  FuzzyDate,
+  ResidencyDto,
   ReviseContactRequest,
 } from '@lupira/cal-api/models';
 import { ContactAddressType, DisplayNameFormat, ReachMedium } from '@lupira/cal-api/models';
@@ -35,13 +38,23 @@ import { PlacePicker } from '../places/PlacePicker';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
 import { fuzzyToInput, parseFuzzyInput, residencyStatus } from '@lupira/cal-domain/fuzzyDate';
+import { addressTypeLabel } from '@lupira/cal-domain/residents';
 import { birthdayFields, birthdayFromFields, partialDateKey } from '@lupira/cal-domain/partialDate';
 import { contactNameError } from '@lupira/cal-domain/contactNames';
 import { CHANNEL_TYPES, PROFILE_SERVICES } from '@lupira/cal-domain/reach';
 import { WrapRow } from '../WrapRow';
 
-// placeId stays null in drafts until a place is picked; save filters those rows out.
-type AddressDraft = Omit<ContactPostalAddress, 'placeId'> & { placeId: string | null; movedInText: string; movedOutText: string };
+// A residency as edited: id null until saved; placeId null until a place is picked (save skips those rows).
+type AddressDraft = {
+  id: string | null;
+  placeId: string | null;
+  type: ContactAddressType;
+  label: string;
+  movedInText: string;
+  movedOutText: string;
+};
+
+type AddressValues = { placeId: string; type: ContactAddressType; label: string | null; movedIn: FuzzyDate | null; movedOut: FuzzyDate | null };
 
 type ContactFormValues = {
   givenName: string;
@@ -62,9 +75,9 @@ type ContactFormValues = {
   deathDate: string;
 };
 
-/** Null-vs-undefined and key-order insensitive shape for the addresses change diff. */
-function normAddr(a: Omit<ContactPostalAddress, 'placeId'> & { placeId?: string | null }) {
-  return { placeId: a.placeId ?? null, type: a.type, movedIn: fuzzyToInput(a.movedIn), movedOut: fuzzyToInput(a.movedOut) };
+/** Null-vs-undefined and key-order insensitive shape for the residency change diff. */
+function residencyKey(a: { placeId: string; type: string; label?: string | null; movedIn?: FuzzyDate | null; movedOut?: FuzzyDate | null }) {
+  return JSON.stringify([a.placeId, a.type, a.label ?? null, fuzzyToInput(a.movedIn), fuzzyToInput(a.movedOut)]);
 }
 
 function AddressStatusHint({ movedInText, movedOutText }: { movedInText: string; movedOutText: string }) {
@@ -127,14 +140,17 @@ function ChipList({ label, values, onChange, placeholder, inputType = 'text' }: 
 }
 
 /** Inline editor for a contact's fields. Scalars go through the merge update; the multi-valued fields use the
- *  wholesale-replace endpoints so entries can be removed. A single Save fans out only to the sections that changed. */
-export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDone: () => void }) {
+ *  wholesale-replace endpoints so entries can be removed; residencies are their own records, each added, revised or
+ *  removed on its own. A single Save fans out only to what changed. */
+export function ContactEditForm({ contact, residencies, onDone }: { contact: ContactDto; residencies: ResidencyDto[]; onDone: () => void }) {
   const invalidate = useInvalidateContacts();
   const showSnack = useSnackbar();
   const revise = useReviseContact();
   const setChannels = useSetContactChannels();
   const setTags = useSetContactTags();
-  const setAddresses = useSetContactAddresses();
+  const addResidency = useAddResidency();
+  const reviseResidency = useReviseResidency();
+  const removeResidency = useRemoveResidency();
   const setProfiles = useSetContactProfiles();
   const setEmergency = useSetEmergencyContacts();
   const markDeceased = useMarkContactDeceased();
@@ -166,10 +182,13 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
       tags: visibleTags(contact.tags),
       // Residency dates are edited as text ("2015", "2015-06", "2015-06-12" — precision = certainty) and
       // parsed at save; a filled moved-out marks the address as former.
-      addresses: contact.addresses.map((a) => ({
-        ...a,
-        movedInText: fuzzyToInput(a.movedIn),
-        movedOutText: fuzzyToInput(a.movedOut),
+      addresses: residencies.map((r) => ({
+        id: r.id,
+        placeId: r.placeId,
+        type: r.type,
+        label: r.label ?? '',
+        movedInText: fuzzyToInput(r.movedIn),
+        movedOutText: fuzzyToInput(r.movedOut),
       })),
       profiles: contact.profiles.map((p) => ({ ...p })),
       emergency: [...contact.emergencyContactIds],
@@ -199,7 +218,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
     // Parse before the first write. This used to sit between the name write and the address write,
     // so an unparseable residency date returned with the rename already committed — the user saw a
     // validation error and no sign that half the form had saved.
-    const cleanAddresses: ContactPostalAddress[] = [];
+    const cleanAddresses: (AddressValues & { id: string | null })[] = [];
     for (const a of v.addresses) {
       if (!a.placeId) continue;
       const movedIn = a.movedInText.trim() ? parseFuzzyInput(a.movedInText) : null;
@@ -208,7 +227,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
         setError('root', { message: 'Residency dates must be YYYY, YYYY-MM, or YYYY-MM-DD.' });
         return;
       }
-      cleanAddresses.push({ placeId: a.placeId, type: a.type, movedIn, movedOut });
+      cleanAddresses.push({ id: a.id, placeId: a.placeId, type: a.type, label: a.label.trim() || null, movedIn, movedOut });
     }
 
     try {
@@ -229,8 +248,13 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
       const nextTags = withPinPreserved(v.tags, contact.tags);
       if (!sameList(nextTags, contact.tags ?? [])) await setTags.mutateAsync({ id, data: { tags: nextTags } });
 
-      if (JSON.stringify(cleanAddresses.map(normAddr)) !== JSON.stringify(contact.addresses.map(normAddr)))
-        await setAddresses.mutateAsync({ id, data: { addresses: cleanAddresses } });
+      const kept = new Set(cleanAddresses.flatMap((a) => (a.id ? [a.id] : [])));
+      for (const r of residencies.filter((x) => !kept.has(x.id))) await removeResidency.mutateAsync({ id: r.id });
+      for (const { id: residencyId, ...data } of cleanAddresses) {
+        if (!residencyId) await addResidency.mutateAsync({ id, data });
+        else if (residencyKey(data) !== residencyKey(residencies.find((r) => r.id === residencyId)!))
+          await reviseResidency.mutateAsync({ id: residencyId, data });
+      }
 
       const cleanProfiles = v.profiles.filter((p) => norm(p.service) && norm(p.handle));
       if (JSON.stringify(cleanProfiles) !== JSON.stringify(contact.profiles))
@@ -419,7 +443,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
                 <TextField select value={field.value ?? ContactAddressType.Home} onChange={field.onChange}>
                   {Object.values(ContactAddressType).map((t) => (
                     <MenuItem key={t} value={t}>
-                      {t}
+                      {addressTypeLabel(t)}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -429,6 +453,11 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
               name={`addresses.${i}.placeId`}
               control={control}
               render={({ field }) => <PlacePicker placeId={field.value ?? null} placeholder="Street, city…" onChange={field.onChange} />}
+            />
+            <Controller
+              name={`addresses.${i}.label`}
+              control={control}
+              render={({ field }) => <TextField placeholder="Label (Summer house…)" {...field} />}
             />
             <Controller
               name={`addresses.${i}.movedInText`}
@@ -452,7 +481,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
               movedInText={watchedAddresses[i]?.movedInText ?? ''}
               movedOutText={watchedAddresses[i]?.movedOutText ?? ''}
             />
-            <Tooltip title="Remove address">
+            <Tooltip title="Remove address (entered by mistake — a move is a moved-out date)">
               <IconButton onClick={() => removeAddress(i)}>
                 <CloseIcon fontSize="small" />
               </IconButton>
@@ -461,7 +490,7 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
         ))}
         <Button
           variant="text"
-          onClick={() => appendAddress({ type: ContactAddressType.Home, placeId: null, movedInText: '', movedOutText: '' })}
+          onClick={() => appendAddress({ id: null, type: ContactAddressType.Home, placeId: null, label: '', movedInText: '', movedOutText: '' })}
         >
           + Add address
         </Button>

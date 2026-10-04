@@ -6,7 +6,7 @@ const point = { lon: 18, lat: 59 };
 
 describe('describeHit', () => {
   it('says where a resident lives, and when a former one did', () => {
-    const now: MapHit = { kind: 'contact', key: 'a', point, contactId: 'anna', name: 'Anna', placeName: 'Storgatan 1', addressType: 'Home', residency: 'active', period: null };
+    const now: MapHit = { kind: 'contact', key: 'a', point, contactId: 'anna', name: 'Anna', placeId: 'p1', placeName: 'Storgatan 1', addressType: 'Home', residency: 'active', period: null };
     const then: MapHit = { ...now, key: 'b', residency: 'former', period: '2010–2015' };
     expect(describeHit(now)).toEqual({ title: 'Anna', detail: ['Home · Storgatan 1'] });
     expect(describeHit(then).detail).toEqual(['Home · Storgatan 1', 'lived here 2010–2015']);

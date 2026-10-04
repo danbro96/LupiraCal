@@ -124,7 +124,7 @@ describe('location fix queue', () => {
 
   it('keeps the migration ladder append-only', async () => {
     // A shipped entry must never be edited — an installed app only runs the rungs above its version.
-    expect(MIGRATIONS).toHaveLength(4);
+    expect(MIGRATIONS).toHaveLength(5);
     const upgraded = openNodeDb();
     await migrate(upgraded, MIGRATIONS.slice(0, 2));
     await migrate(upgraded, MIGRATIONS);

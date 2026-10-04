@@ -29,6 +29,17 @@ describe('quickPlaces', () => {
   });
 });
 
+describe('quickPlaces parents', () => {
+  it("puts your parents' home after your own places", () => {
+    const chips = quickPlaces({
+      now, places, upcoming: [],
+      ownAddresses: [{ placeId: 'home', type: 'Home' }],
+      parents: [{ placeId: 'office', label: "Parents' home" }],
+    });
+    expect(chips.map((c) => [c.kind, c.label])).toEqual([['home', 'Home'], ['parents', "Parents' home"]]);
+  });
+});
+
 describe('nextPlacedEvents', () => {
   it('keeps the next placed occurrence per item, ongoing included, cancelled and past out', () => {
     const rows = nextPlacedEvents([

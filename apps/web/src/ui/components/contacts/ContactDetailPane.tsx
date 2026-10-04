@@ -15,6 +15,7 @@ import {
   useAddContactGroupMember,
   useDeleteContact,
   useGetContact,
+  useListContactResidencies,
   useMoveContact,
   useRemoveContactGroupMember,
   useSetMyContact,
@@ -31,9 +32,12 @@ import { CompletenessBadge } from '../drawer/CompletenessBadge';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
 import { PlaceTile } from '../places/PlaceTile';
+import { EntryCodes } from '../places/EntryCodes';
+import { useParentsHomes, useResidencyRows } from '../../../state/useResidencies';
 import { useCopy } from '../../hooks/useCopy';
 import { ContactCircles } from './ContactCircles';
 import { ContactEditForm } from './ContactEditForm';
+import { MoveDialog } from './MoveDialog';
 import { ContactEventsPanel } from './ContactEventsPanel';
 import { ContactRelationsPanel } from './ContactRelationsPanel';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
@@ -78,12 +82,16 @@ export function ContactDetailPane() {
   const [editing, setEditing] = useState(false);
   const [showCircles, setShowCircles] = useState(false);
   const [showOtherAddresses, setShowOtherAddresses] = useState(false);
+  const [moving, setMoving] = useState(false);
   const copy = useCopy();
+  const { rows: residencyRows } = useResidencyRows();
+  const { data: residencies } = useListContactResidencies(contactId ?? '', { query: { enabled: !!contactId } });
+  const parentsHomes = useParentsHomes(contactId ?? null, residencyRows);
 
   if (isLoading) return <DetailPane><Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Loading…</Typography></DetailPane>;
   if (!contact) return <DetailPane><Typography component="p" sx={{ textAlign: 'center', color: 'text.subtle', mt: 6 }}>Contact not found.</Typography></DetailPane>;
 
-  const { current, other } = splitAddresses(contact.addresses);
+  const { current, other } = splitAddresses(residencyRows.filter((r) => r.contactId === contact.id).map((r) => ({ ...r, type: r.addressType })));
   const addresses = [...current, ...other];
   const memberOf = context?.memberOf ?? [];
   const joinable = context?.joinable ?? [];
@@ -114,7 +122,7 @@ export function ContactDetailPane() {
       </PageHead>
 
       {editing ? (
-        <ContactEditForm contact={contact} onDone={() => setEditing(false)} />
+        residencies ? <ContactEditForm contact={contact} residencies={residencies} onDone={() => setEditing(false)} /> : null
       ) : (
         <>
           <Box
@@ -168,9 +176,20 @@ export function ContactDetailPane() {
             ))}
           </Box>
 
-          {addresses.length > 0 && (
-            <DrawerSection title="Addresses">
-              {current.map((a, i) => <PlaceTile key={`now-${i}`} placeId={a.placeId} meta={addressMeta(a)} />)}
+          {addresses.length + parentsHomes.length > 0 && (
+            <DrawerSection title="Addresses" action={<Button variant="text" size="small" onClick={() => setMoving(true)}>Move…</Button>}>
+              {current.map((a, i) => (
+                <Box key={`now-${i}`}>
+                  <PlaceTile placeId={a.placeId} meta={addressMeta(a)} />
+                  <EntryCodes placeId={a.placeId} />
+                </Box>
+              ))}
+              {parentsHomes.map((p) => (
+                <Box key={`parents-${p.placeId}`}>
+                  <PlaceTile placeId={p.placeId} meta={p.label} />
+                  <EntryCodes placeId={p.placeId} />
+                </Box>
+              ))}
               {other.length > 0 && (
                 <>
                   <Button variant="text" size="small" onClick={() => setShowOtherAddresses((v) => !v)}>
@@ -181,6 +200,8 @@ export function ContactDetailPane() {
               )}
             </DrawerSection>
           )}
+
+          {moving && <MoveDialog contact={contact} rows={residencyRows} onClose={() => setMoving(false)} />}
 
           {contact.emergencyContactIds.length > 0 && (
             <DrawerSection title="Emergency contacts">

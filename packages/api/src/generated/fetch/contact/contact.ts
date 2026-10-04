@@ -21,25 +21,34 @@ import type {
   CreateContactRequest,
   EndContactRelationRequest,
   GetContactCirclesParams,
+  GetPlaceEntryChangesParams,
   GetRelationshipChangesParams,
+  GetResidencyChangesParams,
   GrantOwnerRequest,
   ListContactRelationsParams,
   MeDto,
   MoveContactRequest,
+  MoveOutRequest,
+  MoveRequest,
+  PlaceEntryChangesResponse,
+  PlaceEntryDto,
   ProblemDetails,
   RelationshipChangesResponse,
   RelationshipDto,
   RemoveContactRelationParams,
   RenameContactGroupParams,
+  ResidencyChangesResponse,
+  ResidencyDto,
+  ResidencyRequest,
   ReviseContactRequest,
   RevokeAddressBookOwnerParams,
   SearchContactsParams,
-  SetContactAddressesRequest,
   SetContactChannelsRequest,
   SetContactProfilesRequest,
   SetContactTagsRequest,
   SetDeceasedRequest,
   SetEmergencyContactsRequest,
+  SetEntryCodeRequest,
   SetMyContactRequest,
   SyncContainersResponse,
   UpdateAddressBookRequest
@@ -709,7 +718,7 @@ export const getSearchContactsUrl = (params?: SearchContactsParams,) => {
 }
 
 /**
- * @summary Search contacts (full-text + fuzzy name match).
+ * @summary Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive).
  */
 export const searchContacts = async (params?: SearchContactsParams, options?: Parameters<typeof apiRequest>[1]): Promise<searchContactsResponse> => {
 
@@ -1332,83 +1341,6 @@ return apiRequest<setContactProfilesResponse>(getSetContactProfilesUrl(id),
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(setContactProfilesRequest)
-  }
-);}
-
-
-export type setContactAddressesResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type setContactAddressesResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type setContactAddressesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type setContactAddressesResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type setContactAddressesResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type setContactAddressesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type setContactAddressesResponseSuccess = (setContactAddressesResponse200) & {
-  headers: Headers;
-};
-export type setContactAddressesResponseError = (setContactAddressesResponse400 | setContactAddressesResponse401 | setContactAddressesResponse403 | setContactAddressesResponse404 | setContactAddressesResponse500) & {
-  headers: Headers;
-};
-
-export type setContactAddressesResponse = (setContactAddressesResponseSuccess | setContactAddressesResponseError)
-
-export const getSetContactAddressesUrl = (id: string,) => {
-
-
-
-
-  return `/contact-api/contacts/${id}/addresses`
-}
-
-/**
- * @summary Replace the contact's postal addresses wholesale; each entry needs a LupiraGeoApi place id (resolve the address there first — no free-text).
- */
-export const setContactAddresses = async (id: string,
-    setContactAddressesRequest: SetContactAddressesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setContactAddressesResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return apiRequest<setContactAddressesResponse>(getSetContactAddressesUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(setContactAddressesRequest)
   }
 );}
 
@@ -2312,6 +2244,664 @@ export const listRelationships = async ( options?: Parameters<typeof apiRequest>
 );}
 
 
+export type listContactResidenciesResponse200 = {
+  data: ResidencyDto[]
+  status: 200
+}
+
+export type listContactResidenciesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type listContactResidenciesResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type listContactResidenciesResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type listContactResidenciesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type listContactResidenciesResponseSuccess = (listContactResidenciesResponse200) & {
+  headers: Headers;
+};
+export type listContactResidenciesResponseError = (listContactResidenciesResponse401 | listContactResidenciesResponse403 | listContactResidenciesResponse404 | listContactResidenciesResponse500) & {
+  headers: Headers;
+};
+
+export type listContactResidenciesResponse = (listContactResidenciesResponseSuccess | listContactResidenciesResponseError)
+
+export const getListContactResidenciesUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/contacts/${id}/residencies`
+}
+
+/**
+ * @summary Where the contact lives, holidays and works: current residencies first, then the most recent move-in first.
+ */
+export const listContactResidencies = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<listContactResidenciesResponse> => {
+
+  return apiRequest<listContactResidenciesResponse>(getListContactResidenciesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type addResidencyResponse200 = {
+  data: ResidencyDto
+  status: 200
+}
+
+export type addResidencyResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type addResidencyResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type addResidencyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type addResidencyResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type addResidencyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type addResidencyResponseSuccess = (addResidencyResponse200) & {
+  headers: Headers;
+};
+export type addResidencyResponseError = (addResidencyResponse400 | addResidencyResponse401 | addResidencyResponse403 | addResidencyResponse404 | addResidencyResponse500) & {
+  headers: Headers;
+};
+
+export type addResidencyResponse = (addResidencyResponseSuccess | addResidencyResponseError)
+
+export const getAddResidencyUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/contacts/${id}/residencies`
+}
+
+/**
+ * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place.
+ */
+export const addResidency = async (id: string,
+    residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<addResidencyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<addResidencyResponse>(getAddResidencyUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(residencyRequest)
+  }
+);}
+
+
+export type reviseResidencyResponse200 = {
+  data: ResidencyDto
+  status: 200
+}
+
+export type reviseResidencyResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type reviseResidencyResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type reviseResidencyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type reviseResidencyResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type reviseResidencyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type reviseResidencyResponseSuccess = (reviseResidencyResponse200) & {
+  headers: Headers;
+};
+export type reviseResidencyResponseError = (reviseResidencyResponse400 | reviseResidencyResponse401 | reviseResidencyResponse403 | reviseResidencyResponse404 | reviseResidencyResponse500) & {
+  headers: Headers;
+};
+
+export type reviseResidencyResponse = (reviseResidencyResponseSuccess | reviseResidencyResponseError)
+
+export const getReviseResidencyUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/residencies/${id}`
+}
+
+/**
+ * @summary Correct a residency as entered: place, type, label and period, wholesale. A move is told with move-out or POST /moves instead.
+ */
+export const reviseResidency = async (id: string,
+    residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<reviseResidencyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<reviseResidencyResponse>(getReviseResidencyUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(residencyRequest)
+  }
+);}
+
+
+export type removeResidencyResponse204 = {
+  data: void
+  status: 204
+}
+
+export type removeResidencyResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type removeResidencyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type removeResidencyResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type removeResidencyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type removeResidencyResponseSuccess = (removeResidencyResponse204) & {
+  headers: Headers;
+};
+export type removeResidencyResponseError = (removeResidencyResponse401 | removeResidencyResponse403 | removeResidencyResponse404 | removeResidencyResponse500) & {
+  headers: Headers;
+};
+
+export type removeResidencyResponse = (removeResidencyResponseSuccess | removeResidencyResponseError)
+
+export const getRemoveResidencyUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/residencies/${id}`
+}
+
+/**
+ * @summary Erase a residency entered by mistake. One that ended should be moved out of instead.
+ */
+export const removeResidency = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<removeResidencyResponse> => {
+
+  return apiRequest<removeResidencyResponse>(getRemoveResidencyUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export type moveOutOfResidencyResponse200 = {
+  data: ResidencyDto
+  status: 200
+}
+
+export type moveOutOfResidencyResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type moveOutOfResidencyResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type moveOutOfResidencyResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type moveOutOfResidencyResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type moveOutOfResidencyResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type moveOutOfResidencyResponseSuccess = (moveOutOfResidencyResponse200) & {
+  headers: Headers;
+};
+export type moveOutOfResidencyResponseError = (moveOutOfResidencyResponse400 | moveOutOfResidencyResponse401 | moveOutOfResidencyResponse403 | moveOutOfResidencyResponse404 | moveOutOfResidencyResponse500) & {
+  headers: Headers;
+};
+
+export type moveOutOfResidencyResponse = (moveOutOfResidencyResponseSuccess | moveOutOfResidencyResponseError)
+
+export const getMoveOutOfResidencyUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/residencies/${id}/move-out`
+}
+
+/**
+ * @summary End a residency: the contact moved out on the given date (a year, year-month, or day).
+ */
+export const moveOutOfResidency = async (id: string,
+    moveOutRequest: MoveOutRequest, options?: Parameters<typeof apiRequest>[1]): Promise<moveOutOfResidencyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<moveOutOfResidencyResponse>(getMoveOutOfResidencyUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(moveOutRequest)
+  }
+);}
+
+
+export type listResidenciesResponse200 = {
+  data: ResidencyDto[]
+  status: 200
+}
+
+export type listResidenciesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type listResidenciesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type listResidenciesResponseSuccess = (listResidenciesResponse200) & {
+  headers: Headers;
+};
+export type listResidenciesResponseError = (listResidenciesResponse401 | listResidenciesResponse500) & {
+  headers: Headers;
+};
+
+export type listResidenciesResponse = (listResidenciesResponseSuccess | listResidenciesResponseError)
+
+export const getListResidenciesUrl = () => {
+
+
+
+
+  return `/contact-api/residencies`
+}
+
+/**
+ * @summary Every residency of a contact the caller can read — who lives, holidays and works where.
+ */
+export const listResidencies = async ( options?: Parameters<typeof apiRequest>[1]): Promise<listResidenciesResponse> => {
+
+  return apiRequest<listResidenciesResponse>(getListResidenciesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type recordMoveResponse200 = {
+  data: ResidencyDto[]
+  status: 200
+}
+
+export type recordMoveResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type recordMoveResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type recordMoveResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type recordMoveResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type recordMoveResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type recordMoveResponseSuccess = (recordMoveResponse200) & {
+  headers: Headers;
+};
+export type recordMoveResponseError = (recordMoveResponse400 | recordMoveResponse401 | recordMoveResponse403 | recordMoveResponse404 | recordMoveResponse500) & {
+  headers: Headers;
+};
+
+export type recordMoveResponse = (recordMoveResponseSuccess | recordMoveResponseError)
+
+export const getRecordMoveUrl = () => {
+
+
+
+
+  return `/contact-api/moves`
+}
+
+/**
+ * @summary Several contacts move together: each one's current residencies at fromPlaceId end on movedIn, and a residency at toPlaceId starts then. All or nothing. Returns the new residencies.
+ */
+export const recordMove = async (moveRequest: MoveRequest, options?: Parameters<typeof apiRequest>[1]): Promise<recordMoveResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<recordMoveResponse>(getRecordMoveUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(moveRequest)
+  }
+);}
+
+
+export type getPlaceEntryResponse200 = {
+  data: PlaceEntryDto
+  status: 200
+}
+
+export type getPlaceEntryResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getPlaceEntryResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type getPlaceEntryResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getPlaceEntryResponseSuccess = (getPlaceEntryResponse200) & {
+  headers: Headers;
+};
+export type getPlaceEntryResponseError = (getPlaceEntryResponse401 | getPlaceEntryResponse404 | getPlaceEntryResponse500) & {
+  headers: Headers;
+};
+
+export type getPlaceEntryResponse = (getPlaceEntryResponseSuccess | getPlaceEntryResponseError)
+
+export const getGetPlaceEntryUrl = (placeId: string,) => {
+
+
+
+
+  return `/contact-api/places/${placeId}/entry`
+}
+
+/**
+ * @summary The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404.
+ */
+export const getPlaceEntry = async (placeId: string, options?: Parameters<typeof apiRequest>[1]): Promise<getPlaceEntryResponse> => {
+
+  return apiRequest<getPlaceEntryResponse>(getGetPlaceEntryUrl(placeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type setEntryCodeResponse200 = {
+  data: PlaceEntryDto
+  status: 200
+}
+
+export type setEntryCodeResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type setEntryCodeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type setEntryCodeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type setEntryCodeResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type setEntryCodeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type setEntryCodeResponseSuccess = (setEntryCodeResponse200) & {
+  headers: Headers;
+};
+export type setEntryCodeResponseError = (setEntryCodeResponse400 | setEntryCodeResponse401 | setEntryCodeResponse403 | setEntryCodeResponse404 | setEntryCodeResponse500) & {
+  headers: Headers;
+};
+
+export type setEntryCodeResponse = (setEntryCodeResponseSuccess | setEntryCodeResponseError)
+
+export const getSetEntryCodeUrl = (placeId: string,
+    codeId: string,) => {
+
+
+
+
+  return `/contact-api/places/${placeId}/entry-codes/${codeId}`
+}
+
+/**
+ * @summary Add or replace a code (the client mints codeId). Needs write on a contact currently living there.
+ */
+export const setEntryCode = async (placeId: string,
+    codeId: string,
+    setEntryCodeRequest: SetEntryCodeRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setEntryCodeResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<setEntryCodeResponse>(getSetEntryCodeUrl(placeId,codeId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setEntryCodeRequest)
+  }
+);}
+
+
+export type removeEntryCodeResponse200 = {
+  data: PlaceEntryDto
+  status: 200
+}
+
+export type removeEntryCodeResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type removeEntryCodeResponse403 = {
+  data: ProblemDetails
+  status: 403
+}
+
+export type removeEntryCodeResponse404 = {
+  data: ProblemDetails
+  status: 404
+}
+
+export type removeEntryCodeResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type removeEntryCodeResponseSuccess = (removeEntryCodeResponse200) & {
+  headers: Headers;
+};
+export type removeEntryCodeResponseError = (removeEntryCodeResponse401 | removeEntryCodeResponse403 | removeEntryCodeResponse404 | removeEntryCodeResponse500) & {
+  headers: Headers;
+};
+
+export type removeEntryCodeResponse = (removeEntryCodeResponseSuccess | removeEntryCodeResponseError)
+
+export const getRemoveEntryCodeUrl = (placeId: string,
+    codeId: string,) => {
+
+
+
+
+  return `/contact-api/places/${placeId}/entry-codes/${codeId}`
+}
+
+/**
+ * @summary Remove a code. Needs write on a contact currently living there.
+ */
+export const removeEntryCode = async (placeId: string,
+    codeId: string, options?: Parameters<typeof apiRequest>[1]): Promise<removeEntryCodeResponse> => {
+
+  return apiRequest<removeEntryCodeResponse>(getRemoveEntryCodeUrl(placeId,codeId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
 export type contactGetChangesResponse200 = {
   data: ContactSyncChangesResponse
   status: 200
@@ -2421,6 +3011,124 @@ export const getGetRelationshipChangesUrl = (params?: GetRelationshipChangesPara
 export const getRelationshipChanges = async (params?: GetRelationshipChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getRelationshipChangesResponse> => {
 
   return apiRequest<getRelationshipChangesResponse>(getGetRelationshipChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type getResidencyChangesResponse200 = {
+  data: ResidencyChangesResponse
+  status: 200
+}
+
+export type getResidencyChangesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getResidencyChangesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getResidencyChangesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getResidencyChangesResponseSuccess = (getResidencyChangesResponse200) & {
+  headers: Headers;
+};
+export type getResidencyChangesResponseError = (getResidencyChangesResponse400 | getResidencyChangesResponse401 | getResidencyChangesResponse500) & {
+  headers: Headers;
+};
+
+export type getResidencyChangesResponse = (getResidencyChangesResponseSuccess | getResidencyChangesResponseError)
+
+export const getGetResidencyChangesUrl = (params?: GetResidencyChangesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/contact-api/sync/residencies?${stringifiedParams}` : `/contact-api/sync/residencies`
+}
+
+/**
+ * @summary Delta feed of residencies for offline mirrors: those of contacts the caller can read that changed past the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ */
+export const getResidencyChanges = async (params?: GetResidencyChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getResidencyChangesResponse> => {
+
+  return apiRequest<getResidencyChangesResponse>(getGetResidencyChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type getPlaceEntryChangesResponse200 = {
+  data: PlaceEntryChangesResponse
+  status: 200
+}
+
+export type getPlaceEntryChangesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getPlaceEntryChangesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getPlaceEntryChangesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getPlaceEntryChangesResponseSuccess = (getPlaceEntryChangesResponse200) & {
+  headers: Headers;
+};
+export type getPlaceEntryChangesResponseError = (getPlaceEntryChangesResponse400 | getPlaceEntryChangesResponse401 | getPlaceEntryChangesResponse500) & {
+  headers: Headers;
+};
+
+export type getPlaceEntryChangesResponse = (getPlaceEntryChangesResponseSuccess | getPlaceEntryChangesResponseError)
+
+export const getGetPlaceEntryChangesUrl = (params?: GetPlaceEntryChangesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/contact-api/sync/place-entries?${stringifiedParams}` : `/contact-api/sync/place-entries`
+}
+
+/**
+ * @summary Delta feed of door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Unpaged. Omit since for a full sync.
+ */
+export const getPlaceEntryChanges = async (params?: GetPlaceEntryChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getPlaceEntryChangesResponse> => {
+
+  return apiRequest<getPlaceEntryChangesResponse>(getGetPlaceEntryChangesUrl(params),
   {
     ...options,
     method: 'GET'

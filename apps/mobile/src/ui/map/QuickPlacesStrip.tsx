@@ -4,7 +4,11 @@ import type { QuickPlace } from '@lupira/cal-domain/quickPlaces';
 import { ICONS } from '../icons';
 import { spacing, useColors } from '../theme';
 
-/** Jump targets under the header — your home and work, then what's coming up. Scrolls sideways when they
+const QUICK_PLACE_ICONS: Record<QuickPlace['kind'], string> = {
+  home: ICONS.home, work: ICONS.work, parents: ICONS.family, event: ICONS.event,
+};
+
+/** Jump targets under the header — your home and work, your parents' home, then what's coming up. Scrolls sideways when they
  *  don't fit; renders nothing when there is nowhere to jump. Not ScreenToolbar: its padding would clip the
  *  scroll short of the screen edges. */
 export function QuickPlacesStrip({ places, onPick }: { places: QuickPlace[]; onPick: (place: QuickPlace) => void }) {
@@ -21,7 +25,7 @@ export function QuickPlacesStrip({ places, onPick }: { places: QuickPlace[]; onP
             onPress={() => onPick(p)}
             icon={({ size }) => (
               <Icon
-                source={p.kind === 'home' ? ICONS.home : p.kind === 'work' ? ICONS.work : ICONS.event}
+                source={QUICK_PLACE_ICONS[p.kind]}
                 size={size}
                 color={p.event?.color ?? c.primary}
               />

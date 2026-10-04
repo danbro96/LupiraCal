@@ -15,7 +15,7 @@ import type { LivePosition } from '../../sync/livePosition';
 import { ACTIVITY_COLORS, MAP_COLORS, activityColorExpression, type MapTheme } from '@lupira/cal-tokens/map';
 import {
   CLUSTER, CLUSTER_COUNT_LAYOUT, CURRENT_FIX, HOTSPOT, PIN, PIN_LABEL_HALO_WIDTH, PIN_LABEL_LAYOUT, TRACK, VISIT, clusterRadius,
-  hotspotRadius,
+  contactPinFill, contactPinStroke, hotspotRadius,
 } from '@lupira/cal-tokens/mapPaint';
 import { PIN_CLUSTERS } from '@lupira/cal-domain/mapZoom';
 import { ICONS } from '../icons';
@@ -151,9 +151,9 @@ export function ContactsLayer({ theme, features, sourceRef, onPress }: {
         type="circle"
         filter={['!', ['has', 'point_count']]}
         paint={{
-          'circle-color': colors.contact,
+          'circle-color': contactPinFill(colors.contact, colors.ring) as never,
           'circle-radius': PIN.contact,
-          'circle-stroke-color': colors.ring,
+          'circle-stroke-color': contactPinStroke(colors.contact, colors.ring) as never,
           'circle-stroke-width': PIN.strokeWidth,
         }}
       />

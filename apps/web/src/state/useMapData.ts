@@ -12,7 +12,6 @@ import {
   TRACK_MAX_GAP_S,
 } from '@lupira/cal-domain/mapFeatures';
 import type { MapViewport } from '@lupira/cal-domain/geo';
-import { useSearchContacts } from '@lupira/cal-api/query/contact';
 import { useListSavedPlaces } from '@lupira/cal-api/query/geo';
 import { useGetPhotoMap } from '@lupira/cal-api/query/photo';
 import type { LocationTripDto } from '@lupira/cal-api/models';
@@ -20,8 +19,10 @@ import { useGetHotspots } from '@lupira/cal-api/query/cal';
 import { trackBucketSeconds } from '@lupira/cal-domain/mapWindow';
 import { useContainers } from './useContainers';
 import { useCurrentFixes, useThinnedTrack, useTrips, useVisits } from './useMovement';
+import { useMyContactId } from './useMe';
 import { usePlaceCoords } from './usePlaceLookup';
 import { useRangeOccurrences } from './useRangeOccurrences';
+import { useParentsHomes, useResidencyRows } from './useResidencies';
 
 const HOTSPOT_STALE_MS = 10 * 60_000;
 
@@ -64,36 +65,24 @@ export function useEventFeatures(from: string, to: string, enabled: boolean): Ev
   }, [occurrences, places, isLoading, hydrating, enabled]);
 }
 
-/** Contact pins: every address placeId hydrated; co-located contacts (shared household place) merge into one pin.
- * `features` = current addresses; `former` = residency history (movedOut set), labeled with the period. */
+/** Contact pins: every residency's place hydrated; co-located contacts (shared household place) merge into one pin, and
+ * your parents' home is named as such. `features` = current residencies; `former` = residency history, labeled with
+ * the period. */
 export function useContactFeatures(enabled: boolean): {
   features: FeatureCollection;
   former: FeatureCollection;
   isLoading: boolean;
 } {
-  const contactsQ = useSearchContacts({}, { query: { enabled } });
-  const contacts = useMemo(() => contactsQ.data ?? [], [contactsQ.data]);
+  const { rows, isLoading } = useResidencyRows(enabled);
+  const parents = useParentsHomes(useMyContactId(), rows);
 
   // One hydration serves both current and former pins.
-  const { places, isLoading: hydrating } = usePlaceCoords(
-    useMemo(() => contacts.flatMap((c) => c.addresses.map((a) => a.placeId)), [contacts]),
-  );
+  const { places, isLoading: hydrating } = usePlaceCoords(useMemo(() => rows.map((r) => r.placeId), [rows]));
 
   return useMemo(() => {
-    const { features, former } = contactFeatures(
-      contacts.flatMap((contact) =>
-        contact.addresses.map((address) => ({
-          contactId: contact.id,
-          displayName: contact.displayName,
-          placeId: address.placeId,
-          addressType: String(address.type),
-          movedIn: address.movedIn,
-          movedOut: address.movedOut,
-        }))),
-      places,
-    );
-    return { features, former, isLoading: enabled && (contactsQ.isLoading || hydrating) };
-  }, [contacts, places, contactsQ.isLoading, hydrating, enabled]);
+    const { features, former } = contactFeatures(rows, places, new Map(parents.map((p) => [p.placeId, p.label])));
+    return { features, former, isLoading: enabled && (isLoading || hydrating) };
+  }, [rows, places, parents, isLoading, hydrating, enabled]);
 }
 
 export interface MovementFeaturesResult {

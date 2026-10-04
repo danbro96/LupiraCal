@@ -10,7 +10,7 @@ import { emptyItemGuards } from '../domain/docTypes';
 import type { Horizon } from '../domain/materialize';
 import type { ClientOp } from '../domain/ops';
 import { drain, enqueue } from './outbox';
-import type { ChangesPage, ContactChange, ItemChange, PullDeps, RelationshipChanges } from './pull';
+import type { ChangesPage, ContactChange, FeedChanges, ItemChange, PullDeps } from './pull';
 import { pullCal, pullContainers, pullContacts, pullRelationships } from './pull';
 
 vi.mock('../debug/log', () => ({ logDebug: vi.fn() }));
@@ -254,7 +254,7 @@ describe('pull', () => {
       changed: [{
         contact: { id: 'c1', addressBookId: 'book-1', givenName: 'Jane', birthday: { year: 1990, month: 3, day: 14 } },
         guards: {
-          core: { ts: T(1), cmd: cmd(1) }, addresses: { ts: T(1), cmd: cmd(1) }, profiles: { ts: T(1), cmd: cmd(1) },
+          core: { ts: T(1), cmd: cmd(1) }, profiles: { ts: T(1), cmd: cmd(1) },
           avatar: { ts: T(1), cmd: cmd(1) }, metadata: { ts: T(1), cmd: cmd(1) }, deceased: { ts: T(1), cmd: cmd(1) },
         },
       }],
@@ -456,7 +456,7 @@ describe('calendar visibility filter', () => {
       cursor: '1', hasMore: false, deleted: [],
       changed: [{
         contact: { id: 'c1', addressBookId: 'book-1', givenName: 'Jane', birthday: { year: 1990, month: 8, day: 14 } },
-        guards: { core: stamp, addresses: stamp, profiles: stamp, avatar: stamp, metadata: stamp, deceased: stamp },
+        guards: { core: stamp, profiles: stamp, avatar: stamp, metadata: stamp, deceased: stamp },
       }],
     }]));
     await enqueueOffline([createOp('item-1', 1), createOp('item-2', 2, 'cal-2')]);
@@ -477,7 +477,7 @@ describe('pullRelationships', () => {
   const ids = async () => (await db.all<{ id: string }>('SELECT id FROM relationships ORDER BY id')).map((r) => r.id);
 
   it('replaces the table on a reset, then applies deltas and hands the cursor back', async () => {
-    const pages: RelationshipChanges[] = [
+    const pages: FeedChanges<ReturnType<typeof rel>>[] = [
       { cursor: '5.s', reset: true, changed: [rel('r1'), rel('r2')], deleted: [] },
       { cursor: '9.s', reset: false, changed: [rel('r3')], deleted: ['r1'] },
       { cursor: '9.s', reset: false, changed: [], deleted: [] },

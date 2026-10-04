@@ -11,6 +11,7 @@ import { useCreatePlaceAtPin } from '../../../state/usePlaces';
 import { errText } from '../../errText';
 import { useSnackbar } from '../SnackbarHost';
 import { WrapRow } from '../WrapRow';
+import { EntryCodes } from '../places/EntryCodes';
 
 /** What a click on the map found, as on the phone: one thing gets a card with its ways into a full screen;
  *  several — a contact's home with events and photos on it — get a list, a row opening its screen (or its
@@ -23,11 +24,15 @@ export function MapHitsCard({ hits, theme, onAction, onOpenPlace }: {
 }) {
   const [focused, setFocused] = useState<MapHit | null>(null);
   const single = hits.length === 1 ? hits[0] : focused;
-  if (single) return <HitDetail hit={single} onAction={onAction} onOpenPlace={onOpenPlace} />;
+  // Someone lives here now: the way in is what you came for.
+  const home = hits.find((h) => h.kind === 'contact' && h.residency === 'active');
+  const codes = home?.kind === 'contact' && home.placeId ? <EntryCodes placeId={home.placeId} /> : null;
+  if (single) return <>{codes}<HitDetail hit={single} onAction={onAction} onOpenPlace={onOpenPlace} /></>;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', pr: 3 }}>
       <Typography variant="subtitle2" sx={{ mb: 0.5 }}>{hits.length} things here</Typography>
+      {codes}
       {hits.map((hit) => {
         const { title, detail } = describeHit(hit);
         const primary = hitActions(hit, { placeScreen: true })[0]?.action;

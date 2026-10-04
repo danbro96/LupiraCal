@@ -6,7 +6,10 @@ import type { OccurrenceRow } from '../domain/materialize';
 import { openNodeDb } from './db/nodeDb';
 import { migrate } from './db/schema';
 import type { Db } from './db/types';
-import { mapEventRowsBetween, relationshipsOf, removeRelationships, replaceContainers, saveContact, saveItem, saveRelationships, searchItems, upcomingPlacedEvents } from './mirror';
+import {
+  contactResidencies, mapEventRowsBetween, placeEntryOf, relationshipsOf, removeRelationships, replaceContainers, saveContact, saveItem,
+  savePlaceEntries, saveRelationships, saveResidencies, searchItems, upcomingPlacedEvents,
+} from './mirror';
 
 let db: Db;
 
@@ -173,5 +176,34 @@ describe('relationshipsOf', () => {
       await removeRelationships(tx, ['xy']);
     });
     expect(await relationshipsOf(db, 'y')).toEqual([]);
+  });
+});
+
+describe('residencies and entry codes', () => {
+  const person = (id: string, givenName: string, deleted = false) =>
+    db.exclusive((tx) => saveContact(tx, { doc: { id, addressBookId: 'ab', givenName }, guards: emptyContactGuards(), deleted }, []));
+
+  it("lists live contacts' residencies with their names, labels and dates", async () => {
+    await person('anna', 'Anna');
+    await person('gone', 'Gone', true);
+    await db.exclusive((tx) => saveResidencies(tx, [
+      { id: 'r1', contactId: 'anna', placeId: 'cabin', type: 'Vacation', label: 'Summer house', movedIn: { year: 2019 } },
+      { id: 'r2', contactId: 'gone', placeId: 'flat', type: 'Home' },
+    ]));
+
+    const rows = await contactResidencies(db);
+    expect(rows).toEqual([{
+      contact_id: 'anna', display_name: 'Anna', place_id: 'cabin', address_type: 'Vacation', label: 'Summer house',
+      moved_in: '{"year":2019}', moved_out: null,
+    }]);
+  });
+
+  it('keeps one entry per place', async () => {
+    await db.exclusive(async (tx) => {
+      await savePlaceEntries(tx, [{ placeId: 'villa', codes: [{ id: 'c1', label: 'Port', code: '1234' }] }]);
+      await savePlaceEntries(tx, [{ placeId: 'villa', codes: [{ id: 'c1', label: 'Port', code: '9876' }] }]);
+    });
+    expect((await placeEntryOf(db, 'villa'))?.codes[0].code).toBe('9876');
+    expect(await placeEntryOf(db, 'elsewhere')).toBeNull();
   });
 });

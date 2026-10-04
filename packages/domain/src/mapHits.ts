@@ -14,7 +14,7 @@ export interface HitPoint {
 export type MapHit =
   | { kind: 'event'; key: string; point: HitPoint; itemId: string; title: string | null; start: string | null; color: string | null }
   | {
-      kind: 'contact'; key: string; point: HitPoint; contactId: string; name: string; placeName: string | null;
+      kind: 'contact'; key: string; point: HitPoint; contactId: string; name: string; placeId: string | null; placeName: string | null;
       addressType: string | null;
       /** A former or future resident (the web's history layer) carries its period. */
       residency: 'active' | 'former' | 'future'; period: string | null;
@@ -73,7 +73,7 @@ export function hitsFromFeatures(features: readonly Feature[]): MapHit[] {
         const residency = p.layer === 'contact' ? 'active' : p.status === 'future' ? 'future' : 'former';
         ids.forEach((contactId, i) => hits.push({
           kind: 'contact', key: `contact:${contactId}:${str(p.placeId) ?? ''}:${residency}`, point, contactId,
-          name: names[i] ?? 'Contact', placeName: str(p.placeName), addressType: types[i] ?? null,
+          name: names[i] ?? 'Contact', placeId: str(p.placeId), placeName: str(p.placeName), addressType: types[i] ?? null,
           residency, period: residency === 'active' ? null : periods[i] ?? null,
         }));
         break;

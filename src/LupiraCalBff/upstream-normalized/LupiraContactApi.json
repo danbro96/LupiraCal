@@ -760,7 +760,7 @@
         "tags": [
           "Contacts"
         ],
-        "summary": "Search contacts (full-text \u002B fuzzy name match).",
+        "summary": "Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive).",
         "operationId": "SearchContacts",
         "parameters": [
           {
@@ -1074,7 +1074,7 @@
         "tags": [
           "Contacts"
         ],
-        "summary": "Batch-match a list of names to contacts for imports: per name Matched (\u2192contactId) / Ambiguous / NotFound, with candidate refs. Substring \u002B normalized-name match, not phonetic.",
+        "summary": "Batch-match a list of names to contacts for imports: per name Matched (\u2192contactId) / Ambiguous / NotFound, with candidate refs. Case/diacritic-insensitive full-name or all-tokens match, not phonetic.",
         "operationId": "ResolveContactsByName",
         "requestBody": {
           "content": {
@@ -2134,111 +2134,6 @@
           },
           "404": {
             "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": []
-          }
-        ]
-      }
-    },
-    "/contacts/{id}/addresses": {
-      "put": {
-        "tags": [
-          "Contacts"
-        ],
-        "summary": "Replace the contact\u0027s postal addresses wholesale; each entry needs a LupiraGeoApi place id (resolve the address there first \u2014 no free-text).",
-        "operationId": "SetContactAddresses",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "Idempotency-Key",
-            "in": "header",
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetContactAddressesRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ContactDto"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem\u002Bjson": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -3551,6 +3446,880 @@
         ]
       }
     },
+    "/contacts/{id}/residencies": {
+      "get": {
+        "tags": [
+          "Residencies"
+        ],
+        "summary": "Where the contact lives, holidays and works: current residencies first, then the most recent move-in first.",
+        "operationId": "ListContactResidencies",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResidencyDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Residencies"
+        ],
+        "summary": "Start a residency at a LupiraGeoApi place (resolve the address there first \u2014 no free text). Refused when it overlaps another of the contact\u0027s residencies at the same place.",
+        "operationId": "AddResidency",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidencyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/residencies/{id}": {
+      "put": {
+        "tags": [
+          "Residencies"
+        ],
+        "summary": "Correct a residency as entered: place, type, label and period, wholesale. A move is told with move-out or POST /moves instead.",
+        "operationId": "ReviseResidency",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResidencyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Residencies"
+        ],
+        "summary": "Erase a residency entered by mistake. One that ended should be moved out of instead.",
+        "operationId": "RemoveResidency",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/residencies/{id}/move-out": {
+      "post": {
+        "tags": [
+          "Residencies"
+        ],
+        "summary": "End a residency: the contact moved out on the given date (a year, year-month, or day).",
+        "operationId": "MoveOutOfResidency",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveOutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/residencies": {
+      "get": {
+        "tags": [
+          "Residencies"
+        ],
+        "summary": "Every residency of a contact the caller can read \u2014 who lives, holidays and works where.",
+        "operationId": "ListResidencies",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResidencyDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/moves": {
+      "post": {
+        "tags": [
+          "Residencies"
+        ],
+        "summary": "Several contacts move together: each one\u0027s current residencies at fromPlaceId end on movedIn, and a residency at toPlaceId starts then. All or nothing. Returns the new residencies.",
+        "operationId": "RecordMove",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResidencyDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/places/{placeId}/entry": {
+      "get": {
+        "tags": [
+          "PlaceEntries"
+        ],
+        "summary": "The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404.",
+        "operationId": "GetPlaceEntry",
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceEntryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/places/{placeId}/entry-codes/{codeId}": {
+      "put": {
+        "tags": [
+          "PlaceEntries"
+        ],
+        "summary": "Add or replace a code (the client mints codeId). Needs write on a contact currently living there.",
+        "operationId": "SetEntryCode",
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "codeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetEntryCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceEntryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "PlaceEntries"
+        ],
+        "summary": "Remove a code. Needs write on a contact currently living there.",
+        "operationId": "RemoveEntryCode",
+        "parameters": [
+          {
+            "name": "placeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "codeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceEntryDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/sync/changes": {
       "get": {
         "tags": [
@@ -3647,6 +4416,136 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RelationshipChangesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/sync/residencies": {
+      "get": {
+        "tags": [
+          "Sync"
+        ],
+        "summary": "Delta feed of residencies for offline mirrors: those of contacts the caller can read that changed past the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.",
+        "operationId": "GetResidencyChanges",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResidencyChangesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/sync/place-entries": {
+      "get": {
+        "tags": [
+          "Sync"
+        ],
+        "summary": "Delta feed of door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Unpaged. Omit since for a full sync.",
+        "operationId": "GetPlaceEntryChanges",
+        "parameters": [
+          {
+            "name": "since",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceEntryChangesResponse"
                 }
               }
             }
@@ -3905,10 +4804,11 @@
       "ContactAddressType": {
         "enum": [
           "Home",
+          "Vacation",
           "Work",
           "Other"
         ],
-        "description": "Type of a contact\u0027s postal address."
+        "description": "How a contact uses a place: where they live, a vacation home, where they work, or something else."
       },
       "ContactBirthdayDto": {
         "required": [
@@ -3989,7 +4889,6 @@
           "externalId",
           "displayName",
           "channels",
-          "addresses",
           "profiles",
           "emergencyContactIds",
           "version",
@@ -4087,12 +4986,6 @@
               "string"
             ],
             "description": "Pointer to an avatar image (URL/media id), never bytes."
-          },
-          "addresses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ContactPostalAddress"
-            }
           },
           "profiles": {
             "type": "array",
@@ -4241,28 +5134,6 @@
           }
         },
         "description": "Resolution of one input name. On \u0060Matched\u0060, \u0060ContactId\u0060 is set; \u0060Candidates\u0060 always lists\n            the considered contacts (capped) so the caller can disambiguate."
-      },
-      "ContactPostalAddress": {
-        "required": [
-          "placeId"
-        ],
-        "type": "object",
-        "properties": {
-          "placeId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "type": {
-            "$ref": "#/components/schemas/ContactAddressType"
-          },
-          "movedIn": {
-            "$ref": "#/components/schemas/FuzzyDate"
-          },
-          "movedOut": {
-            "$ref": "#/components/schemas/FuzzyDate"
-          }
-        },
-        "description": "A contact\u0027s postal address: a LupiraGeoApi place id (the sole source of truth \u2014 no free-text) with a home/work\n            type. FuzzyDate boundaries are as precise as actually known, null = unknown; currency is\n            bool ContactPostalAddress.IsActiveOn(DateOnly today), never \u0022MovedOut set\u0022."
       },
       "ContactReachChannel": {
         "required": [
@@ -4578,6 +5449,34 @@
         },
         "description": "Ends a relation (relationship ran its course \u2014 the edge stays, flagged). Removal is for edges entered by mistake."
       },
+      "EntryCodeDto": {
+        "required": [
+          "id",
+          "label",
+          "code",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "label": {
+            "type": "string",
+            "description": "What it opens, e.g. \u0022Port\u0022 or \u0022Gate\u0022."
+          },
+          "code": {
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "FuzzyDate": {
         "required": [
           "year"
@@ -4763,13 +5662,67 @@
           }
         }
       },
+      "MoveOutRequest": {
+        "required": [
+          "movedOut"
+        ],
+        "type": "object",
+        "properties": {
+          "movedOut": {
+            "$ref": "#/components/schemas/FuzzyDate"
+          }
+        }
+      },
+      "MoveRequest": {
+        "required": [
+          "contactIds",
+          "toPlaceId",
+          "type",
+          "movedIn"
+        ],
+        "type": "object",
+        "properties": {
+          "contactIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "toPlaceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ContactAddressType"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "movedIn": {
+            "$ref": "#/components/schemas/FuzzyDate"
+          },
+          "fromPlaceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The place they leave; omit when nobody leaves anywhere (a new vacation home, say).",
+            "format": "uuid"
+          }
+        },
+        "description": "Several contacts move together, e.g. a family: each one\u0027s current residencies at \u0060FromPlaceId\u0060 end on\n            \u0060MovedIn\u0060, and a new residency at \u0060ToPlaceId\u0060 starts then."
+      },
       "NameMatchOutcome": {
         "enum": [
           "Matched",
           "Ambiguous",
           "NotFound"
         ],
-        "description": "Per-name match outcome. \u0060Matched\u0060 = exactly one contact whose normalized display name equals the\n            query (or the lone substring hit); \u0060Ambiguous\u0060 = several candidates; \u0060NotFound\u0060 = no substring hit."
+        "description": "Per-name match outcome, compared case-, diacritic- and punctuation-insensitively. \u0060Matched\u0060 = exactly one\n            contact whose full name form (given\u002Bfamily, given\u002Bmiddle\u002Bfamily, nickname, nickname\u002Bfamily or display name) equals\n            the query, or else the lone contact holding every token of a multi-token query; \u0060Ambiguous\u0060 = several such\n            contacts, or a lone token hit on a one-token query; \u0060NotFound\u0060 = no contact holds every query token."
       },
       "OwnerGrantDto": {
         "required": [
@@ -4853,6 +5806,58 @@
           }
         },
         "description": "The claims a caller\u0027s token resolved to, echoed for cross-service auth-seam probes.\n            Returning the audiences (not a bare 200) lets a failing consumer see which half of the seam\n            is misconfigured."
+      },
+      "PlaceEntryChangesResponse": {
+        "required": [
+          "cursor",
+          "reset",
+          "changed",
+          "deleted"
+        ],
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string"
+          },
+          "reset": {
+            "type": "boolean"
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceEntryDto"
+            }
+          },
+          "deleted": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Place ids whose codes are no longer visible (no current resident the caller can read)."
+          }
+        },
+        "description": "Entry codes changed past the cursor, per place. \u0060Cursor\u0060 is opaque \u2014 hand it back as \u0060?since=\u0060. A full\n            sync (no \u0060since\u0060, or a \u0060Reset\u0060) lists every visible place and suppresses tombstones."
+      },
+      "PlaceEntryDto": {
+        "required": [
+          "placeId",
+          "codes"
+        ],
+        "type": "object",
+        "properties": {
+          "placeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntryCodeDto"
+            }
+          }
+        },
+        "description": "How to get in at a place: its door and gate codes, shared by everyone living there."
       },
       "ProblemDetails": {
         "type": "object",
@@ -5012,6 +6017,111 @@
         },
         "description": "A relationship between two contacts: \u0022\u0060HighId\u0060 is \u0060LowId\u0060\u0027s \u0060Kind\u0060\u0022. Low/High is the ids\u0027 ordinal\n            order, not which side stated it. Each side has its own label (its word for the other); the rest is shared."
       },
+      "ResidencyChangesResponse": {
+        "required": [
+          "cursor",
+          "reset",
+          "changed",
+          "deleted"
+        ],
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string"
+          },
+          "reset": {
+            "type": "boolean"
+          },
+          "changed": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResidencyDto"
+            }
+          },
+          "deleted": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids removed, or no longer visible (the contact deleted or moved out of reach). Unknown ids are safe to ignore."
+          }
+        },
+        "description": "Residencies changed past the cursor. \u0060Cursor\u0060 is opaque \u2014 hand it back as \u0060?since=\u0060. A full sync\n            (no \u0060since\u0060, or a \u0060Reset\u0060) lists every visible residency and suppresses tombstones."
+      },
+      "ResidencyDto": {
+        "required": [
+          "id",
+          "contactId",
+          "placeId",
+          "type",
+          "label",
+          "movedIn",
+          "movedOut"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "contactId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "placeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ContactAddressType"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "movedIn": {
+            "$ref": "#/components/schemas/FuzzyDate"
+          },
+          "movedOut": {
+            "$ref": "#/components/schemas/FuzzyDate"
+          }
+        },
+        "description": "A contact\u0027s tie to a geo place over a period. Current = today inside [movedIn, movedOut]; null ends are open."
+      },
+      "ResidencyRequest": {
+        "required": [
+          "placeId",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "placeId": {
+            "type": "string",
+            "description": "A LupiraGeoApi place id \u2014 resolve the address there first; no free text.",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ContactAddressType"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Free-text refinement, e.g. \u0022Summer house, Gotland\u0022."
+          },
+          "movedIn": {
+            "$ref": "#/components/schemas/FuzzyDate"
+          },
+          "movedOut": {
+            "$ref": "#/components/schemas/FuzzyDate"
+          }
+        },
+        "description": "A residency as stated: start one, or correct one wholesale."
+      },
       "ResolveContactsByNameRequest": {
         "required": [
           "names"
@@ -5132,7 +6242,6 @@
       "SectionGuardsDto": {
         "required": [
           "core",
-          "addresses",
           "profiles",
           "avatar",
           "metadata",
@@ -5141,9 +6250,6 @@
         "type": "object",
         "properties": {
           "core": {
-            "$ref": "#/components/schemas/SectionGuardDto"
-          },
-          "addresses": {
             "$ref": "#/components/schemas/SectionGuardDto"
           },
           "profiles": {
@@ -5160,29 +6266,6 @@
           }
         },
         "description": "Per-section guards for a contact. \u0060Core\u0060 covers the whole ContactFields (name/channels/tags/\n            notes\u2026 \u2014 channel and tag writes ride the same revision event); the rest map 1:1 to their write endpoints."
-      },
-      "SetContactAddressesRequest": {
-        "required": [
-          "addresses"
-        ],
-        "type": "object",
-        "properties": {
-          "addresses": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ContactPostalAddress"
-            }
-          },
-          "occurredAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "Client wall-clock of the edit, for last-writer-wins conflict resolution. Omitted \u21D2 server receive time.",
-            "format": "date-time"
-          }
-        },
-        "description": "Wholesale replacement of a contact\u0027s postal addresses; each entry needs a geo place id."
       },
       "SetContactAvatarRequest": {
         "type": "object",
@@ -5309,6 +6392,29 @@
           }
         },
         "description": "Wholesale replacement of a contact\u0027s emergency-contact designation; order = priority, empty clears."
+      },
+      "SetEntryCodeRequest": {
+        "required": [
+          "label",
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "What it opens, e.g. \u0022Port\u0022 or \u0022Gate\u0022."
+          },
+          "code": {
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional hint, e.g. \u0022ring 2nd floor\u0022."
+          }
+        }
       },
       "SetMyContactRequest": {
         "required": [
@@ -5444,6 +6550,12 @@
     },
     {
       "name": "Relationships"
+    },
+    {
+      "name": "Residencies"
+    },
+    {
+      "name": "PlaceEntries"
     },
     {
       "name": "Sync"

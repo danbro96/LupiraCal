@@ -34,6 +34,15 @@ export const PIN = {
   saved: ['case', ['get', 'isFavorite'], 8, 6] as unknown[],
 } as const;
 
+/** A contact pin is a dot in the contact colour; one where everyone is on holiday (`vacation`) is a ring instead. */
+export function contactPinFill(contact: string, ring: string): unknown[] {
+  return ['case', ['==', ['get', 'vacation'], true], ring, contact];
+}
+
+export function contactPinStroke(contact: string, ring: string): unknown[] {
+  return ['case', ['==', ['get', 'vacation'], true], contact, ring];
+}
+
 /** A pin's name under it: ink on a ring-coloured halo, never the series colour. Dropped where it would collide. */
 export const PIN_LABEL_LAYOUT: {
   'text-font': string[]; 'text-size': number; 'text-anchor': 'top'; 'text-offset': [number, number];

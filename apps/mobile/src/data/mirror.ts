@@ -1,6 +1,6 @@
 import type { RelationshipRecord } from '@lupira/cal-domain/contactRelations';
 import type { ContactGuards, ItemGuards } from '../domain/docTypes';
-import type { ContactDoc, ItemDoc } from '../domain/docTypes';
+import type { ContactDoc, ItemDoc, PlaceEntryDoc, ResidencyDoc } from '../domain/docTypes';
 import type { OccurrenceRow } from '../domain/materialize';
 import type { MirrorContact, MirrorItem } from '../domain/mirrorReducers';
 import type { ClientOp } from '../domain/ops';
@@ -258,29 +258,60 @@ export async function upcomingPlacedEvents(tx: Tx, nowIso: string, limit: number
   );
 }
 
-export type MapContactRow = {
+export type ResidencyRow = {
   contact_id: string;
   display_name: string;
   place_id: string;
   address_type: string | null;
+  label: string | null;
   moved_in: string | null;
   moved_out: string | null;
 };
 
-/** Contact addresses for the map. `json_each` walks the address array stored inside the contact doc,
- *  so this is a pure mirror read — the layer works offline, unlike the web's which refetches every
- *  contact. Fuzzy dates come back as JSON for the caller's residency logic. */
-export async function mapContactAddresses(tx: Tx): Promise<MapContactRow[]> {
-  return tx.all<MapContactRow>(
-    `SELECT c.id AS contact_id, c.display_name,
-            json_extract(a.value, '$.placeId') AS place_id,
-            json_extract(a.value, '$.type')    AS address_type,
-            json_extract(a.value, '$.movedIn')  AS moved_in,
-            json_extract(a.value, '$.movedOut') AS moved_out
-     FROM contacts c, json_each(json_extract(c.doc, '$.addresses')) a
-     WHERE c.deleted = 0 AND json_extract(a.value, '$.placeId') IS NOT NULL
+/** Every residency of a live contact, with the contact's name — a pure mirror read, so the map layer, place picker and
+ *  quick places work offline. Fuzzy dates come back as JSON for the caller's residency logic. */
+export async function contactResidencies(tx: Tx): Promise<ResidencyRow[]> {
+  return tx.all<ResidencyRow>(
+    `SELECT c.id AS contact_id, c.display_name, r.place_id,
+            json_extract(r.doc, '$.type')     AS address_type,
+            json_extract(r.doc, '$.label')    AS label,
+            json_extract(r.doc, '$.movedIn')  AS moved_in,
+            json_extract(r.doc, '$.movedOut') AS moved_out
+     FROM residencies r JOIN contacts c ON c.id = r.contact_id AND c.deleted = 0
      ORDER BY c.display_name COLLATE NOCASE`,
   );
+}
+
+export async function saveResidencies(tx: Tx, residencies: ResidencyDoc[]): Promise<void> {
+  for (const r of residencies) {
+    await tx.run('INSERT OR REPLACE INTO residencies (id, contact_id, place_id, doc) VALUES (?, ?, ?, ?)',
+      [r.id, r.contactId, r.placeId, JSON.stringify(r)]);
+  }
+}
+
+export async function removeResidencies(tx: Tx, ids: string[]): Promise<void> {
+  for (const id of ids) await tx.run('DELETE FROM residencies WHERE id = ?', [id]);
+}
+
+export async function clearResidencies(tx: Tx): Promise<void> {
+  await tx.run('DELETE FROM residencies');
+}
+
+export async function placeEntryOf(tx: Tx, placeId: string): Promise<PlaceEntryDoc | null> {
+  const row = await tx.first<{ doc: string }>('SELECT doc FROM place_entries WHERE place_id = ?', [placeId]);
+  return row ? (JSON.parse(row.doc) as PlaceEntryDoc) : null;
+}
+
+export async function savePlaceEntries(tx: Tx, entries: PlaceEntryDoc[]): Promise<void> {
+  for (const e of entries) await tx.run('INSERT OR REPLACE INTO place_entries (place_id, doc) VALUES (?, ?)', [e.placeId, JSON.stringify(e)]);
+}
+
+export async function removePlaceEntries(tx: Tx, placeIds: string[]): Promise<void> {
+  for (const id of placeIds) await tx.run('DELETE FROM place_entries WHERE place_id = ?', [id]);
+}
+
+export async function clearPlaceEntries(tx: Tx): Promise<void> {
+  await tx.run('DELETE FROM place_entries');
 }
 
 export type ContactRelationshipRow = { record: RelationshipRecord; otherId: string; otherName: string };
@@ -412,7 +443,7 @@ export async function pendingCreateAggregates(tx: Tx): Promise<Set<string>> {
   return new Set(rows.map((r) => r.aggregate_id));
 }
 
-export type SyncScope = 'cal' | 'contact' | 'relationship';
+export type SyncScope = 'cal' | 'contact' | 'relationship' | 'residency' | 'place-entry';
 
 export async function getCursor(tx: Tx, scope: SyncScope): Promise<string | null> {
   const row = await tx.first<{ cursor: string | null }>('SELECT cursor FROM sync_state WHERE scope = ?', [scope]);

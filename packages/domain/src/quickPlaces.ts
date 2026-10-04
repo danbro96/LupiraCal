@@ -1,4 +1,4 @@
-// The map's jump strip: your current home and work, then the next placed events. Both apps assemble it from
+// The map's jump strip: your current home and work, your parents' home, then the next placed events. Both apps assemble it from
 // their own sources (mirror rows on mobile, API occurrences on web) and render the same chips.
 
 import { residencyStatus, type FuzzyDate } from './fuzzyDate';
@@ -29,7 +29,7 @@ export interface UpcomingPlacedEvent {
 
 export type QuickPlace = {
   key: string;
-  kind: 'home' | 'work' | 'event';
+  kind: 'home' | 'work' | 'parents' | 'event';
   label: string;
   /** Null until the place resolves — offline, or never geocoded. */
   point: GeoPoint | null;
@@ -38,8 +38,10 @@ export type QuickPlace = {
   event?: { itemId: string; title: string | null; start: string; color: string | null };
 };
 
-export function quickPlaces({ ownAddresses, places, upcoming, now = new Date() }: {
+export function quickPlaces({ ownAddresses, parents = [], places, upcoming, now = new Date() }: {
   ownAddresses: readonly { placeId: string; type?: string | null; movedIn?: FuzzyDate | null; movedOut?: FuzzyDate | null }[];
+  /** Your parents' homes (`parentsHomes`). */
+  parents?: readonly { placeId: string; label: string }[];
   places: ReadonlyMap<string, QuickPlacePlace>;
   upcoming: readonly UpcomingPlacedEvent[];
   now?: Date;
@@ -79,7 +81,14 @@ export function quickPlaces({ ownAddresses, places, upcoming, now = new Date() }
     }];
   }).slice(0, QUICK_EVENTS_SHOWN);
 
-  return [...homes, ...events];
+  const parentsPlaces: QuickPlace[] = parents.map((p) => ({
+    key: `parents:${p.placeId}`,
+    kind: 'parents',
+    label: p.label,
+    point: pointOf(p.placeId),
+    spanM: placeSpanM(places.get(p.placeId)),
+  }));
+  return [...homes, ...parentsPlaces, ...events];
 }
 
 /** From API occurrences: one per item (a series by its next occurrence), placed, not cancelled, not over. */

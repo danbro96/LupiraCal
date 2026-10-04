@@ -6,13 +6,14 @@
  */
 
 /**
- * Type of a contact's postal address.
+ * How a contact uses a place: where they live, a vacation home, where they work, or something else.
  */
 export type ContactAddressType = typeof ContactAddressType[keyof typeof ContactAddressType];
 
 
 export const ContactAddressType = {
   Home: 'Home',
+  Vacation: 'Vacation',
   Work: 'Work',
   Other: 'Other',
 } as const;

@@ -5,7 +5,7 @@ import { useMap } from './MapCanvas';
 import { ACTIVITY_COLORS, activityColorExpression, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 import {
   CLUSTER, CLUSTER_COUNT_LAYOUT, CURRENT_FIX, HOTSPOT, PIN, PIN_LABEL_HALO_WIDTH, PIN_LABEL_LAYOUT, TRACK, VISIT, clusterRadius,
-  hotspotRadius,
+  contactPinFill, contactPinStroke, hotspotRadius,
 } from '@lupira/cal-tokens/mapPaint';
 import { useGeoJsonLayer, type LayerSpecSansSource } from './useGeoJsonLayer';
 
@@ -93,10 +93,10 @@ export function ContactsLayer({ theme, features }: CommonLayerProps & { features
       id: 'contacts-pins', type: 'circle', filter: ['!', ['has', 'point_count']],
       paint: {
         'circle-radius': PIN.contact,
-        'circle-color': colors.contact,
+        'circle-color': contactPinFill(colors.contact, colors.ring),
         'circle-stroke-width': PIN.strokeWidth,
-        'circle-stroke-color': colors.ring,
-      },
+        'circle-stroke-color': contactPinStroke(colors.contact, colors.ring),
+      } as LayerSpecSansSource['paint'],
     },
     {
       id: 'contacts-labels', type: 'symbol', filter: ['!', ['has', 'point_count']],

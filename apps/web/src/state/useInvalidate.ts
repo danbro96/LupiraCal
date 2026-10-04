@@ -30,6 +30,8 @@ export function useInvalidateContacts() {
         // returns, and it does not share the upstream prefix.
         return key.startsWith('/contact-api/contacts')
           || key.startsWith('/contact-api/relationships')
+          || key.startsWith('/contact-api/residencies')
+          || key.startsWith('/contact-api/places')
           || key.startsWith('/api/contacts')
           || key.includes('/groups');
       },

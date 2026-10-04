@@ -6,6 +6,7 @@ import { describeHit, hitActions, type HitAction } from '@lupira/cal-domain/mapH
 import type { MapHit } from '@lupira/cal-domain/mapHits';
 import { MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
 import { Button } from '../components/Button';
+import { EntryCodes } from '../components/EntryCodes';
 import { Sheet } from '../components/Sheet';
 import { avatarColor } from '../hooks/palette';
 import { ICONS } from '../icons';
@@ -22,8 +23,11 @@ export function MapPreviewSheet({ hits, theme, onAction, onDismiss }: {
   onDismiss: () => void;
 }) {
   const single = hits.length === 1 ? hits[0] : null;
+  // Someone lives here now: the way in is what you came for.
+  const home = hits.find((h) => h.kind === 'contact' && h.residency === 'active');
   return (
     <Sheet title={single ? undefined : `${hits.length} things here`} onDismiss={onDismiss}>
+      {home?.kind === 'contact' && <EntryCodes placeId={home.placeId} />}
       {single ? (
         <HitCard hit={single} theme={theme} onAction={onAction} />
       ) : (

@@ -17,14 +17,6 @@ namespace LupiraCalBff.Upstream.Contact.Models
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The addressBookId property</summary>
         public Guid? AddressBookId { get; set; }
-        /// <summary>The addresses property</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public List<global::LupiraCalBff.Upstream.Contact.Models.ContactPostalAddress>? Addresses { get; set; }
-#nullable restore
-#else
-        public List<global::LupiraCalBff.Upstream.Contact.Models.ContactPostalAddress> Addresses { get; set; }
-#endif
         /// <summary>Pointer to an avatar image (URL/media id), never bytes.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -219,7 +211,6 @@ namespace LupiraCalBff.Upstream.Contact.Models
             return new Dictionary<string, Action<IParseNode>>
             {
                 { "addressBookId", n => { AddressBookId = n.GetGuidValue(); } },
-                { "addresses", n => { Addresses = n.GetCollectionOfObjectValues<global::LupiraCalBff.Upstream.Contact.Models.ContactPostalAddress>(global::LupiraCalBff.Upstream.Contact.Models.ContactPostalAddress.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "avatarRef", n => { AvatarRef = n.GetStringValue(); } },
                 { "birthday", n => { Birthday = n.GetObjectValue<global::LupiraCalBff.Upstream.Contact.Models.PartialDate>(global::LupiraCalBff.Upstream.Contact.Models.PartialDate.CreateFromDiscriminatorValue); } },
                 { "channels", n => { Channels = n.GetCollectionOfObjectValues<global::LupiraCalBff.Upstream.Contact.Models.ContactReachChannel>(global::LupiraCalBff.Upstream.Contact.Models.ContactReachChannel.CreateFromDiscriminatorValue)?.AsList(); } },
@@ -257,7 +248,6 @@ namespace LupiraCalBff.Upstream.Contact.Models
         {
             if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
             writer.WriteGuidValue("addressBookId", AddressBookId);
-            writer.WriteCollectionOfObjectValues<global::LupiraCalBff.Upstream.Contact.Models.ContactPostalAddress>("addresses", Addresses);
             writer.WriteStringValue("avatarRef", AvatarRef);
             writer.WriteObjectValue<global::LupiraCalBff.Upstream.Contact.Models.PartialDate>("birthday", Birthday);
             writer.WriteCollectionOfObjectValues<global::LupiraCalBff.Upstream.Contact.Models.ContactReachChannel>("channels", Channels);

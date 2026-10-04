@@ -3,22 +3,21 @@ import { useQuery } from '@tanstack/react-query';
 import { getHotspots } from '@lupira/cal-api/fetch/cal';
 import { createPlace, createPlaceFromGeocode, forwardGeocode, listSavedPlaces, suggestPlaces } from '@lupira/cal-api/fetch/geo';
 import { PlaceCategory, SuggestionType, type GeocodeResultDto } from '@lupira/cal-api/models';
-import type { FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
 import {
   ADDRESS_SEARCH_LIMIT, MIN_PLACE_QUERY, PLACE_SUGGEST_LIMIT, eventOrigin, pickPlaces,
 } from '@lupira/cal-domain/placeCandidates';
 import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@lupira/cal-domain/places';
 import { getDb } from '../data/db/expoDb';
-import { mapContactAddresses, mapEventRowsBetween } from '../data/mirror';
+import { mapEventRowsBetween } from '../data/mirror';
 import { lastKnownPosition } from '../sync/livePosition';
 import { useSyncStatus } from '../sync/syncStatus';
 import { useParticipationSummary } from './useParticipationSummary';
 import { usePlaceCoords } from './usePlaceLookup';
+import { useResidencyRows } from './useResidencies';
 
 /** What the event editor stores: a geo place id plus the label written next to it. */
 export type PlaceOption = { placeId: string; label: string; context?: string | null };
 
-const parseFuzzy = (raw: string | null): FuzzyDate | null => (raw ? (JSON.parse(raw) as FuzzyDate) : null);
 
 /** Every place the picker can offer, as one list ranked by `@lupira/cal-domain/placeRank`: saved places, your
  *  hotspots, the server's typeahead and your contacts' addresses (matched by the contact's name, or because
@@ -62,10 +61,7 @@ export function usePlaceCandidates({ query, attendeeIds, day }: { query: string;
       return r.data.filter((s) => s.type === SuggestionType.Place);
     },
   });
-  const addresses = useQuery({
-    queryKey: ['contacts', 'map'],
-    queryFn: async () => mapContactAddresses(await getDb()),
-  });
+  const rows = useResidencyRows();
   const dayEvents = useQuery({
     queryKey: ['items', 'places-on', day],
     enabled: !!day,
@@ -74,16 +70,8 @@ export function usePlaceCandidates({ query, attendeeIds, day }: { query: string;
   const fix = useQuery({ queryKey: ['location', 'last-known'], staleTime: 300_000, retry: false, queryFn: lastKnownPosition });
   const { data: summary } = useParticipationSummary(true);
 
-  const rows = useMemo(() => (addresses.data ?? []).map((r) => ({
-    contactId: r.contact_id,
-    displayName: r.display_name,
-    placeId: r.place_id,
-    addressType: r.address_type,
-    movedIn: parseFuzzy(r.moved_in),
-    movedOut: parseFuzzy(r.moved_out),
-  })), [addresses.data]);
   // Same id set as the map's contact layer, so both share one lookup.
-  const places = usePlaceCoords(useMemo(() => (addresses.data ?? []).map((r) => r.place_id), [addresses.data]));
+  const places = usePlaceCoords(useMemo(() => rows.map((r) => r.placeId), [rows]));
   const dayPlaces = usePlaceCoords(useMemo(() => (dayEvents.data ?? []).map((r) => r.place_id), [dayEvents.data]));
 
   return useMemo(() => {

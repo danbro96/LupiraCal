@@ -12,7 +12,6 @@ import type { SectionGuardDto } from './sectionGuardDto';
  */
 export interface ContactSectionGuardsDto {
   core: SectionGuardDto;
-  addresses: SectionGuardDto;
   profiles: SectionGuardDto;
   avatar: SectionGuardDto;
   metadata: SectionGuardDto;

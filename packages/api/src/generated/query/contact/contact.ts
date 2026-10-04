@@ -40,25 +40,34 @@ import type {
   CreateContactRequest,
   EndContactRelationRequest,
   GetContactCirclesParams,
+  GetPlaceEntryChangesParams,
   GetRelationshipChangesParams,
+  GetResidencyChangesParams,
   GrantOwnerRequest,
   ListContactRelationsParams,
   MeDto,
   MoveContactRequest,
+  MoveOutRequest,
+  MoveRequest,
+  PlaceEntryChangesResponse,
+  PlaceEntryDto,
   ProblemDetails,
   RelationshipChangesResponse,
   RelationshipDto,
   RemoveContactRelationParams,
   RenameContactGroupParams,
+  ResidencyChangesResponse,
+  ResidencyDto,
+  ResidencyRequest,
   ReviseContactRequest,
   RevokeAddressBookOwnerParams,
   SearchContactsParams,
-  SetContactAddressesRequest,
   SetContactChannelsRequest,
   SetContactProfilesRequest,
   SetContactTagsRequest,
   SetDeceasedRequest,
   SetEmergencyContactsRequest,
+  SetEntryCodeRequest,
   SetMyContactRequest,
   SyncContainersResponse,
   UpdateAddressBookRequest
@@ -984,7 +993,7 @@ export const useRevokeAddressBookOwner = <TError = ProblemDetails,
 }
 
 /**
- * @summary Search contacts (full-text + fuzzy name match).
+ * @summary Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive).
  */
 export const searchContacts = async (params?: SearchContactsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto[]> => {
 
@@ -1055,7 +1064,7 @@ export function useSearchContacts<TData = Awaited<ReturnType<typeof searchContac
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Search contacts (full-text + fuzzy name match).
+ * @summary Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive).
  */
 
 export function useSearchContacts<TData = Awaited<ReturnType<typeof searchContacts>>, TError = ProblemDetails>(
@@ -1875,94 +1884,6 @@ export const useSetContactProfiles = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getSetContactProfilesMutationOptions(options), queryClient);
-    }
-    export const getSetContactAddressesUrl = (id: string,) => {
-
-
-
-
-  return `/contact-api/contacts/${id}/addresses`
-}
-
-/**
- * @summary Replace the contact's postal addresses wholesale; each entry needs a LupiraGeoApi place id (resolve the address there first — no free-text).
- */
-export const setContactAddresses = async (id: string,
-    setContactAddressesRequest: SetContactAddressesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return apiRequest<ContactDto>(getSetContactAddressesUrl(id),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(setContactAddressesRequest)
-  }
-);}
-
-
-
-
-
-export const getSetContactAddressesMutationKey = () => ['setContactAddresses'] as const;
-
-export const getSetContactAddressesMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactAddresses>>, TError,SetContactAddressesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof setContactAddresses>>, TError,SetContactAddressesMutationVariables, TContext> => {
-
-const mutationKey = getSetContactAddressesMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setContactAddresses>>, SetContactAddressesMutationVariables> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  setContactAddresses(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SetContactAddressesMutationResult = NonNullable<Awaited<ReturnType<typeof setContactAddresses>>>
-    export type SetContactAddressesMutationBody = SetContactAddressesRequest
-    export type SetContactAddressesMutationError = ProblemDetails
-    export type SetContactAddressesMutationVariables = {id: string;data: SetContactAddressesRequest}
-
-    /**
- * @summary Replace the contact's postal addresses wholesale; each entry needs a LupiraGeoApi place id (resolve the address there first — no free-text).
- */
-export const useSetContactAddresses = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactAddresses>>, TError,SetContactAddressesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof setContactAddresses>>,
-        TError,
-        SetContactAddressesMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSetContactAddressesMutationOptions(options), queryClient);
     }
     export const getSetEmergencyContactsUrl = (id: string,) => {
 
@@ -3199,7 +3120,896 @@ export function useListRelationships<TData = Awaited<ReturnType<typeof listRelat
 
 
 
-export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
+export const getListContactResidenciesUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/contacts/${id}/residencies`
+}
+
+/**
+ * @summary Where the contact lives, holidays and works: current residencies first, then the most recent move-in first.
+ */
+export const listContactResidencies = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto[]> => {
+
+  return apiRequest<ResidencyDto[]>(getListContactResidenciesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListContactResidenciesQueryKey = (id: string,) => {
+    return [
+    `/contact-api/contacts/${id}/residencies`
+    ] as const;
+    }
+
+
+export const getListContactResidenciesQueryOptions = <TData = Awaited<ReturnType<typeof listContactResidencies>>, TError = ProblemDetails>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListContactResidenciesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listContactResidencies>>> = ({ signal }) => listContactResidencies(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListContactResidenciesQueryResult = NonNullable<Awaited<ReturnType<typeof listContactResidencies>>>
+export type ListContactResidenciesQueryError = ProblemDetails
+
+
+export function useListContactResidencies<TData = Awaited<ReturnType<typeof listContactResidencies>>, TError = ProblemDetails>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listContactResidencies>>,
+          TError,
+          Awaited<ReturnType<typeof listContactResidencies>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListContactResidencies<TData = Awaited<ReturnType<typeof listContactResidencies>>, TError = ProblemDetails>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listContactResidencies>>,
+          TError,
+          Awaited<ReturnType<typeof listContactResidencies>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListContactResidencies<TData = Awaited<ReturnType<typeof listContactResidencies>>, TError = ProblemDetails>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Where the contact lives, holidays and works: current residencies first, then the most recent move-in first.
+ */
+
+export function useListContactResidencies<TData = Awaited<ReturnType<typeof listContactResidencies>>, TError = ProblemDetails>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListContactResidenciesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getAddResidencyUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/contacts/${id}/residencies`
+}
+
+/**
+ * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place.
+ */
+export const addResidency = async (id: string,
+    residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ResidencyDto>(getAddResidencyUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(residencyRequest)
+  }
+);}
+
+
+
+
+
+export const getAddResidencyMutationKey = () => ['addResidency'] as const;
+
+export const getAddResidencyMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addResidency>>, TError,AddResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof addResidency>>, TError,AddResidencyMutationVariables, TContext> => {
+
+const mutationKey = getAddResidencyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addResidency>>, AddResidencyMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  addResidency(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddResidencyMutationResult = NonNullable<Awaited<ReturnType<typeof addResidency>>>
+    export type AddResidencyMutationBody = ResidencyRequest
+    export type AddResidencyMutationError = ProblemDetails
+    export type AddResidencyMutationVariables = {id: string;data: ResidencyRequest}
+
+    /**
+ * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place.
+ */
+export const useAddResidency = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addResidency>>, TError,AddResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addResidency>>,
+        TError,
+        AddResidencyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAddResidencyMutationOptions(options), queryClient);
+    }
+    export const getReviseResidencyUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/residencies/${id}`
+}
+
+/**
+ * @summary Correct a residency as entered: place, type, label and period, wholesale. A move is told with move-out or POST /moves instead.
+ */
+export const reviseResidency = async (id: string,
+    residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ResidencyDto>(getReviseResidencyUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(residencyRequest)
+  }
+);}
+
+
+
+
+
+export const getReviseResidencyMutationKey = () => ['reviseResidency'] as const;
+
+export const getReviseResidencyMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseResidency>>, TError,ReviseResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof reviseResidency>>, TError,ReviseResidencyMutationVariables, TContext> => {
+
+const mutationKey = getReviseResidencyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviseResidency>>, ReviseResidencyMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviseResidency(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviseResidencyMutationResult = NonNullable<Awaited<ReturnType<typeof reviseResidency>>>
+    export type ReviseResidencyMutationBody = ResidencyRequest
+    export type ReviseResidencyMutationError = ProblemDetails
+    export type ReviseResidencyMutationVariables = {id: string;data: ResidencyRequest}
+
+    /**
+ * @summary Correct a residency as entered: place, type, label and period, wholesale. A move is told with move-out or POST /moves instead.
+ */
+export const useReviseResidency = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseResidency>>, TError,ReviseResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reviseResidency>>,
+        TError,
+        ReviseResidencyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviseResidencyMutationOptions(options), queryClient);
+    }
+    export const getRemoveResidencyUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/residencies/${id}`
+}
+
+/**
+ * @summary Erase a residency entered by mistake. One that ended should be moved out of instead.
+ */
+export const removeResidency = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
+
+  return apiRequest<void>(getRemoveResidencyUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveResidencyMutationKey = () => ['removeResidency'] as const;
+
+export const getRemoveResidencyMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeResidency>>, TError,RemoveResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeResidency>>, TError,RemoveResidencyMutationVariables, TContext> => {
+
+const mutationKey = getRemoveResidencyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeResidency>>, RemoveResidencyMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  removeResidency(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveResidencyMutationResult = NonNullable<Awaited<ReturnType<typeof removeResidency>>>
+
+    export type RemoveResidencyMutationError = ProblemDetails
+    export type RemoveResidencyMutationVariables = {id: string}
+
+    /**
+ * @summary Erase a residency entered by mistake. One that ended should be moved out of instead.
+ */
+export const useRemoveResidency = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeResidency>>, TError,RemoveResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof removeResidency>>,
+        TError,
+        RemoveResidencyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveResidencyMutationOptions(options), queryClient);
+    }
+    export const getMoveOutOfResidencyUrl = (id: string,) => {
+
+
+
+
+  return `/contact-api/residencies/${id}/move-out`
+}
+
+/**
+ * @summary End a residency: the contact moved out on the given date (a year, year-month, or day).
+ */
+export const moveOutOfResidency = async (id: string,
+    moveOutRequest: MoveOutRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ResidencyDto>(getMoveOutOfResidencyUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(moveOutRequest)
+  }
+);}
+
+
+
+
+
+export const getMoveOutOfResidencyMutationKey = () => ['moveOutOfResidency'] as const;
+
+export const getMoveOutOfResidencyMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveOutOfResidency>>, TError,MoveOutOfResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof moveOutOfResidency>>, TError,MoveOutOfResidencyMutationVariables, TContext> => {
+
+const mutationKey = getMoveOutOfResidencyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof moveOutOfResidency>>, MoveOutOfResidencyMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  moveOutOfResidency(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MoveOutOfResidencyMutationResult = NonNullable<Awaited<ReturnType<typeof moveOutOfResidency>>>
+    export type MoveOutOfResidencyMutationBody = MoveOutRequest
+    export type MoveOutOfResidencyMutationError = ProblemDetails
+    export type MoveOutOfResidencyMutationVariables = {id: string;data: MoveOutRequest}
+
+    /**
+ * @summary End a residency: the contact moved out on the given date (a year, year-month, or day).
+ */
+export const useMoveOutOfResidency = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveOutOfResidency>>, TError,MoveOutOfResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof moveOutOfResidency>>,
+        TError,
+        MoveOutOfResidencyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMoveOutOfResidencyMutationOptions(options), queryClient);
+    }
+    export const getListResidenciesUrl = () => {
+
+
+
+
+  return `/contact-api/residencies`
+}
+
+/**
+ * @summary Every residency of a contact the caller can read — who lives, holidays and works where.
+ */
+export const listResidencies = async ( options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto[]> => {
+
+  return apiRequest<ResidencyDto[]>(getListResidenciesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListResidenciesQueryKey = () => {
+    return [
+    `/contact-api/residencies`
+    ] as const;
+    }
+
+
+export const getListResidenciesQueryOptions = <TData = Awaited<ReturnType<typeof listResidencies>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResidenciesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResidencies>>> = ({ signal }) => listResidencies({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListResidenciesQueryResult = NonNullable<Awaited<ReturnType<typeof listResidencies>>>
+export type ListResidenciesQueryError = ProblemDetails
+
+
+export function useListResidencies<TData = Awaited<ReturnType<typeof listResidencies>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listResidencies>>,
+          TError,
+          Awaited<ReturnType<typeof listResidencies>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListResidencies<TData = Awaited<ReturnType<typeof listResidencies>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listResidencies>>,
+          TError,
+          Awaited<ReturnType<typeof listResidencies>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListResidencies<TData = Awaited<ReturnType<typeof listResidencies>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Every residency of a contact the caller can read — who lives, holidays and works where.
+ */
+
+export function useListResidencies<TData = Awaited<ReturnType<typeof listResidencies>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListResidenciesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getRecordMoveUrl = () => {
+
+
+
+
+  return `/contact-api/moves`
+}
+
+/**
+ * @summary Several contacts move together: each one's current residencies at fromPlaceId end on movedIn, and a residency at toPlaceId starts then. All or nothing. Returns the new residencies.
+ */
+export const recordMove = async (moveRequest: MoveRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto[]> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ResidencyDto[]>(getRecordMoveUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(moveRequest)
+  }
+);}
+
+
+
+
+
+export const getRecordMoveMutationKey = () => ['recordMove'] as const;
+
+export const getRecordMoveMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordMove>>, TError,RecordMoveMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof recordMove>>, TError,RecordMoveMutationVariables, TContext> => {
+
+const mutationKey = getRecordMoveMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recordMove>>, RecordMoveMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  recordMove(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecordMoveMutationResult = NonNullable<Awaited<ReturnType<typeof recordMove>>>
+    export type RecordMoveMutationBody = MoveRequest
+    export type RecordMoveMutationError = ProblemDetails
+    export type RecordMoveMutationVariables = {data: MoveRequest}
+
+    /**
+ * @summary Several contacts move together: each one's current residencies at fromPlaceId end on movedIn, and a residency at toPlaceId starts then. All or nothing. Returns the new residencies.
+ */
+export const useRecordMove = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordMove>>, TError,RecordMoveMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof recordMove>>,
+        TError,
+        RecordMoveMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRecordMoveMutationOptions(options), queryClient);
+    }
+    export const getGetPlaceEntryUrl = (placeId: string,) => {
+
+
+
+
+  return `/contact-api/places/${placeId}/entry`
+}
+
+/**
+ * @summary The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404.
+ */
+export const getPlaceEntry = async (placeId: string, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceEntryDto> => {
+
+  return apiRequest<PlaceEntryDto>(getGetPlaceEntryUrl(placeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPlaceEntryQueryKey = (placeId: string,) => {
+    return [
+    `/contact-api/places/${placeId}/entry`
+    ] as const;
+    }
+
+
+export const getGetPlaceEntryQueryOptions = <TData = Awaited<ReturnType<typeof getPlaceEntry>>, TError = ProblemDetails>(placeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPlaceEntryQueryKey(placeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPlaceEntry>>> = ({ signal }) => getPlaceEntry(placeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: placeId !== null && placeId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPlaceEntryQueryResult = NonNullable<Awaited<ReturnType<typeof getPlaceEntry>>>
+export type GetPlaceEntryQueryError = ProblemDetails
+
+
+export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry>>, TError = ProblemDetails>(
+ placeId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPlaceEntry>>,
+          TError,
+          Awaited<ReturnType<typeof getPlaceEntry>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry>>, TError = ProblemDetails>(
+ placeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPlaceEntry>>,
+          TError,
+          Awaited<ReturnType<typeof getPlaceEntry>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry>>, TError = ProblemDetails>(
+ placeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404.
+ */
+
+export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry>>, TError = ProblemDetails>(
+ placeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPlaceEntryQueryOptions(placeId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getSetEntryCodeUrl = (placeId: string,
+    codeId: string,) => {
+
+
+
+
+  return `/contact-api/places/${placeId}/entry-codes/${codeId}`
+}
+
+/**
+ * @summary Add or replace a code (the client mints codeId). Needs write on a contact currently living there.
+ */
+export const setEntryCode = async (placeId: string,
+    codeId: string,
+    setEntryCodeRequest: SetEntryCodeRequest, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceEntryDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<PlaceEntryDto>(getSetEntryCodeUrl(placeId,codeId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(setEntryCodeRequest)
+  }
+);}
+
+
+
+
+
+export const getSetEntryCodeMutationKey = () => ['setEntryCode'] as const;
+
+export const getSetEntryCodeMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setEntryCode>>, TError,SetEntryCodeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setEntryCode>>, TError,SetEntryCodeMutationVariables, TContext> => {
+
+const mutationKey = getSetEntryCodeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setEntryCode>>, SetEntryCodeMutationVariables> = (props) => {
+          const {placeId,codeId,data} = props ?? {};
+
+          return  setEntryCode(placeId,codeId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetEntryCodeMutationResult = NonNullable<Awaited<ReturnType<typeof setEntryCode>>>
+    export type SetEntryCodeMutationBody = SetEntryCodeRequest
+    export type SetEntryCodeMutationError = ProblemDetails
+    export type SetEntryCodeMutationVariables = {placeId: string;codeId: string;data: SetEntryCodeRequest}
+
+    /**
+ * @summary Add or replace a code (the client mints codeId). Needs write on a contact currently living there.
+ */
+export const useSetEntryCode = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setEntryCode>>, TError,SetEntryCodeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setEntryCode>>,
+        TError,
+        SetEntryCodeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetEntryCodeMutationOptions(options), queryClient);
+    }
+    export const getRemoveEntryCodeUrl = (placeId: string,
+    codeId: string,) => {
+
+
+
+
+  return `/contact-api/places/${placeId}/entry-codes/${codeId}`
+}
+
+/**
+ * @summary Remove a code. Needs write on a contact currently living there.
+ */
+export const removeEntryCode = async (placeId: string,
+    codeId: string, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceEntryDto> => {
+
+  return apiRequest<PlaceEntryDto>(getRemoveEntryCodeUrl(placeId,codeId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRemoveEntryCodeMutationKey = () => ['removeEntryCode'] as const;
+
+export const getRemoveEntryCodeMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeEntryCode>>, TError,RemoveEntryCodeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeEntryCode>>, TError,RemoveEntryCodeMutationVariables, TContext> => {
+
+const mutationKey = getRemoveEntryCodeMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeEntryCode>>, RemoveEntryCodeMutationVariables> = (props) => {
+          const {placeId,codeId} = props ?? {};
+
+          return  removeEntryCode(placeId,codeId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveEntryCodeMutationResult = NonNullable<Awaited<ReturnType<typeof removeEntryCode>>>
+
+    export type RemoveEntryCodeMutationError = ProblemDetails
+    export type RemoveEntryCodeMutationVariables = {placeId: string;codeId: string}
+
+    /**
+ * @summary Remove a code. Needs write on a contact currently living there.
+ */
+export const useRemoveEntryCode = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeEntryCode>>, TError,RemoveEntryCodeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof removeEntryCode>>,
+        TError,
+        RemoveEntryCodeMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRemoveEntryCodeMutationOptions(options), queryClient);
+    }
+    export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -3402,6 +4212,220 @@ export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getR
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetRelationshipChangesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetResidencyChangesUrl = (params?: GetResidencyChangesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/contact-api/sync/residencies?${stringifiedParams}` : `/contact-api/sync/residencies`
+}
+
+/**
+ * @summary Delta feed of residencies for offline mirrors: those of contacts the caller can read that changed past the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ */
+export const getResidencyChanges = async (params?: GetResidencyChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyChangesResponse> => {
+
+  return apiRequest<ResidencyChangesResponse>(getGetResidencyChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetResidencyChangesQueryKey = (params?: GetResidencyChangesParams,) => {
+    return [
+    `/contact-api/sync/residencies`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetResidencyChangesQueryOptions = <TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(params?: GetResidencyChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetResidencyChangesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getResidencyChanges>>> = ({ signal }) => getResidencyChanges(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetResidencyChangesQueryResult = NonNullable<Awaited<ReturnType<typeof getResidencyChanges>>>
+export type GetResidencyChangesQueryError = ProblemDetails
+
+
+export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(
+ params: undefined |  GetResidencyChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getResidencyChanges>>,
+          TError,
+          Awaited<ReturnType<typeof getResidencyChanges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(
+ params?: GetResidencyChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getResidencyChanges>>,
+          TError,
+          Awaited<ReturnType<typeof getResidencyChanges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(
+ params?: GetResidencyChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Delta feed of residencies for offline mirrors: those of contacts the caller can read that changed past the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ */
+
+export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(
+ params?: GetResidencyChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetResidencyChangesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetPlaceEntryChangesUrl = (params?: GetPlaceEntryChangesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/contact-api/sync/place-entries?${stringifiedParams}` : `/contact-api/sync/place-entries`
+}
+
+/**
+ * @summary Delta feed of door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Unpaged. Omit since for a full sync.
+ */
+export const getPlaceEntryChanges = async (params?: GetPlaceEntryChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceEntryChangesResponse> => {
+
+  return apiRequest<PlaceEntryChangesResponse>(getGetPlaceEntryChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPlaceEntryChangesQueryKey = (params?: GetPlaceEntryChangesParams,) => {
+    return [
+    `/contact-api/sync/place-entries`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPlaceEntryChangesQueryOptions = <TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(params?: GetPlaceEntryChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPlaceEntryChangesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPlaceEntryChanges>>> = ({ signal }) => getPlaceEntryChanges(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPlaceEntryChangesQueryResult = NonNullable<Awaited<ReturnType<typeof getPlaceEntryChanges>>>
+export type GetPlaceEntryChangesQueryError = ProblemDetails
+
+
+export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(
+ params: undefined |  GetPlaceEntryChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPlaceEntryChanges>>,
+          TError,
+          Awaited<ReturnType<typeof getPlaceEntryChanges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(
+ params?: GetPlaceEntryChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPlaceEntryChanges>>,
+          TError,
+          Awaited<ReturnType<typeof getPlaceEntryChanges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(
+ params?: GetPlaceEntryChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Delta feed of door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Unpaged. Omit since for a full sync.
+ */
+
+export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(
+ params?: GetPlaceEntryChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPlaceEntryChangesQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

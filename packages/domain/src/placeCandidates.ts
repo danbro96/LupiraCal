@@ -5,7 +5,7 @@
 import { haversineM, type GeoPoint } from './geo';
 import { hotspotStats } from './mapFeatures';
 import { rankPlaces, type PlaceCandidate } from './placeRank';
-import { otherResidentsLine, residentsByPlace, residentsLine, withResidency, type ContactAddressRow } from './residents';
+import { addressTypeLabel, otherResidentsLine, residentsByPlace, residentsLine, withResidency, type ContactAddressRow } from './residents';
 import { matchesTerms, searchTerms } from './textSearch';
 
 export const MIN_PLACE_QUERY = 2;
@@ -89,7 +89,7 @@ export function pickPlaces(input: PlacePickerInput): { places: PickerPlace[]; re
       const place = places.get(r.placeId);
       return [{
         placeId: r.placeId,
-        label: place?.name ?? `${r.displayName}'s ${(r.addressType ?? 'address').toLowerCase()}`,
+        label: place?.name ?? `${r.displayName}'s ${r.addressType ? addressTypeLabel(r.addressType).toLowerCase() : 'address'}`,
         context: place?.formattedAddress,
         viaContact: named ? { contactId: r.contactId, status } : undefined,
         point: pointOf(place?.latitude, place?.longitude),

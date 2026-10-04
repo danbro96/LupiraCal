@@ -76,6 +76,16 @@ describe('contactFeatures', () => {
     expect(props(features).label).toBe('Astrid, Erik · Home');
   });
 
+  it('marks a pin where everyone is on holiday, and names a pin outright when asked', () => {
+    const cabin = contactFeatures([at('home', 'Ada', { addressType: 'Vacation' })], places);
+    expect(props(cabin.features).vacation).toBe(true);
+    expect(props(cabin.features).label).toBe('Ada · Vacation home');
+
+    const named = contactFeatures([at('home', 'Mum'), at('home', 'Dad')], places, new Map([['home', "Parents' home"]]));
+    expect(props(named.features).vacation).toBe(false);
+    expect(props(named.features).label).toBe("Parents' home");
+  });
+
   it('splits former residencies out of the active pins', () => {
     const moved = at('work', 'Ada', { movedIn: { year: 2019 }, movedOut: { year: 2021 } });
     const { features, former } = contactFeatures([at('home', 'Ada'), moved], places);

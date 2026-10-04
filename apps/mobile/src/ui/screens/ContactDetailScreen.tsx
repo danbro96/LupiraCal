@@ -17,7 +17,9 @@ import { copyText } from '../../feedback/copy';
 import { deleteContact } from '../../state/actions';
 import { useMyContactId } from '../../state/useMe';
 import { useContactRelations, useContactState } from '../../state/useContactList';
+import { useParentsHomes, useResidencyRows } from '../../state/useResidencies';
 import { Centered } from '../components/Centered';
+import { EntryCodes } from '../components/EntryCodes';
 import { useConfirm } from '../components/ConfirmDialog';
 import { PlaceTile } from '../components/PlaceTile';
 import { TagRow } from '../components/TagRow';
@@ -39,6 +41,8 @@ export function ContactDetailScreen() {
   const { contactId } = route.params;
   const { data: state, isLoading } = useContactState(contactId);
   const { data: relations = [] } = useContactRelations(contactId);
+  const residencyRows = useResidencyRows();
+  const parentsHomes = useParentsHomes(contactId, residencyRows);
   const confirm = useConfirm();
   const [relationsOpen, setRelationsOpen] = useState(false);
   const [otherAddressesOpen, setOtherAddressesOpen] = useState(false);
@@ -84,7 +88,8 @@ export function ContactDetailScreen() {
   const displayName = composeDisplayName(doc);
   const currentRelations = relations.filter((r) => !r.ended);
   const emergency = (doc.emergencyContactIds as string[] | undefined) ?? [];
-  const { current: currentAddresses, other: otherAddresses } = splitAddresses(doc.addresses ?? []);
+  const { current: currentAddresses, other: otherAddresses } = splitAddresses(
+    residencyRows.filter((r) => r.contactId === contactId).map((r) => ({ ...r, type: r.addressType })));
   const addresses = [...currentAddresses, ...otherAddresses];
   const metadata = Object.entries(doc.metadata ?? {});
   const deceased = doc.deceased === true;
@@ -141,9 +146,18 @@ export function ContactDetailScreen() {
         />
       ))}
 
-      {addresses.length > 0 && <List.Subheader>Addresses</List.Subheader>}
+      {addresses.length + parentsHomes.length > 0 && <List.Subheader>Addresses</List.Subheader>}
       {currentAddresses.map((a, i) => (
-        <PlaceTile key={`now-${i}`} placeId={a.placeId} meta={addressMeta(a)} directions />
+        <View key={`now-${i}`}>
+          <PlaceTile placeId={a.placeId} meta={addressMeta(a)} directions />
+          <EntryCodes placeId={a.placeId} />
+        </View>
+      ))}
+      {parentsHomes.map((p) => (
+        <View key={`parents-${p.placeId}`}>
+          <PlaceTile placeId={p.placeId} meta={p.label} directions />
+          <EntryCodes placeId={p.placeId} />
+        </View>
       ))}
       {otherAddresses.length > 0 && (
         <List.Accordion

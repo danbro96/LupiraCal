@@ -4,6 +4,7 @@
 import { displayTitle } from './itemLabels';
 import type { MapHit } from './mapHits';
 import { hotspotStats } from './mapFeatures';
+import { addressTypeLabel } from './residents';
 import { fmtDate, fmtDateTime, fmtTime, parseYmd } from './time';
 
 export type HitAction = 'open' | 'day' | 'zoom' | 'place';
@@ -18,7 +19,7 @@ export function describeHit(hit: MapHit): HitText {
     case 'event':
       return { title: displayTitle(hit.title), detail: hit.start ? [fmtDateTime(new Date(hit.start))] : [] };
     case 'contact': {
-      const where = [hit.addressType ?? (hit.residency === 'active' ? 'Lives here' : null), hit.placeName].filter(Boolean).join(' · ');
+      const where = [hit.addressType ? addressTypeLabel(hit.addressType) : hit.residency === 'active' ? 'Lives here' : null, hit.placeName].filter(Boolean).join(' · ');
       const when = hit.residency === 'future' ? `moves in ${hit.period ?? ''}`.trim() : hit.residency === 'former' ? `lived here ${hit.period ?? ''}`.trim() : null;
       return { title: hit.name, detail: [where, when].filter((x): x is string => !!x) };
     }

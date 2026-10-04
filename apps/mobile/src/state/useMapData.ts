@@ -4,7 +4,6 @@ import type { FeatureCollection } from 'geojson';
 import { getHotspots } from '@lupira/cal-api/fetch/cal';
 import { listSavedPlaces } from '@lupira/cal-api/fetch/geo';
 import { getPhotoMap } from '@lupira/cal-api/fetch/photo';
-import type { FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
 import type { MapViewport } from '@lupira/cal-domain/geo';
 import {
   EMPTY_FEATURES,
@@ -19,11 +18,13 @@ import {
   TRACK_MAX_GAP_S,
 } from '@lupira/cal-domain/mapFeatures';
 import { getDb } from '../data/db/expoDb';
-import { mapContactAddresses, mapEventRowsBetween } from '../data/mirror';
+import { mapEventRowsBetween } from '../data/mirror';
 import { useSyncStatus } from '../sync/syncStatus';
 import { useCalendarFilter, useCalendars } from './useContainers';
 import { useCurrentFixes, useThinnedTrack, useVisits } from './useMovement';
+import { useMyContactId } from './useMe';
 import { usePlaceCoords } from './usePlaceLookup';
+import { useParentsHomes, useResidencyRows } from './useResidencies';
 
 /** GeoJSON layers for the map. Mirror-backed reads key under ['occurrences'/'contacts'] so sync pulls
  *  invalidate them; network-backed ones override the mirror-tuned defaults (staleTime Infinity /
@@ -107,32 +108,17 @@ export function useMovementFeatures(fromIso: string, toIso: string, enabled: boo
   }, [enabled, visitsQ.data, trackQ.data, currentQ.data]);
 }
 
-/** Contact pins from the local mirror — co-located contacts (a household) merge into one pin.
- *  Current addresses only; residency history is a web-only nicety not worth the phone screen. */
+/** Contact pins from the local mirror — co-located contacts (a household) merge into one pin, and your parents' home
+ *  is named as such. Current residencies only; residency history is a web-only nicety not worth the phone screen. */
 export function useContactFeatures(enabled: boolean): FeatureCollection {
-  const rowsQ = useQuery({
-    queryKey: ['contacts', 'map'],
-    enabled,
-    queryFn: async () => mapContactAddresses(await getDb()),
-  });
-  const rows = useMemo(() => rowsQ.data ?? [], [rowsQ.data]);
-  const places = usePlaceCoords(useMemo(() => rows.map((r) => r.place_id), [rows]));
+  const rows = useResidencyRows(enabled);
+  const parents = useParentsHomes(useMyContactId(), rows);
+  const places = usePlaceCoords(useMemo(() => rows.map((r) => r.placeId), [rows]));
 
   return useMemo(() => {
     if (!enabled) return EMPTY_FEATURES;
-    const parse = (raw: string | null): FuzzyDate | null => (raw ? (JSON.parse(raw) as FuzzyDate) : null);
-    return contactFeatures(
-      rows.map((row) => ({
-        contactId: row.contact_id,
-        displayName: row.display_name,
-        placeId: row.place_id,
-        addressType: row.address_type,
-        movedIn: parse(row.moved_in),
-        movedOut: parse(row.moved_out),
-      })),
-      places,
-    ).features;
-  }, [enabled, rows, places]);
+    return contactFeatures(rows, places, new Map(parents.map((p) => [p.placeId, p.label]))).features;
+  }, [enabled, rows, places, parents]);
 }
 
 /** Saved-place pins (favorites first is the API's order; gazetteer link or raw pin). */

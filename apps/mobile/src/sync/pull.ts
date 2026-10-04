@@ -1,12 +1,15 @@
 import { getChanges as calGetChanges } from '@lupira/cal-api/fetch/cal';
 import { bootstrapMe as calBootstrap, getSyncContainers as calGetContainers } from '@lupira/cal-api/fetch/cal';
-import { contactBootstrapMe, contactGetChanges, contactGetSyncContainers as contactGetContainers, getMe, getRelationshipChanges } from '@lupira/cal-api/fetch/contact';
+import {
+  contactBootstrapMe, contactGetChanges, contactGetSyncContainers as contactGetContainers, getMe, getPlaceEntryChanges,
+  getRelationshipChanges, getResidencyChanges,
+} from '@lupira/cal-api/fetch/contact';
 import type { RelationshipRecord } from '@lupira/cal-domain/contactRelations';
 import { needsAddressBookBootstrap, needsCalendarBootstrap } from '@lupira/cal-domain/bootstrap';
 import type { Db, Tx } from '../data/db/types';
 import { saveMyContactId } from '../data/me';
 import * as mirror from '../data/mirror';
-import type { ContactDoc, ContactGuards, ItemDoc, ItemGuards } from '../domain/docTypes';
+import type { ContactDoc, ContactGuards, ItemDoc, ItemGuards, PlaceEntryDoc, ResidencyDoc } from '../domain/docTypes';
 import type { Horizon } from '../domain/materialize';
 import { birthdayRows, monthKeyOf, occurrenceRowsForItem } from '../domain/materialize';
 import type { MirrorContact, MirrorItem } from '../domain/mirrorReducers';
@@ -25,14 +28,16 @@ export type ItemChange = { item: ItemDoc; guards: ItemGuards };
 export type ContactChange = { contact: ContactDoc; guards: ContactGuards };
 /** `reset`: the server restarted from zero — a full sync from that page on. */
 export type ChangesPage<TChange> = { cursor: string; hasMore: boolean; reset: boolean; changed: TChange[]; deleted: string[] };
-/** Unpaged: one response carries every change. */
-export type RelationshipChanges = { cursor: string; reset: boolean; changed: RelationshipRecord[]; deleted: string[] };
+/** An unpaged feed's response: every change in one. */
+export type FeedChanges<T> = { cursor: string; reset: boolean; changed: T[]; deleted: string[] };
 
 export type PullDeps = {
   calChanges(since: string | null): Promise<ChangesPage<ItemChange>>;
   contactChanges(since: string | null): Promise<ChangesPage<ContactChange>>;
-  /** Absent in harnesses that don't model relationships. */
-  relationshipChanges?(since: string | null): Promise<RelationshipChanges>;
+  /** The unpaged feeds; each is absent in harnesses that don't model it. */
+  relationshipChanges?(since: string | null): Promise<FeedChanges<RelationshipRecord>>;
+  residencyChanges?(since: string | null): Promise<FeedChanges<ResidencyDoc>>;
+  placeEntryChanges?(since: string | null): Promise<FeedChanges<PlaceEntryDoc>>;
   calContainers(): Promise<{ id: string; kind?: string | null }[]>;
   contactContainers(): Promise<{ addressBooks: { id: string; isPersonal: boolean }[]; groups: { id: string }[] }>;
   /** Seed the caller's standard containers; absent in harnesses that don't model it. */
@@ -57,6 +62,16 @@ export const realPullDeps: PullDeps = {
   relationshipChanges: async (since) => {
     const r = await getRelationshipChanges(since ? { since } : undefined);
     if (r.status !== 200) throw new ApiError(r.status, 'relationship changes failed');
+    return r.data;
+  },
+  residencyChanges: async (since) => {
+    const r = await getResidencyChanges(since ? { since } : undefined);
+    if (r.status !== 200) throw new ApiError(r.status, 'residency changes failed');
+    return r.data;
+  },
+  placeEntryChanges: async (since) => {
+    const r = await getPlaceEntryChanges(since ? { since } : undefined);
+    if (r.status !== 200) throw new ApiError(r.status, 'entry code changes failed');
     return r.data;
   },
   calContainers: async () => {
@@ -218,16 +233,42 @@ export async function pullContacts(db: Db, horizon: Horizon, deps: PullDeps): Pr
   return { monthKeys, changed };
 }
 
-/** Relationships are read-only here (no outbox ops), so the server's view is applied as is; a reset replaces the
- *  table. Returns whether anything changed. */
-export async function pullRelationships(db: Db, deps: PullDeps): Promise<boolean> {
-  if (!deps.relationshipChanges) return false;
-  const page = await deps.relationshipChanges(await mirror.getCursor(db, 'relationship'));
+/** The unpaged feeds (relationships, residencies, entry codes) are read-only here — no outbox ops — so the server's
+ *  view is applied as is; a reset replaces the table. Each returns whether anything changed. */
+export function pullRelationships(db: Db, deps: PullDeps): Promise<boolean> {
+  return pullFeed(db, deps, 'relationship', deps.relationshipChanges, {
+    clear: mirror.clearRelationships, save: mirror.saveRelationships, remove: mirror.removeRelationships,
+  });
+}
+
+export function pullResidencies(db: Db, deps: PullDeps): Promise<boolean> {
+  return pullFeed(db, deps, 'residency', deps.residencyChanges, {
+    clear: mirror.clearResidencies, save: mirror.saveResidencies, remove: mirror.removeResidencies,
+  });
+}
+
+export function pullPlaceEntries(db: Db, deps: PullDeps): Promise<boolean> {
+  return pullFeed(db, deps, 'place-entry', deps.placeEntryChanges, {
+    clear: mirror.clearPlaceEntries, save: mirror.savePlaceEntries, remove: mirror.removePlaceEntries,
+  });
+}
+
+type FeedTable<T> = {
+  clear(tx: Tx): Promise<void>;
+  save(tx: Tx, rows: T[]): Promise<void>;
+  remove(tx: Tx, ids: string[]): Promise<void>;
+};
+
+async function pullFeed<T>(
+  db: Db, deps: PullDeps, scope: mirror.SyncScope, fetch: ((since: string | null) => Promise<FeedChanges<T>>) | undefined, table: FeedTable<T>,
+): Promise<boolean> {
+  if (!fetch) return false;
+  const page = await fetch(await mirror.getCursor(db, scope));
   return db.exclusive(async (tx) => {
-    if (page.reset) await mirror.clearRelationships(tx);
-    await mirror.saveRelationships(tx, page.changed);
-    await mirror.removeRelationships(tx, page.deleted);
-    await mirror.setCursor(tx, 'relationship', page.cursor, false, deps.now().toISOString());
+    if (page.reset) await table.clear(tx);
+    await table.save(tx, page.changed);
+    await table.remove(tx, page.deleted);
+    await mirror.setCursor(tx, scope, page.cursor, false, deps.now().toISOString());
     return page.reset || page.changed.length > 0 || page.deleted.length > 0;
   });
 }
