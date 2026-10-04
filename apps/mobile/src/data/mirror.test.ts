@@ -3,9 +3,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { ItemDoc } from '../domain/docTypes';
 import { emptyContactGuards, emptyItemGuards } from '../domain/docTypes';
 import type { OccurrenceRow } from '../domain/materialize';
-import { openNodeDb } from './db/nodeDb';
-import { migrate } from './db/schema';
-import type { Db } from './db/types';
+import { openNodeDb } from '@danbro96/lupira-expo-sqlite/node';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from './db/schema';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import {
   contactResidencies, mapEventRowsBetween, placeEntryOf, relationshipsOf, removeRelationships, replaceContainers, saveContact, saveItem,
   savePlaceEntries, saveRelationships, saveResidencies, searchItems, upcomingPlacedEvents,
@@ -15,7 +16,7 @@ let db: Db;
 
 beforeEach(async () => {
   db = openNodeDb();
-  await migrate(db);
+  await migrate(db, MIGRATIONS);
 });
 
 const doc = (id: string, placeId: string | null, calendars: { calendarId: string; status: string }[]): ItemDoc => ({

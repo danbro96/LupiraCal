@@ -45,11 +45,14 @@ public sealed class BffTestFactory : WebApplicationFactory<Program>, IAsyncLifet
         // UseSetting, not ConfigureAppConfiguration: with minimal hosting the factory's config sources are
         // appended at Build(), AFTER Program.cs top-level code has already read values like KeyPath — settings
         // injected this way are visible from the first line.
+        builder.UseSetting("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:9");
         builder.UseSetting("ReverseProxy:Clusters:cal-api:Destinations:primary:Address", Upstream.Address);
         builder.UseSetting("ReverseProxy:Clusters:geo-api:Destinations:primary:Address", Upstream.Address);
         builder.UseSetting("ReverseProxy:Clusters:contact-api:Destinations:primary:Address", Upstream.Address);
         builder.UseSetting("ReverseProxy:Clusters:tasks-api:Destinations:primary:Address", Upstream.Address);
         builder.UseSetting("ReverseProxy:Clusters:location-api:Destinations:primary:Address", Upstream.Address);
+        builder.UseSetting("ReverseProxy:Clusters:photo-api:Destinations:primary:Address", Upstream.Address);
+        builder.UseSetting("ReverseProxy:Clusters:comms-api:Destinations:primary:Address", Upstream.Address);
         builder.UseSetting("Auth:Oidc:Authority", Issuer);
         builder.UseSetting("Auth:Oidc:ClientId", "lupira-cal");
         builder.UseSetting("DataProtection:KeyPath", "");

@@ -3,7 +3,7 @@
 // with; a result only applies while the machine is still in the phase that minted that token — this
 // is what makes late geocode/create responses harmless after further typing.
 
-import { MIN_PLACE_QUERY } from '@lupira/cal-domain/placeCandidates';
+import { MIN_PLACE_QUERY } from '@danbro96/lupira-domain-places/placeCandidates';
 
 export type PickerSuggestion = {
   id: string;

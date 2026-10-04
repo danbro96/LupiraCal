@@ -1,11 +1,11 @@
-import { linkedMessage, linkPhotosTitle, PHOTO_TEXT } from '@lupira/cal-domain/photoFormat';
+import { linkedMessage, linkPhotosTitle, PHOTO_TEXT } from '@danbro96/lupira-domain-photos/photoLinks';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { List, Portal, Text } from 'react-native-paper';
-import { fmtWhen } from '@lupira/cal-domain/time';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
-import { SCRIM } from '@lupira/cal-tokens/color';
-import { toast, toastError } from '../../feedback/toast';
+import { fmtWhen } from '@danbro96/lupira-domain-core/time';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
+import { SCRIM } from '@danbro96/lupira-tokens-core/color';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { linkPhotosToEvent, unlinkPhotosFromEvent, useLinkCandidates, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';

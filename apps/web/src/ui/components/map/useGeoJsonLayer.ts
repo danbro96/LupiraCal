@@ -1,7 +1,7 @@
 import type { FeatureCollection } from 'geojson';
 import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap, MapGeoJSONFeature } from 'maplibre-gl';
 import { useEffect, useEffectEvent } from 'react';
-import { PIN_CLUSTERS } from '@lupira/cal-domain/mapZoom';
+import { PIN_CLUSTERS } from '@danbro96/lupira-domain-maps/mapZoom';
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 export type LayerSpecSansSource = DistributiveOmit<LayerSpecification, 'source'>;

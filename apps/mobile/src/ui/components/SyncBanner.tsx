@@ -5,7 +5,7 @@ import { ProgressBar, Text, useTheme } from 'react-native-paper';
 import { bannerState, type BannerKind } from '../../domain/bannerState';
 import { PHASE_LABELS } from '../../domain/syncPhase';
 import { useSyncStatus } from '../../sync/syncStatus';
-import { Glyph } from './Glyph';
+import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
 

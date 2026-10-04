@@ -1,11 +1,11 @@
 import { StyleSheet, View } from 'react-native';
 import { Chip, FAB, Text } from 'react-native-paper';
 import { MAP_FUTURE_DAYS, MAP_SINCE_LABELS, type MapSince } from '@lupira/cal-domain/mapWindow';
-import { ACTIVITY_COLORS, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
+import { ACTIVITY_COLORS, MAP_COLORS, type MapTheme } from '@danbro96/lupira-tokens-map/map';
 import { LAYERS, LAYER_KEYS, type LayerKey } from '@lupira/cal-tokens/mapLayers';
 import { unmappableLine } from '@lupira/cal-domain/mapFeatures';
 import { MAP_SINCE_OPTIONS } from '../../state/prefs-store';
-import { SegmentedPicker } from '../components/SegmentedPicker';
+import { SegmentedPicker } from '@danbro96/lupira-expo-paper/components/SegmentedPicker';
 import { Sheet } from '../components/Sheet';
 import { ICON_BY_NAME, ICONS } from '../icons';
 import { spacing, useColors } from '../theme';

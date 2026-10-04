@@ -1,6 +1,6 @@
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { fmtDate, parseYmd } from '@lupira/cal-domain/time';
-import { ymd } from '@lupira/cal-domain/time';
+import { fmtDate, parseYmd } from '@danbro96/lupira-domain-core/time';
+import { ymd } from '@danbro96/lupira-domain-core/time';
 import { PickerButton } from './PickerButton';
 
 /** Android system picker writing back the editors' string form ('yyyy-MM-dd'). `weekday` suits event days

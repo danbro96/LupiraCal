@@ -1,9 +1,10 @@
 import { Map as MapLibreMap, NavigationControl, ScaleControl } from 'maplibre-gl';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import './maplibreSetup';
-import { fallbackStyle, loadMapStyle } from './mapStyle';
-import type { MapTheme } from '@lupira/cal-tokens/map';
-import { MAP_HOME } from '@lupira/cal-domain/mapZoom';
+import '@danbro96/lupira-web-maplibre/maplibreSetup';
+import { fallbackStyle, loadMapStyle } from '@danbro96/lupira-web-maplibre/mapStyle';
+import { useMapTheme } from '@danbro96/lupira-web-maplibre/useMapTheme';
+import { GEO_API_BASE_URL } from '../../../config';
+import { MAP_HOME } from '@danbro96/lupira-domain-maps/mapZoom';
 import Paper from '@mui/material/Paper';
 
 const MapContext = createContext<MapLibreMap | null>(null);
@@ -14,19 +15,6 @@ export function useMap(): MapLibreMap {
   if (!map) throw new Error('useMap must be used inside MapCanvas');
   return map;
 }
-
-export function useMapTheme(): MapTheme {
-  const [theme, setTheme] = useState<MapTheme>(() =>
-    window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = (e: MediaQueryListEvent) => setTheme(e.matches ? 'dark' : 'light');
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, []);
-  return theme;
-}
-
 
 export function MapCanvas({ children, center, zoom }: { children?: ReactNode; center?: [number, number]; zoom?: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,9 +33,9 @@ export function MapCanvas({ children, center, zoom }: { children?: ReactNode; ce
     (async () => {
       let style;
       try {
-        style = await loadMapStyle(themeRef.current);
+        style = await loadMapStyle(themeRef.current, GEO_API_BASE_URL);
       } catch {
-        style = fallbackStyle(themeRef.current);
+        style = fallbackStyle(themeRef.current, GEO_API_BASE_URL);
         if (!disposed) setBasemapMissing(true);
       }
       if (disposed) return;
@@ -81,10 +69,10 @@ export function MapCanvas({ children, center, zoom }: { children?: ReactNode; ce
     let stale = false;
     (async () => {
       try {
-        const style = await loadMapStyle(theme);
+        const style = await loadMapStyle(theme, GEO_API_BASE_URL);
         if (!stale) map.setStyle(style);
       } catch {
-        if (!stale) map.setStyle(fallbackStyle(theme));
+        if (!stale) map.setStyle(fallbackStyle(theme, GEO_API_BASE_URL));
       }
     })();
     return () => { stale = true; };

@@ -1,8 +1,8 @@
 import { useListContactRelations, useListResidencies, useSearchContacts } from '@lupira/cal-api/query/contact';
-import { parentsHomes, type ContactAddressRow, type ParentsHome } from '@lupira/cal-domain/residents';
+import { parentsHomes, type ContactAddressRow, type ParentsHome } from '@danbro96/lupira-domain-contacts/residents';
 
-/** Every readable contact's residencies as `@lupira/cal-domain/residents` rows (named), for the map, the place picker,
- *  quick places and contact cards — one fetch each, shared by react-query. */
+/** Every readable contact's residencies as `@danbro96/lupira-domain-contacts/residents` rows (named), for the
+ *  map, the place picker, quick places and contact cards — one fetch each, shared by react-query. */
 export function useResidencyRows(enabled = true): { rows: ContactAddressRow[]; isLoading: boolean } {
   const residencies = useListResidencies({ query: { enabled } });
   const contacts = useSearchContacts({}, { query: { enabled } });

@@ -1,4 +1,4 @@
-import { addDays, parseYmd, startOfDay } from './time';
+import { addDays, parseYmd, startOfDay } from '@danbro96/lupira-domain-core/time';
 
 export type RangePreset = 'upcoming' | 'past' | 'all' | 'custom';
 

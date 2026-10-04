@@ -5,7 +5,7 @@ import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { addMonths, fmtMonthTitle, isToday, monthMatrix, sameDay, startOfMonth } from '@lupira/cal-domain/time';
+import { addMonths, fmtMonthTitle, isToday, monthMatrix, sameDay, startOfMonth } from '@danbro96/lupira-domain-core/time';
 
 interface Props {
   /** The date to highlight as current. */

@@ -6,10 +6,10 @@ import { Chip, Text } from 'react-native-paper';
 import { tasksGetItem as getItem } from '@lupira/cal-api/fetch/tasks';
 import { assigneeLabel, dueLine, isTaskOverdue, taskDeepLink } from '@lupira/cal-domain/tasks';
 import { Centered } from '../components/Centered';
-import { Button } from '../components/Button';
+import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors, spacing } from '../theme';
-import { toastError } from '../../feedback/toast';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
 /** Read-only view of a LupiraTasks deadline. Online-only by design (tasks never enter the mirror);
  *  editing lives in the Lupira Tasks app, reached via the deep link below. */

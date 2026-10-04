@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { List, Text } from 'react-native-paper';
 import { RRULE_PRESETS, describeRrule, NO_REPEAT } from '@lupira/cal-domain/rrule';
-import { Button } from '../components/Button';
+import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import { Input } from '../components/Input';
 import { Sheet } from '../components/Sheet';
 import { ICONS } from '../icons';

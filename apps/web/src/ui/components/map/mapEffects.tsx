@@ -1,7 +1,7 @@
 import type { FeatureCollection, Point } from 'geojson';
 import { useEffect, useRef } from 'react';
-import { bboxOf, mapViewport, padBbox, type GeoPoint, type MapViewport } from '@lupira/cal-domain/geo';
-import { placeSpanM, zoomForSpan } from '@lupira/cal-domain/mapZoom';
+import { bboxOf, mapViewport, padBbox, type GeoPoint, type MapViewport } from '@danbro96/lupira-domain-places/geo';
+import { placeSpanM, zoomForSpan } from '@danbro96/lupira-domain-maps/mapZoom';
 import { useGeoPlace } from '../../../state/usePlaces';
 import { useMap } from './MapCanvas';
 

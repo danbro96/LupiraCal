@@ -1,8 +1,8 @@
 import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto, ItemStatus, OccurrenceOrigin } from '@lupira/cal-api/models';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { lastDayOf } from '@lupira/cal-domain/occurrences';
 import { isOverdue } from '@lupira/cal-domain/tasks';
-import { parseYmd, sameDay, ymd } from '@lupira/cal-domain/time';
+import { parseYmd, sameDay, ymd } from '@danbro96/lupira-domain-core/time';
 import type { OpenTask } from '../state/useTaskDeadlines';
 import type { IconName } from '@lupira/cal-tokens/icons';
 import { CALENDAR_KIND_ICONS, calendarColor } from './theme/kinds';

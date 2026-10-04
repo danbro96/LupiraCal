@@ -1,11 +1,11 @@
 // The map's jump strip: your current home and work, your parents' home, then the next placed events. Both apps assemble it from
 // their own sources (mirror rows on mobile, API occurrences on web) and render the same chips.
 
-import { residencyStatus, type FuzzyDate } from './fuzzyDate';
-import type { GeoPoint } from './geo';
-import { displayTitle } from './itemLabels';
-import { placeSpanM } from './mapZoom';
-import { fmtDayShort, fmtTime, isToday } from './time';
+import { residencyStatus, type FuzzyDate } from '@danbro96/lupira-domain-contacts/fuzzyDate';
+import type { GeoPoint } from '@danbro96/lupira-domain-places/geo';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
+import { placeSpanM } from '@danbro96/lupira-domain-maps/mapZoom';
+import { fmtDayShort, fmtTime, isToday } from '@danbro96/lupira-domain-core/time';
 
 export const QUICK_EVENTS_SHOWN = 5;
 /** Some upcoming places won't resolve to a point; fetching more keeps the strip full. */

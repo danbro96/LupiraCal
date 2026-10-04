@@ -1,5 +1,5 @@
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { hhmm } from '@lupira/cal-domain/time';
+import { hhmm } from '@danbro96/lupira-domain-core/time';
 import { PickerButton } from './PickerButton';
 
 /** Android system picker writing back the editors' string form ('HH:MM'). */

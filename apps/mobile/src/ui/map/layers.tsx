@@ -12,12 +12,12 @@ import type { Ref } from 'react';
 import { StyleSheet, View, type NativeSyntheticEvent } from 'react-native';
 import { Icon } from 'react-native-paper';
 import type { LivePosition } from '../../sync/livePosition';
-import { ACTIVITY_COLORS, MAP_COLORS, activityColorExpression, type MapTheme } from '@lupira/cal-tokens/map';
+import { ACTIVITY_COLORS, MAP_COLORS, activityColorExpression, type MapTheme } from '@danbro96/lupira-tokens-map/map';
 import {
   CLUSTER, CLUSTER_COUNT_LAYOUT, CURRENT_FIX, HOTSPOT, PIN, PIN_LABEL_HALO_WIDTH, PIN_LABEL_LAYOUT, TRACK, VISIT, clusterRadius,
   contactPinFill, contactPinStroke, hotspotRadius,
 } from '@lupira/cal-tokens/mapPaint';
-import { PIN_CLUSTERS } from '@lupira/cal-domain/mapZoom';
+import { PIN_CLUSTERS } from '@danbro96/lupira-domain-maps/mapZoom';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
 

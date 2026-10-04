@@ -1,5 +1,5 @@
 import { DEFAULT_BACKUP_SETTINGS, type PhotoBackupSettings } from '../domain/photoBackup';
-import type { Db } from './db/types';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { getMeta, setMeta } from './mirror';
 
 /** Backup settings live in mirror_meta so the uploader (sync layer) can read them without reaching up

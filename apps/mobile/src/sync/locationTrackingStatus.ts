@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { getDb } from '../data/db/expoDb';
-import type { Db } from '../data/db/types';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { oldestQueuedTs, queueDepth } from '../data/locationQueue';
 
 /** Live tracking counters. Lives in the sync layer for the same reason syncStatus and

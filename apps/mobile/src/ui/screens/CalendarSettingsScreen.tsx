@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { List, Switch } from 'react-native-paper';
 import { ALL_DAY_ROW_OPTIONS, usePrefs } from '../../state/prefs-store';
 import { useCalendars, type CalendarContainer } from '../../state/useContainers';
-import { SegmentedPicker } from '../components/SegmentedPicker';
+import { SegmentedPicker } from '@danbro96/lupira-expo-paper/components/SegmentedPicker';
 import { SettingsNote } from '../components/SettingsText';
 import { useCalendarColors } from '../hooks/palette';
 import { spacing } from '../theme';

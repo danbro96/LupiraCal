@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getDb } from '../data/db/expoDb';
-import { migrate } from '../data/db/schema';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from '../data/db/schema';
 import { ensurePhotoPermission } from '../data/photoLibrary';
 import { clearUnfinishedUploads } from '../data/photoQueue';
 import { defaultBackupSettings, loadBackupSettings, saveBackupSettings } from '../data/photoSettings';
@@ -31,7 +32,7 @@ export const usePhotoBackup = create<PhotoBackupState & PhotoBackupActions>((set
 
   init: async () => {
     const db = await getDb();
-    await migrate(db);
+    await migrate(db, MIGRATIONS);
     set({ settings: await loadBackupSettings(db), loaded: true });
     await usePhotoBackupStatus.getState().refresh(db);
   },

@@ -1,4 +1,4 @@
-import type { Db } from './db/types';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { getMeta, setMeta } from './mirror';
 
 /** The signed-in user's own contact, as contact-api links it. Kept in mirror_meta so an event created

@@ -5,8 +5,8 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { MAP_ALL_FROM_YMD } from '@lupira/cal-domain/mapWindow';
-import { addDays, startOfDay, ymd } from '@lupira/cal-domain/time';
-import { ACTIVITY_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
+import { addDays, startOfDay, ymd } from '@danbro96/lupira-domain-core/time';
+import { ACTIVITY_COLORS, type MapTheme } from '@danbro96/lupira-tokens-map/map';
 import { LAYERS, LAYER_KEYS, type LayerKey } from '@lupira/cal-tokens/mapLayers';
 import { unmappableLine } from '@lupira/cal-domain/mapFeatures';
 

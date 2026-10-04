@@ -1,14 +1,14 @@
 import { v7 as uuidv7 } from 'uuid';
 import type { BridgeInboxRow } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
-import type { Db } from '../data/db/types';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { deterministicIdFor } from '../data/ids';
 import * as mirror from '../data/mirror';
 import type { CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow } from '../domain/bridgeTranslate';
 import { PENDING_PREFIX, contactReviseIsEcho, mergeChannelTypes, sourceKeyOfPendingMarker, translateCalRow, translateContactRow } from '../domain/bridgeTranslate';
 import { currentHorizon } from '../domain/materialize';
 import type { ClientOp } from '../domain/ops';
-import { logDebug } from '../debug/log';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { enqueue } from './outbox';
 
 /** Impure half of the write-back: pull captured provider edits from the Kotlin inbox, resolve ids

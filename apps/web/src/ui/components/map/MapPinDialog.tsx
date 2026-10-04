@@ -1,4 +1,4 @@
-import { formatCoords } from '@lupira/cal-domain/places';
+import { formatCoords } from '@danbro96/lupira-domain-places/places';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Marker, type MapMouseEvent } from 'maplibre-gl';
 import { useEffect, useRef, useState } from 'react';

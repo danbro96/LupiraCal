@@ -9,7 +9,7 @@ import {
   useSearchPlaces as useSearchGeoPlaces,
 } from '@lupira/cal-api/query/geo';
 import { PlaceCategory, type PlaceDto, type SearchPlacesParams } from '@lupira/cal-api/models';
-import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@lupira/cal-domain/places';
+import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@danbro96/lupira-domain-places/places';
 
 /** Browse/search the LupiraGeoApi gazetteer (text `q`, category, spatial `near`/`bbox`). */
 export function useSearchPlaces(params: SearchPlacesParams) {

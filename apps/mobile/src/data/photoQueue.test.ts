@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { openNodeDb } from './db/nodeDb';
-import { migrate } from './db/schema';
-import type { Db } from './db/types';
+import { openNodeDb } from '@danbro96/lupira-expo-sqlite/node';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from './db/schema';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import * as queue from './photoQueue';
 
 let db: Db;
 
 beforeEach(async () => {
   db = openNodeDb();
-  await migrate(db);
+  await migrate(db, MIGRATIONS);
 });
 
 const asset = (id: string, takenAt = '2026-08-20T10:00:00.000Z') => ({

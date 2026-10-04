@@ -1,4 +1,17 @@
 {
+  "clusters": {
+    "cal-api": { "prefix": "/api" },
+    "contact-api": { "prefix": "/contact-api" },
+    "geo-api": { "prefix": "/geo-api" },
+    "tasks-api": { "prefix": "/tasks-api" },
+    "location-api": { "prefix": "/location-api" },
+    "photo-api": { "prefix": "/photo-api" },
+    "comms-api": { "prefix": "/comms-api" }
+  },
+  "groups": {
+    "static": { "catchAll": true },
+    "device": { "policy": "Anonymous", "prefixed": false, "credential": "deviceKey" }
+  },
   "operations": {
     "cal-api": [
       "DELETE /calendars/{calendarId}/owners",

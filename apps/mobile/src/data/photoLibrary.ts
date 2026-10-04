@@ -1,7 +1,7 @@
 import { File, Paths } from 'expo-file-system';
 import { Asset, AssetField, MediaType, Query, requestPermissionsAsync } from 'expo-media-library';
 import { contentTypeOf, extensionOf, isSupportedContentType } from '../domain/photoBackup';
-import { logDebug } from '../debug/log';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 
 /** MediaStore adapter for the backup queue. Scanning uses `exeForMetadata()` — it reads the cheap
  *  media-store columns without resolving file paths, so a full-library sweep stays fast; per-asset

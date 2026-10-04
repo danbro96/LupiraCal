@@ -3,11 +3,11 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { Link } from 'react-router-dom';
 import { useGetItem } from '@lupira/cal-api/query/cal';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { usePhotoActions } from '../../../state/usePhotoActions';
 import { usePhotoEventLinks } from '../../../state/usePhotoLibrary';
 import { DrawerSection } from '../DrawerSection';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../WrapRow';
 import { LinkEventDialog } from './LinkEventDialog';
 

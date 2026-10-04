@@ -1,5 +1,5 @@
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
-import type { Db } from './db/types';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { getMeta, setMeta } from './mirror';
 
 /** The newest page of the unfiltered library, so an offline launch still has a grid — photos are

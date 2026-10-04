@@ -1,9 +1,9 @@
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { birthdayAgeLine, nextBirthday, turningAge } from '@lupira/cal-domain/birthday';
-import { initialsOf, deceasedLine } from '@lupira/cal-domain/contactNames';
+import { initialsOf, deceasedLine } from '@danbro96/lupira-domain-contacts/contactNames';
 import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
-import { addressMeta, splitAddresses } from '@lupira/cal-domain/residents';
+import { addressMeta, splitAddresses } from '@danbro96/lupira-domain-contacts/residents';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,14 +13,14 @@ import { Avatar, Button, List, Text } from 'react-native-paper';
 import { getDb } from '../../data/db/expoDb';
 import { composeDisplayName, loadContact } from '../../data/mirror';
 import type { PartialDateDto } from '../../domain/docTypes';
-import { copyText } from '../../feedback/copy';
+import { copyText } from '@danbro96/lupira-expo-feedback/copy';
 import { deleteContact } from '../../state/actions';
 import { useMyContactId } from '../../state/useMe';
 import { useContactRelations, useContactState } from '../../state/useContactList';
 import { useParentsHomes, useResidencyRows } from '../../state/useResidencies';
 import { Centered } from '../components/Centered';
 import { EntryCodes } from '../components/EntryCodes';
-import { useConfirm } from '../components/ConfirmDialog';
+import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { PlaceTile } from '../components/PlaceTile';
 import { TagRow } from '../components/TagRow';
 import { avatarColor } from '../hooks/palette';
@@ -28,7 +28,7 @@ import { ReachIcon } from '../components/ReachIcon';
 import type { RootStackParamList } from '../navigation/types';
 import { spacing, useColors } from '../theme';
 import { ICONS } from '../icons';
-import { Glyph } from '../components/Glyph';
+import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 
 /** Read-only overview — ALL editing lives on the edit screen. Shows everything the mirror doc carries:
  *  names, kind, pronouns, birthday+age, deceased, unified reach (channels + profiles), addresses (current

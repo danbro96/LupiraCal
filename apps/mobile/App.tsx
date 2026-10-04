@@ -9,8 +9,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuth } from './src/state/auth-store';
-import { ConfirmDialogHost } from './src/ui/components/ConfirmDialog';
-import { ToastHost } from './src/ui/components/ToastHost';
+import { ConfirmDialogHost } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
+import { ToastHost } from '@danbro96/lupira-expo-paper/components/ToastHost';
 import { navDark, navLight, paperDark, paperLight } from './src/ui/theme/paperTheme';
 import { useBridge } from './src/state/bridge-store';
 import { useLocationTracking } from './src/state/location-tracking-store';
@@ -20,11 +20,11 @@ import { registerBackgroundSync } from './src/sync/backgroundTask';
 import { queryClient } from './src/sync/reactivity';
 import { startSync } from './src/sync/sync';
 import { RootStack } from './src/ui/navigation/RootStack';
-import { useAutoUpdate } from './src/ui/hooks/useAutoUpdate';
+import { useAutoUpdate } from '@danbro96/lupira-expo-diagnostics/useAutoUpdate';
 import type { RootStackParamList } from './src/ui/navigation/types';
-import { paperSettings } from './src/ui/theme/paperSettings';
+import { paperSettings } from '@danbro96/lupira-expo-paper/theme/paperSettings';
 import { SENTRY_DSN } from './src/config';
-import { UPDATE_CHANNEL, UPDATE_ID } from './src/ui/buildInfo';
+import { UPDATE_CHANNEL, UPDATE_ID } from '@danbro96/lupira-expo-diagnostics/buildInfo';
 
 Sentry.init({
   dsn: SENTRY_DSN,

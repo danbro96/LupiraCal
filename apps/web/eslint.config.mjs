@@ -4,11 +4,15 @@ import tseslint from 'typescript-eslint';
 
 /** v7 entity-selector helper: `to('domain','data')` → [{ to: { element: { type: 'domain' } } }, …]. */
 const to = (...types) => types.map((t) => ({ to: { element: { type: t } } }));
+const platform = (source, internalPath) => ({ to: { module: { origin: 'external', source, ...(internalPath && { internalPath }) } } });
+const fromEach = (types, allow) => types.map((t) => ({ from: { element: { type: t } }, allow }));
 
 // A structural gate, not a style overhaul. The only real rule is the layered import boundary.
 // Downward-only: data → config; state → data/config; ui → everything below. Domain logic lives in
 // @lupira/cal-domain (packages/domain) and arrives as an external package import — allowed from
 // every layer (it is the bottom of the stack); its purity is enforced by its own eslint config.
+// LupiraPlatform (@danbro96) packages sit at the layer their name declares: tokens/domain from every
+// layer, http from data up, web kits from ui — except the session kit's data and state modules.
 // The web has no offline `sync/` layer (it is online-only), so the chain is shorter than the app's.
 export default [
   {
@@ -50,7 +54,15 @@ export default [
           { from: { element: { type: 'state' } }, allow: to('state', 'data', 'config') },
           { from: { element: { type: 'ui' } }, allow: to('ui', 'state', 'data', 'config') },
           { from: { element: { type: 'config' } }, allow: [] },
+          { allow: [{ to: { module: { origin: ['external', 'core'] } } }] },
+          { disallow: [platform('@danbro96/*')] },
+          { allow: [platform(['@danbro96/lupira-tokens-*', '@danbro96/lupira-domain-*'])] },
+          ...fromEach(['data', 'state', 'ui'], [platform('@danbro96/lupira-http')]),
+          ...fromEach(['data', 'state', 'ui'], [platform('@danbro96/lupira-web-session', ['session', 'cookieTransport'])]),
+          ...fromEach(['state', 'ui'], [platform('@danbro96/lupira-web-session', 'useSession')]),
+          { from: { element: { type: 'ui' } }, allow: [platform('@danbro96/lupira-web-*')] },
         ],
+        checkAllOrigins: true,
       }],
       ...reactHooks.configs['recommended-latest'].rules,
     },

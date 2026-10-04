@@ -1,10 +1,10 @@
-import { addMonths, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { addMonths, parseYmd, ymd } from '@danbro96/lupira-domain-core/time';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue } from 'react-native-reanimated';
 import type { CalRow } from '../../state/useOccurrences';
-import { useBackDismiss } from '../hooks/useBackDismiss';
+import { useBackDismiss } from '@danbro96/lupira-expo-paper/hooks/useBackDismiss';
 import { DaySheet } from './DaySheet';
 import { useJump, type CalendarJump } from './jump';
 import { MonthView } from './MonthView';

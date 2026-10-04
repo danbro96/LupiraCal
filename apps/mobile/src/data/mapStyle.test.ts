@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { setAuthPort } from './api/authProvider';
+import { setAuthPort } from '@danbro96/lupira-http/authPort';
 import { fallbackStyle, loadMapStyle, type BasemapStyle } from './mapStyle';
 
 const ORIGIN = 'http://10.0.2.2:5181';
@@ -24,7 +24,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
 });
 
-// The document handling is @lupira/cal-domain/mapStyle's and tested there; this covers the wiring.
+// The document handling is @danbro96/lupira-domain-maps/mapStyle's and tested there; this covers the wiring.
 describe('loadMapStyle', () => {
   it('sends the bearer on both requests, against the normalized origin', async () => {
     fetchMock

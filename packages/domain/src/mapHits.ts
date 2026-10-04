@@ -4,7 +4,7 @@
 // read tolerates both forms.
 
 import type { Feature } from 'geojson';
-import type { Bbox } from './geo';
+import type { Bbox } from '@danbro96/lupira-domain-places/geo';
 
 export interface HitPoint {
   lon: number;

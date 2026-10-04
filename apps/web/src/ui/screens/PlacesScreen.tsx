@@ -1,4 +1,4 @@
-import { formatCoords } from '@lupira/cal-domain/places';
+import { formatCoords } from '@danbro96/lupira-domain-places/places';
 import { lazy, Suspense, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
@@ -21,7 +21,7 @@ import Box from '@mui/material/Box';
 import { classifyOrphan, defaultPruneSelection, type OrphanClass } from '@lupira/cal-domain/placeCuration';
 import { useUpdatePlace } from '@lupira/cal-api/query/geo';
 import { PlaceSource, type OrphanCandidateDto, type PlaceDto } from '@lupira/cal-api/models';
-import { plural } from '@lupira/cal-domain/wording';
+import { plural } from '@danbro96/lupira-domain-core/wording';
 import { useInvalidatePlaces } from '../../state/useInvalidate';
 import {
   isLanOnly404,
@@ -32,7 +32,7 @@ import {
   useUnlocatedPlaces,
 } from '../../state/usePlaceCuration';
 import { errText } from '../errText';
-import { useSnackbar } from '../components/SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../components/WrapRow';
 import { DrawerSection } from '../components/DrawerSection';
 import { Page } from '../components/Page';

@@ -1,7 +1,7 @@
 // Family identity and per-day parent rails for the calendar grids.
 
 import { clampToDay } from './occurrences';
-import { sameDay } from './time';
+import { sameDay } from '@danbro96/lupira-domain-core/time';
 
 export interface FamilyFields {
   itemId: string;

@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { create } from 'zustand';
-import { logDebug } from '../debug/log';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 
 /** The live blue dot while the Map tab is open.
  *

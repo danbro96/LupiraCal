@@ -1,7 +1,8 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { getDb } from '../data/db/expoDb';
-import { migrate } from '../data/db/schema';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from '../data/db/schema';
 import { getMeta, setMeta } from '../data/mirror';
 import { enqueueFix } from '../data/locationQueue';
 import { loadTrackingSettings } from '../data/locationSettings';
@@ -10,7 +11,7 @@ import {
   type MotionActivity,
 } from '../domain/locationFix';
 import { batteryPct } from '../data/battery';
-import { logDebug } from '../debug/log';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { runLocationUpload } from './locationUploader';
 import { useTrackingStatus } from './locationTrackingStatus';
 
@@ -57,7 +58,7 @@ TaskManager.defineTask(TASK_NAME, async ({ data, error }) => {
 
 async function recordFixes(locations: Location.LocationObject[]): Promise<void> {
   const db = await getDb();
-  await migrate(db);   // the task can run before any UI has mounted
+  await migrate(db, MIGRATIONS);   // the task can run before any UI has mounted
 
   const settings = await loadTrackingSettings(db);
   if (!settings.enabled || settings.paused) return;

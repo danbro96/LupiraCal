@@ -1,5 +1,3 @@
-import type { Db } from './types';
-
 /** Append-only migration ladder keyed on PRAGMA user_version. Each entry runs once, in order, inside an
  *  exclusive transaction. THE OUTBOX IS NEVER DROPPED — un-pushed offline writes must survive any upgrade
  *  (ops carry envelope_version so a future shape change can translate rather than wipe). New schema work =
@@ -142,27 +140,3 @@ export const MIGRATIONS: string[] = [
   );
   `,
 ];
-
-// Single-flight per db handle: bridge-store init and the first runSync both migrate on app start —
-// on a virgin database both read user_version 0 and the loser hits "table items already exists".
-const migrating = new WeakMap<Db, Promise<void>>();
-
-export function migrate(db: Db, migrations: string[] = MIGRATIONS): Promise<void> {
-  let inFlight = migrating.get(db);
-  if (!inFlight) {
-    inFlight = runMigrate(db, migrations).finally(() => migrating.delete(db));
-    migrating.set(db, inFlight);
-  }
-  return inFlight;
-}
-
-async function runMigrate(db: Db, migrations: string[]): Promise<void> {
-  const row = await db.first<{ user_version: number }>('PRAGMA user_version');
-  const from = row?.user_version ?? 0;
-  for (let v = from; v < migrations.length; v++) {
-    // PRAGMA can't be parameterized and user_version must commit WITH the DDL, so both run via exec
-    // inside one exclusive scope per step.
-    await db.exclusive(async () => undefined);   // drain writers before DDL
-    await db.exec(`${migrations[v]}\nPRAGMA user_version = ${v + 1};`);
-  }
-}

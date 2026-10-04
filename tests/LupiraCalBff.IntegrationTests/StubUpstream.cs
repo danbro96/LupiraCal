@@ -45,5 +45,3 @@ public sealed class StubUpstream : IAsyncDisposable
 
     public async ValueTask DisposeAsync() => await _app.DisposeAsync();
 }
-
-public sealed record UpstreamEcho(string Path, string Authorization, string XDevUser);

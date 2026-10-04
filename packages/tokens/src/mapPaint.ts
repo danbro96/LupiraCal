@@ -1,6 +1,6 @@
 /**
  * Map mark sizes and label typography, shared by the web (maplibre-gl) and mobile (MapLibre Native) layers.
- * Colours come from `map.ts`; the layer components stay per app. Where a size differs, it differs by input:
+ * Colours come from `@danbro96/lupira-tokens-map/map`; the layer components stay per app. Where a size differs, it differs by input:
  * a finger needs bigger cluster targets, and a phone screen smaller hotspot halos.
  */
 

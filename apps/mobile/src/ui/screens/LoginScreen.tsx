@@ -4,9 +4,9 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Button, Text } from 'react-native-paper';
-import { exchangeAuthCode } from '../../data/auth/oidc';
+import { oidc } from '../../data/auth/oidc';
 import { OIDC_CLIENT_ID, OIDC_ISSUER, OIDC_REDIRECT_PATH, OIDC_SCHEME, OIDC_SCOPES } from '../../data/auth/oidcConfig';
-import { logDebug } from '../../debug/log';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { useAuth } from '../../state/auth-store';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors } from '../theme';
@@ -64,7 +64,7 @@ async function signInWith(
       if (result.type === 'error') setError(result.error?.message ?? 'Sign-in failed.');
       return;
     }
-    const tokens = await exchangeAuthCode(result.params.code, redirectUri, request!.codeVerifier!);
+    const tokens = await oidc.exchangeAuthCode({ code: result.params.code, redirectUri, codeVerifier: request!.codeVerifier! });
     await useAuth.getState().setSession(tokens);
     logDebug('auth', 'signed in');
   } catch (e) {

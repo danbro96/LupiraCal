@@ -3,16 +3,17 @@ import { getContact } from '@lupira/cal-api/fetch/contact';
 import NetInfo from '@react-native-community/netinfo';
 import * as Sentry from '@sentry/react-native';
 import { AppState } from 'react-native';
-import { authPort } from '../data/api/authProvider';
+import { authPort } from '@danbro96/lupira-http/authPort';
 import { getDb } from '../data/db/expoDb';
-import type { Db } from '../data/db/types';
-import { migrate } from '../data/db/schema';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from '../data/db/schema';
 import * as mirror from '../data/mirror';
-import { ApiError, isNetworkError } from '../domain/apiError';
+import { ApiError, isNetworkError } from '@danbro96/lupira-http/apiError';
 import { emptyContactGuards, emptyItemGuards, type ContactDoc, type ItemDoc } from '../domain/docTypes';
 import type { Horizon } from '../domain/materialize';
 import { birthdayRows, currentHorizon, horizonDrifted, monthKeyOf, occurrenceRowsForItem } from '../domain/materialize';
-import { logDebug } from '../debug/log';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { bridgePublish, drainBridgeInbox } from './bridge';
 import { toContactDoc, toItemDoc } from './docAdapters';
 import { discardParked, drain } from './outbox';
@@ -39,7 +40,7 @@ async function run(dbOverride: Db | undefined, deps: PullDeps): Promise<void> {
   status.set({ syncing: true });
   try {
     const db = dbOverride ?? (await getDb());
-    await migrate(db);
+    await migrate(db, MIGRATIONS);
     await authPort().refresh();
 
     // Stock-app edits captured by the bridge ride the same push as the app's own queued writes.

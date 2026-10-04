@@ -1,7 +1,7 @@
 import { compareDayEntries } from '@lupira/cal-domain/occurrences';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
-import { isToday, monthMatrix, parseYmd, weekdayNames, ymd } from '@lupira/cal-domain/time';
-import { textOn } from '@lupira/cal-tokens/contrast';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
+import { isToday, monthMatrix, parseYmd, weekdayNames, ymd } from '@danbro96/lupira-domain-core/time';
+import { textOn } from '@danbro96/lupira-tokens-core/contrast';
 import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -13,7 +13,7 @@ import { useCalendarColors } from '../hooks/palette';
 import { AvailStrip, addStatus } from './AvailStrip';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
-import { Glyph } from '../components/Glyph';
+import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 
 const BAR_GLYPH = 9;
 const WEEKDAYS = weekdayNames();

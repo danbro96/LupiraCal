@@ -12,6 +12,7 @@ on:
 jobs:
   tests:
     uses: ./.github/workflows/tests.yml
+    secrets: inherit
 
   build-push:
     needs: tests
@@ -41,3 +42,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          secrets: |
+            packages_token=${{ secrets.PACKAGES_TOKEN }}

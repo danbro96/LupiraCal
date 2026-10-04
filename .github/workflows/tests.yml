@@ -5,6 +5,7 @@ on:
 
 env:
   SOLUTION: LupiraCalBff.slnx
+  PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
 
 jobs:
   unit:

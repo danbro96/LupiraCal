@@ -17,6 +17,9 @@ concurrency:
   group: mobile-ota
   cancel-in-progress: false
 
+env:
+  PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+
 jobs:
   publish:
     runs-on: ubuntu-latest

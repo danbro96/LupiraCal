@@ -31,10 +31,10 @@ import {
 import { describeFire } from '@lupira/cal-domain/fire';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { errText } from '../../errText';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';
-import { BoltIcon } from '../../icons';
+import { BoltIcon } from '@danbro96/lupira-web-mui/icons';
 
 /**
  * The event-bound payload: at most one of prompt/action per item (server-enforced XOR — a 409

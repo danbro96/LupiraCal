@@ -1,5 +1,5 @@
 import type { LocationFix, MotionActivity, LocationProvider } from '../domain/locationFix';
-import type { Db, Tx } from './db/types';
+import type { Db, Tx } from '@danbro96/lupira-expo-sqlite/types';
 import { getMeta, setMeta } from './mirror';
 
 /** Row-level persistence for the GPS fix queue. Same contract as mirror.ts: every function takes a Tx.

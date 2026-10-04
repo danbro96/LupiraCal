@@ -1,5 +1,5 @@
-import { errorText } from '@lupira/cal-domain/apiError';
-import { DISPLAY_NAME_FORMAT_LABELS } from '@lupira/cal-domain/contactNames';
+import { errorText } from '@danbro96/lupira-http/apiError';
+import { DISPLAY_NAME_FORMAT_LABELS } from '@danbro96/lupira-domain-contacts/contactNames';
 import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -17,7 +17,7 @@ import { contactCoreFromForm, contactFormFromDoc, emptyContactForm } from '../..
 import { createContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '../../state/actions';
 import { useAddressBooks } from '../../state/useAddressBooks';
 import { useContactState } from '../../state/useContactList';
-import { ChoiceChips } from '../components/ChoiceChips';
+import { ChoiceChips } from '@danbro96/lupira-expo-paper/components/ChoiceChips';
 import { DateField } from '../components/DateField';
 import { Field } from '../components/Field';
 import { Input } from '../components/Input';

@@ -9,7 +9,7 @@ import { Link as RouterLink } from 'react-router-dom';
 import { useGetItem } from '@lupira/cal-api/query/cal';
 import { linkedEventIds, topPlaces } from '@lupira/cal-domain/photoFormat';
 import type { PhotoDay } from '../../../state/usePhotoLibrary';
-import { CalendarIcon, MapIcon } from '../../icons';
+import { CalendarIcon, MapIcon } from '@danbro96/lupira-web-mui/icons';
 
 /** A day's date, where it was and what it was — each a way to narrow the grid to it. */
 export function DayHeader({ day, links, selecting, allSelected, onToggleDay, onPlace, onEvent }: {

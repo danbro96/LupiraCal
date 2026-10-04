@@ -1,4 +1,4 @@
-import { contactNameError } from '@lupira/cal-domain/contactNames';
+import { contactNameError } from '@danbro96/lupira-domain-contacts/contactNames';
 import { scheduleFromForm, parseList, type EditResult, type ItemForm } from '@lupira/cal-domain/itemForm';
 import { birthdayFields, birthdayFromFields } from '@lupira/cal-domain/partialDate';
 import { deviceTimeZone, eventZone, isoToWall } from '@lupira/cal-domain/zonedTime';

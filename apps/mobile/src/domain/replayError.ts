@@ -1,4 +1,4 @@
-import { ApiError } from './apiError';
+import { ApiError } from '@danbro96/lupira-http/apiError';
 
 /** Park-don't-wedge: what the outbox drain does with a failed replay. Pure and total so the whole decision
  *  table is unit-tested (ported from LupiraTasksMobile, with its 429 misclassification fixed — throttling is

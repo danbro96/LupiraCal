@@ -1,6 +1,6 @@
 import { resolveApiUrl } from '../data/api/apiUrl';
 import { getDb } from '../data/db/expoDb';
-import type { Db } from '../data/db/types';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { clearDeviceCredentials, loadDevice } from '../data/locationDevice';
 import {
   deferFix, deleteFixes, deleteFixesUpTo, ensureSeqAbove, pendingFixes, pruneExpired, trimToCap,
@@ -8,7 +8,7 @@ import {
 import { loadTrackingSettings } from '../data/locationSettings';
 import type { LocationFix } from '../domain/locationFix';
 import { RETENTION_DAYS, receiptIsCoherent, rejectDisposition } from '../domain/locationFix';
-import { logDebug } from '../debug/log';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { DeviceRevokedError, MAX_BATCH_LINES, fetchCursor, postFixes, type IngestReceipt } from './locationIngest';
 import { useTrackingStatus } from './locationTrackingStatus';
 

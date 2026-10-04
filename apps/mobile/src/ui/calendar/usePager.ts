@@ -3,7 +3,7 @@ import type { LayoutChangeEvent } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { cancelAnimation, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { useLatestCallback } from '../hooks/useLatestCallback';
+import { useLatestCallback } from '@danbro96/lupira-expo-paper/hooks/useLatestCallback';
 
 const LOCK_PX = 12;
 const COMMIT_FRACTION = 0.25;

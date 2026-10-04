@@ -21,7 +21,7 @@ maplibre-gl v6's default worker URL (sibling of the entry module) 404s under bun
 Fix, both halves required:
 
 - The `sync:maplibre` script vendors `maplibre-gl-worker.mjs` + `maplibre-gl-shared.mjs` verbatim into `public/maplibre/` (gitignored, runs predev/prebuild).
-- `setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')` in `components/map/maplibreSetup.ts`, a side-effect module every map constructor imports (`MapCanvas`, `MiniMap`).
+- `setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')` in `@danbro96/lupira-web-maplibre/maplibreSetup`, a side-effect module every map constructor imports (`MapCanvas`, the package `MiniMap`).
 
 A missing basemap *sprite* is equally fatal (style stuck loading); `loadMapStyle` Range-probes the pmtiles and falls back to `fallbackStyle` when assets are unprovisioned.
 

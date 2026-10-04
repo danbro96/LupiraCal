@@ -1,4 +1,4 @@
-import type { Db } from '../data/db/types';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import * as mirror from '../data/mirror';
 import { nextAttemptDelayMs, PARK_AFTER_ATTEMPTS } from '../domain/backoff';
 import type { Horizon } from '../domain/materialize';

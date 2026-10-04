@@ -1,10 +1,10 @@
 import { Linking, ScrollView, StyleSheet } from 'react-native';
 import { List, Switch } from 'react-native-paper';
-import { toast, toastError } from '../../feedback/toast';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { useLocationTracking } from '../../state/location-tracking-store';
 import { useTrackingStatus } from '../../sync/locationTrackingStatus';
 import { runLocationUpload } from '../../sync/locationUploader';
-import { useConfirm } from '../components/ConfirmDialog';
+import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { SettingsAction, SettingsNote } from '../components/SettingsText';
 import { spacing } from '../theme';
 

@@ -2,6 +2,8 @@ import Constants from 'expo-constants';
 
 export const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
+export const REQUEST_TIMEOUT_MS = 10_000;
+
 /** 'dev' = this backend's bypass; here that means sending nothing (the BFF's DevAuthHandler). */
 export type AuthMode = 'oidc' | 'dev';
 

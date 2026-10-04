@@ -5,8 +5,8 @@
  * single source for them.
  *
  * What is left is the basemap, which is not part of any OpenAPI surface: geo-api serves the style,
- * sprite, glyphs and pmtiles as static assets, and `ui/components/map/mapStyle.ts` fetches them by
- * hand.
+ * sprite, glyphs and pmtiles as static assets, and `@danbro96/lupira-web-maplibre/mapStyle` fetches
+ * them by hand.
  */
 const rawGeo = import.meta.env.VITE_GEO_API_BASE_URL as string | undefined;
 export const GEO_API_BASE_URL = (rawGeo ?? '/geo-api').replace(/\/$/, '');

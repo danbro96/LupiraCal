@@ -12,25 +12,25 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import { logout } from '../../data/session';
-import { useSession } from '../../state/useSession';
+import { logout } from '@danbro96/lupira-web-session/session';
+import { useSession } from '@danbro96/lupira-web-session/useSession';
 import { useCreateCalendar, useGrantCalendarOwner, useRevokeCalendarOwner } from '@lupira/cal-api/query/cal';
 import { CalendarClass, CalendarKind, type ContainerDto } from '@lupira/cal-api/models';
 import { useCreateAddressBook, useGrantAddressBookOwner, useRevokeAddressBookOwner } from '@lupira/cal-api/query/contact';
 import type { AddressBookDto } from '@lupira/cal-api/models';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
-import { KIND_COLORS } from '@lupira/cal-tokens/kinds';
+import { KIND_COLORS } from '@danbro96/lupira-tokens-calendar/kinds';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { addressBookLabel, useAddressBooks } from '../../state/useAddressBooks';
 import { useInvalidateAddressBooks, useInvalidateContainers } from '../../state/useInvalidate';
 import { calendarColor } from '../theme/kinds';
 import { KindIcon } from '../components/KindIcon';
 import { errText } from '../errText';
-import { useSnackbar } from '../components/SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../components/WrapRow';
 import { Page } from '../components/Page';
 import { PageHead } from '../components/Page';
-import { ContactsIcon } from '../icons';
+import { ContactsIcon } from '@danbro96/lupira-web-mui/icons';
 
 /** Container management: calendars (class/kind/color/tz, from cal-api) and address books (from
  *  contact-api), with creation and per-owner sharing. */

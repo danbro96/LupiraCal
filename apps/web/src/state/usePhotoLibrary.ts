@@ -2,12 +2,13 @@ import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-qu
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getListPhotosQueryKey, listPhotos, lookupPhotos, useGetPhotoStats } from '@lupira/cal-api/query/photo';
-import { groupByDay as groupDays, photoDayLabel, photoEventLinks, THUMB_SAFE_STALE_MS, type DayGroup, PHOTO_LINK } from '@lupira/cal-domain/photoFormat';
+import { groupByDay as groupDays, photoDayLabel, photoEventLinks, THUMB_SAFE_STALE_MS, type DayGroup } from '@lupira/cal-domain/photoFormat';
+import { PHOTO_LINK } from '@danbro96/lupira-domain-photos/photoLinks';
 import { filterPhotos } from '@lupira/cal-domain/photoFilter';
 import type { ListPhotosParams, PhotoListItemDto } from '@lupira/cal-api/models';
 import { getListRelationEdgesQueryKey, listRelationEdges, useSearchItems } from '@lupira/cal-api/query/cal';
-import { dayEndIso, dayStartIso } from '@lupira/cal-domain/time';
-import { captureWindow, EVENT_CANDIDATE_LIMIT, eventPhotoWindow, PHOTO_SUGGEST_LIMIT, type PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
+import { dayEndIso, dayStartIso } from '@danbro96/lupira-domain-core/time';
+import { captureWindow, EVENT_CANDIDATE_LIMIT, eventPhotoWindow, PHOTO_SUGGEST_LIMIT, type PhotoWindowSource } from '@danbro96/lupira-domain-photos/photoWindow';
 
 /** The gallery's read model. Filters live in URL params so a view is linkable and survives a reload,
  *  exactly as useItemSearch does it. */

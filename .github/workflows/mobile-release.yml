@@ -13,6 +13,9 @@ concurrency:
   group: mobile-release
   cancel-in-progress: false
 
+env:
+  PACKAGES_TOKEN: ${{ secrets.PACKAGES_TOKEN }}
+
 jobs:
   tests:
     uses: ./.github/workflows/tests.yml

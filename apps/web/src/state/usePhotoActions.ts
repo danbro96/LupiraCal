@@ -1,7 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { createItemRelationsBatch, deleteItemRelationsBatch } from '@lupira/cal-api/query/cal';
 import { deletePhoto, emptyPhotoTrash, restorePhoto, trashPhoto } from '@lupira/cal-api/query/photo';
-import { PHOTO_LINK } from '@lupira/cal-domain/photoFormat';
+import { PHOTO_LINK } from '@danbro96/lupira-domain-photos/photoLinks';
 import { useInvalidatePhotos } from './useInvalidate';
 
 export type Outcome = { done: number; failed: number };

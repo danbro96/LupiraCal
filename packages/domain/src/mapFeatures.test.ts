@@ -5,7 +5,6 @@ import {
   contactPinLabel,
   eventFeatures,
   hotspotFeatures,
-  hotspotStats,
   photoCellBounds,
   photoFeatures,
   savedPlaceFeatures,
@@ -154,13 +153,6 @@ describe('hotspotFeatures', () => {
     ]);
     expect(fc.features[0].geometry).toEqual({ type: 'Point', coordinates: [14, 58] });
     expect(props(fc)).toMatchObject({ layer: 'hotspot', hotspotId: 'cell:58.000,14.000', placeId: null, label: null, activeDays: 12 });
-  });
-});
-
-describe('hotspotStats', () => {
-  it('always states the days and leaves out zero counts', () => {
-    expect(hotspotStats({ activeDays: 1, eventCount: 1, photoCount: 0 })).toBe('1 day · 1 event');
-    expect(hotspotStats({ activeDays: 12, eventCount: 0, photoCount: 80 })).toBe('12 days · 80 photos');
   });
 });
 

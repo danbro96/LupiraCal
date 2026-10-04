@@ -31,16 +31,16 @@ import type {
   ReviseContactRequest,
 } from '@lupira/cal-api/models';
 import { ContactAddressType, DisplayNameFormat, ReachMedium } from '@lupira/cal-api/models';
-import { DISPLAY_NAME_FORMAT_LABELS as NAME_FORMAT_LABELS } from '@lupira/cal-domain/contactNames';
+import { DISPLAY_NAME_FORMAT_LABELS as NAME_FORMAT_LABELS } from '@danbro96/lupira-domain-contacts/contactNames';
 import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { PlacePicker } from '../places/PlacePicker';
 import { errText } from '../../errText';
-import { useSnackbar } from '../SnackbarHost';
-import { fuzzyToInput, parseFuzzyInput, residencyStatus } from '@lupira/cal-domain/fuzzyDate';
-import { addressTypeLabel } from '@lupira/cal-domain/residents';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
+import { fuzzyToInput, parseFuzzyInput, residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
+import { addressTypeLabel } from '@danbro96/lupira-domain-contacts/residents';
 import { birthdayFields, birthdayFromFields, partialDateKey } from '@lupira/cal-domain/partialDate';
-import { contactNameError } from '@lupira/cal-domain/contactNames';
+import { contactNameError } from '@danbro96/lupira-domain-contacts/contactNames';
 import { CHANNEL_TYPES, PROFILE_SERVICES } from '@lupira/cal-domain/reach';
 import { WrapRow } from '../WrapRow';
 

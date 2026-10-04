@@ -16,7 +16,7 @@ import '@xyflow/react/dist/style.css';
 import { getListContactRelationsQueryKey, listContactRelations } from '@lupira/cal-api/query/contact';
 import type { ContactRelationEntryDto } from '@lupira/cal-api/models';
 import { buildRelationGraph } from '@lupira/cal-domain/contactRelations';
-import { matchesTerms, searchTerms } from '@lupira/cal-domain/textSearch';
+import { matchesTerms, searchTerms } from '@danbro96/lupira-domain-core/textSearch';
 import type { RelationCategory } from '@lupira/cal-domain/contactRelations';
 import { useIsPhone } from '../../hooks/useIsPhone';
 

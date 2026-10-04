@@ -1,4 +1,4 @@
-import { ymd } from './time';
+import { ymd } from '@danbro96/lupira-domain-core/time';
 
 // Placement math for the week/day grids: timed lanes and the all-day strip.
 

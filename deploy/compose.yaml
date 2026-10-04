@@ -21,7 +21,7 @@ services:
       ReverseProxy__Clusters__photo-api__Destinations__primary__Address: ${PHOTO_API_BASE_URL:-https://photo-api.lupira.com}
       ReverseProxy__Clusters__comms-api__Destinations__primary__Address: ${COMMS_API_BASE_URL:-https://comms-api.lupira.com}
       DataProtection__KeyPath: /keys
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:?required}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
       OTEL_METRIC_EXPORT_INTERVAL: ${OTEL_METRIC_EXPORT_INTERVAL:-300000}

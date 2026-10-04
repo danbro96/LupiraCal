@@ -1,4 +1,4 @@
-import { addDays, addMonths, fmtMonthTitle, fmtWeekRange, startOfWeek, ymd } from '@lupira/cal-domain/time';
+import { addDays, addMonths, fmtMonthTitle, fmtWeekRange, startOfWeek, ymd } from '@danbro96/lupira-domain-core/time';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';

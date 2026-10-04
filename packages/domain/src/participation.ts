@@ -1,7 +1,7 @@
 // Attendee wording both apps use. Keyed on cal-api's ParticipationStatus / ParticipationRole names as
 // strings so this stays free of the generated models; consumers re-type against the enums.
 
-import { plural } from './wording';
+import { plural } from '@danbro96/lupira-domain-core/wording';
 
 export const RSVP_LABELS = {
   NeedsAction: 'Invited — no reply yet',

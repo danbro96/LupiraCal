@@ -1,4 +1,4 @@
-import { KIND_COLORS } from './kinds';
+import { KIND_COLORS } from '@danbro96/lupira-tokens-calendar/kinds';
 
 /** Service marks drawn in the service's own colour; everything else in the neutral generic tone. */
 export const REACH_COLORS: Record<string, string> = {

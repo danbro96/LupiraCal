@@ -1,11 +1,11 @@
 // What a map preview says about each kind of hit, and the ways into a full screen it offers. Both apps
 // render these; each maps an action to its own navigation.
 
-import { displayTitle } from './itemLabels';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import type { MapHit } from './mapHits';
-import { hotspotStats } from './mapFeatures';
-import { addressTypeLabel } from './residents';
-import { fmtDate, fmtDateTime, fmtTime, parseYmd } from './time';
+import { hotspotStats } from '@danbro96/lupira-domain-places/hotspots';
+import { addressTypeLabel } from '@danbro96/lupira-domain-contacts/residents';
+import { fmtDate, fmtDateTime, fmtTime, parseYmd } from '@danbro96/lupira-domain-core/time';
 
 export type HitAction = 'open' | 'day' | 'zoom' | 'place';
 

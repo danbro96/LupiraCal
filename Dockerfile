@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Single-image BFF: build the Vite SPA, then publish the .NET app with the SPA served from wwwroot.
 # Build context = repo root.
 
@@ -12,7 +13,7 @@ COPY packages/api/package.json packages/api/
 COPY apps/mobile/package.json apps/mobile/
 # Web workspaces only — the mobile app's Expo tree has no business in this image.
 RUN npm i -g npm@12
-RUN npm ci -w apps/web -w packages/domain -w packages/tokens -w packages/api --include-workspace-root
+RUN --mount=type=secret,id=packages_token,env=PACKAGES_TOKEN npm ci -w apps/web -w packages/domain -w packages/tokens -w packages/api --include-workspace-root
 COPY packages/domain/ packages/domain/
 COPY packages/tokens/ packages/tokens/
 COPY packages/api/ packages/api/
@@ -22,10 +23,11 @@ RUN npm run build -w apps/web -- --outDir dist --emptyOutDir
 # --- backend publish ---
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
+COPY nuget.config ./
 COPY src/LupiraCalBff/ ./LupiraCalBff/
 WORKDIR /src/LupiraCalBff
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet restore "./LupiraCalBff.csproj"
+RUN --mount=type=secret,id=packages_token,env=PACKAGES_TOKEN dotnet restore "./LupiraCalBff.csproj"
 RUN dotnet publish "./LupiraCalBff.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 COPY --from=client /repo/apps/web/dist /app/publish/wwwroot
 

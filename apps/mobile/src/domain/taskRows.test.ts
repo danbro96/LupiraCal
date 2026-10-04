@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ymd } from '@lupira/cal-domain/time';
+import { ymd } from '@danbro96/lupira-domain-core/time';
 import type { TaskLike } from '@lupira/cal-domain/tasks';
 import { isTaskRow, taskDeadlineRows } from './taskRows';
 

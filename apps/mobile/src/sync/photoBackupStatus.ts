@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { getDb } from '../data/db/expoDb';
-import type { Db } from '../data/db/types';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { queueCounts } from '../data/photoQueue';
 
 /** Live backup counters + transfer progress. Lives in the sync layer for the same reason syncStatus

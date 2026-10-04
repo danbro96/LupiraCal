@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { lookupPlaces } from '@lupira/cal-api/fetch/geo';
 import type { PlaceDto } from '@lupira/cal-api/models';
-import { PLACE_LOOKUP_MAX, chunk, distinctPlaceIds, toLocatedPlaces } from '@lupira/cal-domain/places';
+import { PLACE_LOOKUP_MAX, chunk, distinctPlaceIds, toLocatedPlaces } from '@danbro96/lupira-domain-places/places';
 import { useSyncStatus } from '../sync/syncStatus';
 
 // Shared so the empty case keeps its identity — a fresh Map per render defeats callers' memoization.

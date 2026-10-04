@@ -1,4 +1,4 @@
-import { fmtWhen, ymd } from './time';
+import { fmtWhen, ymd } from '@danbro96/lupira-domain-core/time';
 
 /** What both clients need from a LupiraTasks item; structural so no wire type reaches this package. */
 export type TaskLike = {

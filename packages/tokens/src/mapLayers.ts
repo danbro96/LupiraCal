@@ -1,5 +1,5 @@
 import type { IconName } from './icons.ts';
-import type { MapColorKey } from './map.ts';
+import type { MapColorKey } from '@danbro96/lupira-tokens-map/map';
 
 /** The map's toggleable layers, one definition for both apps: order in the controls, label, the palette
  *  slot the toggle is tinted with, its icon concept, and whether it starts on. */

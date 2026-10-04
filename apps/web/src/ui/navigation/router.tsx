@@ -1,7 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import App from '../../App';
-import { RequireAuth } from './RequireAuth';
+import { RequireAuth } from '@danbro96/lupira-web-session/RequireAuth';
+import { Centered } from '@danbro96/lupira-web-mui/Centered';
 import { AppShell } from '../components/AppShell';
 import { CalendarScreen } from '../screens/CalendarScreen';
 import { InboxScreen } from '../screens/InboxScreen';
@@ -28,7 +29,7 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       {
-        element: <RequireAuth />,
+        element: <RequireAuth pending={(title) => <Centered title={title} />} />,
         children: [
           {
             element: <AppShell />,

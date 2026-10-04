@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { residencyStatus, type FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
-import { parentsHomes, type ContactAddressRow, type ParentsHome } from '@lupira/cal-domain/residents';
+import { residencyStatus, type FuzzyDate } from '@danbro96/lupira-domain-contacts/fuzzyDate';
+import { parentsHomes, type ContactAddressRow, type ParentsHome } from '@danbro96/lupira-domain-contacts/residents';
 import { getDb } from '../data/db/expoDb';
 import { contactResidencies, placeEntryOf } from '../data/mirror';
 import type { PlaceEntryDoc } from '../domain/docTypes';
@@ -8,8 +8,9 @@ import { useContactRelations } from './useContactList';
 
 const parseFuzzy = (raw: string | null): FuzzyDate | null => (raw ? (JSON.parse(raw) as FuzzyDate) : null);
 
-/** Every live contact's residencies from the mirror, as `@lupira/cal-domain/residents` rows. One query serves the map,
- *  the place picker, quick places and contact cards, so they agree and share one place lookup. */
+/** Every live contact's residencies from the mirror, as `@danbro96/lupira-domain-contacts/residents` rows. One
+ *  query serves the map, the place picker, quick places and contact cards, so they agree and share one place
+ *  lookup. */
 export function useResidencyRows(enabled = true): ContactAddressRow[] {
   const q = useQuery({
     queryKey: ['contacts', 'residencies'],

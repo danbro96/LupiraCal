@@ -1,6 +1,6 @@
 /** Formatters for photo metadata, shared by the web and mobile galleries. */
 
-import { plural } from './wording';
+import { plural } from '@danbro96/lupira-domain-core/wording';
 
 const KB = 1024;
 
@@ -91,9 +91,6 @@ export function linkedEventIds(photoIds: readonly string[], links: ReadonlyMap<s
   return [...ids];
 }
 
-/** The cal-api relation that ties a photo to the event it depicts. */
-export const PHOTO_LINK = { toKind: 'photo', relationType: 'depicts' } as const;
-
 /** Whole days until a trashed photo is purged, never negative — "3 days left". */
 export function daysLeft(purgesAt: string, now: Date): number {
   return Math.max(0, Math.ceil((Date.parse(purgesAt) - now.getTime()) / 86_400_000));
@@ -126,29 +123,6 @@ export function unlinkedPhotoIds(photoIds: readonly string[], links: ReadonlyMap
   return photoIds.filter((id) => !links.get(id)?.includes(itemId));
 }
 
-export function linkPhotosTitle(count: number): string {
-  return count === 1 ? 'Link to an event' : `Link ${count} photos to an event`;
-}
-
-export function linkedMessage(count: number, linked: number): string {
-  return count === 1 ? 'Linked to the event' : `Linked ${linked} photos`;
-}
-
-/** Photo wording both apps show. */
-export const PHOTO_TEXT = {
-  movedToTrash: 'Moved to trash',
-  trashEmptied: 'Trash emptied',
-  emptyTrashFailed: 'Could not empty the trash',
-  deletedForGood: 'Deleted for good',
-  deleteFailed: 'Could not delete the photo.',
-  emptyTrashWarning: 'Every photo in the trash is deleted for good. It cannot be undone.',
-  noLocation: 'No location — this photo never appears on the map.',
-  noneLinked: 'No photos linked.',
-  noneAround: 'No photos from this time.',
-  takenDuring: 'Taken during this event:',
-  noEventsAround: 'No events around this time.',
-} as const;
-
 export function purgeWarning(n: number): string {
   return n === 1
     ? 'This removes the original and its thumbnail from storage. It cannot be undone.'
@@ -163,10 +137,6 @@ export function inTrashLine(purgesAt: string, now: Date): string {
 /** The trashed tile's badge: "3 days left". */
 export function trashBadge(purgesAt: string, now: Date): string {
   return `${fmtDays(daysLeft(purgesAt, now))} left`;
-}
-
-export function seeAllLinked(n: number): string {
-  return `See all ${n} in Photos`;
 }
 
 /** A day group's heading: "Sat 4 Oct 2026" — the weekday helps place a day, the short form fits a phone. */

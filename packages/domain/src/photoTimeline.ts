@@ -1,4 +1,4 @@
-import { parseYmd, ymd } from './time';
+import { parseYmd, ymd } from '@danbro96/lupira-domain-core/time';
 
 /** The galleries' time navigation: `/photos/stats` month counts grouped by year, and the local day
  *  bounds a year or month selects — the same 'yyyy-MM-dd' vocabulary a map pin hands over. */

@@ -1,9 +1,9 @@
 import {
   clampToDay, drawnEnd, foldLanes, hiddenPerColumn, inAllDayStrip, lastDayOf, layoutColumns, packLanes, type Positioned,
 } from '@lupira/cal-domain/occurrences';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
-import { addDays, daysFrom, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, parseYmd, ymd } from '@lupira/cal-domain/time';
-import { textOn } from '@lupira/cal-tokens/contrast';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
+import { addDays, daysFrom, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, parseYmd, ymd } from '@danbro96/lupira-domain-core/time';
+import { textOn } from '@danbro96/lupira-tokens-core/contrast';
 import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
@@ -13,7 +13,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { PlaceDto } from '@lupira/cal-api/models';
-import { EMPHASIS, withAlpha } from '@lupira/cal-tokens/color';
+import { EMPHASIS } from '@lupira/cal-tokens/color';
+import { withAlpha } from '@danbro96/lupira-tokens-core/color';
 import type { GridRow } from '../../data/mirror';
 import { isTaskRow } from '../../domain/taskRows';
 import { usePrefs } from '../../state/prefs-store';
@@ -21,11 +22,11 @@ import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrenc
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
 import { availabilityColor, useCalendarColors } from '../hooks/palette';
-import { useBackDismiss } from '../hooks/useBackDismiss';
+import { useBackDismiss } from '@danbro96/lupira-expo-paper/hooks/useBackDismiss';
 import { AvailStrip, addStatus } from './AvailStrip';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
-import { Glyph } from '../components/Glyph';
+import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 import { useJump, type CalendarJump } from './jump';
 import { usePager } from './usePager';
 

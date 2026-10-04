@@ -7,12 +7,12 @@ import { Link } from 'react-router-dom';
 import { useCreateItemRelation } from '@lupira/cal-api/query/cal';
 import { getListRelationEdgesQueryKey } from '@lupira/cal-api/query/cal';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
-import type { PhotoWindowSource } from '@lupira/cal-domain/photoWindow';
-import { PHOTO_TEXT, seeAllLinked, PHOTO_LINK } from '@lupira/cal-domain/photoFormat';
+import type { PhotoWindowSource } from '@danbro96/lupira-domain-photos/photoWindow';
+import { PHOTO_TEXT, seeAllLinked, PHOTO_LINK } from '@danbro96/lupira-domain-photos/photoLinks';
 import { useEventPhotos, useSuggestedPhotos } from '../../../state/usePhotoLibrary';
 import { DrawerSection } from '../DrawerSection';
 import { WrapRow } from '../WrapRow';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 
 const TILE = 72;
 

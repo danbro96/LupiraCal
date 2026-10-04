@@ -1,6 +1,6 @@
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { fmtDateTime } from '@lupira/cal-domain/time';
+import { fmtDateTime } from '@danbro96/lupira-domain-core/time';
 import { Image } from 'expo-image';
 import { memo, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
@@ -10,15 +10,16 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { scheduleOnRN } from 'react-native-worklets';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { reprocessPhoto } from '@lupira/cal-api/fetch/photo';
-import { formatCoords } from '@lupira/cal-domain/places';
-import { fmtBytes, fmtDimensions, fmtDuration, geotagLabel, inTrashLine, originalIsViewable, PHOTO_TEXT, purgeWarning } from '@lupira/cal-domain/photoFormat';
-import { toast, toastError } from '../../feedback/toast';
+import { formatCoords } from '@danbro96/lupira-domain-places/places';
+import { fmtBytes, fmtDimensions, fmtDuration, geotagLabel, inTrashLine, originalIsViewable, purgeWarning } from '@lupira/cal-domain/photoFormat';
+import { PHOTO_TEXT } from '@danbro96/lupira-domain-photos/photoLinks';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { purgePhotos, restorePhotos, trashPhotos } from '../../state/photoActions';
 import { DEFAULT_PHOTO_FILTERS, usePhoto, usePhotoLibrary } from '../../state/usePhotoLibrary';
 import { saveOriginalToPhone } from '../../sync/photoUploader';
 import { invalidatePhotos } from '../../sync/reactivity';
 import { Centered } from '../components/Centered';
-import { useConfirm } from '../components/ConfirmDialog';
+import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { LinkEventSheet } from '../photos/LinkEventSheet';
 import { originalCacheKey, thumbCacheKey } from '../photos/imageCache';
 import { PhotoEventLinks } from '../photos/PhotoEventLinks';

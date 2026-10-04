@@ -5,13 +5,13 @@ import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import { useAcceptItemIntoCalendar, useRemoveItemFromCalendar } from '@lupira/cal-api/query/cal';
 import type { CalendarItemDto } from '@lupira/cal-api/models';
-import { fmtDate, fmtDateTime, parseYmd } from '@lupira/cal-domain/time';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { fmtDate, fmtDateTime, parseYmd } from '@danbro96/lupira-domain-core/time';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
 import { useProposedByCalendar } from '../../state/useProposed';
 import { errText } from '../errText';
-import { useSnackbar } from '../components/SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { calendarColor } from '../theme/kinds';
 import { Page } from '../components/Page';
 

@@ -6,16 +6,15 @@ import { Image } from 'expo-image';
 import { memo, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
-import {
-  fmtDuration, outcomeMessage, PHOTO_TEXT, photoCount, purgeWarning, trashBadge,
-} from '@lupira/cal-domain/photoFormat';
+import { fmtDuration, outcomeMessage, photoCount, purgeWarning, trashBadge } from '@lupira/cal-domain/photoFormat';
+import { PHOTO_TEXT } from '@danbro96/lupira-domain-photos/photoLinks';
 import { fmtPhotoRange, photoTimeline, yearRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { photoEmptyText } from '@lupira/cal-domain/photoFilter';
-import { SCRIM } from '@lupira/cal-tokens/color';
+import { SCRIM } from '@danbro96/lupira-tokens-core/color';
 import { photoGrid, type PhotoGridEntry } from '../../domain/photoGrid';
-import { hapticSelection } from '../../feedback/haptics';
-import { toast, toastError } from '../../feedback/toast';
+import { hapticSelection } from '@danbro96/lupira-expo-feedback/haptics';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { usePhotoBackup } from '../../state/photo-backup-store';
 import { emptyTrash, purgePhotos, restorePhotos, trashPhotos, type Outcome } from '../../state/photoActions';
 import { linkPhotosToEvent, unlinkPhotosFromEvent, useLinkedEvents, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
@@ -23,10 +22,10 @@ import { DEFAULT_PHOTO_FILTERS, groupByDay, usePhotoLibrary, usePhotoStats, type
 import { usePhotoBackupStatus } from '../../sync/photoBackupStatus';
 import { retryParkedPhotos } from '../../sync/photoUploader';
 import { Centered } from '../components/Centered';
-import { useConfirm } from '../components/ConfirmDialog';
+import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { IndeterminateBar } from '../components/IndeterminateBar';
 import { LetterRail } from '../components/LetterRail';
-import { ScreenToolbar } from '../components/ScreenToolbar';
+import { ScreenToolbar } from '@danbro96/lupira-expo-paper/components/ScreenToolbar';
 import { SyncBanner } from '../components/SyncBanner';
 import { useColors } from '../theme';
 import { DayHeader } from '../photos/DayHeader';

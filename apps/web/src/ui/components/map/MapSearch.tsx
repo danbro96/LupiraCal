@@ -6,7 +6,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { getForwardGeocodeQueryOptions, useSuggestPlaces } from '@lupira/cal-api/query/geo';
 import { SuggestionType, type PlaceSuggestionDto } from '@lupira/cal-api/models';
-import { MIN_PLACE_QUERY } from '@lupira/cal-domain/placeCandidates';
+import { MIN_PLACE_QUERY } from '@danbro96/lupira-domain-places/placeCandidates';
 import Box from '@mui/material/Box';
 import { RowName } from '../Rows';
 

@@ -28,7 +28,7 @@ import { useInvalidateAddressBooks, useInvalidateContacts } from '../../../state
 import { AddressBookManage } from './AddressBookManage';
 import { WrapRow } from '../WrapRow';
 import { SidePane } from './panes';
-import { BusinessIcon, ContactsIcon, GroupIcon, PersonIcon } from '../../icons';
+import { BusinessIcon, ContactsIcon, GroupIcon, PersonIcon } from '@danbro96/lupira-web-mui/icons';
 
 const COUNT_SX = { flex: 'none', fontSize: 12, color: 'text.subtle', fontVariantNumeric: 'tabular-nums' } as const;
 // Forms and the add buttons align with the group rows, one caret-width in.

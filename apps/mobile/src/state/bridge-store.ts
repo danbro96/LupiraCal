@@ -3,9 +3,10 @@ import { create } from 'zustand';
 import type { BridgeState } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
 import { getDb } from '../data/db/expoDb';
-import { migrate } from '../data/db/schema';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from '../data/db/schema';
 import { getMeta, setMeta } from '../data/mirror';
-import { logDebug } from '../debug/log';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 
 /** The Android-integration preference and its lifecycle. Flags persist in mirror_meta (NOT the
  *  auth store's SecureStore map: the sync layer must read `bridge.enabled` and can't import state/;
@@ -53,7 +54,7 @@ export const useBridge = create<BridgePref & BridgeActions>((set, get) => ({
       const db = await getDb();
       // Fresh installs: init races the first runSync, and the schema (incl. mirror_meta) is
       // migration-created — run the idempotent ladder ourselves before reading flags.
-      await migrate(db);
+      await migrate(db, MIGRATIONS);
       const enabled = (await getMeta(db, ENABLED_KEY)) === '1';
       const prompted = (await getMeta(db, PROMPTED_KEY)) === '1';
       set({ enabled, prompted, loaded: true });

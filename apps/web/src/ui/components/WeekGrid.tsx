@@ -6,13 +6,13 @@ import IconButton from '@mui/material/IconButton';
 import type { AvailabilitySegment } from '../../state/useAvailability';
 import { clampToDay, drawnEnd, foldLanes, hiddenPerColumn, inAllDayStrip, layoutColumns, packLanes } from '@lupira/cal-domain/occurrences';
 import { type DayRail, familyKey, railsForDay } from '@lupira/cal-domain/family';
-import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, ymd } from '@lupira/cal-domain/time';
-import { textOn } from '@lupira/cal-tokens/contrast';
-import { availabilityColor } from '@lupira/cal-tokens/kinds';
+import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, ymd } from '@danbro96/lupira-domain-core/time';
+import { textOn } from '@danbro96/lupira-tokens-core/contrast';
+import { availabilityColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { familyAccent } from '../theme/kinds';
 import { coversDay, segmentSpan, type GridEntry } from '../entries';
-import { ExpandIcon, ExpandLessIcon } from '../icons';
+import { ExpandIcon, ExpandLessIcon } from '@danbro96/lupira-web-mui/icons';
 
 const HOUR_PX = 48;
 const RAIL_SLOT_PX = 5; // 3px rail + 2px gap

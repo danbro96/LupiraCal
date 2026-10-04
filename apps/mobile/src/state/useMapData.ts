@@ -4,7 +4,7 @@ import type { FeatureCollection } from 'geojson';
 import { getHotspots } from '@lupira/cal-api/fetch/cal';
 import { listSavedPlaces } from '@lupira/cal-api/fetch/geo';
 import { getPhotoMap } from '@lupira/cal-api/fetch/photo';
-import type { MapViewport } from '@lupira/cal-domain/geo';
+import type { MapViewport } from '@danbro96/lupira-domain-places/geo';
 import {
   EMPTY_FEATURES,
   contactFeatures,

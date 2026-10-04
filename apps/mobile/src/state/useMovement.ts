@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCurrentLocation, getThinnedTrack, listVisits } from '@lupira/cal-api/fetch/location';
-import { LIVE_FIX_POLL_MS, LIVE_FIX_STALE_MS, movementStaleMs } from '@lupira/cal-domain/geo';
+import { LIVE_FIX_POLL_MS, LIVE_FIX_STALE_MS, movementStaleMs } from '@danbro96/lupira-domain-places/geo';
 import { trackBucketSeconds } from '@lupira/cal-domain/mapWindow';
 import { useSyncStatus } from '../sync/syncStatus';
 

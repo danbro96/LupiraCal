@@ -7,13 +7,13 @@ import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import ViewListIcon from '@mui/icons-material/ViewList';
-import type { Bbox, MapViewport } from '@lupira/cal-domain/geo';
+import type { Bbox, MapViewport } from '@danbro96/lupira-domain-places/geo';
 import { photoCellBounds } from '@lupira/cal-domain/mapFeatures';
 import type { HitAction } from '@lupira/cal-domain/mapHitLabels';
 import { hitsFromFeatures, type MapHit } from '@lupira/cal-domain/mapHits';
-import { CELL_PADDING_PX, PIN_CLUSTERS, TARGET_ZOOM, zoomForSpan } from '@lupira/cal-domain/mapZoom';
+import { CELL_PADDING_PX, PIN_CLUSTERS, TARGET_ZOOM, zoomForSpan } from '@danbro96/lupira-domain-maps/mapZoom';
 import type { QuickPlace } from '@lupira/cal-domain/quickPlaces';
-import { dayEndIso, dayStartIso, ymd } from '@lupira/cal-domain/time';
+import { dayEndIso, dayStartIso, ymd } from '@danbro96/lupira-domain-core/time';
 import { DEFAULT_LAYERS, LAYER_KEYS, isLayerKey, type LayerKey } from '@lupira/cal-tokens/mapLayers';
 import { readPref, writePref } from '../../state/localPrefs';
 import {
@@ -25,7 +25,8 @@ import {
   useSavedPlaceFeatures,
 } from '../../state/useMapData';
 import { useQuickPlaces } from '../../state/useQuickPlaces';
-import { MapCanvas, useMap, useMapTheme } from '../components/map/MapCanvas';
+import { useMapTheme } from '@danbro96/lupira-web-maplibre/useMapTheme';
+import { MapCanvas, useMap } from '../components/map/MapCanvas';
 import {
   DEFAULT_PRESET,
   LayerToggles,
@@ -50,7 +51,7 @@ import {
   SavedPlacesLayer,
 } from '../components/map/layers';
 import { FitToData, FlyToPlace, ViewportReporter } from '../components/map/mapEffects';
-import { EventIcon, FamilyIcon, HomeIcon, WorkIcon } from '../icons';
+import { EventIcon, FamilyIcon, HomeIcon, WorkIcon } from '@danbro96/lupira-web-mui/icons';
 
 const QUICK_PLACE_ICONS = { home: HomeIcon, work: WorkIcon, parents: FamilyIcon, event: EventIcon } as const;
 

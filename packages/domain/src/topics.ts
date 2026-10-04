@@ -1,7 +1,7 @@
 // Shaping for comms topics, shared by the web pane and (later) the mobile screen.
 
-import { UNTITLED } from './itemLabels';
-import { ymd } from './time';
+import { UNTITLED } from '@danbro96/lupira-domain-events/itemLabels';
+import { ymd } from '@danbro96/lupira-domain-core/time';
 
 /** comms releases a topic once it goes idle; until then it is still accruing messages. */
 export const SETTLED_TOPIC_STATUSES = ['Released'] as const;

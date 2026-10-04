@@ -1,8 +1,8 @@
 import { Camera, Map as MapView, type StyleSpecification } from '@maplibre/maplibre-react-native';
 import { StyleSheet, useColorScheme, View } from 'react-native';
 import { Icon } from 'react-native-paper';
-import { zoomForSpan } from '@lupira/cal-domain/mapZoom';
-import type { MapTheme } from '@lupira/cal-tokens/map';
+import { zoomForSpan } from '@danbro96/lupira-domain-maps/mapZoom';
+import type { MapTheme } from '@danbro96/lupira-tokens-map/map';
 import { fallbackStyle } from '../../data/mapStyle';
 import { useMapStyle } from '../../state/useMapStyle';
 import { ICONS } from '../icons';

@@ -9,11 +9,11 @@ import { retryOne } from '../../sync/outbox';
 import { discardParkedAndRestore, runSync } from '../../sync/sync';
 import { PHASE_LABELS, useSyncStatus } from '../../sync/syncStatus';
 import { useOutboxRows } from '../../state/useOutboxRows';
-import { useConfirm } from '../components/ConfirmDialog';
-import { Button } from '../components/Button';
+import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
+import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import { IndeterminateBar } from '../components/IndeterminateBar';
 import { useColors, spacing } from '../theme';
-import { plural } from '@lupira/cal-domain/wording';
+import { plural } from '@danbro96/lupira-domain-core/wording';
 
 /** The review surface for offline writes: parked ops (gave up after backoff or hit a definitive rejection)
  *  get per-row retry / discard — discard also rolls the optimistic mirror write back to server truth. */

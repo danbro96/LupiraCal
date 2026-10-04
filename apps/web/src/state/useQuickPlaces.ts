@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useSearchItems } from '@lupira/cal-api/query/cal';
 import { nextPlacedEvents, quickPlaces, type QuickPlace } from '@lupira/cal-domain/quickPlaces';
-import { addDays } from '@lupira/cal-domain/time';
-import { calendarColor } from '@lupira/cal-tokens/kinds';
+import { addDays } from '@danbro96/lupira-domain-core/time';
+import { calendarColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { useContainers } from './useContainers';
 import { useMyContactId } from './useMe';
 import { usePlaceCoords } from './usePlaceLookup';

@@ -2,7 +2,8 @@ import * as Location from 'expo-location';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { create } from 'zustand';
 import { getDb } from '../data/db/expoDb';
-import { migrate } from '../data/db/schema';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from '../data/db/schema';
 import { ensureDevice, forgetDevice, loadDevice } from '../data/locationDevice';
 import { clearQueue } from '../data/locationQueue';
 import { defaultTrackingSettings, loadTrackingSettings, saveTrackingSettings, type TrackingSettings } from '../data/locationSettings';
@@ -53,7 +54,7 @@ export const useLocationTracking = create<TrackingState & TrackingActions>((set,
 
   init: async () => {
     const db = await getDb();
-    await migrate(db);
+    await migrate(db, MIGRATIONS);
     const [settings, device, background] = await Promise.all([
       loadTrackingSettings(db),
       loadDevice(),

@@ -4,8 +4,8 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Text } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
-import { hapticSelection } from '../../feedback/haptics';
-import { useLatestCallback } from '../hooks/useLatestCallback';
+import { hapticSelection } from '@danbro96/lupira-expo-feedback/haptics';
+import { useLatestCallback } from '@danbro96/lupira-expo-paper/hooks/useLatestCallback';
 import { radii, useColors } from '../theme';
 
 const RAIL_WIDTH = 22;

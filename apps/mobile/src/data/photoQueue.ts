@@ -1,5 +1,5 @@
 import type { PhotoQueueRow, QueueState } from '../domain/photoBackup';
-import type { Tx } from './db/types';
+import type { Tx } from '@danbro96/lupira-expo-sqlite/types';
 
 /** Row-level persistence for the camera-roll backup queue. Same contract as mirror.ts: every function
  *  takes a Tx, so a scan can never interleave with a drain. */

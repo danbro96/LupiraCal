@@ -5,7 +5,7 @@ import type { OccurrenceRow } from '../domain/materialize';
 import type { MirrorContact, MirrorItem } from '../domain/mirrorReducers';
 import type { ClientOp } from '../domain/ops';
 import { OP_ENVELOPE_VERSION, aggregateIdOf, domainOf } from '../domain/ops';
-import type { SqlValue, Tx } from './db/types';
+import type { SqlValue, Tx } from '@danbro96/lupira-expo-sqlite/types';
 
 /** Row-level persistence for the mirror. Every function takes a Tx — writes only ever happen inside
  *  Db.exclusive, so a pull can never interleave with an enqueue (the tasks app's transaction defect). */

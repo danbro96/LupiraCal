@@ -3,7 +3,7 @@
 // duration is kept on the clock the user sees, not in elapsed time across a DST change.
 
 import { deviceTimeZone, isoToWall, wallToIso } from './zonedTime';
-import { ymd } from './time';
+import { ymd } from '@danbro96/lupira-domain-core/time';
 
 export type PlaceRef = { placeId: string; label: string };
 

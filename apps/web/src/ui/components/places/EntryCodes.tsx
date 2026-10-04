@@ -9,8 +9,8 @@ import { useGetPlaceEntry, useRemoveEntryCode, useSetEntryCode } from '@lupira/c
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { errText } from '../../errText';
 import { useCopy } from '../../hooks/useCopy';
-import { CloseIcon, CopyIcon, EntryCodeIcon } from '../../icons';
-import { useSnackbar } from '../SnackbarHost';
+import { CloseIcon, CopyIcon, EntryCodeIcon } from '@danbro96/lupira-web-mui/icons';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../WrapRow';
 
 /** A place's door and gate codes, masked until clicked. Nothing renders when nobody you can see lives there now (the

@@ -9,12 +9,12 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import { useRecordMove, useSearchContacts } from '@lupira/cal-api/query/contact';
 import { ContactAddressType, type ContactDto } from '@lupira/cal-api/models';
-import { parseFuzzyInput } from '@lupira/cal-domain/fuzzyDate';
-import { addressTypeLabel, withResidency, type ContactAddressRow } from '@lupira/cal-domain/residents';
+import { parseFuzzyInput } from '@danbro96/lupira-domain-contacts/fuzzyDate';
+import { addressTypeLabel, withResidency, type ContactAddressRow } from '@danbro96/lupira-domain-contacts/residents';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { errText } from '../../errText';
 import { PlacePicker } from '../places/PlacePicker';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 
 /** Tells a move once for everyone who moves: each one's current residencies at the place they leave end on the date,
  *  and a residency at the new place starts then. Starts from the contact's current home and the people living there. */

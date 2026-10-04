@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Avatar from '@mui/material/Avatar';
-import { initialsOf } from '@lupira/cal-domain/contactNames';
-import { avatarColor } from '@lupira/cal-tokens/kinds';
+import { initialsOf } from '@danbro96/lupira-domain-contacts/contactNames';
+import { avatarColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
@@ -26,7 +26,7 @@ import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';
 import { PageHead } from '../Page';
 import { DetailPane } from './panes';
-import { BusinessIcon, GroupIcon } from '../../icons';
+import { BusinessIcon, GroupIcon } from '@danbro96/lupira-web-mui/icons';
 
 /** Right pane for a group/org: members with add/remove, inline rename, delete. */
 export function GroupDetailPane() {

@@ -5,9 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { router } from './ui/navigation/router';
-import { SnackbarHost } from './ui/components/SnackbarHost';
+import { SnackbarHost } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { theme } from './ui/theme/muiTheme';
-import { ApiError, installApiTransport } from './data/fetcher';
+import { ApiError } from '@danbro96/lupira-http/apiError';
+import { installCookieTransport } from '@danbro96/lupira-web-session/cookieTransport';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -22,7 +23,7 @@ const queryClient = new QueryClient({
 });
 
 // Before anything can issue a request: the generated clients call through this.
-installApiTransport();
+installCookieTransport();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

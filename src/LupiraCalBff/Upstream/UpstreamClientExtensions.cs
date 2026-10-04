@@ -1,3 +1,4 @@
+using Lupira.Bff.Proxy;
 using LupiraCalBff.Upstream.Contact;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
@@ -9,8 +10,6 @@ public static class UpstreamClientExtensions
 {
     public static IServiceCollection AddUpstreamClients(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddHttpContextAccessor();
-        services.AddTransient<SessionTokenHandler>();
         services.AddKiotaClient<ContactApiClient>(configuration, "contact-api", adapter => new ContactApiClient(adapter));
         return services;
     }

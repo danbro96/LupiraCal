@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError } from './apiError';
+import { ApiError } from '@danbro96/lupira-http/apiError';
 import { classifyReplayError } from './replayError';
 
 describe('classifyReplayError', () => {

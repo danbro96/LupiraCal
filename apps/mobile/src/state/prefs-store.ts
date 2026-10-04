@@ -1,7 +1,8 @@
 import type { MapSince } from '@lupira/cal-domain/mapWindow';
 import { create } from 'zustand';
 import { getDb } from '../data/db/expoDb';
-import { migrate } from '../data/db/schema';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from '../data/db/schema';
 import { getMeta, setMeta } from '../data/mirror';
 
 /** Small user preferences, persisted in mirror_meta (same reasoning as bridge-store: shared ground the
@@ -90,7 +91,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
 
   init: async () => {
     const db = await getDb();
-    await migrate(db);
+    await migrate(db, MIGRATIONS);
     set({
       debugEnabled: (await getMeta(db, DEBUG_KEY)) === '1',
       calendarChoices: parseJson(await getMeta(db, CALENDAR_CHOICES_KEY), isFlagRecord, {}),

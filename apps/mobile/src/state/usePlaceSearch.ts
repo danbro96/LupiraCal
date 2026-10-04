@@ -5,8 +5,8 @@ import { createPlace, createPlaceFromGeocode, forwardGeocode, listSavedPlaces, s
 import { PlaceCategory, SuggestionType, type GeocodeResultDto } from '@lupira/cal-api/models';
 import {
   ADDRESS_SEARCH_LIMIT, MIN_PLACE_QUERY, PLACE_SUGGEST_LIMIT, eventOrigin, pickPlaces,
-} from '@lupira/cal-domain/placeCandidates';
-import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@lupira/cal-domain/places';
+} from '@danbro96/lupira-domain-places/placeCandidates';
+import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@danbro96/lupira-domain-places/places';
 import { getDb } from '../data/db/expoDb';
 import { mapEventRowsBetween } from '../data/mirror';
 import { lastKnownPosition } from '../sync/livePosition';
@@ -19,9 +19,9 @@ import { useResidencyRows } from './useResidencies';
 export type PlaceOption = { placeId: string; label: string; context?: string | null };
 
 
-/** Every place the picker can offer, as one list ranked by `@lupira/cal-domain/placeRank`: saved places, your
- *  hotspots, the server's typeahead and your contacts' addresses (matched by the contact's name, or because
- *  they're invited). Contacts come from the mirror; the rest needs a connection and fails open to less. */
+/** Every place the picker can offer, as one list ranked by `@danbro96/lupira-domain-places/placeRank`: saved
+ *  places, your hotspots, the server's typeahead and your contacts' addresses (matched by the contact's name,
+ *  or because they're invited). Contacts come from the mirror; the rest needs a connection and fails open to less. */
 export function usePlaceCandidates({ query, attendeeIds, day }: { query: string; attendeeIds: string[]; day: string | null }) {
   const reachable = useSyncStatus((s) => s.serverReachable);
   const q = query.trim();

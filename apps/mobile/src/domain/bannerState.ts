@@ -1,5 +1,5 @@
 import type { SyncPhase } from './syncPhase';
-import { plural } from '@lupira/cal-domain/wording';
+import { plural } from '@danbro96/lupira-domain-core/wording';
 
 // Pure derivation of the sync banner from the status store, kept framework-free so it can be
 // unit-tested. Priority: in-progress sync → server reachability → parked changes → last sync error.

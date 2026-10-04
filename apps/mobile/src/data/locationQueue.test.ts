@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { openNodeDb } from './db/nodeDb';
-import { MIGRATIONS, migrate } from './db/schema';
-import type { Db } from './db/types';
+import { openNodeDb } from '@danbro96/lupira-expo-sqlite/node';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from './db/schema';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import * as queue from './locationQueue';
 
 let db: Db;
 
 beforeEach(async () => {
   db = openNodeDb();
-  await migrate(db);
+  await migrate(db, MIGRATIONS);
 });
 
 const fix = (over: Partial<Parameters<typeof queue.enqueueFix>[1]> = {}) => ({

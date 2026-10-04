@@ -13,25 +13,22 @@ vi.mock('expo-secure-store', () => ({
     return Promise.resolve();
   }),
 }));
-vi.mock('../debug/log', () => ({ logDebug: vi.fn() }));
+vi.mock('@danbro96/lupira-expo-diagnostics/log', () => ({ logDebug: vi.fn() }));
 vi.mock('@sentry/react-native', () => ({ setUser: vi.fn() }));
 vi.mock('expo-crypto', () => ({ CryptoDigestAlgorithm: { SHA256: 'SHA-256' }, digestStringAsync: vi.fn(() => Promise.resolve('hash')) }));
 
 const refreshTokensMock = vi.fn();
-vi.mock('../data/auth/oidc', () => {
+vi.mock('../data/auth/oidc', () => ({ oidc: { refreshTokens: (rt: string) => refreshTokensMock(rt) } }));
+vi.mock('@danbro96/lupira-expo-oidc/oidc', () => {
   class RefreshError extends Error {
-    constructor(message: string, readonly definitive: boolean) {
+    constructor(readonly definitive: boolean, message: string) {
       super(message);
     }
   }
-  return {
-    RefreshError,
-    refreshTokens: (rt: string) => refreshTokensMock(rt),
-    decodeJwt: () => ({ email: 'user@test' }),
-  };
+  return { RefreshError, decodeJwt: () => ({ email: 'user@test' }) };
 });
 
-import { RefreshError } from '../data/auth/oidc';
+import { RefreshError } from '@danbro96/lupira-expo-oidc/oidc';
 import { useAuth } from './auth-store';
 
 function seedSession(expiresInMs: number) {
@@ -83,7 +80,7 @@ describe('refreshIfNeeded', () => {
 
   it('clears the session on a definitive failure', async () => {
     seedSession(10_000);
-    refreshTokensMock.mockRejectedValue(new RefreshError('invalid_grant', true));
+    refreshTokensMock.mockRejectedValue(new RefreshError(true, 'invalid_grant'));
 
     expect(await useAuth.getState().refreshIfNeeded({ force: true })).toBeNull();
     expect(useAuth.getState().token).toBeNull();
@@ -92,7 +89,7 @@ describe('refreshIfNeeded', () => {
 
   it('keeps the session on a transient failure and returns the same token', async () => {
     seedSession(10_000);
-    refreshTokensMock.mockRejectedValue(new RefreshError('503', false));
+    refreshTokensMock.mockRejectedValue(new RefreshError(false, '503'));
 
     expect(await useAuth.getState().refreshIfNeeded({ force: true })).toBe('tok-1');
     expect(useAuth.getState().token).toBe('tok-1');

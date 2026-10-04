@@ -1,7 +1,7 @@
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import type { ItemDetails } from '@lupira/cal-api/models';
-import { fmtDateTime } from '@lupira/cal-domain/time';
+import { fmtDateTime } from '@danbro96/lupira-domain-core/time';
 import { DrawerSection } from '../DrawerSection';
 
 /** Read-only card for the composable item detail: a booking, a travel leg, and/or a presence segment.

@@ -4,9 +4,9 @@ import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import type { CalendarItemDto } from '@lupira/cal-api/models';
-import { addressMeta, residentsByPlace } from '@lupira/cal-domain/residents';
-import { formatCoords, osmUrl } from '@lupira/cal-domain/places';
-import { fmtDate, fmtDateTime, parseYmd } from '@lupira/cal-domain/time';
+import { addressMeta, residentsByPlace } from '@danbro96/lupira-domain-contacts/residents';
+import { formatCoords, osmUrl } from '@danbro96/lupira-domain-places/places';
+import { fmtDate, fmtDateTime, parseYmd } from '@danbro96/lupira-domain-core/time';
 import { useGeoPlace, usePlaceItems } from '../../../state/usePlaces';
 import { useResidencyRows } from '../../../state/useResidencies';
 import { EntryCodes } from '../places/EntryCodes';
@@ -15,9 +15,9 @@ import { DrawerSection } from '../DrawerSection';
 import IconButton from '@mui/material/IconButton';
 import Box from '@mui/material/Box';
 import CloseIcon from '@mui/icons-material/Close';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { Row, RowName } from '../Rows';
-import { PlaceIcon } from '../../icons';
+import { PlaceIcon } from '@danbro96/lupira-web-mui/icons';
 
 /** The ?place= detail pane (extracted from the former LocationsScreen): containment, items, contacts. */
 export function PlaceDetailPanel({ placeId, onClose }: { placeId: string; onClose: () => void }) {

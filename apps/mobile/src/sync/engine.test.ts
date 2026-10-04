@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { openNodeDb } from '../data/db/nodeDb';
-import { MIGRATIONS, migrate } from '../data/db/schema';
-import type { Db } from '../data/db/types';
+import { openNodeDb } from '@danbro96/lupira-expo-sqlite/node';
+import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
+import { MIGRATIONS } from '../data/db/schema';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import * as mirror from '../data/mirror';
-import { ApiError } from '../domain/apiError';
+import { ApiError } from '@danbro96/lupira-http/apiError';
 import { PARK_AFTER_ATTEMPTS } from '../domain/backoff';
 import type { ItemDoc, ItemGuards } from '../domain/docTypes';
 import { emptyItemGuards } from '../domain/docTypes';
@@ -13,7 +14,7 @@ import { drain, enqueue } from './outbox';
 import type { ChangesPage, ContactChange, FeedChanges, ItemChange, PullDeps } from './pull';
 import { pullCal, pullContainers, pullContacts, pullRelationships } from './pull';
 
-vi.mock('../debug/log', () => ({ logDebug: vi.fn() }));
+vi.mock('@danbro96/lupira-expo-diagnostics/log', () => ({ logDebug: vi.fn() }));
 
 /** The whole engine under node:sqlite — enqueue/drain (backoff, park, causal hold), the delta/full pull with
  *  rebase-through-pending-ops, tombstones, prune, and cursor plumbing. Every scenario here is a defect class
@@ -27,7 +28,7 @@ let db: Db;
 
 beforeEach(async () => {
   db = openNodeDb();
-  await migrate(db);
+  await migrate(db, MIGRATIONS);
 });
 
 const createOp = (itemId: string, n: number, calendarId = 'cal-1'): ClientOp => ({
@@ -370,8 +371,8 @@ describe('migrations', () => {
   });
 
   it('migrate is idempotent', async () => {
-    await migrate(db);
-    await migrate(db);
+    await migrate(db, MIGRATIONS);
+    await migrate(db, MIGRATIONS);
     expect((await db.first<{ user_version: number }>('PRAGMA user_version'))?.user_version).toBe(MIGRATIONS.length);
   });
 });
@@ -442,9 +443,9 @@ describe('grid read surface (M5)', () => {
 describe('migration ladder concurrency', () => {
   it('concurrent migrate calls on a virgin db do not race the ladder', async () => {
     const fresh = openNodeDb();
-    await Promise.all([migrate(fresh), migrate(fresh), migrate(fresh)]);
+    await Promise.all([migrate(fresh, MIGRATIONS), migrate(fresh, MIGRATIONS), migrate(fresh, MIGRATIONS)]);
     expect(await fresh.first('SELECT 1 AS ok FROM mirror_meta')).toBeNull();   // table exists, empty
-    await migrate(fresh);   // and stays idempotent afterwards
+    await migrate(fresh, MIGRATIONS);   // and stays idempotent afterwards
   });
 });
 

@@ -1,8 +1,8 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
-import { type FuzzyDate, fmtFuzzyDate, fmtResidencyPeriod, residencyStatus } from './fuzzyDate';
-import { splitTrack, type Bbox, type TrackPointLike } from './geo';
-import { addressTypeLabel } from './residents';
-import { plural } from './wording';
+import { type FuzzyDate, fmtFuzzyDate, fmtResidencyPeriod, residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
+import { splitTrack, type Bbox, type TrackPointLike } from '@danbro96/lupira-domain-places/geo';
+import { addressTypeLabel } from '@danbro96/lupira-domain-contacts/residents';
+import { plural } from '@danbro96/lupira-domain-core/wording';
 
 // Row-to-GeoJSON projection for the map, shared by web and mobile. Both read the same layers from
 // different sources — web from the API, mobile from the SQLite mirror — so only the source is
@@ -253,15 +253,6 @@ export function hotspotFeatures(hotspots: readonly HotspotPin[]): FeatureCollect
   })));
 }
 
-
-/** "12 days · 3 events · 80 photos" — a zero count is left out, the day count never is. */
-export function hotspotStats(h: Pick<HotspotPin, 'activeDays' | 'eventCount' | 'photoCount'>): string {
-  return [
-    plural(h.activeDays, 'day'),
-    h.eventCount > 0 ? plural(h.eventCount, 'event') : null,
-    h.photoCount > 0 ? plural(h.photoCount, 'photo') : null,
-  ].filter(Boolean).join(' · ');
-}
 
 /** The photo endpoint already answers GeoJSON, clustered server-side: a count above 1 is a grid cell, not a
  *  photo. This re-keys its properties onto the layer contract. */

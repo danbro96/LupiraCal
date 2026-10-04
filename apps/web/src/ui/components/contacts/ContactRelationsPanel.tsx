@@ -23,11 +23,11 @@ import {
 } from '@lupira/cal-api/query/contact';
 import type { ContactDto, ContactRelationEntryDto, ContactRelationKind } from '@lupira/cal-api/models';
 import { groupRelationEntries, RELATION_KINDS } from '@lupira/cal-domain/contactRelations';
-import { matchesTerms, searchTerms } from '@lupira/cal-domain/textSearch';
+import { matchesTerms, searchTerms } from '@danbro96/lupira-domain-core/textSearch';
 import type { RelationCategory, RelationKind } from '@lupira/cal-domain/contactRelations';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { errText } from '../../errText';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { ContactRelationGraph } from './ContactRelationGraph';
 import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';

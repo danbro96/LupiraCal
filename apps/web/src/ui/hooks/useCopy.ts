@@ -1,4 +1,4 @@
-import { useSnackbar } from '../components/SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 
 /** Copy text, then say "<what> copied" — the confirmation the phone's hold-to-copy gives. */
 export function useCopy(): (text: string, what: string) => void {

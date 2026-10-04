@@ -17,10 +17,10 @@ import { useGetItem } from '@lupira/cal-api/query/cal';
 import { useGetContact } from '@lupira/cal-api/query/contact';
 import { ItemCategory, ItemStatus, OriginKind, type CalendarItemOccurrenceDto, type ContainerDto } from '@lupira/cal-api/models';
 import { groupOccurrences } from '@lupira/cal-domain/itemTree';
-import { statusBadge, displayTitle } from '@lupira/cal-domain/itemLabels';
-import { fmtWhen } from '@lupira/cal-domain/time';
+import { statusBadge, displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
+import { fmtWhen } from '@danbro96/lupira-domain-core/time';
 import { RANGE_PRESETS } from '@lupira/cal-domain/searchRange';
-import { plural } from '@lupira/cal-domain/wording';
+import { plural } from '@danbro96/lupira-domain-core/wording';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { SEARCH_PAGE_SIZE, useItemSearch } from '../../state/useItemSearch';
 import { errText } from '../errText';
@@ -30,7 +30,7 @@ import { useIsPhone } from '../hooks/useIsPhone';
 import { PageHead } from '../components/Page';
 import { Row, RowName } from '../components/Rows';
 import { Page } from '../components/Page';
-import { PersonIcon } from '../icons';
+import { PersonIcon } from '@danbro96/lupira-web-mui/icons';
 
 /** Global list/search over every readable calendar; rows deep-link into the ?item= drawer. */
 export function ItemsScreen() {

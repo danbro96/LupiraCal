@@ -8,7 +8,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, List, Switch, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { calendarLabel, defaultCalendarIds } from '@lupira/cal-domain/calendars';
-import { attendeeName } from '@lupira/cal-domain/contactNames';
+import { attendeeName } from '@danbro96/lupira-domain-contacts/contactNames';
 import { NO_ATTENDEES } from '@lupira/cal-domain/participation';
 import {
   categoryAllDayDefault, emptyItemForm, withAllDay, withSchedule, type ItemForm, type ScheduleField,

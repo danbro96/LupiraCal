@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ymd } from './time';
+import { ymd } from '@danbro96/lupira-domain-core/time';
 import { dueDay, dueLine, isOpenDeadline, isOverdue, isTaskOverdue, monthUtcRange, taskDeepLink, taskWebUrl, type TaskLike } from './tasks';
 
 const task = (over: Partial<TaskLike>): TaskLike => ({

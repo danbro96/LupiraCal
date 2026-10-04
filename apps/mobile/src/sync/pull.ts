@@ -6,7 +6,7 @@ import {
 } from '@lupira/cal-api/fetch/contact';
 import type { RelationshipRecord } from '@lupira/cal-domain/contactRelations';
 import { needsAddressBookBootstrap, needsCalendarBootstrap } from '@lupira/cal-domain/bootstrap';
-import type { Db, Tx } from '../data/db/types';
+import type { Db, Tx } from '@danbro96/lupira-expo-sqlite/types';
 import { saveMyContactId } from '../data/me';
 import * as mirror from '../data/mirror';
 import type { ContactDoc, ContactGuards, ItemDoc, ItemGuards, PlaceEntryDoc, ResidencyDoc } from '../domain/docTypes';
@@ -14,8 +14,8 @@ import type { Horizon } from '../domain/materialize';
 import { birthdayRows, monthKeyOf, occurrenceRowsForItem } from '../domain/materialize';
 import type { MirrorContact, MirrorItem } from '../domain/mirrorReducers';
 import { applyContactOp, applyItemOp } from '../domain/mirrorReducers';
-import { logDebug } from '../debug/log';
-import { ApiError } from '../domain/apiError';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
+import { ApiError } from '@danbro96/lupira-http/apiError';
 import { toContactChangesPage, toItemChangesPage } from './docAdapters';
 import { useSyncStatus } from './syncStatus';
 

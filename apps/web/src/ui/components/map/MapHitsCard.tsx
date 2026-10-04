@@ -5,11 +5,11 @@ import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
 import type { MapHit } from '@lupira/cal-domain/mapHits';
 import { describeHit, hitActions, type HitAction } from '@lupira/cal-domain/mapHitLabels';
-import { MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
+import { MAP_COLORS, type MapTheme } from '@danbro96/lupira-tokens-map/map';
 import { useInvalidatePlaces } from '../../../state/useInvalidate';
 import { useCreatePlaceAtPin } from '../../../state/usePlaces';
 import { errText } from '../../errText';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../WrapRow';
 import { EntryCodes } from '../places/EntryCodes';
 

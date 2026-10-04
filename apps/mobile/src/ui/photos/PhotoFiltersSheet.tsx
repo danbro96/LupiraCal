@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Portal, Text } from 'react-native-paper';
 import type { AssetKind, AssetStatus } from '@lupira/cal-api/models';
-import { SCRIM } from '@lupira/cal-tokens/color';
+import { SCRIM } from '@danbro96/lupira-tokens-core/color';
 import {
   fmtMonth, fmtPhotoRange, monthRange, type TimelineYear, wholeSpan, yearRange,
 } from '@lupira/cal-domain/photoTimeline';

@@ -4,9 +4,9 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 
 ## UI stack specifics
 
-- Paper is themed from tokens via `ui/theme/paperTheme.ts` (+ adapted React Navigation themes); dark mode via `useColorScheme`.
+- Paper is themed from tokens via `createPaperThemes` (`@danbro96/lupira-expo-paper`, called in `ui/theme/paperTheme.ts`; + adapted React Navigation themes); dark mode via `useColorScheme`.
 - Two files may call Paper's `useTheme()` directly, each because it needs an MD3 slot the estate palette has no equivalent for: `SyncBanner` (errorContainer) and `MapScreen` (elevation ramp).
-- Feedback: `toast()` / `toastError()` from `feedback/` (host `ToastHost`, Paper `Snackbar`); hold-to-copy (place tiles, reach rows) is `copyText()` in the same leaf. `useUnsavedGuard` keeps `Alert.alert` (it fires inside `beforeRemove`).
+- Feedback: `toast()` / `toastError()` from `@danbro96/lupira-expo-feedback` (host: the expo-paper `ToastHost`, Paper `Snackbar`); hold-to-copy (place tiles, reach rows) is its `copyText()`. `useUnsavedGuard` keeps `Alert.alert` (it fires inside `beforeRemove`).
 - Text inputs use the `Input` wrapper in `ui/components/form.tsx` (Paper `TextInput`, outlined+dense, label prop; `Field` is only for non-text controls). It keeps a column-rhythm `marginTop` where the sibling apps' `TextField` carries a row-layout `flex: 1`.
 - No hex literals except white text over calendar-coloured backgrounds.
 - A place renders as `ui/components/PlaceTile` everywhere (name, address, meta line, `ui/map/MiniMap` thumbnail — a texture-mode, gesture-less `MapView`, so detail screens only, never lists — framed by place type via `@lupira/cal-domain/mapZoom`; tap → Map tab `at`). Tags render as `TagRow` text, never chips.

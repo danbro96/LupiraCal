@@ -8,7 +8,7 @@ import { birthdayAgeLine, nextBirthday, turningAge } from '@lupira/cal-domain/bi
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
 import { DetailDrawer } from './DetailDrawer';
 import { DrawerSection } from '../DrawerSection';
-import { CakeIcon } from '../../icons';
+import { CakeIcon } from '@danbro96/lupira-web-mui/icons';
 
 /** Read-only view for a birthday occurrence (a contact projection, not a stored item): the birthday date,
  *  the age the contact is turning when known, and a link to the contact. `year` is the clicked occurrence's year. */

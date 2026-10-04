@@ -1,11 +1,11 @@
 import { Image } from 'expo-image';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Avatar, Icon, Text } from 'react-native-paper';
-import { initialsOf } from '@lupira/cal-domain/contactNames';
+import { initialsOf } from '@danbro96/lupira-domain-contacts/contactNames';
 import { describeHit, hitActions, type HitAction } from '@lupira/cal-domain/mapHitLabels';
 import type { MapHit } from '@lupira/cal-domain/mapHits';
-import { MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
-import { Button } from '../components/Button';
+import { MAP_COLORS, type MapTheme } from '@danbro96/lupira-tokens-map/map';
+import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import { EntryCodes } from '../components/EntryCodes';
 import { Sheet } from '../components/Sheet';
 import { avatarColor } from '../hooks/palette';

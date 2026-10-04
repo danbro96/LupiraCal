@@ -12,17 +12,16 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useGetItem } from '@lupira/cal-api/query/cal';
-import {
-  fmtDuration, outcomeMessage, PHOTO_TEXT, photoCount, purgeWarning, trashBadge,
-} from '@lupira/cal-domain/photoFormat';
+import { fmtDuration, outcomeMessage, photoCount, purgeWarning, trashBadge } from '@lupira/cal-domain/photoFormat';
+import { PHOTO_TEXT } from '@danbro96/lupira-domain-photos/photoLinks';
 import { fmtPhotoRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { photoEmptyText } from '@lupira/cal-domain/photoFilter';
-import { SCRIM } from '@lupira/cal-tokens/color';
+import { SCRIM } from '@danbro96/lupira-tokens-core/color';
 import { usePhotoActions } from '../../state/usePhotoActions';
 import { errText } from '../errText';
-import { CalendarIcon, CheckboxBlankIcon, CheckboxIcon, CloseIcon, DeleteIcon, PlaceIcon } from '../icons';
-import { useSnackbar } from '../components/SnackbarHost';
+import { CalendarIcon, CheckboxBlankIcon, CheckboxIcon, CloseIcon, DeleteIcon, PlaceIcon } from '@danbro96/lupira-web-mui/icons';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../components/WrapRow';
 import { DayHeader } from '../components/photos/DayHeader';
 import { LinkEventDialog } from '../components/photos/LinkEventDialog';

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ApiError } from '../data/fetcher';
+import { ApiError } from '@danbro96/lupira-http/apiError';
 import {
   getGetPlaceQueryKey,
   prunePlaces,

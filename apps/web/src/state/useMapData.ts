@@ -11,7 +11,7 @@ import {
   visitFeatures,
   TRACK_MAX_GAP_S,
 } from '@lupira/cal-domain/mapFeatures';
-import type { MapViewport } from '@lupira/cal-domain/geo';
+import type { MapViewport } from '@danbro96/lupira-domain-places/geo';
 import { useListSavedPlaces } from '@lupira/cal-api/query/geo';
 import { useGetPhotoMap } from '@lupira/cal-api/query/photo';
 import type { LocationTripDto } from '@lupira/cal-api/models';

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { lookupPlaces } from '@lupira/cal-api/query/geo';
 import type { PlaceDto } from '@lupira/cal-api/models';
-import { PLACE_LOOKUP_MAX, chunk, distinctPlaceIds, toLocatedPlaces } from '@lupira/cal-domain/places';
+import { PLACE_LOOKUP_MAX, chunk, distinctPlaceIds, toLocatedPlaces } from '@danbro96/lupira-domain-places/places';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

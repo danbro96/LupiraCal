@@ -24,17 +24,17 @@ import {
 } from '@lupira/cal-api/query/cal';
 import type { CalendarItemDto } from '@lupira/cal-api/models';
 import { useSearchContacts } from '@lupira/cal-api/query/contact';
-import { initialsOf } from '@lupira/cal-domain/contactNames';
+import { initialsOf } from '@danbro96/lupira-domain-contacts/contactNames';
 import { rankByInteraction } from '@lupira/cal-domain/contactRank';
 import { NO_ATTENDEES, attendeeSummary, roleLabel, rsvpLabel } from '@lupira/cal-domain/participation';
-import { avatarColor } from '@lupira/cal-tokens/kinds';
-import { attendeeName } from '@lupira/cal-domain/contactNames';
+import { avatarColor } from '@danbro96/lupira-tokens-calendar/kinds';
+import { attendeeName } from '@danbro96/lupira-domain-contacts/contactNames';
 import { rsvpTone, type Tone } from '@lupira/cal-tokens/color';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { useJoinItem } from '../../../state/useJoinItem';
 import { useMyContactId } from '../../../state/useMe';
 import { errText } from '../../errText';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';
 

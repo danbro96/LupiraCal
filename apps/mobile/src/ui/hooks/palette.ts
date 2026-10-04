@@ -1,4 +1,4 @@
-import { AVAILABILITY_COLORS, avatarColor, availabilityColor, calendarColor } from '@lupira/cal-tokens/kinds';
+import { AVAILABILITY_COLORS, avatarColor, availabilityColor, calendarColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { useCalendars } from '../../state/useContainers';
 
 export { AVAILABILITY_COLORS, availabilityColor, avatarColor };

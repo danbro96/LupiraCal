@@ -1,4 +1,4 @@
-import { ymd } from '@lupira/cal-domain/time';
+import { ymd } from '@danbro96/lupira-domain-core/time';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { getDb } from '../data/db/expoDb';
 import { searchItems, type ItemSearchRow } from '../data/mirror';

@@ -1,7 +1,7 @@
 import type { FeatureCollection } from 'geojson';
 import type { LocationTripDto } from '@lupira/cal-api/models';
 import { useMap } from './MapCanvas';
-import { ACTIVITY_COLORS, activityColorExpression, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
+import { ACTIVITY_COLORS, activityColorExpression, MAP_COLORS, type MapTheme } from '@danbro96/lupira-tokens-map/map';
 import {
   CLUSTER, CLUSTER_COUNT_LAYOUT, CURRENT_FIX, HOTSPOT, PIN, PIN_LABEL_HALO_WIDTH, PIN_LABEL_LAYOUT, TRACK, VISIT, clusterRadius,
   contactPinFill, contactPinStroke, hotspotRadius,

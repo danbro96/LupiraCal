@@ -13,21 +13,21 @@ import { NavLink, useLocation, useMatch, useSearchParams } from 'react-router-do
 import { useCreateContact, useSetContactTags } from '@lupira/cal-api/query/contact';
 import type { ContactDto, ContactReachChannel } from '@lupira/cal-api/models';
 import { ReachMedium } from '@lupira/cal-api/models';
-import { initialsOf } from '@lupira/cal-domain/contactNames';
+import { initialsOf } from '@danbro96/lupira-domain-contacts/contactNames';
 import { PINNED_TAG, isPinned } from '@lupira/cal-domain/contactTiers';
-import { avatarColor } from '@lupira/cal-tokens/kinds';
+import { avatarColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { addressBookLabel, useAddressBooks } from '../../../state/useAddressBooks';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { useTieredContacts } from '../../../state/useTieredContacts';
 import { errText } from '../../errText';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { birthdayFromFields, partialDateBadge } from '@lupira/cal-domain/partialDate';
-import { contactNameError } from '@lupira/cal-domain/contactNames';
+import { contactNameError } from '@danbro96/lupira-domain-contacts/contactNames';
 import { parseList } from '@lupira/cal-domain/itemForm';
 import { useGroup } from './useGroup';
 import { WrapRow } from '../WrapRow';
 import { SidePane } from './panes';
-import { CakeIcon, StarIcon } from '../../icons';
+import { CakeIcon, StarIcon } from '@danbro96/lupira-web-mui/icons';
 
 /** Split a comma-separated input into reach channels of one medium (create-form convenience). */
 function toChannels(raw: string, medium: ReachMedium): ContactReachChannel[] {

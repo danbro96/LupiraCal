@@ -4,13 +4,14 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { placeSpanM } from '@lupira/cal-domain/mapZoom';
-import { placeTitle } from '@lupira/cal-domain/places';
+import { placeSpanM } from '@danbro96/lupira-domain-maps/mapZoom';
+import { placeTitle } from '@danbro96/lupira-domain-places/places';
+import { GEO_API_BASE_URL } from '../../../config';
 import { useGeoPlace } from '../../../state/usePlaces';
 import { useCopy } from '../../hooks/useCopy';
-import { CopyIcon, EditIcon, PlaceIcon } from '../../icons';
+import { CopyIcon, EditIcon, PlaceIcon } from '@danbro96/lupira-web-mui/icons';
 
-const MiniMap = lazy(() => import('../map/MiniMap'));
+const MiniMap = lazy(() => import('@danbro96/lupira-web-maplibre/MiniMap'));
 
 const THUMB_W = 72;
 const THUMB_H = 56;
@@ -42,7 +43,7 @@ export function PlaceTile({ placeId, label, meta, muted, onEdit }: {
       </Box>
       {point ? (
         <Suspense fallback={<Thumb />}>
-          <MiniMap point={point} spanM={placeSpanM(place)} width={THUMB_W} height={THUMB_H} />
+          <MiniMap point={point} spanM={placeSpanM(place)} width={THUMB_W} height={THUMB_H} geoBase={GEO_API_BASE_URL} />
         </Suspense>
       ) : (
         <Thumb />

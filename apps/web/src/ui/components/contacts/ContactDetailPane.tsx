@@ -23,14 +23,14 @@ import {
 import { useGetContactContext } from '@lupira/cal-api/query/bff-contacts';
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
-import { addressMeta, splitAddresses } from '@lupira/cal-domain/residents';
-import { fmtDate } from '@lupira/cal-domain/time';
+import { addressMeta, splitAddresses } from '@danbro96/lupira-domain-contacts/residents';
+import { fmtDate } from '@danbro96/lupira-domain-core/time';
 import { addressBookLabel, useAddressBooks } from '../../../state/useAddressBooks';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { useMyContactId } from '../../../state/useMe';
 import { CompletenessBadge } from '../drawer/CompletenessBadge';
 import { errText } from '../../errText';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { PlaceTile } from '../places/PlaceTile';
 import { EntryCodes } from '../places/EntryCodes';
 import { useParentsHomes, useResidencyRows } from '../../../state/useResidencies';
@@ -41,12 +41,12 @@ import { MoveDialog } from './MoveDialog';
 import { ContactEventsPanel } from './ContactEventsPanel';
 import { ContactRelationsPanel } from './ContactRelationsPanel';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
-import { deceasedLine } from '@lupira/cal-domain/contactNames';
+import { deceasedLine } from '@danbro96/lupira-domain-contacts/contactNames';
 import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';
 import { PageHead } from '../Page';
 import { DetailPane } from './panes';
-import { BusinessIcon, CakeIcon, CopyIcon, GroupIcon, StarIcon } from '../../icons';
+import { BusinessIcon, CakeIcon, CopyIcon, GroupIcon, StarIcon } from '@danbro96/lupira-web-mui/icons';
 
 const linkSx: SxProps<Theme> = { fontSize: 13, fontWeight: 600, p: '2px', whiteSpace: 'nowrap', '@media (pointer: coarse)': { p: '6px 2px' } };
 

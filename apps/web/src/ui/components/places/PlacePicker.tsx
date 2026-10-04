@@ -9,7 +9,7 @@ import Box from '@mui/material/Box';
 import CloseIcon from '@mui/icons-material/Close';
 import { forwardGeocode } from '@lupira/cal-api/query/geo';
 import { SuggestionType, type PlaceSuggestionDto } from '@lupira/cal-api/models';
-import { ADDRESS_SEARCH_LIMIT, PLACE_SEARCH_DEBOUNCE_MS } from '@lupira/cal-domain/placeCandidates';
+import { ADDRESS_SEARCH_LIMIT, PLACE_SEARCH_DEBOUNCE_MS } from '@danbro96/lupira-domain-places/placeCandidates';
 import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { usePlaceCandidates } from '../../../state/usePlaceCandidates';
 import { useCreatePlaceAtPin, useCreatePlaceFromHit } from '../../../state/usePlaces';
@@ -23,7 +23,7 @@ import {
   type PickerState,
 } from './placePickerMachine';
 import { PlaceLabel } from './PlaceLabel';
-import { PlaceIcon } from '../../icons';
+import { PlaceIcon } from '@danbro96/lupira-web-mui/icons';
 
 const MapPinDialog = lazy(() => import('../map/MapPinDialog'));
 

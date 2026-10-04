@@ -12,7 +12,6 @@
     "spec": "dotnet build ../../src/LupiraCalBff/LupiraCalBff.csproj -v q --nologo"
   },
   "exports": {
-    "./transport": "./src/transport.ts",
     "./models": "./src/generated/models/index.ts",
     "./query/*": "./src/generated/query/*/*.ts",
     "./fetch/*": "./src/generated/fetch/*/*.ts"
@@ -22,5 +21,8 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "^5.101.4"
+  },
+  "dependencies": {
+    "@danbro96/lupira-http": "0.1.0"
   }
 }

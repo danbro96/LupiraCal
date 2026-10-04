@@ -1,4 +1,5 @@
-import type { CalendarKindName } from './kinds.ts';
+import type { IconName as CoreIconName } from '@danbro96/lupira-tokens-core/icons';
+import type { CalendarKindName } from '@danbro96/lupira-tokens-calendar/kinds';
 
 export type ItemCategoryName =
   | 'General'
@@ -19,29 +20,7 @@ export type ItemCategoryName =
  * mobile to `MaterialIcons`. Both resolvers are `Record<IconName, …>`, so adding a name here
  * fails their builds until they map it.
  */
-export type IconName =
-  | 'cake'
-  | 'calendar'
-  | 'celebration'
-  | 'checkBox'
-  | 'cleaning'
-  | 'event'
-  | 'group'
-  | 'hotel'
-  | 'inbox'
-  | 'luggage'
-  | 'medical'
-  | 'person'
-  | 'photo'
-  | 'restaurant'
-  | 'robot'
-  | 'run'
-  | 'saved'
-  | 'schedule'
-  | 'target'
-  | 'timeline'
-  | 'tools'
-  | 'walk';
+export type IconName = CoreIconName | 'photo' | 'saved' | 'timeline';
 
 export const CALENDAR_KIND_ICONS: Record<CalendarKindName, IconName> = {
   Personal: 'person',

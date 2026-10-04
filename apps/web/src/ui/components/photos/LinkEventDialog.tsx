@@ -1,4 +1,5 @@
-import { linkedMessage, linkPhotosTitle, PHOTO_TEXT, unlinkedPhotoIds } from '@lupira/cal-domain/photoFormat';
+import { unlinkedPhotoIds } from '@lupira/cal-domain/photoFormat';
+import { linkedMessage, linkPhotosTitle, PHOTO_TEXT } from '@danbro96/lupira-domain-photos/photoLinks';
 import { useState } from 'react';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -9,11 +10,11 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
-import { fmtWhen } from '@lupira/cal-domain/time';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { fmtWhen } from '@danbro96/lupira-domain-core/time';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { usePhotoActions } from '../../../state/usePhotoActions';
 import { useLinkCandidates, usePhotoEventLinks } from '../../../state/usePhotoLibrary';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 
 /** One picker for linking a single photo or a selection: events around the capture times, confirmed by
  *  the user — a photo taken during a 9-to-5 "work" block is not of it. */

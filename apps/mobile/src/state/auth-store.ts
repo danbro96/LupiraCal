@@ -2,11 +2,12 @@ import * as Sentry from '@sentry/react-native';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
-import { API_PRESETS, DEFAULT_API_URL, DEFAULT_AUTH_MODE, type AuthMode } from '../config';
-import { setAuthPort } from '../data/api/authProvider';
+import { DEFAULT_API_URL, DEFAULT_AUTH_MODE, type AuthMode } from '../config';
+import { setAuthPort } from '@danbro96/lupira-http/authPort';
 import { API_URL_STORAGE_KEY } from '../config';
-import { RefreshError, decodeJwt, refreshTokens, type TokenResponse } from '../data/auth/oidc';
-import { logDebug } from '../debug/log';
+import { RefreshError, decodeJwt, type TokenSet } from '@danbro96/lupira-expo-oidc/oidc';
+import { oidc } from '../data/auth/oidc';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 
 export type AuthUser = { sub: string; name?: string };
 
@@ -40,7 +41,7 @@ type AuthActions = {
   /** Switch backend (settings screen). Clears the session — a token minted for one backend is meaningless
    *  against another, and the LAN mode sends none at all. */
   setBackend(urls: Record<string, string>, authMode: AuthMode): Promise<void>;
-  setSession(tokens: TokenResponse): Promise<void>;
+  setSession(tokens: TokenSet): Promise<void>;
   clearSession(): Promise<void>;
   /** Coalesced, rotation-safe refresh — see the state walk-through inline. */
   refreshIfNeeded(opts?: { force?: boolean; sentToken?: string }): Promise<string | null>;
@@ -66,6 +67,9 @@ const EXPIRY_MARGIN_MS = 60_000;
 let refreshing: Promise<string | null> | null = null;
 
 const signInListeners = new Set<() => void>();
+
+const claim = (claims: Record<string, unknown>, ...names: string[]): string | undefined =>
+  names.map((n) => claims[n]).find((v): v is string => typeof v === 'string');
 
 export const useAuth = create<AuthState & AuthActions>((set, get) => ({
   loaded: false,
@@ -107,7 +111,9 @@ export const useAuth = create<AuthState & AuthActions>((set, get) => ({
     const hadToken = get().token !== null;
     const user = ((): AuthUser | null => {
       const c = decodeJwt(t.accessToken);
-      return c.email || c.sub ? { sub: c.email ?? c.sub!, name: c.name } : get().user;
+      const email = claim(c, 'email', 'preferred_username');
+      const sub = claim(c, 'sub');
+      return email || sub ? { sub: email ?? sub!, name: claim(c, 'name', 'given_name') } : get().user;
     })();
     const expiresAt = Date.now() + (t.expiresIn ?? 3600) * 1000;
     // In-memory FIRST: a rotated refresh token must survive a persistence failure or the session is stranded.
@@ -152,7 +158,7 @@ export const useAuth = create<AuthState & AuthActions>((set, get) => ({
 
     refreshing ??= (async () => {
       try {
-        const t = await refreshTokens(refreshToken);
+        const t = await oidc.refreshTokens(refreshToken);
         await get().setSession(t);
         logDebug('auth', 'token refreshed');
         return get().token;
@@ -189,7 +195,3 @@ setAuthPort({
   refresh: (force, sentToken) => useAuth.getState().refreshIfNeeded({ force, sentToken }),
   onSignIn,
 });
-
-export function presetFor(url: string, authMode: AuthMode): string {
-  return API_PRESETS.find((p) => p.urls.api === url && p.authMode === authMode)?.key ?? 'custom';
-}

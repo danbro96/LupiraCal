@@ -13,10 +13,10 @@ import {
   type UpdateCalendarItemRequest,
 } from '@lupira/cal-api/models';
 import { describeRrule, NO_REPEAT, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
-import { fmtDate, parseYmd, ymd } from '@lupira/cal-domain/time';
+import { fmtDate, parseYmd, ymd } from '@danbro96/lupira-domain-core/time';
 import { eventZone, zoneChoices, zoneLabel } from '@lupira/cal-domain/zonedTime';
 import { movedEnd } from '@lupira/cal-domain/itemForm';
-import { UNTITLED } from '@lupira/cal-domain/itemLabels';
+import { UNTITLED } from '@danbro96/lupira-domain-events/itemLabels';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { CategoryIcon } from '../KindIcon';
 import { AttendeesPanel } from './AttendeesPanel';
@@ -33,7 +33,7 @@ import { PlaceTile } from '../places/PlaceTile';
 import { ItemPhotosPanel } from './ItemPhotosPanel';
 import { RelationsPanel } from './RelationsPanel';
 import { errText } from '../../errText';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';
 

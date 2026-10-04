@@ -5,7 +5,7 @@ import {
   useListTrips,
   useListVisits,
 } from '@lupira/cal-api/query/location';
-import { LIVE_FIX_POLL_MS, LIVE_FIX_STALE_MS, movementStaleMs } from '@lupira/cal-domain/geo';
+import { LIVE_FIX_POLL_MS, LIVE_FIX_STALE_MS, movementStaleMs } from '@danbro96/lupira-domain-places/geo';
 
 /**
  * GPS read models for the map, online-only. Query keys are collision-free with the other APIs

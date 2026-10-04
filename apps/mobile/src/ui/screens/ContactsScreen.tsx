@@ -1,8 +1,8 @@
 import { INDEX_LETTERS, indexByLetter, sectionFor, sectionOffsets, type LetterEntry } from '@lupira/cal-domain/letterIndex';
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
-import { initialsOf } from '@lupira/cal-domain/contactNames';
+import { initialsOf } from '@danbro96/lupira-domain-contacts/contactNames';
 import { partialDateBadge } from '@lupira/cal-domain/partialDate';
-import { matchesTerms, searchTerms } from '@lupira/cal-domain/textSearch';
+import { matchesTerms, searchTerms } from '@danbro96/lupira-domain-core/textSearch';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
@@ -12,12 +12,12 @@ import { Avatar, FAB, Searchbar, Text } from 'react-native-paper';
 import type { ContactListRow } from '../../data/mirror';
 import { useContactList } from '../../state/useContactList';
 import { avatarColor } from '../hooks/palette';
-import { ScreenToolbar } from '../components/ScreenToolbar';
+import { ScreenToolbar } from '@danbro96/lupira-expo-paper/components/ScreenToolbar';
 import { SyncBanner } from '../components/SyncBanner';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors, spacing } from '../theme';
 import { ICONS } from '../icons';
-import { Glyph } from '../components/Glyph';
+import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 import { LetterRail } from '../components/LetterRail';
 
 type Entry = LetterEntry<ContactListRow>;

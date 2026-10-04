@@ -6,7 +6,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { useGetContact } from '@lupira/cal-api/query/contact';
 import { useGetTopic } from '@lupira/cal-api/query/comms';
 import { groupMessagesByDay, topicHeadline } from '@lupira/cal-domain/topics';
-import { fmtDate, fmtDayTitle, fmtDateTime, fmtTime, parseYmd } from '@lupira/cal-domain/time';
+import { fmtDate, fmtDayTitle, fmtDateTime, fmtTime, parseYmd } from '@danbro96/lupira-domain-core/time';
 import { useContactTopics } from '../../../state/useContactTopics';
 import { errText } from '../../errText';
 import { PageHead } from '../Page';

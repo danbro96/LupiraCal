@@ -6,8 +6,8 @@ import { useSearchItems } from '@lupira/cal-api/query/cal';
 import { useListPhotoPlaces } from '@lupira/cal-api/query/photo';
 import type { PhotoStats } from '@lupira/cal-api/models';
 import { matchTimeline, PHOTO_SEARCH, photoTimeline, type DayRange } from '@lupira/cal-domain/photoTimeline';
-import { fmtWhen } from '@lupira/cal-domain/time';
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { fmtWhen } from '@danbro96/lupira-domain-core/time';
+import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { RowName } from '../Rows';
 
 type Suggestion =

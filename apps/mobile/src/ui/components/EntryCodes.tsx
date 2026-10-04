@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Chip } from 'react-native-paper';
-import { copyText } from '../../feedback/copy';
+import { copyText } from '@danbro96/lupira-expo-feedback/copy';
 import { usePlaceEntry, useResidencyRows } from '../../state/useResidencies';
 import { ICONS } from '../icons';
 import { spacing } from '../theme';

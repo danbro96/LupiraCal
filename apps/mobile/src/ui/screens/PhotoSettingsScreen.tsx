@@ -3,7 +3,7 @@ import { List, Switch, Text } from 'react-native-paper';
 import { usePhotoBackup } from '../../state/photo-backup-store';
 import { usePhotoBackupStatus } from '../../sync/photoBackupStatus';
 import { retryParkedPhotos, runPhotoBackup } from '../../sync/photoUploader';
-import { useConfirm } from '../components/ConfirmDialog';
+import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { DateField } from '../components/DateField';
 import { SettingsAction, SettingsNote } from '../components/SettingsText';
 import { spacing, useColors } from '../theme';

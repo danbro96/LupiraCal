@@ -18,7 +18,7 @@ import {
 import type { AddressBookDto } from '@lupira/cal-api/models';
 import { useInvalidateAddressBooks } from '../../../state/useInvalidate';
 import { errText } from '../../errText';
-import { useSnackbar } from '../SnackbarHost';
+import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 
 const ACCESS_OPTIONS = [
   { value: 'read', label: 'Read' },

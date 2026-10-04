@@ -3,7 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, Chip, Text } from 'react-native-paper';
-import { toast, toastError } from '../../feedback/toast';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { linkPhotosToEvent, unlinkPhotosFromEvent, useLinkedEvents, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
 import { useColors } from '../theme';
 import type { RootStackParamList } from '../navigation/types';

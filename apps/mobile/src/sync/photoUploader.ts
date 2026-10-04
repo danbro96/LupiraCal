@@ -3,14 +3,14 @@ import { v7 as uuidv7 } from 'uuid';
 import { declarePhoto, completePhotoUpload } from '@lupira/cal-api/fetch/photo';
 import type { PhotoAssetDto } from '@lupira/cal-api/models';
 import { getDb } from '../data/db/expoDb';
-import type { Db } from '../data/db/types';
+import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import * as mirror from '../data/mirror';
 import { saveToDevice, scanAssets, uploadToPresignedUrl } from '../data/photoLibrary';
 import * as queue from '../data/photoQueue';
 import { loadBackupSettings } from '../data/photoSettings';
 import { nextAttemptDelayMs, PARK_AFTER_ATTEMPTS } from '../domain/backoff';
 import type { PhotoBackupSettings, PhotoQueueRow } from '../domain/photoBackup';
-import { logDebug } from '../debug/log';
+import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { usePhotoBackupStatus } from './photoBackupStatus';
 
 /** Camera-roll backup: scan MediaStore for assets inside the backup window, then drain the queue by

@@ -2,17 +2,17 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
-import { placeSpanM } from '@lupira/cal-domain/mapZoom';
-import { placeTitle } from '@lupira/cal-domain/places';
+import { placeSpanM } from '@danbro96/lupira-domain-maps/mapZoom';
+import { placeTitle } from '@danbro96/lupira-domain-places/places';
 import { EMPHASIS } from '@lupira/cal-tokens/color';
-import { copyText } from '../../feedback/copy';
-import { toastError } from '../../feedback/toast';
+import { copyText } from '@danbro96/lupira-expo-feedback/copy';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { ICONS } from '../icons';
 import { MiniMap } from '../map/MiniMap';
 import type { RootStackParamList } from '../navigation/types';
 import { spacing, useColors } from '../theme';
-import { IconButton } from './IconButton';
+import { IconButton } from '@danbro96/lupira-expo-paper/components/IconButton';
 
 const THUMB = 64;
 

@@ -56,7 +56,7 @@ export type SocialProfile = { service: string; handle: string; url?: string | nu
 export type PartialDateDto = { year: number | null; month: number; day: number };
 
 export type FuzzyDateDto = { year: number; month?: number | null; day?: number | null };
-/** A contact's residency at a place — current iff today falls between movedIn and movedOut (`@lupira/cal-domain/fuzzyDate`). */
+/** A contact's residency at a place — current iff today falls between movedIn and movedOut (`@danbro96/lupira-domain-contacts/fuzzyDate`). */
 export type ResidencyDoc = {
   id: string;
   contactId: string;

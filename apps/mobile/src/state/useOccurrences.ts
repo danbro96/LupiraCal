@@ -1,4 +1,4 @@
-import { addDays, addMonths, parseYmd, startOfMonth, ymd } from '@lupira/cal-domain/time';
+import { addDays, addMonths, parseYmd, startOfMonth, ymd } from '@danbro96/lupira-domain-core/time';
 import { useQueries } from '@tanstack/react-query';
 import { getDb } from '../data/db/expoDb';
 import { gridRowsBetween, type CalendarFilter, type GridRow } from '../data/mirror';

@@ -4,19 +4,19 @@ Shared MUI conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`. T
 
 ## Stack specifics
 
-- Theme = `ui/theme/muiTheme.ts`: `createTheme({cssVariables: {colorSchemeSelector: 'media'}, colorSchemes})` fed from tokens (teal primary), system-driven dark. Breakpoint `md: 821` is the phone breakpoint (`useIsPhone` wraps `useMediaQuery`).
+- Theme = `createLupiraMuiTheme` from `@danbro96/lupira-web-mui` (CSS-variable color schemes, `colorSchemeSelector: 'media'`) fed from tokens, plus Cal's category vars (teal primary), system-driven dark. Breakpoint `md: 821` is the phone breakpoint (`useIsPhone` wraps `useMediaQuery`).
 - Palette (incl. custom `border`, `text.subtle`, `warning`/`success`) emits `--mui-palette-*`; the domain relation accents emit as `--cat-*` via `MuiCssBaseline` styleOverrides, sourced from `@lupira/cal-tokens/contactCategories`.
 - No bespoke stylesheet. `index.css` is 39 lines: Tailwind's two entry points, an `@theme inline` that re-exports `--cat-*` as `cat-*` utilities, three element resets, and `.map-canvas` (maplibre-gl.css forces `position:relative` on its own wrapper, so the host must size as a flex child). Tailwind 4 serves utilities on non-MUI elements and vendor DOM reachable only with an arbitrary variant.
 - Two `className` hooks are deliberate and load-bearing: `.contact-row` (so the pin reveals on row hover) and `.map-canvas`.
 - Vendor stylesheets (maplibre, xyflow) are unlayered and outrank every layer: overriding their rules needs `!`.
 - Shared layout primitives in `ui/components/`: `WrapRow`, `DrawerSection`, `Page`/`PageHead`, `Row`/`RowName`, `panes.tsx`.
 - Forms = react-hook-form (`Controller`-wrapped MUI fields). `ContactEditForm` gates its 8-endpoint fan-out by payload comparison, not `dirtyFields`.
-- Mutation errors → `useSnackbar()` (SnackbarHost); field validation stays inline.
+- Mutation errors → `useSnackbar()` (`@danbro96/lupira-web-mui` SnackbarHost); field validation stays inline.
 - Detail cards share `drawer/DetailDrawer.tsx`.
 - A place renders as `places/PlaceTile` (name, one-line address, meta, a lazy `map/MiniMap` thumbnail framed by `@lupira/cal-domain/mapZoom`, copy button via `useCopy`).
 - Per-browser conveniences (last calendar, calendar view per layout, map layers/range) live in `state/localPrefs`, behind the URL.
 - Build splits a `vendor-mui` chunk (rolldown `advancedChunks`).
-- Icons: `ui/icons.ts` re-exports `@mui/icons-material` `*Outlined`. `packages/tokens/src/icons.ts` names concepts, not glyphs, so it stays dependency-free; `ICON_BY_NAME` in `ui/theme/kinds.ts` is `Record<IconName, SvgIconComponent>`, making an unmapped concept a compile error. `SavedPlaceDto.icon` is geo-api data, rendered verbatim.
+- Icons: `@danbro96/lupira-web-mui/icons` re-exports `@mui/icons-material` `*Outlined`; `ui/icons.ts` holds only Cal's extras. `packages/tokens/src/icons.ts` names concepts, not glyphs, so it stays dependency-free; `ICON_BY_NAME` in `ui/theme/kinds.ts` is `Record<IconName, SvgIconComponent>`, making an unmapped concept a compile error. `SavedPlaceDto.icon` is geo-api data, rendered verbatim.
 - Screens: the three lazy routes (`MapScreen`, `PlacesScreen`, `PhotosScreen`) keep `export default` because `React.lazy` needs one; the filename still matches the symbol. `ContactsLayout` lives in `ui/navigation/` — routing structure, not a screen.
 
 ## Calendar visibility and writability

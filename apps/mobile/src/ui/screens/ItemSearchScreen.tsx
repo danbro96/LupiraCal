@@ -1,5 +1,5 @@
-import { displayTitle, statusBadge } from '@lupira/cal-domain/itemLabels';
-import { fmtWhen } from '@lupira/cal-domain/time';
+import { displayTitle, statusBadge } from '@danbro96/lupira-domain-events/itemLabels';
+import { fmtWhen } from '@danbro96/lupira-domain-core/time';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { memo, useDeferredValue, useState } from 'react';
@@ -7,8 +7,8 @@ import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 import { Searchbar, Text } from 'react-native-paper';
 import type { ItemSearchRow } from '../../data/mirror';
 import { useItemSearch } from '../../state/useItemSearch';
-import { Glyph } from '../components/Glyph';
-import { ScreenToolbar } from '../components/ScreenToolbar';
+import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
+import { ScreenToolbar } from '@danbro96/lupira-expo-paper/components/ScreenToolbar';
 import { useCalendarColors } from '../hooks/palette';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';

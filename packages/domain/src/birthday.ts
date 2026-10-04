@@ -1,6 +1,6 @@
 // Age math for the read-only birthday card. Pure — callers pass coerced numbers (no PartialDate coupling).
 
-import { fmtDate } from './time';
+import { fmtDate } from '@danbro96/lupira-domain-core/time';
 
 /** Age reached on the birthday occurrence dated `on` (its month/day is the birthday). Null when the birth year is unknown. */
 export function turningAge(birthYear: number | null, on: Date): number | null {

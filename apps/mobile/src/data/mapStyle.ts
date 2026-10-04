@@ -1,6 +1,6 @@
-import { fallbackStyle as sharedFallback, loadBasemapStyle, type BasemapStyle } from '@lupira/cal-domain/mapStyle';
-import type { MapTheme } from '@lupira/cal-tokens/map';
-import { authPort } from './api/authProvider';
+import { fallbackStyle as sharedFallback, loadBasemapStyle, type BasemapStyle } from '@danbro96/lupira-domain-maps/mapStyle';
+import type { MapTheme } from '@danbro96/lupira-tokens-map/map';
+import { authPort } from '@danbro96/lupira-http/authPort';
 
 export type { BasemapStyle };
 

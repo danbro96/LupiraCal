@@ -3,7 +3,7 @@ import { getPhoto, getPhotoStats, listPhotoPlaces, listPhotos } from '@lupira/ca
 import type { AssetKind, AssetStatus, ListPhotosParams, PhotoListItemDto, PhotoSort } from '@lupira/cal-api/models';
 import { filterPhotos } from '@lupira/cal-domain/photoFilter';
 import { groupByDay as groupDays, photoDayLabel, THUMB_SAFE_STALE_MS, type DayGroup } from '@lupira/cal-domain/photoFormat';
-import { dayEndIso, dayStartIso } from '@lupira/cal-domain/time';
+import { dayEndIso, dayStartIso } from '@danbro96/lupira-domain-core/time';
 import { PHOTO_SEARCH } from '@lupira/cal-domain/photoTimeline';
 import { getDb } from '../data/db/expoDb';
 import { loadPhotoSnapshot, savePhotoSnapshot } from '../data/photoSnapshot';

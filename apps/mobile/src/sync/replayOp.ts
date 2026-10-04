@@ -5,7 +5,7 @@ import { createContact, deleteContact, reviseContact, setContactChannels, setCon
 import type { ContactReachChannel } from '@lupira/cal-api/models';
 import { participationIdOf } from '@lupira/cal-domain/participation';
 import { v5 as uuidv5 } from 'uuid';
-import { ApiError } from '../domain/apiError';
+import { ApiError } from '@danbro96/lupira-http/apiError';
 import type { ClientOp, ItemCore } from '../domain/ops';
 
 /** Op → REST. Every call carries `Idempotency-Key: commandId` (the server ledger makes redelivery a no-op —

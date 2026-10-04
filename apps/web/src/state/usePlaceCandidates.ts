@@ -2,14 +2,14 @@ import { useMemo } from 'react';
 import { useGetParticipationSummary, useSearchItems } from '@lupira/cal-api/query/cal';
 import { useListSavedPlaces, useSuggestPlaces } from '@lupira/cal-api/query/geo';
 import { SuggestionType } from '@lupira/cal-api/models';
-import { MIN_PLACE_QUERY, PLACE_SUGGEST_LIMIT, eventOrigin, pickPlaces } from '@lupira/cal-domain/placeCandidates';
-import { dayEndIso, dayStartIso } from '@lupira/cal-domain/time';
+import { MIN_PLACE_QUERY, PLACE_SUGGEST_LIMIT, eventOrigin, pickPlaces } from '@danbro96/lupira-domain-places/placeCandidates';
+import { dayEndIso, dayStartIso } from '@danbro96/lupira-domain-core/time';
 import { useHotspots } from './useHotspots';
 import { usePlaceCoords } from './usePlaceLookup';
 import { useResidencyRows } from './useResidencies';
 
-/** The place picker's sources, fetched once it opens, ranked by `@lupira/cal-domain/placeCandidates`: saved
- *  places, hotspots, the typeahead, and contacts' addresses (by name, or because they're invited). The
+/** The place picker's sources, fetched once it opens, ranked by `@danbro96/lupira-domain-places/placeCandidates`:
+ *  saved places, hotspots, the typeahead, and contacts' addresses (by name, or because they're invited). The
  *  day's other events place the event; localities ride along unranked — they only aim the pin map. */
 export function usePlaceCandidates({ query, opened, attendeeIds, day }: {
   query: string;

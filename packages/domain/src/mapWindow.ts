@@ -1,7 +1,7 @@
 // The map's one age limit. Every dated layer — events, photos, hotspots, where you've been — reaches back the
 // same distance; events also keep what's coming up, since a planned place is as useful as a visited one.
 
-import { ymd } from './time';
+import { ymd } from '@danbro96/lupira-domain-core/time';
 
 export type MapSince = 'week' | 'month' | 'year' | 'all';
 
