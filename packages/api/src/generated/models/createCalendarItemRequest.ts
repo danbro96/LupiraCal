@@ -47,8 +47,8 @@ export interface CreateCalendarItemRequest {
      */
   location?: string | null;
   /**
-     * A pre-resolved LupiraGeoApi place id. When set, it is attached directly (no geocoding, no fail-closed risk) and
-     *             string? CreateCalendarItemRequest.Location, if any, is kept as the label. Trust the caller resolved it via geo first.
+     * A pre-resolved LupiraGeoApi place id, kept with string? CreateCalendarItemRequest.Location as its label. Checked against geo: an
+     *             unknown id is rejected, a merged-away id is stored as its survivor.
      * @nullable
      */
   placeId?: string | null;
@@ -59,7 +59,10 @@ export interface CreateCalendarItemRequest {
   startsAt?: string | null;
   /** @nullable */
   endsAt?: string | null;
-  /** @nullable */
+  /**
+     * IANA zone of a timed item. Omitted ⇒ the calendar's zone, else the server default; the end zone follows it.
+     * @nullable
+     */
   startTimezone?: string | null;
   /** @nullable */
   startDate?: string | null;

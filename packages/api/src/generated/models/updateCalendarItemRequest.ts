@@ -26,7 +26,7 @@ export interface UpdateCalendarItemRequest {
   /**
      * Re-anchor the location to a resolved LupiraGeoApi place; string? UpdateCalendarItemRequest.Location then carries the display
      *             label. Set bool UpdateCalendarItemRequest.PlaceIdProvided with a null value to clear. Free-text-only location changes are rejected
-     *             (resolve via geo first).
+     *             (resolve via geo first); an id geo doesn't know is rejected, a merged-away id is stored as its survivor.
      * @nullable
      */
   placeId?: string | null;
@@ -49,7 +49,8 @@ export interface UpdateCalendarItemRequest {
   endDate?: string | null;
   endDateProvided?: boolean;
   /**
-     * IANA timezone names annotating the timed start/end.
+     * IANA timezone names annotating the timed start/end. An update that makes the item timed or sets a recurrence
+     *             rule without a zone gets the calendar's zone, else the server default; the end zone follows the start.
      * @nullable
      */
   startTimezone?: string | null;

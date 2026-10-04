@@ -16,8 +16,8 @@ export interface TravelLegRequest {
   /** @nullable */
   fromPlace?: string | null;
   /**
-     * Pre-resolved place ids (places-first imports). When set, used directly instead of resolving
-     *             string? TravelLegRequest.ToPlace/string? TravelLegRequest.FromPlace text; the text, if any, is kept as the label.
+     * Pre-resolved place ids (places-first imports), checked against geo like the item's PlaceId. When set, used
+     *             instead of resolving string? TravelLegRequest.ToPlace/string? TravelLegRequest.FromPlace text; the text, if any, is kept as the label.
      * @nullable
      */
   toPlaceId?: string | null;
