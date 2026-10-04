@@ -26,8 +26,8 @@
 
   <ItemGroup>
     <PackageReference Include="Lupira.Bff.Auth" Version="0.1.0" />
-    <PackageReference Include="Lupira.Bff.OpenApi" Version="0.2.0" />
-    <PackageReference Include="Lupira.Bff.Proxy" Version="0.1.0" />
+    <PackageReference Include="Lupira.Bff.OpenApi" Version="0.3.0" />
+    <PackageReference Include="Lupira.Bff.Proxy" Version="0.2.1" />
     <PackageReference Include="Lupira.Build" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Lupira.Depz" Version="0.1.0" />
     <PackageReference Include="Lupira.Depz.Yarp" Version="0.1.0" />
