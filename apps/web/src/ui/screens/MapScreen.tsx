@@ -50,7 +50,9 @@ import {
   SavedPlacesLayer,
 } from '../components/map/layers';
 import { FitToData, FlyToPlace, ViewportReporter } from '../components/map/mapEffects';
-import { EventIcon, HomeIcon, WorkIcon } from '../icons';
+import { EventIcon, FamilyIcon, HomeIcon, WorkIcon } from '../icons';
+
+const QUICK_PLACE_ICONS = { home: HomeIcon, work: WorkIcon, parents: FamilyIcon, event: EventIcon } as const;
 
 const SELECTION_KEYS = ['place', 'item', 'at'];
 const LAYERS_PREF = 'map.layers';
@@ -369,7 +371,7 @@ function QuickPlacesBar({ places, onPick }: { places: QuickPlace[]; onPick: (p: 
   return (
     <Box sx={{ flexBasis: '100%', display: 'flex', gap: 0.5, overflowX: 'auto', pb: 0.5, scrollbarWidth: 'none' }}>
       {places.map((p) => {
-        const Icon = p.kind === 'home' ? HomeIcon : p.kind === 'work' ? WorkIcon : EventIcon;
+        const Icon = QUICK_PLACE_ICONS[p.kind];
         return (
           <Chip
             key={p.key}
