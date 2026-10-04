@@ -25,7 +25,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
 #else
         public string AvatarRef { get; set; }
 #endif
-        /// <summary>A calendar date that may omit the year — a birthday is often known only as a month-day.            int PartialDate.Month and int PartialDate.Day are always present; int? PartialDate.Year is null when unknown.            Canonical text is `yyyy-MM-dd` with a year, else `--MM-dd`; other wire formats are the serializers&apos; concern.</summary>
+        /// <summary>The birthday property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public global::LupiraCalBff.Upstream.Contact.Models.PartialDate? Birthday { get; set; }
@@ -41,7 +41,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
 #else
         public List<global::LupiraCalBff.Upstream.Contact.Models.ContactReachChannel> Channels { get; set; }
 #endif
-        /// <summary>How well-documented this contact is. Drives contact-enrichment ranking (completeness × relevance).</summary>
+        /// <summary>The completeness property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public global::LupiraCalBff.Upstream.Contact.Models.CompletenessScore? Completeness { get; set; }
@@ -120,10 +120,10 @@ namespace LupiraCalBff.Upstream.Contact.Models
         /// <summary>The metadata property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public UntypedNode? Metadata { get; set; }
+        public global::LupiraCalBff.Upstream.Contact.Models.JsonNode? Metadata { get; set; }
 #nullable restore
 #else
-        public UntypedNode Metadata { get; set; }
+        public global::LupiraCalBff.Upstream.Contact.Models.JsonNode Metadata { get; set; }
 #endif
         /// <summary>The middleName property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -228,7 +228,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
                 { "givenName", n => { GivenName = n.GetStringValue(); } },
                 { "id", n => { Id = n.GetGuidValue(); } },
                 { "kind", n => { Kind = n.GetEnumValue<global::LupiraCalBff.Upstream.Contact.Models.ContactKind>(); } },
-                { "metadata", n => { Metadata = n.GetObjectValue<UntypedNode>(UntypedNode.CreateFromDiscriminatorValue); } },
+                { "metadata", n => { Metadata = n.GetObjectValue<global::LupiraCalBff.Upstream.Contact.Models.JsonNode>(global::LupiraCalBff.Upstream.Contact.Models.JsonNode.CreateFromDiscriminatorValue); } },
                 { "middleName", n => { MiddleName = n.GetStringValue(); } },
                 { "nickname", n => { Nickname = n.GetStringValue(); } },
                 { "notes", n => { Notes = n.GetStringValue(); } },
@@ -265,7 +265,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
             writer.WriteStringValue("givenName", GivenName);
             writer.WriteGuidValue("id", Id);
             writer.WriteEnumValue<global::LupiraCalBff.Upstream.Contact.Models.ContactKind>("kind", Kind);
-            writer.WriteObjectValue<UntypedNode>("metadata", Metadata);
+            writer.WriteObjectValue<global::LupiraCalBff.Upstream.Contact.Models.JsonNode>("metadata", Metadata);
             writer.WriteStringValue("middleName", MiddleName);
             writer.WriteStringValue("nickname", Nickname);
             writer.WriteStringValue("notes", Notes);

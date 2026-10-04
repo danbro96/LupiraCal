@@ -1,8 +1,8 @@
 {
-  "descriptionHash": "2A4BF06F2F6E8C2665AF00561E60BAE4CC21647F01D2B37326763682BCCB6FD66AFA3DDB90B389E472B81B30751484F79919A3178ED5A7BB5C4CB61DDFE0A86C",
-  "descriptionLocation": "../../upstream-normalized/LupiraContactApi.json",
+  "descriptionHash": "3ACEE29986B637CBFFBFBE0C8F32766AE60B9DC58699E49A574A52F2BE1FCDACA8625BC3B78EF165608F177174CD6809F22D93A32D8F7C7531EC9FBD081F2417",
+  "descriptionLocation": "../../upstream/LupiraContactApi.json",
   "lockFileVersion": "1.0.0",
-  "kiotaVersion": "1.34.1",
+  "kiotaVersion": "1.35.0",
   "clientClassName": "ContactApiClient",
   "typeAccessModifier": "Public",
   "clientNamespaceName": "LupiraCalBff.Upstream.Contact",

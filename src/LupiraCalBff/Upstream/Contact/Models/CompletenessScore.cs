@@ -8,7 +8,7 @@ using System;
 namespace LupiraCalBff.Upstream.Contact.Models
 {
     /// <summary>
-    /// How well-documented this contact is. Drives contact-enrichment ranking (completeness × relevance).
+    /// How well-documented a record is: `Score` 0..1 (Σ weight·presence / Σ weight), the unmet            fields ranked by missing mass (weight·absence, largest first), and the rubric version that produced it.            `null` (not this type) means &quot;not applicable&quot;.
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     public partial class CompletenessScore : IAdditionalDataHolder, IParsable

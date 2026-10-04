@@ -15,7 +15,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>A calendar date that may omit the year — a birthday is often known only as a month-day.            int PartialDate.Month and int PartialDate.Day are always present; int? PartialDate.Year is null when unknown.            Canonical text is `yyyy-MM-dd` with a year, else `--MM-dd`; other wire formats are the serializers&apos; concern.</summary>
+        /// <summary>The birthday property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
         public global::LupiraCalBff.Upstream.Contact.Models.PartialDate? Birthday { get; set; }
@@ -31,7 +31,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
 #else
         public List<global::LupiraCalBff.Upstream.Contact.Models.ContactReachChannel> Channels { get; set; }
 #endif
-        /// <summary>How a contact&apos;s DisplayName renders. Rendering-only — excluded from the content hash. `Full` is ordinal 0 so old events replay to today&apos;s behavior.</summary>
+        /// <summary>The displayNameFormat property</summary>
         public global::LupiraCalBff.Upstream.Contact.Models.DisplayNameFormat? DisplayNameFormat { get; set; }
         /// <summary>The familyName property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -49,7 +49,7 @@ namespace LupiraCalBff.Upstream.Contact.Models
 #else
         public string GivenName { get; set; }
 #endif
-        /// <summary>What the contact card represents. A business/venue (a provider referenced from            bookings, say) is an `Organization`: no birthday, employer, or kinship applies. `Individual` is ordinal 0            so pre-existing events replay as persons.</summary>
+        /// <summary>The kind property</summary>
         public global::LupiraCalBff.Upstream.Contact.Models.ContactKind? Kind { get; set; }
         /// <summary>The middleName property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER

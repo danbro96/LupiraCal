@@ -17,15 +17,6 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Yarp.ReverseProxy.Transforms;
 
-// Writes the generator's input, then exits. Kiota's output compiles into this project, so the BFF
-// cannot produce that input during the same build — refreshing a spec is copy, normalize, generate,
-// build. See UpstreamSpecRefresh for the paths.
-if (args is ["--normalize-specs", ..])
-{
-    UpstreamSpecRefresh.WriteNormalized(args.ElementAtOrDefault(1));
-    return;
-}
-
 var builder = WebApplication.CreateBuilder(args);
 
 // `--routes` prints what the proxy will serve.
