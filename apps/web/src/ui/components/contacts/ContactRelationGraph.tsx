@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import IconButton from '@mui/material/IconButton';
@@ -149,14 +149,8 @@ export function ContactRelationGraph({
   const isPhone = useIsPhone();
   const [expandedIds, setExpandedIds] = useState<string[]>([centerId]);
   const [fullscreen, setFullscreen] = useState(false);
-  const expand = useCallback(
-    (id: string) => setExpandedIds((ids) => (ids.includes(id) ? ids : [...ids, id])),
-    [],
-  );
-  const open = useCallback(
-    (id: string) => navigate({ pathname: `/contacts/${id}`, search: location.search }),
-    [navigate, location.search],
-  );
+  const expand = (id: string) => setExpandedIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+  const open = (id: string) => navigate({ pathname: `/contacts/${id}`, search: location.search });
 
   const results = useQueries({
     queries: expandedIds.map((id) => {
@@ -180,7 +174,7 @@ export function ContactRelationGraph({
   );
 
   const terms = searchTerms(query);
-  const expandedSet = useMemo(() => new Set(expandedIds), [expandedIds]);
+  const expandedSet = new Set(expandedIds);
   const rfNodes: RelationFlowNode[] = graph.nodes.map((n) => {
     const hit = terms.length > 0 && matchesTerms(terms, n.label);
     return {

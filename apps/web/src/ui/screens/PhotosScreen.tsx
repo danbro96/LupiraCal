@@ -48,7 +48,7 @@ export default function PhotosScreen() {
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
 
   // A filter change can take selected photos out of view, and acting on unseen photos would surprise.
-  const setParam = useCallback((key: string, value: string | undefined) => {
+  const setParam = (key: string, value: string | undefined) => {
     if (key !== 'photo') setSelected(new Set());
     setParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -56,9 +56,9 @@ export default function PhotosScreen() {
       else next.delete(key);
       return next;
     }, { replace: true });
-  }, [setParams]);
+  };
 
-  const setRange = useCallback((range: { from: string; to: string } | null) => {
+  const setRange = (range: { from: string; to: string } | null) => {
     setSelected(new Set());
     setParams((prev) => {
       const next = new URLSearchParams(prev);
@@ -71,7 +71,7 @@ export default function PhotosScreen() {
       }
       return next;
     }, { replace: true });
-  }, [setParams]);
+  };
 
   // Opening pushes a history entry and paging replaces it, so Back closes the viewer onto the grid
   // instead of leaving the page. A deep-linked photo has no grid entry behind it to pop back to.
@@ -131,7 +131,7 @@ export default function PhotosScreen() {
     });
 
   const selecting = selected.size > 0;
-  const selectedPhotos = useMemo(() => items.filter((i) => selected.has(i.id)), [items, selected]);
+  const selectedPhotos = items.filter((i) => selected.has(i.id));
 
   const report = (verb: string, outcome: { done: number; failed: number }, undo?: () => void) => {
     if (outcome.failed > 0) showSnack(outcomeMessage(verb, outcome));

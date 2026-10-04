@@ -4,7 +4,7 @@ import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useLayoutEffect, useMemo, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Chip, HelperText, IconButton, List, Switch, Text } from 'react-native-paper';
 import type { ContactDoc, ReachChannel, SocialProfile } from '../../domain/docTypes';
@@ -63,10 +63,7 @@ export function ContactEditScreen() {
   }
   if (!contactId && !bookId && books?.length) setBookId(books[0].id);
 
-  const dirty = useMemo(
-    () => snapshot(form, channels, profiles, tagsCsv) !== baseline,
-    [form, channels, profiles, tagsCsv, baseline],
-  );
+  const dirty = snapshot(form, channels, profiles, tagsCsv) !== baseline;
 
   const set = <K extends keyof ContactForm>(key: K, value: ContactForm[K]) => setForm((f) => ({ ...f, [key]: value }));
 

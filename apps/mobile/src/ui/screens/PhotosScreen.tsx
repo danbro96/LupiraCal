@@ -2,7 +2,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import {
@@ -57,10 +57,10 @@ export function PhotosScreen() {
   const [gridWidth, setGridWidth] = useState(0);
 
   // A filter change can take selected photos out of view, and acting on unseen photos would surprise.
-  const applyFilters = useCallback((next: PhotoQueryFilters | ((f: PhotoQueryFilters) => PhotoQueryFilters)) => {
+  const applyFilters = (next: PhotoQueryFilters | ((f: PhotoQueryFilters) => PhotoQueryFilters)) => {
     setSelected(NO_SELECTION);
     setFilters(next);
-  }, []);
+  };
 
   // Handoffs (a map pin's day, an event's photos) are consumed and cleared, so the same one arriving
   // twice still applies after the user has changed the filters in between.
@@ -82,19 +82,16 @@ export function PhotosScreen() {
   const { data: stats } = usePhotoStats();
   const [eventTitle] = useLinkedEvents(filters.event ? [filters.event] : []).map((e) => e.title);
 
-  const sections = useMemo(() => groupByDay(items), [items]);
+  const sections = groupByDay(items);
   const tile = (gridWidth - GAP * (COLUMNS + 1)) / COLUMNS;
   const failed = stats?.byStatus?.Failed ?? 0;
-  const timeline = useMemo(
-    () => photoTimeline(stats?.byMonth ?? {}, filters.sort !== 'TakenAtAsc'),
-    [stats, filters.sort],
-  );
-  const railLabels = useMemo(() => timeline.map((y) => yearLabel(y.year)), [timeline]);
-  const railPresent = useMemo(() => new Set(railLabels), [railLabels]);
-  const onRailSelect = useCallback((label: string) => {
+  const timeline = photoTimeline(stats?.byMonth ?? {}, filters.sort !== 'TakenAtAsc');
+  const railLabels = timeline.map((y) => yearLabel(y.year));
+  const railPresent = new Set(railLabels);
+  const onRailSelect = (label: string) => {
     const year = timeline.find((y) => yearLabel(y.year) === label)?.year;
     if (year) applyFilters((f) => ({ ...f, ...yearRange(year) }));
-  }, [timeline, applyFilters]);
+  };
 
   const filterSummary = [
     filters.trashed ? 'Trash' : null,
@@ -108,13 +105,13 @@ export function PhotosScreen() {
   ].filter(Boolean).join(' · ');
 
   const selecting = selected.size > 0;
-  const toggle = useCallback((photoId: string) => setSelected((prev) => {
+  const toggle = (photoId: string) => setSelected((prev) => {
     const next = new Set(prev);
     if (next.has(photoId)) next.delete(photoId);
     else next.add(photoId);
     return next;
-  }), []);
-  const toggleDay = useCallback((day: PhotoDay) => setSelected((prev) => {
+  });
+  const toggleDay = (day: PhotoDay) => setSelected((prev) => {
     const next = new Set(prev);
     const all = day.data.every((p) => next.has(p.id));
     for (const p of day.data) {
@@ -122,8 +119,8 @@ export function PhotosScreen() {
       else next.add(p.id);
     }
     return next;
-  }), []);
-  const selectedPhotos = useMemo(() => items.filter((p) => selected.has(p.id)), [items, selected]);
+  });
+  const selectedPhotos = items.filter((p) => selected.has(p.id));
 
   const report = (verb: string, outcome: Outcome, undo?: () => void) => {
     if (outcome.failed > 0) toastError(outcomeMessage(verb, outcome));
@@ -168,24 +165,23 @@ export function PhotosScreen() {
     else toastError('Could not empty the trash.');
   };
 
-  // Stable list props: a new renderItem re-renders every mounted day row and tile.
-  const onTilePress = useCallback((photoId: string) => {
+  const onTilePress = (photoId: string) => {
     if (selecting) toggle(photoId);
     else navigation.navigate('PhotoViewer', { photoId, filters });
-  }, [selecting, toggle, navigation, filters]);
-  const onTileLongPress = useCallback((photoId: string) => {
+  };
+  const onTileLongPress = (photoId: string) => {
     hapticSelection();
     toggle(photoId);
-  }, [toggle]);
-  const onShowEvent = useCallback((eventId: string) => applyFilters((f) => ({ ...f, event: eventId })), [applyFilters]);
-  const onRefresh = useCallback(() => void refetch(), [refetch]);
-  const onEndReached = useCallback(() => {
+  };
+  const onShowEvent = (eventId: string) => applyFilters((f) => ({ ...f, event: eventId }));
+  const onRefresh = () => void refetch();
+  const onEndReached = () => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-  const onPlace = useCallback((place: string) => applyFilters((f) => ({ ...f, place })), [applyFilters]);
-  const onDayMap = useCallback((at: { lon: number; lat: number }) =>
-    navigation.navigate('Tabs', { screen: 'Map', params: { at: { ...at, focus: 'photo' } } }), [navigation]);
-  const renderSectionHeader = useCallback(({ section }: { section: (typeof sections)[number] }) => (
+  };
+  const onPlace = (place: string) => applyFilters((f) => ({ ...f, place }));
+  const onDayMap = (at: { lon: number; lat: number }) =>
+    navigation.navigate('Tabs', { screen: 'Map', params: { at: { ...at, focus: 'photo' } } });
+  const renderSectionHeader = ({ section }: { section: (typeof sections)[number] }) => (
     <DayHeader
       day={section}
       links={links}
@@ -196,9 +192,9 @@ export function PhotosScreen() {
       onEvent={onShowEvent}
       onMap={onDayMap}
     />
-  ), [links, selecting, selected, toggleDay, onPlace, onShowEvent, onDayMap]);
+  );
   // SectionList renders one row per item, so each "row" is a full day laid out as a wrapped grid.
-  const renderItem = useCallback(({ index, section }: { index: number; section: (typeof sections)[number] }) => {
+  const renderItem = ({ index, section }: { index: number; section: (typeof sections)[number] }) => {
     if (index % COLUMNS !== 0) return null;
     const row = section.data.slice(index, index + COLUMNS);
     return (
@@ -218,7 +214,7 @@ export function PhotosScreen() {
         ))}
       </View>
     );
-  }, [tile, links, selecting, selected, onTilePress, onTileLongPress, onShowEvent]);
+  };
 
   if (isLoading) return <Centered text="Loading…" />;
   if (items.length === 0 && (offline || error)) return <Centered text="Photos need a connection." />;

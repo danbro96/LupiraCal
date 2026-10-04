@@ -6,7 +6,7 @@ import { matchesTerms, searchTerms } from '@lupira/cal-domain/textSearch';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Avatar, FAB, Searchbar, Text } from 'react-native-paper';
 import type { ContactListRow } from '../../data/mirror';
@@ -37,21 +37,19 @@ export function ContactsScreen() {
   const [query, setQuery] = useState('');
 
   const q = query.trim().toLowerCase();
-  const rows = useMemo(() => {
-    const terms = searchTerms(q);
-    return (data ?? []).filter((r) => matchesTerms(terms, r.displayName, r.doc.nickname, ...visibleTags(r.doc.tags)));
-  }, [data, q]);
-  const { entries, headerAt } = useMemo(() => indexByLetter(rows, nameOf), [rows]);
-  const stickyHeaderIndices = useMemo(() => [...headerAt.values()], [headerAt]);
-  const presentLetters = useMemo(() => new Set(headerAt.keys()), [headerAt]);
+  const terms = searchTerms(q);
+  const rows = (data ?? []).filter((r) => matchesTerms(terms, r.displayName, r.doc.nickname, ...visibleTags(r.doc.tags)));
+  const { entries, headerAt } = indexByLetter(rows, nameOf);
+  const stickyHeaderIndices = [...headerAt.values()];
+  const presentLetters = new Set(headerAt.keys());
 
-  const offsets = useMemo(() => sectionOffsets(headerAt, HEADER_HEIGHT, ROW_HEIGHT), [headerAt]);
+  const offsets = sectionOffsets(headerAt, HEADER_HEIGHT, ROW_HEIGHT);
   const contentHeight = headerAt.size * HEADER_HEIGHT + (entries.length - headerAt.size) * ROW_HEIGHT;
 
   const listRef = useRef<FlashListRef<Entry>>(null);
   const pendingOffset = useRef<number | null>(null);
   // One scroll per frame, to the latest letter: a fast drag skips the letters the list couldn't keep up with.
-  const jumpTo = useCallback((letter: string) => {
+  const jumpTo = (letter: string) => {
     const offset = sectionFor(offsets, letter);
     if (offset === undefined) return;
     const scheduled = pendingOffset.current !== null;
@@ -61,25 +59,18 @@ export function ContactsScreen() {
       if (pendingOffset.current !== null) listRef.current?.scrollToOffset({ offset: pendingOffset.current, animated: false });
       pendingOffset.current = null;
     });
-  }, [offsets]);
+  };
 
-  // Stable, so the memoized rows skip re-rendering on each keystroke in the search box.
-  const openContact = useCallback(
-    (contactId: string) => navigation.navigate('ContactDetail', { contactId }),
-    [navigation],
-  );
-  const renderItem = useCallback(
-    ({ item }: { item: Entry }) => item.kind === 'header'
-      ? <SectionHeader letter={item.letter} />
-      : <ContactRow row={item.item} onOpen={openContact} />,
-    [openContact],
-  );
+  const openContact = (contactId: string) => navigation.navigate('ContactDetail', { contactId });
+  const renderItem = ({ item }: { item: Entry }) => item.kind === 'header'
+    ? <SectionHeader letter={item.letter} />
+    : <ContactRow row={item.item} onOpen={openContact} />;
   const hasContacts = !!data?.length;
-  const empty = useMemo(() => (
+  const empty = (
     <Text style={[styles.empty, { color: c.textMuted }]}>
       {hasContacts ? 'No matches' : 'No contacts in the mirror yet'}
     </Text>
-  ), [hasContacts, c.textMuted]);
+  );
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
@@ -123,7 +114,7 @@ const SKELETON_ROWS = Array.from({ length: 16 }, (_, i) => i);
 
 /** Sits behind the list: after a rail jump the list scrolls before its rows render, and the gap
  *  shows these instead of a blank frame. Rows are opaque so it never shows through them. */
-const SkeletonRows = memo(function SkeletonRows({ height }: { height: number }) {
+function SkeletonRows({ height }: { height: number }) {
   const c = useColors();
   return (
     <View pointerEvents="none" style={[styles.skeleton, { height }]}>
@@ -138,7 +129,7 @@ const SkeletonRows = memo(function SkeletonRows({ height }: { height: number }) 
       ))}
     </View>
   );
-});
+}
 
 const SectionHeader = memo(function SectionHeader({ letter }: { letter: string }) {
   const c = useColors();

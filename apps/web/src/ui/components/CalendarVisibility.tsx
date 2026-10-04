@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import type { ContainerDto } from '@lupira/cal-api/models';
 import { isCalendarShown } from '@lupira/cal-domain/calendars';
 import { readPref, writePref } from '../../state/localPrefs';
@@ -30,27 +30,24 @@ export function CalendarVisibilityProvider({ children }: { children: ReactNode }
   const [choices, setChoices] = useState(readChoices);
   const [tasksVisible, setTasksVisible] = useState(() => readPref(TASKS_PREF) !== '0');
 
-  const isVisible = useCallback((c: ContainerDto) => isCalendarShown(c, choices), [choices]);
+  const isVisible = (c: ContainerDto) => isCalendarShown(c, choices);
 
-  const toggle = useCallback((c: ContainerDto) => {
+  const toggle = (c: ContainerDto) => {
     setChoices((prev) => {
       const next = { ...prev, [c.id]: !isCalendarShown(c, prev) };
       writePref(CHOICES_PREF, JSON.stringify(next));
       return next;
     });
-  }, []);
+  };
 
-  const toggleTasks = useCallback(() => {
+  const toggleTasks = () => {
     setTasksVisible((v) => {
       writePref(TASKS_PREF, v ? '0' : '1');
       return !v;
     });
-  }, []);
+  };
 
-  const value = useMemo(
-    () => ({ isVisible, toggle, tasksVisible, toggleTasks }),
-    [isVisible, toggle, tasksVisible, toggleTasks],
-  );
+  const value = { isVisible, toggle, tasksVisible, toggleTasks };
   return <VisibilityContext.Provider value={value}>{children}</VisibilityContext.Provider>;
 }
 

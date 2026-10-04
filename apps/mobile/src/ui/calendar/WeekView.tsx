@@ -57,7 +57,7 @@ type Bar = { row: CalRow; startCol: number; endCol: number; before: boolean; aft
  *  placed on a day axis fixed at mount, one week per page — so the neighbour is live under the finger,
  *  and after a step the new far-side week mounts off-screen. A jump snaps, and Today also scrolls the
  *  current time back into view. */
-export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPressOccurrence, onCreateSlot }: {
+export function WeekView({ weekStart, jump, onStep, onPressOccurrence, onCreateSlot }: {
   weekStart: Date;
   jump: CalendarJump;
   onStep: (dir: 1 | -1) => void;
@@ -68,15 +68,15 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
   // Slot granularity is 30 min; the ＋ chip covers the tapped half hour (prefill length stays 1h).
   const c = useColors();
   const [pendingSlot, setPendingSlot] = useState<{ day: string; slot: number } | null>(null);
-  const clearSlot = useCallback(() => setPendingSlot(null), []);
+  const clearSlot = () => setPendingSlot(null);
   useBackDismiss(pendingSlot !== null, clearSlot);
-  const tapSlot = useCallback((day: string, slot: number) => {
+  const tapSlot = (day: string, slot: number) => {
     setPendingSlot((cur) => (cur && cur.day === day && cur.slot === slot ? null : { day, slot }));
-  }, []);
-  const createFromSlot = useCallback((day: string, slot: number) => {
+  };
+  const createFromSlot = (day: string, slot: number) => {
     onCreateSlot(day, slotTime(slot));
     setPendingSlot(null);
-  }, [onCreateSlot]);
+  };
 
   const [originIdx] = useState(() => dayIndex(weekStart));
   const page = (dayIndex(weekStart) - originIdx) / 7;
@@ -196,7 +196,7 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
       </View>
     </GestureDetector>
   );
-});
+}
 
 const NO_ROWS: GridRow[] = [];
 
@@ -449,6 +449,7 @@ function SlidingDays({ slideStyle, gutter, behind, onClipLayout, children }: {
  *  Everything in the lanes is placed in percent of the day, so a zoom frame animates one height on the
  *  UI thread instead of re-rendering the grid. */
 function useTimeZoom(initialHours: number) {
+  'use no memo';
   const savedHourH = usePrefs((p) => p.hourHeight);
   const [initialOffset] = useState(() => ({ x: 0, y: initialHours * savedHourH }));
   const hourH = useSharedValue(savedHourH);

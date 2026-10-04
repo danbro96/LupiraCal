@@ -11,7 +11,7 @@ const backend = process.env.BACKEND_ORIGIN ?? "http://localhost:5181";
 const proxied = ["/api", "/geo-api", "/contact-api", "/tasks-api", "/location-api", "/photo-api", "/auth", "/signin-oidc", "/signout-callback-oidc", "/livez", "/readyz"];
 
 export default defineConfig({
-  plugins: [react(), babel({ presets: [reactCompilerPreset()] }), tailwindcss()],
+  plugins: [react(), babel({ presets: [reactCompilerPreset({ panicThreshold: "all_errors" })] }), tailwindcss()],
   server: {
     port: 5174,
     proxy: Object.fromEntries(

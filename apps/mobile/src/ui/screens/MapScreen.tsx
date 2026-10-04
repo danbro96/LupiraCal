@@ -11,7 +11,7 @@ import {
 import { useFocusEffect, useIsFocused, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Feature } from 'geojson';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { NativeSyntheticEvent } from 'react-native';
 import { StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { ActivityIndicator, Banner, useTheme } from 'react-native-paper';
@@ -75,12 +75,9 @@ export function MapScreen() {
   const since = usePrefs((p) => p.mapSince);
   // A photo handed over from the gallery shows even if the layer is off — for this visit, not as a setting.
   const [photosForced, setPhotosForced] = useState(false);
-  const enabled = useMemo(() => {
-    const merged = { ...DEFAULT_LAYERS };
-    for (const key of LAYER_KEYS) if (typeof layerPrefs[key] === 'boolean') merged[key] = layerPrefs[key];
-    if (photosForced) merged.photos = true;
-    return merged;
-  }, [layerPrefs, photosForced]);
+  const enabled = { ...DEFAULT_LAYERS };
+  for (const key of LAYER_KEYS) if (typeof layerPrefs[key] === 'boolean') enabled[key] = layerPrefs[key];
+  if (photosForced) enabled.photos = true;
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewport, setViewport] = useState<MapViewport | null>(null);
@@ -89,7 +86,7 @@ export function MapScreen() {
   const [selected, setSelected] = useState<HitPoint | null>(null);
   const [now, setNow] = useState(minuteNow);
 
-  const span = useMemo(() => mapWindow(since, now), [since, now]);
+  const span = mapWindow(since, now);
   const fromIso = span.from?.toISOString() ?? null;
   const events = useEventFeatures(span.eventsFromDay, span.eventsToDay, enabled.events);
   const saved = useSavedPlaceFeatures(enabled.saved);
@@ -133,18 +130,18 @@ export function MapScreen() {
     if (mapLoaded.current) flyTo(at);
     else pendingTarget.current = at;
   }, [at, flyTo]);
-  const onMapLoaded = useCallback(() => {
+  const onMapLoaded = () => {
     mapLoaded.current = true;
     if (pendingTarget.current) flyTo(pendingTarget.current);
     pendingTarget.current = null;
-  }, [flyTo]);
+  };
 
   // GPS stops when you leave the tab. Focus, not mount: a bottom tab stays mounted once visited.
-  useFocusEffect(useCallback(() => {
+  useFocusEffect(() => {
     setNow(minuteNow());
     void useLivePosition.getState().start();
     return () => useLivePosition.getState().stop();
-  }, []));
+  });
 
   // Camera.trackUserLocation would start MapLibre's own location engine — a second GPS subscription.
   useEffect(() => {
@@ -156,22 +153,22 @@ export function MapScreen() {
     });
   }, [follow, livePosition]);
 
-  const onRegionDidChange = useCallback((e: NativeSyntheticEvent<ViewStateChangeEvent>) => {
+  const onRegionDidChange = (e: NativeSyntheticEvent<ViewStateChangeEvent>) => {
     // MapLibre's bounds are already [west, south, east, north] — the order the API's bbox takes.
     setViewport(mapViewport(e.nativeEvent.bounds, e.nativeEvent.zoom));
     // A deliberate pan means the user took the wheel — drop follow-mode rather than fighting them.
     if (e.nativeEvent.userInteraction) setFollow('off');
-  }, []);
+  };
 
-  const closePreview = useCallback(() => {
+  const closePreview = () => {
     setHits(null);
     setSelected(null);
-  }, []);
+  };
 
   /** Everything under the finger, across layers: a cluster that can still split zooms in; one that can't
    *  (pins on one spot) lists its members; a lone photo cell zooms to its photos. Layers are queried one
    *  source at a time so each cluster is known to belong to the source that can expand it. */
-  const onMapPress = useCallback(async (e: NativeSyntheticEvent<PressEvent>) => {
+  const onMapPress = async (e: NativeSyntheticEvent<PressEvent>) => {
     const [x, y] = e.nativeEvent.point;
     const box: [[number, number], [number, number]] = [[x - HIT_RADIUS, y - HIT_RADIUS], [x + HIT_RADIUS, y + HIT_RADIUS]];
     const found: Feature[] = [];
@@ -209,10 +206,10 @@ export function MapScreen() {
     }
     setSelected(tapped[0].point);
     setHits(tapped);
-  }, [enabled, closePreview]);
+  };
 
   /** A jump frames the place by what it is, across the screen's width; an event also opens its card. */
-  const onQuickPick = useCallback((p: QuickPlace) => {
+  const onQuickPick = (p: QuickPlace) => {
     if (!p.point) return;
     setFollow('off');
     setSelected(p.point);
@@ -220,9 +217,9 @@ export function MapScreen() {
       center: [p.point.lon, p.point.lat], zoom: zoomForSpan(p.spanM, width, p.point.lat), duration: 600,
     });
     setHits(p.event ? [{ kind: 'event', key: p.key, point: p.point, ...p.event }] : null);
-  }, [width]);
+  };
 
-  const onHitAction = useCallback((hit: MapHit, action: HitAction) => {
+  const onHitAction = (hit: MapHit, action: HitAction) => {
     if (action === 'zoom' && hit.kind === 'photoCell') {
       closePreview();
       cameraRef.current?.fitBounds(photoCellBounds(hit.bounds), { padding: CELL_PADDING, duration: 400 });
@@ -240,7 +237,7 @@ export function MapScreen() {
     if (hit.kind === 'event') navigation.navigate('ItemDetail', { itemId: hit.itemId });
     else if (hit.kind === 'contact') navigation.navigate('ContactDetail', { contactId: hit.contactId });
     else if (hit.kind === 'photo') navigation.navigate('PhotoViewer', { photoId: hit.photoId });
-  }, [navigation, closePreview]);
+  };
 
   const onLocatePress = async () => {
     const started = await useLivePosition.getState().start();

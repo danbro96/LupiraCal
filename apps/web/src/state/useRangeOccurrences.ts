@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useSearchItems } from '@lupira/cal-api/query/cal';
 import type { CalendarItemOccurrenceDto, ContainerDto } from '@lupira/cal-api/models';
 
@@ -23,13 +22,10 @@ export function useRangeOccurrences(
     { query: { enabled: calendars.length > 0 } },
   );
 
-  const byCalendar = useMemo(
-    () => calendars.map((calendar) => ({
-      calendar,
-      occurrences: (data ?? []).filter((o) => o.calendarIds.includes(calendar.id)),
-    })),
-    [calendars, data],
-  );
+  const byCalendar = calendars.map((calendar) => ({
+    calendar,
+    occurrences: (data ?? []).filter((o) => o.calendarIds.includes(calendar.id)),
+  }));
 
   return { byCalendar, isLoading: calendars.length > 0 && isLoading };
 }

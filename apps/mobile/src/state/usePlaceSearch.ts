@@ -71,8 +71,8 @@ export function usePlaceCandidates({ query, attendeeIds, day }: { query: string;
   const { data: summary } = useParticipationSummary(true);
 
   // Same id set as the map's contact layer, so both share one lookup.
-  const places = usePlaceCoords(useMemo(() => rows.map((r) => r.placeId), [rows]));
-  const dayPlaces = usePlaceCoords(useMemo(() => (dayEvents.data ?? []).map((r) => r.place_id), [dayEvents.data]));
+  const places = usePlaceCoords(rows.map((r) => r.placeId));
+  const dayPlaces = usePlaceCoords((dayEvents.data ?? []).map((r) => r.place_id));
 
   return useMemo(() => {
     const picked = pickPlaces({

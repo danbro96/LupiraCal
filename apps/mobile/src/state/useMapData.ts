@@ -79,10 +79,7 @@ export function usePhotoFeatures(viewport: MapViewport | null, fromIso: string |
     },
   });
 
-  return useMemo(
-    () => (enabled ? photoFeatures(q.data?.features ?? []) : EMPTY_FEATURES),
-    [enabled, q.data],
-  );
+  return enabled ? photoFeatures(q.data?.features ?? []) : EMPTY_FEATURES;
 }
 
 export type MovementFeatures = { visits: FeatureCollection; track: FeatureCollection; current: FeatureCollection };
@@ -95,17 +92,15 @@ export function useMovementFeatures(fromIso: string, toIso: string, enabled: boo
   const trackQ = useThinnedTrack(fromIso, toIso, enabled);
   const currentQ = useCurrentFixes(enabled, live);
 
-  return useMemo(() => {
-    if (!enabled) return EMPTY_MOVEMENT;
-    return {
-      visits: visitFeatures(visitsQ.data ?? []),
-      track: trackFeatures(
-        (trackQ.data ?? []).map((p) => ({ lat: p.lat, lon: p.lon, ts: p.ts, activity: p.activity ?? null })),
-        TRACK_MAX_GAP_S,
-      ),
-      current: currentFixFeatures(currentQ.data ?? []),
-    };
-  }, [enabled, visitsQ.data, trackQ.data, currentQ.data]);
+  if (!enabled) return EMPTY_MOVEMENT;
+  return {
+    visits: visitFeatures(visitsQ.data ?? []),
+    track: trackFeatures(
+      (trackQ.data ?? []).map((p) => ({ lat: p.lat, lon: p.lon, ts: p.ts, activity: p.activity ?? null })),
+      TRACK_MAX_GAP_S,
+    ),
+    current: currentFixFeatures(currentQ.data ?? []),
+  };
 }
 
 /** Contact pins from the local mirror — co-located contacts (a household) merge into one pin, and your parents' home
@@ -113,12 +108,10 @@ export function useMovementFeatures(fromIso: string, toIso: string, enabled: boo
 export function useContactFeatures(enabled: boolean): FeatureCollection {
   const rows = useResidencyRows(enabled);
   const parents = useParentsHomes(useMyContactId(), rows);
-  const places = usePlaceCoords(useMemo(() => rows.map((r) => r.placeId), [rows]));
+  const places = usePlaceCoords(rows.map((r) => r.placeId));
 
-  return useMemo(() => {
-    if (!enabled) return EMPTY_FEATURES;
-    return contactFeatures(rows, places, new Map(parents.map((p) => [p.placeId, p.label]))).features;
-  }, [enabled, rows, places, parents]);
+  if (!enabled) return EMPTY_FEATURES;
+  return contactFeatures(rows, places, new Map(parents.map((p) => [p.placeId, p.label]))).features;
 }
 
 /** Saved-place pins (favorites first is the API's order; gazetteer link or raw pin). */
@@ -136,10 +129,7 @@ export function useSavedPlaceFeatures(enabled: boolean): FeatureCollection {
     },
   });
 
-  return useMemo(
-    () => (enabled ? savedPlaceFeatures(q.data ?? []) : EMPTY_FEATURES),
-    [enabled, q.data],
-  );
+  return enabled ? savedPlaceFeatures(q.data ?? []) : EMPTY_FEATURES;
 }
 
 /** Hotspots from `fromIso` (all-time when null) up to now, ranked by active days. */
@@ -157,8 +147,5 @@ export function useHotspotFeatures(fromIso: string | null, enabled: boolean): Fe
     },
   });
 
-  return useMemo(
-    () => (enabled ? hotspotFeatures(q.data ?? []) : EMPTY_FEATURES),
-    [enabled, q.data],
-  );
+  return enabled ? hotspotFeatures(q.data ?? []) : EMPTY_FEATURES;
 }

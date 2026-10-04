@@ -1,5 +1,4 @@
 import type { FeatureCollection } from 'geojson';
-import { useMemo } from 'react';
 import type { LocationTripDto } from '@lupira/cal-api/models';
 import { useMap } from './MapCanvas';
 import { ACTIVITY_COLORS, activityColorExpression, MAP_COLORS, type MapTheme } from '@lupira/cal-tokens/map';
@@ -34,7 +33,7 @@ export function EventsLayer({ theme, features }: { theme: MapTheme; features: Fe
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
-  const layers = useMemo<LayerSpecSansSource[]>(() => [
+  const layers: LayerSpecSansSource[] = [
     {
       id: 'events-clusters', type: 'circle', filter: ['has', 'point_count'],
       paint: {
@@ -59,7 +58,7 @@ export function EventsLayer({ theme, features }: { theme: MapTheme; features: Fe
         'circle-stroke-color': colors.ring,
       },
     },
-  ], [colors]);
+  ];
 
   useGeoJsonLayer(map, 'events', features, layers, {
     cluster: true,
@@ -73,7 +72,7 @@ export function ContactsLayer({ theme, features }: CommonLayerProps & { features
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
-  const layers = useMemo<LayerSpecSansSource[]>(() => [
+  const layers: LayerSpecSansSource[] = [
     {
       id: 'contacts-clusters', type: 'circle', filter: ['has', 'point_count'],
       paint: {
@@ -93,10 +92,10 @@ export function ContactsLayer({ theme, features }: CommonLayerProps & { features
       id: 'contacts-pins', type: 'circle', filter: ['!', ['has', 'point_count']],
       paint: {
         'circle-radius': PIN.contact,
-        'circle-color': contactPinFill(colors.contact, colors.ring),
+        'circle-color': contactPinFill(colors.contact, colors.ring) as never,
         'circle-stroke-width': PIN.strokeWidth,
-        'circle-stroke-color': contactPinStroke(colors.contact, colors.ring),
-      } as LayerSpecSansSource['paint'],
+        'circle-stroke-color': contactPinStroke(colors.contact, colors.ring) as never,
+      },
     },
     {
       id: 'contacts-labels', type: 'symbol', filter: ['!', ['has', 'point_count']],
@@ -104,7 +103,7 @@ export function ContactsLayer({ theme, features }: CommonLayerProps & { features
       // Text wears ink, never the series color; the halo is the surface ring.
       paint: { 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': PIN_LABEL_HALO_WIDTH },
     },
-  ], [colors]);
+  ];
 
   useGeoJsonLayer(map, 'contacts', features, layers, {
     cluster: true,
@@ -118,7 +117,7 @@ export function FormerContactsLayer({ theme, features }: CommonLayerProps & { fe
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
-  const layers = useMemo<LayerSpecSansSource[]>(() => [
+  const layers: LayerSpecSansSource[] = [
     {
       id: 'contacts-former-pins', type: 'circle',
       paint: {
@@ -134,7 +133,7 @@ export function FormerContactsLayer({ theme, features }: CommonLayerProps & { fe
       layout: { ...PIN_LABEL_LAYOUT, 'text-field': ['get', 'label'] } as LayerSpecSansSource['layout'],
       paint: { 'text-color': colors.ink, 'text-opacity': 0.6, 'text-halo-color': colors.ring, 'text-halo-width': PIN_LABEL_HALO_WIDTH },
     },
-  ], [colors]);
+  ];
 
   useGeoJsonLayer(map, 'contacts-former', features, layers, {
     interactive: INTERACTIVE['contacts-former'],
@@ -151,7 +150,7 @@ export function MovementLayer({ theme, visits, track, current }: CommonLayerProp
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
-  const trackLayers = useMemo<LayerSpecSansSource[]>(() => [
+  const trackLayers: LayerSpecSansSource[] = [
     {
       id: 'track-casing', type: 'line',
       layout: { 'line-cap': 'round', 'line-join': 'round' },
@@ -170,10 +169,10 @@ export function MovementLayer({ theme, visits, track, current }: CommonLayerProp
       layout: { 'line-cap': 'round', 'line-join': 'round' },
       paint: { 'line-color': ACTIVITY_COLORS[theme].Unknown, 'line-width': TRACK.width, 'line-dasharray': [...TRACK.unknownDash] },
     },
-  ], [theme, colors]);
+  ];
   useGeoJsonLayer(map, 'track', track, trackLayers);
 
-  const visitLayers = useMemo<LayerSpecSansSource[]>(() => [
+  const visitLayers: LayerSpecSansSource[] = [
     {
       id: 'visits-circles', type: 'circle',
       paint: {
@@ -184,12 +183,12 @@ export function MovementLayer({ theme, visits, track, current }: CommonLayerProp
         'circle-stroke-color': colors.visitFill,
       },
     },
-  ], [colors]);
+  ];
   useGeoJsonLayer(map, 'visits', visits, visitLayers, {
     interactive: INTERACTIVE.visits,
   });
 
-  const currentLayers = useMemo<LayerSpecSansSource[]>(() => [
+  const currentLayers: LayerSpecSansSource[] = [
     {
       id: 'current-halo', type: 'circle',
       paint: { 'circle-radius': CURRENT_FIX.haloRadius, 'circle-color': colors.currentFill, 'circle-opacity': CURRENT_FIX.haloOpacity },
@@ -203,7 +202,7 @@ export function MovementLayer({ theme, visits, track, current }: CommonLayerProp
         'circle-stroke-color': colors.ring,
       },
     },
-  ], [colors]);
+  ];
   useGeoJsonLayer(map, 'current', current, currentLayers, {
     interactive: INTERACTIVE.current,
   });
@@ -215,7 +214,7 @@ export function SavedPlacesLayer({ theme, features }: CommonLayerProps & { featu
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
-  const layers = useMemo<LayerSpecSansSource[]>(() => [
+  const layers: LayerSpecSansSource[] = [
     {
       id: 'saved-pins', type: 'circle',
       paint: {
@@ -225,7 +224,7 @@ export function SavedPlacesLayer({ theme, features }: CommonLayerProps & { featu
         'circle-stroke-color': colors.ring,
       },
     },
-  ], [colors]);
+  ];
 
   useGeoJsonLayer(map, 'saved', features, layers, {
     interactive: INTERACTIVE.saved,
@@ -238,7 +237,7 @@ export function HotspotsLayer({ theme, features }: CommonLayerProps & { features
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
-  const layers = useMemo<LayerSpecSansSource[]>(() => [
+  const layers: LayerSpecSansSource[] = [
     {
       id: 'hotspots-halo', type: 'circle',
       paint: {
@@ -254,7 +253,7 @@ export function HotspotsLayer({ theme, features }: CommonLayerProps & { features
       layout: { ...PIN_LABEL_LAYOUT, 'text-field': ['coalesce', ['get', 'label'], ''] } as LayerSpecSansSource['layout'],
       paint: { 'text-color': colors.ink, 'text-halo-color': colors.ring, 'text-halo-width': PIN_LABEL_HALO_WIDTH },
     },
-  ], [colors]);
+  ];
 
   useGeoJsonLayer(map, 'hotspots', features, layers, {
     beneathData: true,
@@ -268,7 +267,7 @@ export function PhotosLayer({ theme, features }: CommonLayerProps & { features: 
   const map = useMap();
   const colors = MAP_COLORS[theme];
 
-  const layers = useMemo<LayerSpecSansSource[]>(() => [
+  const layers: LayerSpecSansSource[] = [
     {
       id: 'photos-clusters', type: 'circle', filter: ['>', ['get', 'count'], 1],
       paint: {
@@ -293,7 +292,7 @@ export function PhotosLayer({ theme, features }: CommonLayerProps & { features: 
         'circle-stroke-color': colors.ring,
       },
     },
-  ], [colors]);
+  ];
 
   useGeoJsonLayer(map, 'photos', features, layers, {
     interactive: INTERACTIVE.photos,

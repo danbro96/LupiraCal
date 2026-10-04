@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
@@ -22,13 +22,12 @@ export function useSnackbar() {
 
 export function SnackbarHost({ children }: { children: ReactNode }) {
   const [current, setCurrent] = useState<{ message: string; severity: Severity; action?: SnackAction; key: number } | null>(null);
-  const show = useCallback<Show>((message, severity = 'error', action) => {
+  const show: Show = (message, severity = 'error', action) => {
     setCurrent({ message, severity, action, key: Date.now() });
-  }, []);
-  const value = useMemo(() => show, [show]);
+  };
 
   return (
-    <SnackbarContext.Provider value={value}>
+    <SnackbarContext.Provider value={show}>
       {children}
       <Snackbar
         key={current?.key}

@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { residencyStatus, type FuzzyDate } from '@lupira/cal-domain/fuzzyDate';
 import { parentsHomes, type ContactAddressRow, type ParentsHome } from '@lupira/cal-domain/residents';
@@ -17,7 +16,7 @@ export function useResidencyRows(enabled = true): ContactAddressRow[] {
     enabled,
     queryFn: async () => contactResidencies(await getDb()),
   });
-  return useMemo(() => (q.data ?? []).map((r) => ({
+  return (q.data ?? []).map((r) => ({
     contactId: r.contact_id,
     displayName: r.display_name,
     placeId: r.place_id,
@@ -25,17 +24,15 @@ export function useResidencyRows(enabled = true): ContactAddressRow[] {
     label: r.label,
     movedIn: parseFuzzy(r.moved_in),
     movedOut: parseFuzzy(r.moved_out),
-  })), [q.data]);
+  }));
 }
 
 /** Where the contact's parents live now — derived from Parent relationships and their residencies, never stored. */
 export function useParentsHomes(contactId: string | null, rows: readonly ContactAddressRow[]): ParentsHome[] {
   const { data: relations } = useContactRelations(contactId ?? '');
-  return useMemo(() => {
-    if (!contactId) return [];
-    const parents = (relations ?? []).filter((r) => r.kind === 'Parent' && !r.ended).map((r) => ({ contactId: r.otherId, displayName: r.displayName }));
-    return parentsHomes(contactId, parents, rows);
-  }, [contactId, relations, rows]);
+  if (!contactId) return [];
+  const parents = (relations ?? []).filter((r) => r.kind === 'Parent' && !r.ended).map((r) => ({ contactId: r.otherId, displayName: r.displayName }));
+  return parentsHomes(contactId, parents, rows);
 }
 
 /** A place's door codes from the mirror, shown only while the mirror still has someone living there now — a move-out

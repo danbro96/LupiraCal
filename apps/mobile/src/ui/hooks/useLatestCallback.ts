@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
 /** A stable function that always calls the latest `fn`, for callbacks handed to gestures and worklets. */
 export function useLatestCallback<A extends unknown[], R>(fn: (...args: A) => R): (...args: A) => R {
@@ -6,5 +6,5 @@ export function useLatestCallback<A extends unknown[], R>(fn: (...args: A) => R)
   useLayoutEffect(() => {
     latest.current = fn;
   });
-  return useCallback((...args: A) => latest.current(...args), []);
+  return (...args: A) => latest.current(...args);
 }

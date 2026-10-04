@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getListContainersQueryKey, useBootstrapMe, useListContainers } from '@lupira/cal-api/query/cal';
 import { needsCalendarBootstrap } from '@lupira/cal-domain/bootstrap';
 
 export function useContainers() {
   const query = useListContainers();
-  const containers = useMemo(() => query.data ?? [], [query.data]);
+  const containers = query.data ?? [];
   // Containers are all calendars now — address books moved to LupiraContactApi (useAddressBooks).
   const calendars = containers;
   return { ...query, containers, calendars };

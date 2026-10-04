@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { FlatList, Share, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { Button } from '../components/Button';
@@ -13,8 +12,8 @@ import { spacing, useColors, type Palette } from '../theme';
 export function DebugLogScreen() {
   const entries = useDebugLog(s => s.entries);
   const c = useColors();
-  const styles = useMemo(() => makeStyles(c), [c]);
-  const rows = useMemo(() => [...entries].reverse(), [entries]);
+  const styles = makeStyles(c);
+  const rows = [...entries].reverse();
 
   function onShare() {
     void Share.share({

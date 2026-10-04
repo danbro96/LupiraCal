@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { List } from 'react-native-paper';
 import { rankByInteraction } from '@lupira/cal-domain/contactRank';
@@ -31,8 +31,8 @@ export function PeopleSheet({ selected, attendees, me, onChange, onDismiss }: {
   const { data: summary } = useParticipationSummary(true);
   const [q, setQ] = useState('');
 
-  const ranked = useMemo(() => rankByInteraction(contacts ?? [], summary), [contacts, summary]);
-  const byId = useMemo(() => new Map((contacts ?? []).map((row) => [row.id, row])), [contacts]);
+  const ranked = rankByInteraction(contacts ?? [], summary);
+  const byId = new Map((contacts ?? []).map((row) => [row.id, row]));
   const statusOf = new Map(attendees.map((a) => [a.contactId, a.status]));
   const terms = searchTerms(q);
   const term = terms.length > 0;

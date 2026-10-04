@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Snackbar } from 'react-native-paper';
@@ -38,10 +37,8 @@ export function ToastHost() {
  *  and, while the screen is focused, toasts sit above the bar instead of over its buttons. */
 export function useToastClearance(height: number): void {
   const setClearance = useToast(s => s.setClearance);
-  useFocusEffect(
-    useCallback(() => {
-      setClearance(height);
-      return () => setClearance(0);
-    }, [height, setClearance]),
-  );
+  useFocusEffect(() => {
+    setClearance(height);
+    return () => setClearance(0);
+  });
 }

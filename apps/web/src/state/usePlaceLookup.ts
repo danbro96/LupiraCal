@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { lookupPlaces } from '@lupira/cal-api/query/geo';
 import type { PlaceDto } from '@lupira/cal-api/models';
@@ -15,7 +14,7 @@ export function usePlaceCoords(ids: readonly (string | null | undefined)[]): {
   places: Map<string, PlaceDto>;
   isLoading: boolean;
 } {
-  const distinct = useMemo(() => distinctPlaceIds(ids), [ids]);
+  const distinct = distinctPlaceIds(ids);
   const { data, isLoading } = useQuery({
     queryKey: ['/geo-api/places/lookup', distinct],
     queryFn: async ({ signal }) =>
@@ -23,6 +22,6 @@ export function usePlaceCoords(ids: readonly (string | null | undefined)[]): {
     enabled: distinct.length > 0,
     staleTime: DAY_MS,
   });
-  const places = useMemo(() => toLocatedPlaces(data ?? []), [data]);
+  const places = toLocatedPlaces(data ?? []);
   return { places, isLoading: distinct.length > 0 && isLoading };
 }

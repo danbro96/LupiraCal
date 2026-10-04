@@ -28,15 +28,13 @@ export function useAvailabilitySegments(
   const ids = useMemo(() => [...new Set((occurrences.data ?? []).map((o) => o.id))], [occurrences.data]);
   const details = useQueries({ queries: ids.map((id) => getGetItemQueryOptions(id)) });
 
-  return useMemo(() => {
-    const statusById = new Map<string, AvailabilityStatus>();
-    details.forEach((d, i) => {
-      const status = d.data?.details?.presence?.status;
-      if (status) statusById.set(ids[i], status);
-    });
-    return (occurrences.data ?? []).flatMap((o) => {
-      const status = statusById.get(o.id);
-      return status ? [{ start: o.start, end: o.end, isAllDay: o.isAllDay, status }] : [];
-    });
-  }, [occurrences.data, details, ids]);
+  const statusById = new Map<string, AvailabilityStatus>();
+  details.forEach((d, i) => {
+    const status = d.data?.details?.presence?.status;
+    if (status) statusById.set(ids[i], status);
+  });
+  return (occurrences.data ?? []).flatMap((o) => {
+    const status = statusById.get(o.id);
+    return status ? [{ start: o.start, end: o.end, isAllDay: o.isAllDay, status }] : [];
+  });
 }

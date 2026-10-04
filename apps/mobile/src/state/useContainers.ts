@@ -1,6 +1,5 @@
 import { isSelectableCalendar, isCalendarShown } from '@lupira/cal-domain/calendars';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
 import { getDb } from '../data/db/expoDb';
 import { listContainerDocs, type CalendarFilter } from '../data/mirror';
 import { usePrefs } from './prefs-store';
@@ -32,10 +31,8 @@ export function useCalendars() {
 export function useCalendarFilter(): CalendarFilter | null {
   const { data } = useCalendars();
   const choices = usePrefs((p) => p.calendarChoices);
-  return useMemo(() => {
-    if (!data) return null;
-    const shown = data.filter((c) => isCalendarShown(c, choices));
-    const birthdays = data.find((c) => c.kind === 'Birthdays');
-    return { calendarIds: shown.map((c) => c.id).sort(), birthdays: !birthdays || shown.includes(birthdays) };
-  }, [data, choices]);
+  if (!data) return null;
+  const shown = data.filter((c) => isCalendarShown(c, choices));
+  const birthdays = data.find((c) => c.kind === 'Birthdays');
+  return { calendarIds: shown.map((c) => c.id).sort(), birthdays: !birthdays || shown.includes(birthdays) };
 }

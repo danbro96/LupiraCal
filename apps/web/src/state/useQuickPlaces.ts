@@ -21,12 +21,11 @@ export function useQuickPlaces(nowIso: string): QuickPlace[] {
 
   const ownAddresses = useMemo(() => rows.filter((r) => r.contactId === me).map((r) => ({ ...r, type: r.addressType })), [rows, me]);
   const upcoming = useMemo(() => nextPlacedEvents(occurrences ?? [], new Date(nowIso)), [occurrences, nowIso]);
-  const { places } = usePlaceCoords(useMemo(
-    () => [...ownAddresses.map((a) => a.placeId), ...parents.map((p) => p.placeId), ...upcoming.map((o) => o.placeId)],
-    [ownAddresses, parents, upcoming],
-  ));
+  const { places } = usePlaceCoords(
+    [...ownAddresses.map((a) => a.placeId), ...parents.map((p) => p.placeId), ...upcoming.map((o) => o.placeId)],
+  );
 
-  return useMemo(() => quickPlaces({
+  return quickPlaces({
     ownAddresses,
     parents,
     places,
@@ -34,5 +33,5 @@ export function useQuickPlaces(nowIso: string): QuickPlace[] {
       const calendar = calendars.find((c) => o.calendarIds.includes(c.id));
       return { itemId: o.id, title: o.title ?? null, start: o.start, placeId: o.placeId!, color: calendar ? calendarColor(calendar) : null };
     }),
-  }), [ownAddresses, parents, places, upcoming, calendars]);
+  });
 }

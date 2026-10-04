@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { createItemRelationsBatch, deleteItemRelationsBatch, listRelationEdges, searchItems } from '@lupira/cal-api/fetch/cal';
 import { listPhotos, lookupPhotos } from '@lupira/cal-api/fetch/photo';
@@ -31,17 +30,14 @@ function usePhotoEventEdges() {
 /** photoId → linked calendar item ids. */
 export function usePhotoEventLinks(): Map<string, string[]> {
   const query = usePhotoEventEdges();
-  return useMemo(() => photoEventLinks(query.data ?? []), [query.data]);
+  return photoEventLinks(query.data ?? []);
 }
 
 /** The photos linked to one calendar item, hydrated in a single batch lookup. */
 export function useEventPhotoQuery(itemId: string) {
   const reachable = useSyncStatus((s) => s.serverReachable);
   const edges = usePhotoEventEdges();
-  const ids = useMemo(
-    () => (edges.data ?? []).filter((e) => e.fromId === itemId).map((e) => e.toRef),
-    [edges.data, itemId],
-  );
+  const ids = (edges.data ?? []).filter((e) => e.fromId === itemId).map((e) => e.toRef);
 
   const query = useQuery({
     queryKey: ['photos', 'lookup', ids],
@@ -72,7 +68,7 @@ export function useEventPhotos(itemId: string): PhotoListItemDto[] {
  *  block is not of it, so nothing is linked until the user says so. */
 export function useSuggestedPhotos(item: PhotoWindowSource, exclude: readonly string[], enabled: boolean) {
   const reachable = useSyncStatus((s) => s.serverReachable);
-  const window = useMemo(() => eventPhotoWindow(item), [item]);
+  const window = eventPhotoWindow(item);
 
   const query = useQuery({
     queryKey: ['photos', 'suggestions', window?.fromIso, window?.toIso],
@@ -86,10 +82,7 @@ export function useSuggestedPhotos(item: PhotoWindowSource, exclude: readonly st
     },
   });
 
-  const items = useMemo(
-    () => (query.data ?? []).filter((p) => !exclude.includes(p.id)),
-    [query.data, exclude],
-  );
+  const items = (query.data ?? []).filter((p) => !exclude.includes(p.id));
   return { items, isLoading: query.isLoading, hasWindow: window !== null };
 }
 

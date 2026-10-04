@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { getPhoto, getPhotoStats, listPhotoPlaces, listPhotos } from '@lupira/cal-api/fetch/photo';
 import type { AssetKind, AssetStatus, ListPhotosParams, PhotoListItemDto, PhotoSort } from '@lupira/cal-api/models';
@@ -75,11 +74,9 @@ export function usePhotoLibrary(filters: PhotoQueryFilters) {
   });
 
   const event = useEventPhotoQuery(filters.event ?? '');
-  const eventItems = useMemo(() => {
-    const { from, to } = listParams(filters);
-    return filterPhotos(event.data ?? [], { ...filters, fromIso: from, toIso: to });
-  }, [event.data, filters]);
-  const items = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data]);
+  const { from, to } = listParams(filters);
+  const eventItems = filterPhotos(event.data ?? [], { ...filters, fromIso: from, toIso: to });
+  const items = query.data?.pages.flatMap((p) => p.items) ?? [];
 
   if (filters.event) {
     return {

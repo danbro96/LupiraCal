@@ -2,7 +2,7 @@ import { displayTitle, statusBadge } from '@lupira/cal-domain/itemLabels';
 import { fmtWhen } from '@lupira/cal-domain/time';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { memo, useCallback, useDeferredValue, useMemo, useState } from 'react';
+import { memo, useDeferredValue, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 import { Searchbar, Text } from 'react-native-paper';
 import type { ItemSearchRow } from '../../data/mirror';
@@ -25,17 +25,15 @@ export function ItemSearchScreen() {
   const ready = q.length >= MIN_QUERY;
   const { data, isFetching } = useItemSearch(ready ? q : '');
 
-  const sections = useMemo(() => {
-    const rows = ready ? data ?? [] : [];
-    const upcoming = rows.filter((r) => r.next_utc !== null);
-    const past = rows.filter((r) => r.next_utc === null);
-    return [
-      ...(upcoming.length ? [{ title: 'Upcoming', data: upcoming }] : []),
-      ...(past.length ? [{ title: 'Past', data: past }] : []),
-    ];
-  }, [data, ready]);
+  const rows = ready ? data ?? [] : [];
+  const upcoming = rows.filter((r) => r.next_utc !== null);
+  const past = rows.filter((r) => r.next_utc === null);
+  const sections = [
+    ...(upcoming.length ? [{ title: 'Upcoming', data: upcoming }] : []),
+    ...(past.length ? [{ title: 'Past', data: past }] : []),
+  ];
 
-  const open = useCallback((itemId: string) => navigation.navigate('ItemDetail', { itemId }), [navigation]);
+  const open = (itemId: string) => navigation.navigate('ItemDetail', { itemId });
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>

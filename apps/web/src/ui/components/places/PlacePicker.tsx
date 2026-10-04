@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import Autocomplete from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
@@ -56,7 +56,7 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
   }, [state.text]);
   const [opened, setOpened] = useState(false);
   const { places, localities, typing, loading } = usePlaceCandidates({ query: q, opened, attendeeIds, day });
-  const options = useMemo<PickerOption[]>(() => [
+  const options: PickerOption[] = [
     ...places.map((p) => ({
       id: p.placeId,
       type: SuggestionType.Place,
@@ -69,7 +69,7 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
       faded: !!p.viaContact && p.viaContact.status !== 'active',
     })),
     ...localities,
-  ], [places, localities]);
+  ];
 
   const dispatch = (event: PickerEvent) => {
     const { state: next, commands } = transition(stateRef.current, event);

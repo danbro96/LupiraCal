@@ -58,18 +58,15 @@ const inStrip = (e: GridEntry) => inAllDayStrip(e, e.childCount > 0);
 
 /** Timed week/day lanes: hour rows, an all-day strip, availability tint, and column-packed events. */
 export function WeekGrid({ days, entries, segments, onOpenItem, selectedFamilyKey }: Props) {
-  const allDay = useMemo(() => entries.filter(inStrip), [entries]);
-  const timed = useMemo(() => entries.filter((e) => !inStrip(e)), [entries]);
+  const allDay = entries.filter(inStrip);
+  const timed = entries.filter((e) => !inStrip(e));
   const nowMin = minutesOfDay(new Date());
 
   const [hoverFamily, setHoverFamily] = useState<string | null>(null);
   const activeFamily = hoverFamily ?? selectedFamilyKey ?? null;
   const famOf: FamOf = (key) => (activeFamily ? (key === activeFamily ? 'hi' : 'dim') : null);
 
-  const railsByDay = useMemo(
-    () => new Map(days.map((d) => [ymd(d), railsForDay(entries, d)])),
-    [entries, days],
-  );
+  const railsByDay = new Map(days.map((d) => [ymd(d), railsForDay(entries, d)]));
 
   // The day count drove a --day-count custom property when this lived in CSS; sx can read it directly.
   const cols = { display: 'grid', gridTemplateColumns: `56px repeat(${days.length}, 1fr)` } as const;

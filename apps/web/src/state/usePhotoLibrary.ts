@@ -75,7 +75,7 @@ export function usePhotoLibrary(filters: PhotoFilters) {
     () => filterPhotos(event.items, { sort, kind, status, located, place, fromIso: from, toIso: to }),
     [event.items, sort, kind, status, located, place, from, to],
   );
-  const items = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data]);
+  const items = query.data?.pages.flatMap((p) => p.items) ?? [];
 
   if (filters.event) {
     return {
@@ -114,7 +114,7 @@ export function usePhotoEventLinks() {
     staleTime: 5 * 60_000,
   });
 
-  return useMemo(() => photoEventLinks(query.data ?? []), [query.data]);
+  return photoEventLinks(query.data ?? []);
 }
 
 export type PhotoDay = DayGroup<PhotoListItemDto>;
@@ -130,10 +130,7 @@ function useEventPhotoQuery(itemId: string) {
     staleTime: 5 * 60_000,
     enabled: !!itemId,
   });
-  const ids = useMemo(
-    () => (edges.data ?? []).filter((e) => e.fromId === itemId).map((e) => e.toRef),
-    [edges.data, itemId],
-  );
+  const ids = (edges.data ?? []).filter((e) => e.fromId === itemId).map((e) => e.toRef);
 
   const lookup = useQuery({
     queryKey: ['/photo-api/photos/lookup', ids],
@@ -159,7 +156,7 @@ export function useEventPhotos(itemId: string) {
 
 /** Events around the photos' capture times, offered as link targets. */
 export function useLinkCandidates(takenAts: readonly string[], enabled: boolean) {
-  const window = useMemo(() => captureWindow(takenAts), [takenAts]);
+  const window = captureWindow(takenAts);
   return useSearchItems(
     { from: window?.fromIso, to: window?.toIso, take: EVENT_CANDIDATE_LIMIT },
     { query: { enabled: enabled && window !== null } },
@@ -169,7 +166,7 @@ export function useLinkCandidates(takenAts: readonly string[], enabled: boolean)
 /** Photos taken while an event was happening. Candidates only: a photo taken during a 9-to-5 "work"
  *  block is not of it, so nothing is linked until the user says so. */
 export function useSuggestedPhotos(item: PhotoWindowSource, exclude: readonly string[], enabled: boolean) {
-  const window = useMemo(() => eventPhotoWindow(item), [item]);
+  const window = eventPhotoWindow(item);
 
   const { data, isLoading } = useQuery({
     queryKey: [...getListPhotosQueryKey({ from: window?.fromIso, to: window?.toIso }), 'suggestions'],
@@ -178,9 +175,6 @@ export function useSuggestedPhotos(item: PhotoWindowSource, exclude: readonly st
     staleTime: THUMB_SAFE_STALE_MS,
   });
 
-  const items = useMemo(
-    () => (data?.items ?? []).filter((p) => !exclude.includes(p.id)),
-    [data, exclude],
-  );
+  const items = (data?.items ?? []).filter((p) => !exclude.includes(p.id));
   return { items, isLoading, hasWindow: window !== null };
 }

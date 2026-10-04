@@ -1,18 +1,17 @@
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { lookupPlaces } from '@lupira/cal-api/fetch/geo';
 import type { PlaceDto } from '@lupira/cal-api/models';
 import { PLACE_LOOKUP_MAX, chunk, distinctPlaceIds, toLocatedPlaces } from '@lupira/cal-domain/places';
 import { useSyncStatus } from '../sync/syncStatus';
 
-// Shared so the empty case keeps its identity — a fresh Map per render defeats callers' useMemo.
+// Shared so the empty case keeps its identity — a fresh Map per render defeats callers' memoization.
 const NO_PLACES = new Map<string, PlaceDto>();
 
 /** Hydrate stored geo place ids into coordinates in one batched query. The id set is the key, not a
  *  URL path — lookup is a POST, which orval generates as a mutation. */
 export function usePlaceCoords(placeIds: (string | null | undefined)[]): Map<string, PlaceDto> {
   const reachable = useSyncStatus((s) => s.serverReachable);
-  const distinct = useMemo(() => distinctPlaceIds(placeIds), [placeIds]);
+  const distinct = distinctPlaceIds(placeIds);
   const q = useQuery({
     queryKey: ['map', 'places', distinct],
     enabled: reachable && distinct.length > 0,

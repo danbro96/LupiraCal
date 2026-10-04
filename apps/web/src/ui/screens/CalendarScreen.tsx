@@ -117,18 +117,7 @@ export function CalendarScreen() {
   };
 
   const selectedItemId = searchParams.get('item');
-  const selectedFamilyKey = useMemo(() => {
-    if (!selectedItemId) return undefined;
-    for (const e of entries) {
-      if (e.itemId === selectedItemId) {
-        const k = familyKey(e);
-        if (k) return k;
-      }
-      // The selected item may be an out-of-range parent whose children are on-screen.
-      if (e.parentItemId === selectedItemId) return selectedItemId;
-    }
-    return undefined;
-  }, [entries, selectedItemId]);
+  const selectedFamilyKey = familyKeyOf(entries, selectedItemId);
 
   return (
     <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
@@ -276,4 +265,17 @@ export function CalendarScreen() {
       </Box>
     </Box>
   );
+}
+
+function familyKeyOf(entries: GridEntry[], selectedItemId: string | null): string | undefined {
+  if (!selectedItemId) return undefined;
+  for (const e of entries) {
+    if (e.itemId === selectedItemId) {
+      const k = familyKey(e);
+      if (k) return k;
+    }
+    // The selected item may be an out-of-range parent whose children are on-screen.
+    if (e.parentItemId === selectedItemId) return selectedItemId;
+  }
+  return undefined;
 }

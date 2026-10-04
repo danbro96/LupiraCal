@@ -3,7 +3,8 @@ import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap, MapGeoJSONF
 import { useEffect, useEffectEvent } from 'react';
 import { PIN_CLUSTERS } from '@lupira/cal-domain/mapZoom';
 
-export type LayerSpecSansSource = Omit<LayerSpecification, 'source'>;
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+export type LayerSpecSansSource = DistributiveOmit<LayerSpecification, 'source'>;
 
 interface GeoJsonLayerOptions {
   cluster?: boolean;
@@ -17,7 +18,7 @@ interface GeoJsonLayerOptions {
 /**
  * The one fiddly piece of MapLibre/React glue, kept in one place: add source+layers once the style
  * is ready, re-add after every setStyle (styledata wipes them), push data changes via setData, and
- * tear down on unmount. `layers` must be referentially stable (module const or useMemo).
+ * tear down on unmount. `layers` must be referentially stable (module const or compiler-memoized).
  */
 export function useGeoJsonLayer(
   map: MapLibreMap,

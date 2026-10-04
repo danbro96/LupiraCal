@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import { Button, Dialog, Portal, Text } from 'react-native-paper';
 import { useColors } from '../theme';
 
@@ -23,13 +23,13 @@ export function ConfirmDialogHost({ children }: { children: ReactNode }) {
   const [visible, setVisible] = useState(false);
   const resolver = useRef<((v: boolean) => void) | null>(null);
 
-  const confirm = useCallback((o: ConfirmOptions) => {
+  const confirm = (o: ConfirmOptions) => {
     setOpts(o);
     setVisible(true);
     return new Promise<boolean>((resolve) => {
       resolver.current = resolve;
     });
-  }, []);
+  };
 
   // Keeps the last opts so the dialog still has content while it fades out.
   const settle = (v: boolean) => {

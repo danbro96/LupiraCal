@@ -2,7 +2,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { fmtDateTime } from '@lupira/cal-domain/time';
 import { Image } from 'expo-image';
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Directions, Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Button, IconButton, List, Menu, Text } from 'react-native-paper';
@@ -54,7 +54,7 @@ export function PhotoViewerScreen() {
   // keeps that decision correct when the page arrives mid-render.
   const found = items.findIndex((i) => i.id === currentId);
   const inPage = found >= 0;
-  const pages = useMemo<PhotoListItemDto[]>(() => (inPage ? items : detail ? [detail] : []), [inPage, items, detail]);
+  const pages: PhotoListItemDto[] = inPage ? items : detail ? [detail] : [];
   const index = Math.max(0, found);
   const current = detail ?? pages[index] ?? pages[0];
 
@@ -130,9 +130,8 @@ export function PhotoViewerScreen() {
     navigation.setOptions({ title: pages.length > 1 ? `${index + 1} of ${pages.length}` : 'Photo' });
   }, [navigation, index, pages.length]);
 
-  // Stable list props: a new renderItem re-renders every mounted page, and each page owns gestures.
   const originalUrl = detail?.originalUrl;
-  const renderItem = useCallback(({ item, index: i }: { item: PhotoListItemDto; index: number }) => (
+  const renderItem = ({ item, index: i }: { item: PhotoListItemDto; index: number }) => (
     <PhotoPage
       photo={item}
       width={width}
@@ -143,18 +142,15 @@ export function PhotoViewerScreen() {
       onZoomChange={setZoomed}
       onSwipeInfo={setInfoOpen}
     />
-  ), [width, index, originalUrl]);
-  const getItemLayout = useCallback(
-    (_: unknown, i: number) => ({ length: width, offset: width * i, index: i }),
-    [width],
   );
-  const onMomentumScrollEnd = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const getItemLayout = (_: unknown, i: number) => ({ length: width, offset: width * i, index: i });
+  const onMomentumScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const next = pages[Math.round(e.nativeEvent.contentOffset.x / width)];
     if (next) setCurrentId(next.id);
-  }, [pages, width]);
-  const onEndReached = useCallback(() => {
+  };
+  const onEndReached = () => {
     if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  };
 
   if (pages.length === 0) return <Centered text={isLoading ? 'Loading…' : 'This photo is no longer available.'} />;
 

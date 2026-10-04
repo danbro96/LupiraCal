@@ -28,8 +28,8 @@ export function usePlaceCandidates({ query, opened, attendeeIds, day }: {
   const { data: dayEvents } = useSearchItems(dayRange, { query: { enabled: opened && !!dayRange } });
 
   // Same id set as the map's contact layer, so both share one lookup.
-  const { places } = usePlaceCoords(useMemo(() => addresses.map((a) => a.placeId), [addresses]));
-  const { places: dayPlaces } = usePlaceCoords(useMemo(() => (dayEvents ?? []).map((o) => o.placeId), [dayEvents]));
+  const { places } = usePlaceCoords(addresses.map((a) => a.placeId));
+  const { places: dayPlaces } = usePlaceCoords((dayEvents ?? []).map((o) => o.placeId));
 
   return useMemo(() => {
     const picked = pickPlaces({

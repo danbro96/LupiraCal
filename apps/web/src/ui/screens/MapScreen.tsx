@@ -1,6 +1,6 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Marker, type GeoJSONSource, type MapGeoJSONFeature, type MapMouseEvent } from 'maplibre-gl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -74,23 +74,23 @@ export default function MapScreen() {
   const theme = useMapTheme();
   const selectedPlaceId = params.get('place') ?? undefined;
 
-  const setParam = useCallback((key: string, value: string | undefined) =>
+  const setParam = (key: string, value: string | undefined) =>
     setParams((prev) => {
       const next = new URLSearchParams(prev);
       if (value) next.set(key, value);
       else next.delete(key);
       return next;
-    }, { replace: true }), [setParams]);
+    }, { replace: true });
 
   // One selection at a time: each flies the map on load, so leaving an older one in the URL makes a
   // reload return to it instead of to what was picked last.
-  const select = useCallback((key: 'place' | 'item', value: string | undefined) =>
+  const select = (key: 'place' | 'item', value: string | undefined) =>
     setParams((prev) => {
       const next = new URLSearchParams(prev);
       for (const k of SELECTION_KEYS) next.delete(k);
       if (value) next.set(key, value);
       return next;
-    }, { replace: true }), [setParams]);
+    }, { replace: true });
 
   const range: DateRange = useMemo(() => {
     const from = params.get('from');
@@ -123,8 +123,8 @@ export default function MapScreen() {
   };
 
   // Inclusive local dates → half-open UTC instants for the APIs.
-  const fromIso = useMemo(() => dayStartIso(range.fromYmd), [range.fromYmd]);
-  const toIso = useMemo(() => dayEndIso(range.toYmd), [range.toYmd]);
+  const fromIso = dayStartIso(range.fromYmd);
+  const toIso = dayEndIso(range.toYmd);
 
   const events = useEventFeatures(fromIso, toIso, activeLayers.includes('events'));
   const movement = useMovementFeatures(fromIso, toIso, activeLayers.includes('movement'));
@@ -139,16 +139,16 @@ export default function MapScreen() {
   const [hits, setHits] = useState<{ list: MapHit[]; at: [number, number] }>();
   const [selected, setSelected] = useState<[number, number]>();
   const [flyTarget, setFlyTarget] = useState<FlyTarget>();
-  const popoverAnchor = useMemo(() => (hits ? { lngLat: hits.at } : undefined), [hits]);
-  const closeHits = useCallback(() => {
+  const popoverAnchor = hits ? { lngLat: hits.at } : undefined;
+  const closeHits = () => {
     setHits(undefined);
     setSelected(undefined);
-  }, []);
-  const openPlace = useCallback((placeId: string) => {
+  };
+  const openPlace = (placeId: string) => {
     setHits(undefined);
     select('place', placeId);
-  }, [select]);
-  const onHits = useCallback((list: MapHit[]) => {
+  };
+  const onHits = (list: MapHit[]) => {
     if (list.length === 0) {
       closeHits();
       return;
@@ -156,7 +156,7 @@ export default function MapScreen() {
     const point: [number, number] = [list[0].point.lon, list[0].point.lat];
     setSelected(point);
     setHits({ list, at: point });
-  }, [closeHits]);
+  };
 
   const onHitAction = (hit: MapHit, action: HitAction) => {
     if (action === 'zoom' && hit.kind === 'photoCell') {
@@ -207,10 +207,7 @@ export default function MapScreen() {
     }
   }
 
-  const fitCollections = useMemo(
-    () => [events.features, movement.visits, contacts.features, saved.features],
-    [events.features, movement.visits, contacts.features, saved.features],
-  );
+  const fitCollections = [events.features, movement.visits, contacts.features, saved.features];
   // A deep link already aimed the camera; turning a layer on later must not pull it away.
   const deepLinked = !!selectedPlaceId || !!atParam || !!params.get('item');
   const anyLoading = events.isLoading || movement.isLoading || contacts.isLoading || saved.isLoading || photos.isLoading
@@ -218,7 +215,7 @@ export default function MapScreen() {
 
   const showIndex = params.get('index') === '1';
   const showHistory = params.get('history') === '1';
-  const indexGroups = useMemo<IndexGroup[]>(() => {
+  const indexGroups: IndexGroup[] = (() => {
     const flyTo = (feature: GeoJSON.Feature, placeId?: unknown) => () => {
       const [lon, lat] = (feature.geometry as GeoJSON.Point).coordinates;
       setFlyTarget({ center: [lon, lat] });
@@ -287,7 +284,7 @@ export default function MapScreen() {
       { title: 'Saved places', rows: savedRows },
       { title: 'Events in range', rows: eventRows },
     ];
-  }, [contacts.features, contacts.former, showHistory, saved.features, events.features, select]);
+  })();
 
   return (
     <Box sx={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex' }}>

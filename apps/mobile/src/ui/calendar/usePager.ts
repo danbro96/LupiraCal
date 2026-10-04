@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { cancelAnimation, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -64,19 +64,19 @@ export function usePager(onStep: (dir: 1 | -1) => void) {
   });
 
   /** Animate one page over, as a swipe would, e.g. for a tap on a neighbouring page's content. */
-  const slide = useCallback((dir: 1 | -1) => actions.settle(dir), [actions]);
+  const slide = (dir: 1 | -1) => actions.settle(dir);
 
-  const snapTo = useCallback((p: number) => {
+  const snapTo = (p: number) => {
     cancelAnimation(offset);
     pending.set(0);
     page.set(p);
     offset.set(-p * width.get());
-  }, [offset, pending, page, width]);
+  };
 
-  const onPageLayout = useCallback((e: LayoutChangeEvent) => {
+  const onPageLayout = (e: LayoutChangeEvent) => {
     width.set(e.nativeEvent.layout.width);
     offset.set(-page.get() * e.nativeEvent.layout.width);
-  }, [width, offset, page]);
+  };
 
   const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
   return { gesture: actions.gesture, slideStyle, slide, snapTo, onPageLayout };

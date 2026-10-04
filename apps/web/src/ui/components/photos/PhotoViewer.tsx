@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -73,10 +73,9 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
     return () => window.removeEventListener('keydown', onKey);
   }, [confirming, prev, next, onNavigate]);
 
-  const src = useMemo(() => {
-    if (!photo) return undefined;
-    return (originalIsViewable(photo.contentType) ? photo.originalUrl ?? photo.thumbUrl : photo.thumbUrl) ?? undefined;
-  }, [photo]);
+  const src = photo
+    ? (originalIsViewable(photo.contentType) ? photo.originalUrl ?? photo.thumbUrl : photo.thumbUrl) ?? undefined
+    : undefined;
 
   const leave = () => {
     const neighbour = next ?? prev;

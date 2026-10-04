@@ -44,25 +44,21 @@ export function useEventFeatures(from: string, to: string, enabled: boolean): Ev
     [byCalendar],
   );
 
-  const { places, isLoading: hydrating } = usePlaceCoords(
-    useMemo(() => occurrences.map(({ occurrence }) => occurrence.placeId), [occurrences]),
-  );
+  const { places, isLoading: hydrating } = usePlaceCoords(occurrences.map(({ occurrence }) => occurrence.placeId));
 
-  return useMemo(() => {
-    const { features, unmappableCount } = eventFeatures(
-      occurrences.map(({ occurrence, calendarId, color }) => ({
-        itemId: occurrence.id,
-        title: occurrence.title,
-        start: occurrence.start,
-        calendarId,
-        color,
-        placeId: occurrence.placeId,
-        hasLocationLabel: Boolean(occurrence.locationLabel),
-      })),
-      places,
-    );
-    return { features, unmappableCount, isLoading: enabled && (isLoading || hydrating) };
-  }, [occurrences, places, isLoading, hydrating, enabled]);
+  const { features, unmappableCount } = eventFeatures(
+    occurrences.map(({ occurrence, calendarId, color }) => ({
+      itemId: occurrence.id,
+      title: occurrence.title,
+      start: occurrence.start,
+      calendarId,
+      color,
+      placeId: occurrence.placeId,
+      hasLocationLabel: Boolean(occurrence.locationLabel),
+    })),
+    places,
+  );
+  return { features, unmappableCount, isLoading: enabled && (isLoading || hydrating) };
 }
 
 /** Contact pins: every residency's place hydrated; co-located contacts (shared household place) merge into one pin, and
@@ -77,12 +73,10 @@ export function useContactFeatures(enabled: boolean): {
   const parents = useParentsHomes(useMyContactId(), rows);
 
   // One hydration serves both current and former pins.
-  const { places, isLoading: hydrating } = usePlaceCoords(useMemo(() => rows.map((r) => r.placeId), [rows]));
+  const { places, isLoading: hydrating } = usePlaceCoords(rows.map((r) => r.placeId));
 
-  return useMemo(() => {
-    const { features, former } = contactFeatures(rows, places, new Map(parents.map((p) => [p.placeId, p.label])));
-    return { features, former, isLoading: enabled && (isLoading || hydrating) };
-  }, [rows, places, parents, isLoading, hydrating, enabled]);
+  const { features, former } = contactFeatures(rows, places, new Map(parents.map((p) => [p.placeId, p.label])));
+  return { features, former, isLoading: enabled && (isLoading || hydrating) };
 }
 
 export interface MovementFeaturesResult {
@@ -100,7 +94,7 @@ export function useMovementFeatures(from: string, to: string, enabled: boolean):
   const trackQ = useThinnedTrack(from, to, enabled, trackBucketSeconds(new Date(from), new Date(to)));
   const currentQ = useCurrentFixes(enabled);
 
-  return useMemo(() => ({
+  return {
     visits: visitFeatures(visitsQ.data ?? []),
     track: trackFeatures(
       (trackQ.data ?? []).map((p) => ({ lat: p.lat, lon: p.lon, ts: p.ts, activity: p.activity ?? null })),
@@ -109,17 +103,17 @@ export function useMovementFeatures(from: string, to: string, enabled: boolean):
     current: currentFixFeatures(currentQ.data ?? []),
     trips: tripsQ.data ?? [],
     isLoading: enabled && (visitsQ.isLoading || trackQ.isLoading || tripsQ.isLoading),
-  }), [visitsQ.data, visitsQ.isLoading, tripsQ.data, tripsQ.isLoading, trackQ.data, trackQ.isLoading, currentQ.data, enabled]);
+  };
 }
 
 /** Saved-place pins (favorites first is the API's order; either a gazetteer link or a raw pin). */
 export function useSavedPlaceFeatures(enabled: boolean): { features: FeatureCollection; isLoading: boolean } {
   const savedQ = useListSavedPlaces({ query: { enabled } });
 
-  return useMemo(() => ({
+  return {
     features: savedPlaceFeatures(savedQ.data ?? []),
     isLoading: enabled && savedQ.isLoading,
-  }), [savedQ.data, savedQ.isLoading, enabled]);
+  };
 }
 
 /** Geotagged photos taken in [from, to) in the current viewport, clustered by the server for its zoom, so
@@ -130,10 +124,10 @@ export function usePhotoFeatures(viewport: MapViewport | null, from: string, to:
     { query: { enabled: enabled && viewport !== null } },
   );
 
-  return useMemo(() => ({
+  return {
     features: photoFeatures(photosQ.data?.features ?? []),
     isLoading: enabled && photosQ.isLoading,
-  }), [photosQ.data, photosQ.isLoading, enabled]);
+  };
 }
 
 /** Where events and photos concentrated in [from, to). The server clusters and ranks, so one fetch serves
@@ -141,8 +135,8 @@ export function usePhotoFeatures(viewport: MapViewport | null, from: string, to:
 export function useHotspotFeatures(from: string, to: string, enabled: boolean): { features: FeatureCollection; isLoading: boolean } {
   const hotspotsQ = useGetHotspots({ from, to }, { query: { enabled, staleTime: HOTSPOT_STALE_MS } });
 
-  return useMemo(() => ({
+  return {
     features: hotspotFeatures(hotspotsQ.data ?? []),
     isLoading: enabled && hotspotsQ.isLoading,
-  }), [hotspotsQ.data, hotspotsQ.isLoading, enabled]);
+  };
 }

@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useListRelationships, useSearchContacts } from '@lupira/cal-api/query/contact';
 import type { SearchContactsParams } from '@lupira/cal-api/models';
 import { useGetParticipationSummary } from '@lupira/cal-api/query/cal';
@@ -14,11 +13,9 @@ export function useTieredContacts(params: SearchContactsParams) {
   const { data: summary } = useGetParticipationSummary();
   const { data: relationships } = useListRelationships();
 
-  const { active, dormant, contacts } = useMemo(() => {
-    const contacts = contactsQ.data ?? [];
-    const relatedIds = new Set((relationships ?? []).flatMap((r) => [r.lowId, r.highId]));
-    return { ...partitionByActivity(contacts, summary, { relatedIds }), contacts };
-  }, [contactsQ.data, summary, relationships]);
+  const contacts = contactsQ.data ?? [];
+  const relatedIds = new Set((relationships ?? []).flatMap((r) => [r.lowId, r.highId]));
+  const { active, dormant } = partitionByActivity(contacts, summary, { relatedIds });
 
   return { active, dormant, contacts, isLoading: contactsQ.isLoading };
 }

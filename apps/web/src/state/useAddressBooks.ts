@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   getListAddressBooksQueryKey,
@@ -10,7 +10,7 @@ import { needsAddressBookBootstrap } from '@lupira/cal-domain/bootstrap';
 
 export function useAddressBooks() {
   const query = useListAddressBooks();
-  const addressBooks = useMemo(() => query.data ?? [], [query.data]);
+  const addressBooks = query.data ?? [];
   return { ...query, addressBooks };
 }
 
