@@ -19,6 +19,7 @@ env:
 jobs:
   tests:
     uses: ./.github/workflows/tests.yml
+    secrets: inherit
 
   build-submit:
     needs: tests
