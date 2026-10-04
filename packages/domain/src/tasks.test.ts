@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ymd } from './time';
-import { dueDay, isOpenDeadline, isOverdue, monthUtcRange, taskDeepLink, taskWebUrl, type TaskLike } from './tasks';
+import { dueDay, dueLine, isOpenDeadline, isOverdue, isTaskOverdue, monthUtcRange, taskDeepLink, taskWebUrl, type TaskLike } from './tasks';
 
 const task = (over: Partial<TaskLike>): TaskLike => ({
   id: 'i1',
@@ -54,3 +54,14 @@ describe('links', () => {
     expect(taskWebUrl('l1')).toBe('https://tasks.lupira.com/lists/l1');
   });
 });
+
+describe('dueLine', () => {
+  const now = new Date('2026-10-04T12:00:00Z');
+  it('says when, flags an open task past it, and nothing for a done one', () => {
+    expect(dueLine({ dueAt: '2026-10-01T10:00:00Z' }, now)).toMatch(/^Due .* — overdue$/);
+    expect(dueLine({ dueAt: '2026-10-01T10:00:00Z', completed: true }, now)).not.toMatch(/overdue/);
+    expect(dueLine({ dueAt: null }, now)).toBe('No deadline');
+    expect(isTaskOverdue({ dueAt: '2026-10-09T10:00:00Z' }, now)).toBe(false);
+  });
+});
+

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { List, Text } from 'react-native-paper';
 import {
-  COMMON_TIME_ZONES, canonicalTimeZone, deviceTimeZone, fmtZoneOffset, isValidTimeZone, zoneCity,
+  canonicalTimeZone, deviceTimeZone, fmtZoneOffset, zoneChoices, zoneCity, zoneLabel,
 } from '@lupira/cal-domain/zonedTime';
 import { Input } from '../components/Input';
 import { Sheet } from '../components/Sheet';
@@ -11,8 +11,7 @@ import { useColors } from '../theme';
 
 /** `at` = the event's start, so a winter event entered in summer shows its winter offset. */
 export function zoneSummary(timeZone: string, at?: Date): string {
-  const here = timeZone === deviceTimeZone();
-  return `${zoneCity(timeZone)} · ${fmtZoneOffset(timeZone, at)}${here ? ' · this phone' : ''}`;
+  return zoneLabel(timeZone, at, 'this phone');
 }
 
 /** The travel zones plus any IANA id typed in full ("Asia/Kathmandu") — the engine validates it. */
@@ -26,7 +25,7 @@ export function TimeZoneSheet({ value, at, onPick, onDismiss }: {
   const [q, setQ] = useState('');
   const device = deviceTimeZone();
   // An engine without zone data validates nothing, and the list stays empty rather than offering zones it can't convert.
-  const zones = [...new Set([device, value, ...COMMON_TIME_ZONES])].filter(isValidTimeZone);
+  const zones = zoneChoices(value);
   const term = q.trim().toLowerCase();
   const shown = term ? zones.filter((z) => z.toLowerCase().includes(term) || zoneCity(z).toLowerCase().includes(term)) : zones;
   const typed = q.trim() ? canonicalTimeZone(q.trim()) : null;

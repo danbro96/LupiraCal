@@ -1,4 +1,5 @@
 import { expandRecurrence } from '@lupira/cal-domain/recurrence';
+import { ymd } from '@lupira/cal-domain/time';
 import type { ContactDoc, ItemDoc } from './docTypes';
 
 /** The single grid read path: every visible instant becomes one row in the `occurrences` table, recomputed
@@ -62,7 +63,7 @@ export function occurrenceRowsForItem(doc: ItemDoc, deleted: boolean, horizon: H
     sourceId: doc.id,
     startUtc: s.toISOString(),
     endUtc: durationMs !== null ? new Date(s.getTime() + durationMs).toISOString() : null,
-    startDay: allDay ? utcDayKey(s) : localDayKey(s),
+    startDay: allDay ? utcDayKey(s) : ymd(s),
     allDay,
   }));
 }
@@ -93,10 +94,6 @@ export function birthdayRows(contact: ContactDoc, deleted: boolean, horizon: Hor
 
 export function monthKeyOf(dayKey: string): string {
   return dayKey.slice(0, 7);
-}
-
-export function localDayKey(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 function utcDayKey(d: Date): string {

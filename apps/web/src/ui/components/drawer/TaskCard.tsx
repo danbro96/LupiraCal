@@ -3,10 +3,9 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { useTasksGetItem } from '@lupira/cal-api/query/tasks';
 import type { ItemDto } from '@lupira/cal-api/models';
-import { fmtDate, fmtTime } from '@lupira/cal-domain/time';
 import { DetailDrawer } from './DetailDrawer';
 import { DrawerSection } from '../DrawerSection';
-import { isOverdue, taskDeepLink, taskWebUrl } from '@lupira/cal-domain/tasks';
+import { assigneeLabel, dueLine, isTaskOverdue, taskDeepLink, taskWebUrl } from '@lupira/cal-domain/tasks';
 
 /** Read-only view for a task deadline (lives in LupiraTasks, not cal): status, due, notes, and the
  *  deep link into the tasks app. The web fallback lands on the list — tasks-web has no per-task route. */
@@ -23,8 +22,8 @@ export function TaskCard({ listId, itemId, onClose }: { listId: string; itemId: 
 }
 
 function TaskBody({ task }: { task: ItemDto }) {
-  const due = task.dueAt ? new Date(task.dueAt) : null;
-  const overdue = !!task.dueAt && !task.completed && isOverdue(task.dueAt, new Date());
+  const now = new Date();
+  const overdue = isTaskOverdue(task, now);
 
   return (
     <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
@@ -36,14 +35,7 @@ function TaskBody({ task }: { task: ItemDto }) {
       </Box>
 
       <DrawerSection title="Due">
-        {due ? (
-          <Typography component="p" sx={{ mb: 1, color: overdue ? 'error.main' : 'text.secondary' }}>
-            {fmtDate(due)} {fmtTime(due)}
-            {overdue ? ' — overdue' : ''}
-          </Typography>
-        ) : (
-          <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">No deadline.</Typography>
-        )}
+        <Typography component="p" sx={{ mb: 1, color: overdue ? 'error.main' : 'text.secondary' }}>{dueLine(task, now)}</Typography>
       </DrawerSection>
 
       <DrawerSection title="Status">
@@ -52,7 +44,7 @@ function TaskBody({ task }: { task: ItemDto }) {
           {task.statusReason ? ` — ${task.statusReason}` : ''}
         </Typography>
         {task.priority > 0 && <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Priority {task.priority}</Typography>}
-        {task.assignee && <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Assigned to {task.assignee.displayName || task.assignee.email}</Typography>}
+        {task.assignee && <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Assigned to {assigneeLabel(task.assignee)}</Typography>}
       </DrawerSection>
 
       {task.notes && (

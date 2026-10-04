@@ -160,3 +160,14 @@ export function wallToIso(day: string, time: string, zone: string | null | undef
   return new Date(y, m - 1, d, hh, mm).toISOString();
 }
 
+/** The zones an event can be put in: this device's, the event's own, then the common travel zones — only those
+ *  this runtime can convert. */
+export function zoneChoices(current: string | null | undefined): string[] {
+  return [...new Set([deviceTimeZone(), current, ...COMMON_TIME_ZONES])].filter(isValidTimeZone);
+}
+
+/** "Tokyo · UTC+9 · this phone"; `at` = the event's start, so a winter event shows its winter offset. */
+export function zoneLabel(zone: string, at: Date | undefined, deviceWord: string): string {
+  return `${zoneCity(zone)} · ${fmtZoneOffset(zone, at)}${zone === deviceTimeZone() ? ` · ${deviceWord}` : ''}`;
+}
+

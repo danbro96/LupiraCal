@@ -22,7 +22,7 @@ import {
 import { useGetContactContext } from '@lupira/cal-api/query/bff-contacts';
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
-import { addressMeta, withResidency } from '@lupira/cal-domain/residents';
+import { addressMeta, splitAddresses } from '@lupira/cal-domain/residents';
 import { fmtDate } from '@lupira/cal-domain/time';
 import { addressBookLabel, useAddressBooks } from '../../../state/useAddressBooks';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
@@ -82,9 +82,8 @@ export function ContactDetailPane() {
   if (isLoading) return <DetailPane><Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Loading…</Typography></DetailPane>;
   if (!contact) return <DetailPane><Typography component="p" sx={{ textAlign: 'center', color: 'text.subtle', mt: 6 }}>Contact not found.</Typography></DetailPane>;
 
-  const addresses = contact.addresses.filter((a) => a.placeId).map((a) => withResidency(a));
-  const current = addresses.filter((a) => a.status === 'active');
-  const other = addresses.filter((a) => a.status !== 'active');
+  const { current, other } = splitAddresses(contact.addresses);
+  const addresses = [...current, ...other];
   const memberOf = context?.memberOf ?? [];
   const joinable = context?.joinable ?? [];
   const groupSearch = `?book=${contact.addressBookId}`;

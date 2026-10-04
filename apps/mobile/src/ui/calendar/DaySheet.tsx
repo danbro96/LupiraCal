@@ -1,4 +1,4 @@
-import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { displayTitle, statusBadge } from '@lupira/cal-domain/itemLabels';
 import { compareDayEntries } from '@lupira/cal-domain/occurrences';
 import { fmtDayTitle, fmtTime, isThisYear, parseYmd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
@@ -127,7 +127,9 @@ function DayAgenda({ day, onPress }: { day: string; onPress: (row: CalRow) => vo
             </Text>
             <Text style={styles.text} numberOfLines={1}>{displayTitle(r.title)}</Text>
             {isTaskRow(r) && r.task.overdue && <Text style={[styles.flag, { color: c.danger }]}>overdue</Text>}
-            {r.status === 'Cancelled' && <Text style={[styles.flag, { color: c.danger }]}>cancelled</Text>}
+            {!isTaskRow(r) && statusBadge(r.status) && (
+              <Text style={[styles.flag, { color: r.status === 'Cancelled' ? c.danger : c.textMuted }]}>{statusBadge(r.status)}</Text>
+            )}
           </Pressable>
         );
       })}

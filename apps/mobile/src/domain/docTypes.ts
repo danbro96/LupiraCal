@@ -4,7 +4,9 @@ import type { StoredRelation } from '@lupira/cal-domain/contactRelations';
  *  asserted where data-layer code hands DTOs in). Unknown fields ride along untouched — the mirror stores the
  *  full server JSON and only reads/writes the fields the reducers know. */
 
-export type SectionGuard = { ts: string; cmd: string };
+import type { SectionGuard } from '@lupira/cal-domain/lww';
+
+export type { SectionGuard };
 
 export type ItemGuards = {
   core: SectionGuard;

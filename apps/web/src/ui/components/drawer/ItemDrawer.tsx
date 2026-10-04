@@ -14,7 +14,7 @@ import {
 } from '@lupira/cal-api/models';
 import { describeRrule, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { fmtDate, parseYmd, ymd } from '@lupira/cal-domain/time';
-import { COMMON_TIME_ZONES, deviceTimeZone, eventZone, fmtZoneOffset, isValidTimeZone, zoneCity } from '@lupira/cal-domain/zonedTime';
+import { eventZone, zoneChoices, zoneLabel } from '@lupira/cal-domain/zonedTime';
 import { movedEnd } from '@lupira/cal-domain/itemForm';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { CategoryIcon } from '../KindIcon';
@@ -66,9 +66,8 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
   const patch = (data: UpdateCalendarItemRequest) => update.mutate({ id: item.id, data });
 
   const zone = eventZone(item.startTimezone);
-  const browserZone = deviceTimeZone();
   const zoneAt = item.startsAt ? new Date(item.startsAt) : undefined;
-  const zoneOptions = [...new Set([browserZone, zone, ...COMMON_TIME_ZONES])].filter(isValidTimeZone);
+  const zoneOptions = zoneChoices(zone);
   const zonePatch = (z: string): UpdateCalendarItemRequest => ({
     startTimezone: z, startTimezoneProvided: true, endTimezone: z, endTimezoneProvided: true,
   });
@@ -174,7 +173,7 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
               >
                 {zoneOptions.map((z) => (
                   <MenuItem key={z} value={z}>
-                    {`${zoneCity(z)} · ${fmtZoneOffset(z, zoneAt)}${z === browserZone ? ' · this browser' : ''}`}
+                    {zoneLabel(z, zoneAt, 'this browser')}
                   </MenuItem>
                 ))}
               </TextField>

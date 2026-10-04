@@ -4,6 +4,7 @@ import { List } from 'react-native-paper';
 import { rankByInteraction } from '@lupira/cal-domain/contactRank';
 import { rsvpLabel } from '@lupira/cal-domain/participation';
 import { attendeeName } from '@lupira/cal-domain/contactNames';
+import { matchesTerms, searchTerms } from '@lupira/cal-domain/textSearch';
 import type { ItemAttendee } from '../../domain/docTypes';
 import { useContactList } from '../../state/useContactList';
 import { useParticipationSummary } from '../../state/useParticipationSummary';
@@ -33,9 +34,10 @@ export function PeopleSheet({ selected, attendees, me, onChange, onDismiss }: {
   const ranked = useMemo(() => rankByInteraction(contacts ?? [], summary), [contacts, summary]);
   const byId = useMemo(() => new Map((contacts ?? []).map((row) => [row.id, row])), [contacts]);
   const statusOf = new Map(attendees.map((a) => [a.contactId, a.status]));
-  const term = q.trim().toLowerCase();
+  const terms = searchTerms(q);
+  const term = terms.length > 0;
   const candidates = ranked
-    .filter((row) => row.id !== me && !selected.includes(row.id) && (!term || row.displayName.toLowerCase().includes(term)))
+    .filter((row) => row.id !== me && !selected.includes(row.id) && matchesTerms(terms, row.displayName))
     .slice(0, LIST_LIMIT);
 
   const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id]);

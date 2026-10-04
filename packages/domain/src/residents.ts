@@ -70,3 +70,11 @@ export function addressMeta(a: { type?: string | null; movedIn?: FuzzyDate | nul
   return a.movedIn ? `${type} · since ${fmtFuzzyDate(a.movedIn)}` : type;
 }
 
+/** A contact's addresses, current first-class and past/future apart; addresses with no place are dropped. */
+export function splitAddresses<T extends { placeId?: string | null; movedIn?: FuzzyDate | null; movedOut?: FuzzyDate | null }>(
+  addresses: readonly T[], today: Date = new Date(),
+): { current: (T & { status: ResidencyStatus })[]; other: (T & { status: ResidencyStatus })[] } {
+  const all = addresses.filter((a) => a.placeId).map((a) => withResidency(a, today));
+  return { current: all.filter((a) => a.status === 'active'), other: all.filter((a) => a.status !== 'active') };
+}
+
