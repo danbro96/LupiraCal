@@ -10,6 +10,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { forwardGeocode } from '@lupira/cal-api/query/geo';
 import { SuggestionType, type PlaceSuggestionDto } from '@lupira/cal-api/models';
 import { ADDRESS_SEARCH_LIMIT, PLACE_SEARCH_DEBOUNCE_MS } from '@lupira/cal-domain/placeCandidates';
+import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { usePlaceCandidates } from '../../../state/usePlaceCandidates';
 import { useCreatePlaceAtPin, useCreatePlaceFromHit } from '../../../state/usePlaces';
 import { errText } from '../../errText';
@@ -153,7 +154,7 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
         }}
         getOptionLabel={(o) => (typeof o === 'string' ? o : o.name)}
         renderOption={({ key, ...props }, o) => (
-          <li key={key} {...props} style={o.faded ? { opacity: 0.6 } : undefined}>
+          <li key={key} {...props} style={o.faded ? { opacity: EMPHASIS.faded } : undefined}>
             <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <span>
                 {o.name}

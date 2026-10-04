@@ -3,6 +3,7 @@ import { BackHandler, Pressable, StyleSheet } from 'react-native';
 import { Portal, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors } from '../theme';
+import { SCRIM } from '@lupira/cal-tokens/color';
 
 /** A modal picker sheet: bottom-anchored, or top-anchored when it holds a search box so the keyboard never
  *  covers the results. Hardware back closes the sheet rather than the screen under it. */
@@ -42,7 +43,7 @@ export function Sheet({ title, anchor = 'bottom', onDismiss, children }: {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: '#0006' },
+  backdrop: { flex: 1, backgroundColor: SCRIM.backdrop },
   alignTop: { justifyContent: 'flex-start' },
   alignBottom: { justifyContent: 'flex-end' },
   bottomSheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingHorizontal: 16, maxHeight: '80%' },

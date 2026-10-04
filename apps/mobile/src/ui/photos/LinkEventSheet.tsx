@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { List, Portal, Text } from 'react-native-paper';
 import { fmtWhen } from '@lupira/cal-domain/time';
 import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { SCRIM } from '@lupira/cal-tokens/color';
 import { toast, toastError } from '../../feedback/toast';
 import { linkPhotosToEvent, unlinkPhotosFromEvent, useLinkCandidates, usePhotoEventLinks } from '../../state/usePhotoEventLinks';
 import { useColors } from '../theme';
@@ -65,7 +66,7 @@ export function LinkEventSheet({ photos, onDismiss, onLinked }: {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' },
+  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: SCRIM.backdrop },
   sheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: '80%' },
   title: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
   muted: { fontSize: 13, marginVertical: 8 },

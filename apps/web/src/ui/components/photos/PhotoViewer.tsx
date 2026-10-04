@@ -14,6 +14,7 @@ import { useGetPhoto, useReprocessPhoto } from '@lupira/cal-api/query/photo';
 import { formatCoords } from '@lupira/cal-domain/places';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { fmtBytes, fmtDimensions, fmtDuration, geotagLabel, inTrashLine, originalIsViewable, PHOTO_TEXT, purgeWarning } from '@lupira/cal-domain/photoFormat';
+import { SCRIM } from '@lupira/cal-tokens/color';
 import { useInvalidatePhotos } from '../../../state/useInvalidate';
 import { usePhotoActions } from '../../../state/usePhotoActions';
 import { useIsPhone } from '../../hooks/useIsPhone';
@@ -109,7 +110,7 @@ export function PhotoViewer({ photoId, siblings, hasMore, onLoadMore, onClose, o
       onError: (e) => showSnack(e instanceof Error ? e.message : 'Could not queue the photo'),
     });
 
-  const onImage = { color: '#fff', bgcolor: 'rgba(0,0,0,0.4)', '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' } };
+  const onImage = { color: SCRIM.textOnImage, bgcolor: SCRIM.backdrop, '&:hover': { bgcolor: SCRIM.onImage } };
 
   return (
     <Dialog open fullScreen onClose={onClose}>

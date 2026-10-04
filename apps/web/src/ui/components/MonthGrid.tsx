@@ -9,6 +9,7 @@ import { familyKey } from '@lupira/cal-domain/family';
 import { compareDayEntries } from '@lupira/cal-domain/occurrences';
 import { fmtTime, isToday, weekdayNames } from '@lupira/cal-domain/time';
 import { availabilityColor } from '@lupira/cal-tokens/kinds';
+import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { familyAccent } from '../theme/kinds';
 import { coversDay, segmentSpan, type GridEntry } from '../entries';
 
@@ -37,8 +38,8 @@ function chipSx(e: GridEntry, accent: string | undefined, fam: 'hi' | 'dim' | nu
     minWidth: 0,
     justifyContent: 'flex-start',
     ...(e.task && { borderWidth: 1, borderStyle: 'solid', borderLeftWidth: 3 }),
-    ...(e.status === 'Cancelled' && { opacity: 0.6 }),
-    ...(e.ghost && { opacity: 0.55, borderStyle: 'dashed' }),
+    ...(e.status === 'Cancelled' && { opacity: EMPHASIS.cancelled }),
+    ...(e.ghost && { opacity: EMPHASIS.ghost, borderStyle: 'dashed' }),
     ...(fam === 'hi' && accent && { boxShadow: `0 0 0 2px ${accent}` }),
     ...(fam === 'dim' && { opacity: 0.35 }),
     '@media (prefers-reduced-motion: no-preference)': {
@@ -138,7 +139,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
                       height: 7,
                       // Square dot = deadline in the compact cells.
                       ...(e.task && { borderRadius: '2px' }),
-                      ...(e.ghost && { opacity: 0.55 }),
+                      ...(e.ghost && { opacity: EMPHASIS.ghost }),
                     }}
                     style={{ background: e.color }}
                   />

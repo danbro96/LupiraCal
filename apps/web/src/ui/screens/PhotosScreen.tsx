@@ -18,6 +18,7 @@ import {
 import { fmtPhotoRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { photoEmptyText } from '@lupira/cal-domain/photoFilter';
+import { SCRIM } from '@lupira/cal-tokens/color';
 import { usePhotoActions } from '../../state/usePhotoActions';
 import { errText } from '../errText';
 import { CalendarIcon, CheckboxBlankIcon, CheckboxIcon, CloseIcon, DeleteIcon, PlaceIcon } from '../icons';
@@ -393,7 +394,7 @@ export default function PhotosScreen() {
   );
 }
 
-const OVERLAY = { position: 'absolute', px: 0.5, borderRadius: 0.5, bgcolor: 'rgba(0,0,0,0.6)', color: '#fff' } as const;
+const OVERLAY = { position: 'absolute', px: 0.5, borderRadius: 0.5, bgcolor: SCRIM.onImage, color: SCRIM.textOnImage } as const;
 
 function PhotoTile({ item, eventId, selected, selecting, onOpen, onToggle, onShowEvent }: {
   item: PhotoListItemDto;
@@ -445,7 +446,7 @@ function PhotoTile({ item, eventId, selected, selecting, onOpen, onToggle, onSho
           title="Show this event's photos"
           aria-label="Show this event's photos"
           onClick={(e) => { e.stopPropagation(); onShowEvent(eventId); }}
-          sx={{ ...OVERLAY, left: 4, top: 4, p: 0.25, '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' } }}
+          sx={{ ...OVERLAY, left: 4, top: 4, p: 0.25, '&:hover': { bgcolor: SCRIM.onImageHover } }}
         >
           <CalendarIcon sx={{ fontSize: 16 }} />
         </IconButton>
@@ -458,7 +459,7 @@ function PhotoTile({ item, eventId, selected, selecting, onOpen, onToggle, onSho
         sx={{
           ...OVERLAY, right: 4, top: 4, p: 0.25,
           opacity: selecting ? 1 : 0, '&:focus-visible': { opacity: 1 }, '@media (hover: none)': { opacity: 1 },
-          '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' },
+          '&:hover': { bgcolor: SCRIM.onImageHover },
         }}
       >
         {selected ? <CheckboxIcon sx={{ fontSize: 18 }} /> : <CheckboxBlankIcon sx={{ fontSize: 18 }} />}

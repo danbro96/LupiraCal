@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Chip, Icon, Text } from 'react-native-paper';
 import { NO_ATTENDEES, attendeeSummary, rsvpLabel } from '@lupira/cal-domain/participation';
+import { rsvpTone } from '@lupira/cal-tokens/color';
 import type { ItemAttendee } from '../../domain/docTypes';
 import { ICONS } from '../icons';
 import { spacing, useColors } from '../theme';
@@ -24,11 +25,13 @@ export function AttendeeChips({ attendees, nameOf, onJoin, onOpen }: {
   const rsvp = (a: ItemAttendee) => {
     if (!a.participationId) return { icon: ICONS.upload, color: c.textMuted, label: 'invite pending sync' };
     const label = rsvpLabel(a.status);
-    switch (a.status) {
-      case 'Accepted': return { icon: ICONS.check, color: c.success, label };
-      case 'Declined': return { icon: ICONS.close, color: c.danger, label };
-      case 'Tentative': return { icon: ICONS.help, color: c.warning, label };
-      default: return { icon: ICONS.schedule, color: c.textMuted, label };
+    const tone = rsvpTone(a.status);
+    const color = tone === 'muted' ? c.textMuted : c[tone];
+    switch (tone) {
+      case 'success': return { icon: ICONS.check, color, label };
+      case 'danger': return { icon: ICONS.close, color, label };
+      case 'warning': return { icon: ICONS.help, color, label };
+      default: return { icon: ICONS.schedule, color, label };
     }
   };
 

@@ -29,6 +29,7 @@ import { rankByInteraction } from '@lupira/cal-domain/contactRank';
 import { NO_ATTENDEES, attendeeSummary, roleLabel, rsvpLabel } from '@lupira/cal-domain/participation';
 import { avatarColor } from '@lupira/cal-tokens/kinds';
 import { attendeeName } from '@lupira/cal-domain/contactNames';
+import { rsvpTone, type Tone } from '@lupira/cal-tokens/color';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { useJoinItem } from '../../../state/useJoinItem';
 import { useMyContactId } from '../../../state/useMe';
@@ -45,10 +46,11 @@ const ROLE_OPTIONS = [
 ];
 
 /** RSVP colour comes from the palette slots added for it, not a per-status class. */
-const STATUS_COLOR: Record<string, string> = {
-  Accepted: 'success.main',
-  Declined: 'error.main',
-  Tentative: 'warning.main',
+const TONE_COLOR: Record<Tone, string> = {
+  success: 'success.main',
+  danger: 'error.main',
+  warning: 'warning.main',
+  muted: 'text.secondary',
 };
 
 /** Invitees + RSVP state, with invite/respond/attend/leave/remove riding the participation events. A name
@@ -114,7 +116,7 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
                 <span>{contactName(a.contactId)}</span>
               )}
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {roleLabel(a.role)} · <Box component="b" sx={{ color: STATUS_COLOR[status] }}>
+                {roleLabel(a.role)} · <Box component="b" sx={{ color: TONE_COLOR[rsvpTone(status)] }}>
                   {rsvpLabel(status)}
                 </Box>
                 {a.attendedAt ? ' · attended' : ''}

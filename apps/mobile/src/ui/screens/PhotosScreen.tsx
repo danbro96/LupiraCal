@@ -11,6 +11,7 @@ import {
 import { fmtPhotoRange, photoTimeline, yearRange } from '@lupira/cal-domain/photoTimeline';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { photoEmptyText } from '@lupira/cal-domain/photoFilter';
+import { SCRIM } from '@lupira/cal-tokens/color';
 import { hapticSelection } from '../../feedback/haptics';
 import { toast, toastError } from '../../feedback/toast';
 import { usePhotoBackup } from '../../state/photo-backup-store';
@@ -400,7 +401,7 @@ const PhotoTile = memo(function PhotoTile({ photo, size, eventId, selecting, sel
       )}
       {selecting && (
         <View style={styles.check} pointerEvents="none">
-          <Icon source={selected ? ICONS.checkCircle : ICONS.circle} size={22} color={selected ? c.primary : '#fff'} />
+          <Icon source={selected ? ICONS.checkCircle : ICONS.circle} size={22} color={selected ? c.primary : SCRIM.textOnImage} />
         </View>
       )}
     </Pressable>
@@ -418,8 +419,8 @@ const styles = StyleSheet.create({
   thumbSelected: { transform: [{ scale: 0.88 }], borderRadius: 6 },
   placeholder: { alignItems: 'center', justifyContent: 'center' },
   badge: {
-    position: 'absolute', right: 4, bottom: 4, fontSize: 10, color: '#fff',
-    backgroundColor: '#0009', paddingHorizontal: 4, borderRadius: 3, overflow: 'hidden',
+    position: 'absolute', right: 4, bottom: 4, fontSize: 10, color: SCRIM.textOnImage,
+    backgroundColor: SCRIM.onImage, paddingHorizontal: 4, borderRadius: 3, overflow: 'hidden',
   },
   badgeLeft: { left: 4, right: undefined, top: 4, bottom: undefined, paddingVertical: 2 },
   badgeBottomLeft: { left: 4, right: undefined },

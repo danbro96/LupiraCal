@@ -4,6 +4,7 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { placeSpanM } from '@lupira/cal-domain/mapZoom';
 import { placeTitle } from '@lupira/cal-domain/places';
+import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { copyText } from '../../feedback/copy';
 import { toastError } from '../../feedback/toast';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
@@ -74,7 +75,7 @@ export function PlaceTile({ placeId, label, meta, muted, directions }: {
 
 const styles = StyleSheet.create({
   tile: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs, paddingHorizontal: spacing.lg },
-  muted: { opacity: 0.6 },
+  muted: { opacity: EMPHASIS.faded },
   body: { flex: 1, gap: 2 },
   title: { fontSize: 15, fontWeight: '500' },
   line: { fontSize: 13 },

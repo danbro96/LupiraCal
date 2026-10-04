@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { PlaceDto } from '@lupira/cal-api/models';
+import { EMPHASIS, withAlpha } from '@lupira/cal-tokens/color';
 import type { GridRow } from '../../data/mirror';
 import { isTaskRow } from '../../domain/taskRows';
 import { usePrefs } from '../../state/prefs-store';
@@ -241,7 +242,7 @@ const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, sl
       style={[
         styles.dayColumn,
         { left: colPct(col), width: colPct(1), borderColor: c.divider },
-        avail !== undefined && { backgroundColor: `${availabilityColor(avail)}24` },
+        avail !== undefined && { backgroundColor: withAlpha(availabilityColor(avail), EMPHASIS.availabilityBand) },
       ]}
       onPress={(e) => onTapSlot(dayKey, Math.max(0, Math.min(47, Math.floor(e.nativeEvent.locationY / (hourH.value / 2)))))}
     >
@@ -519,7 +520,7 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 9, lineHeight: 12, includeFontPadding: false },
   // Deadlines read as outlines with dark text, distinct from the filled calendar chips.
   taskChip: { borderWidth: 0.5 },
-  cancelled: { opacity: 0.5 },
+  cancelled: { opacity: EMPHASIS.cancelled },
   struck: { textDecorationLine: 'line-through' },
   lanes: { flexDirection: 'row' },
   hourLabel: { position: 'absolute', right: 4, marginTop: -6, fontSize: 9 },

@@ -5,6 +5,7 @@ import type { GeocodeResultDto } from '@lupira/cal-api/models';
 import { toastError } from '../../feedback/toast';
 import type { PickerPlace } from '@lupira/cal-domain/placeCandidates';
 import { MIN_PLACE_QUERY, PLACE_SEARCH_DEBOUNCE_MS } from '@lupira/cal-domain/placeCandidates';
+import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { createPlaceFromHit, type PlaceOption, useGeocodeHits, usePlaceCandidates } from '../../state/usePlaceSearch';
 import { useSyncStatus } from '../../sync/syncStatus';
 import { Input } from '../components/Input';
@@ -137,5 +138,5 @@ const styles = StyleSheet.create({
   muted: { fontSize: 13, marginVertical: 8 },
   line: { fontSize: 13 },
   other: { fontStyle: 'italic' },
-  faded: { opacity: 0.6 },
+  faded: { opacity: EMPHASIS.faded },
 });

@@ -1,6 +1,7 @@
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Portal, Text } from 'react-native-paper';
 import type { AssetKind, AssetStatus } from '@lupira/cal-api/models';
+import { SCRIM } from '@lupira/cal-tokens/color';
 import {
   fmtMonth, fmtPhotoRange, monthRange, type TimelineYear, wholeSpan, yearRange,
 } from '@lupira/cal-domain/photoTimeline';
@@ -141,7 +142,7 @@ export function PhotoFiltersSheet({ filters, timeline, eventTitle, onChange, onD
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: '#0006' },
+  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: SCRIM.backdrop },
   sheet: { borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: '80%' },
   title: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
   label: { fontSize: 12, marginTop: 12, marginBottom: 4 },

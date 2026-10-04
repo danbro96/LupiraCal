@@ -50,3 +50,26 @@ export const DARK: ColorScheme = {
   brand: '#E76F51',
   success: '#5fd49b',
 };
+
+/** Over photos and behind sheets. The same in both schemes: what lies underneath sets the contrast. */
+export const SCRIM = {
+  backdrop: 'rgba(0, 0, 0, 0.4)',
+  onImage: 'rgba(0, 0, 0, 0.6)',
+  onImageHover: 'rgba(0, 0, 0, 0.8)',
+  textOnImage: '#ffffff',
+} as const;
+
+/** How strongly a mark is drawn: cancelled and proposed (ghost) items recede, a former address fades, the
+ *  availability band is a tint behind the grid. */
+export const EMPHASIS = { cancelled: 0.5, ghost: 0.55, faded: 0.6, availabilityBand: 0.14 } as const;
+
+/** A '#rrggbb' colour with an alpha, as '#rrggbbaa'. */
+export function withAlpha(hex: string, alpha: number): string {
+  return `${hex.slice(0, 7)}${Math.round(Math.min(1, Math.max(0, alpha)) * 255).toString(16).padStart(2, '0')}`;
+}
+
+/** The palette slot an RSVP is drawn in; each app maps the slot to its own theme. */
+export type Tone = 'success' | 'danger' | 'warning' | 'muted';
+export function rsvpTone(status: string | null | undefined): Tone {
+  return status === 'Accepted' ? 'success' : status === 'Declined' ? 'danger' : status === 'Tentative' ? 'warning' : 'muted';
+}

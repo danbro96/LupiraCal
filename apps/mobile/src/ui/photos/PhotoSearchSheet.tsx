@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { matchTimeline, PHOTO_SEARCH, type DayRange, type TimelineYear } from '@lupira/cal-domain/photoTimeline';
 import { fmtWhen } from '@lupira/cal-domain/time';
 import { displayTitle } from '@lupira/cal-domain/itemLabels';
+import { SCRIM } from '@lupira/cal-tokens/color';
 import { useEventSearch } from '../../state/usePhotoEventLinks';
 import { usePlaceSuggestions } from '../../state/usePhotoLibrary';
 import { Input } from '../components/Input';
@@ -94,7 +95,7 @@ export function PhotoSearchSheet({ timeline, onDate, onEvent, onPlace, onDismiss
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-start', backgroundColor: '#0006' },
+  backdrop: { flex: 1, justifyContent: 'flex-start', backgroundColor: SCRIM.backdrop },
   sheet: { borderBottomLeftRadius: 16, borderBottomRightRadius: 16, paddingHorizontal: 16, paddingBottom: 8, maxHeight: '75%' },
   hint: { fontSize: 13, marginVertical: 12 },
 });

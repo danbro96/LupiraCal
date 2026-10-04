@@ -18,6 +18,8 @@ import { useCreateCalendar, useGrantCalendarOwner, useRevokeCalendarOwner } from
 import { CalendarClass, CalendarKind, type ContainerDto } from '@lupira/cal-api/models';
 import { useCreateAddressBook, useGrantAddressBookOwner, useRevokeAddressBookOwner } from '@lupira/cal-api/query/contact';
 import type { AddressBookDto } from '@lupira/cal-api/models';
+import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
+import { KIND_COLORS } from '@lupira/cal-tokens/kinds';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { addressBookLabel, useAddressBooks } from '../../state/useAddressBooks';
 import { useInvalidateAddressBooks, useInvalidateContainers } from '../../state/useInvalidate';
@@ -232,8 +234,8 @@ function NewContainerForm({ onDone }: { onDone: () => void }) {
     type: 'calendar',
     slug: '',
     displayName: '',
-    color: '#1d6feb',
-    defaultTimezone: 'Europe/Stockholm',
+    color: KIND_COLORS.Personal,
+    defaultTimezone: deviceTimeZone() ?? 'UTC',
     class: 'Agenda' as CalendarClass,
     kind: 'Generic' as CalendarKind,
   });

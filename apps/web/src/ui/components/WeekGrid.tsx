@@ -9,6 +9,7 @@ import { type DayRail, familyKey, railsForDay } from '@lupira/cal-domain/family'
 import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, ymd } from '@lupira/cal-domain/time';
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { availabilityColor } from '@lupira/cal-tokens/kinds';
+import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { familyAccent } from '../theme/kinds';
 import { coversDay, segmentSpan, type GridEntry } from '../entries';
 import { ExpandIcon, ExpandLessIcon } from '../icons';
@@ -242,8 +243,8 @@ function AllDayStrip({
                 border: 1,
                 borderColor: e.task.overdue ? 'error.main' : 'text.secondary',
               }),
-              ...(e.status === 'Cancelled' && { opacity: 0.5, textDecoration: 'line-through' }),
-              ...(e.ghost && { opacity: 0.55, borderStyle: 'dashed' }),
+              ...(e.status === 'Cancelled' && { opacity: EMPHASIS.cancelled, textDecoration: 'line-through' }),
+              ...(e.ghost && { opacity: EMPHASIS.ghost, borderStyle: 'dashed' }),
               ...(role === 'parent' && { pl: '9px' }),
               boxShadow: famShadow(role, fam, accent),
               ...(fam === 'dim' && { opacity: 0.35 }),
@@ -344,7 +345,7 @@ function DayColumn({
         <Box
           key={`seg-${i}`}
           title={s.status}
-          sx={{ position: 'absolute', left: 0, right: 0, opacity: 0.14, borderRadius: '2px' }}
+          sx={{ position: 'absolute', left: 0, right: 0, opacity: EMPHASIS.availabilityBand, borderRadius: '2px' }}
           style={{
             top: (s.startMin / 60) * HOUR_PX,
             height: ((s.endMin - s.startMin) / 60) * HOUR_PX,
@@ -475,8 +476,8 @@ function DayColumn({
               flexDirection: 'column',
               alignItems: 'flex-start',
               zIndex: 1,
-              ...(p.item.status === 'Cancelled' && { opacity: 0.5 }),
-              ...(p.item.ghost && { opacity: 0.55 }),
+              ...(p.item.status === 'Cancelled' && { opacity: EMPHASIS.cancelled }),
+              ...(p.item.ghost && { opacity: EMPHASIS.ghost }),
               ...(role === 'child' && { pt: '5px' }),
               boxShadow: famShadow(role, fam, accent),
               ...(fam === 'dim' && { opacity: 0.35 }),
