@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getListPhotosQueryKey, listPhotos, lookupPhotos } from '@lupira/cal-api/query/photo';
-import { THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
+import { THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/thumbCache';
 import { PHOTO_LINK } from '@danbro96/lupira-domain-photos/photoLinks';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { getListRelationEdgesQueryKey, listRelationEdges } from '@lupira/cal-api/query/cal';

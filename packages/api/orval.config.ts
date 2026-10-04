@@ -3,7 +3,7 @@ import { defineConfig } from 'orval';
 // One spec — the merged BFF surface — in two flavours, because the split is per call site, not per
 // app. `query` is for anything read straight off the server; `fetch` is for callers that own their
 // own caching: the mobile sync engine (cal + contact are mirrored into SQLite and rebase offline
-// edits) and the photo backup queue. Both go through src/transport.ts (`@danbro96/lupira-http`'s
+// edits) and the event photo strip. Both go through src/transport.ts (`@danbro96/lupira-http`'s
 // seam), which each app fills in.
 //
 // Models are generated once, by the query target, and the fetch target points at the same directory

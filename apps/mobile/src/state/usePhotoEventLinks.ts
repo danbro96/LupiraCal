@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { listRelationEdges } from '@lupira/cal-api/fetch/cal';
 import { listPhotos, lookupPhotos } from '@lupira/cal-api/fetch/photo';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
-import { THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
+import { THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/thumbCache';
 import { PHOTO_LINK } from '@danbro96/lupira-domain-photos/photoLinks';
 import { eventPhotoWindow, PHOTO_SUGGEST_LIMIT, type PhotoWindowSource } from '@danbro96/lupira-domain-photos/photoWindow';
 import { useSyncStatus } from '../sync/syncStatus';

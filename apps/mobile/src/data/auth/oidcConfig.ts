@@ -1,5 +1,5 @@
 /** The Authentik public client for this app (PKCE, no secret). The token's audience fans out to
- *  lupira-cal + lupira-contact + lupira-geo + lupira-tasks + lupira-photo + lupira-location + lupira-comms
+ *  lupira-cal + lupira-contact + lupira-geo + lupira-tasks + lupira-photo + lupira-comms
  *  via the -aud scope mappings, so one bearer satisfies the BFF and every upstream it proxies. Refresh
  *  grants never widen scopes — adding an audience here only takes effect after a sign-out/in. */
 // No trailing slash — expo-auth-session appends `/.well-known/...` verbatim and Authentik 404s the `//`.
@@ -15,7 +15,6 @@ export const OIDC_SCOPES = [
   'lupira-geo-aud',
   'lupira-tasks-aud',
   'lupira-photo-aud',
-  'lupira-location-aud',
   'lupira-comms-aud',
 ];
 export const OIDC_SCHEME = 'lupiracalendar';
