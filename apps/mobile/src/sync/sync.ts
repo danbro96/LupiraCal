@@ -17,7 +17,6 @@ import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { bridgePublish, drainBridgeInbox } from './bridge';
 import { toContactDoc, toItemDoc } from './docAdapters';
 import { discardParked, drain } from './outbox';
-import { runPhotoBackup } from './photoUploader';
 import type { PullDeps } from './pull';
 import { pullCal, pullContacts, pullContainers, pullMe, pullPlaceEntries, pullRelationships, pullResidencies, realPullDeps } from './pull';
 import { invalidateContacts, invalidateContainers, invalidateItems, invalidateMe, invalidateMonthKeys } from './reactivity';
@@ -78,10 +77,6 @@ async function run(dbOverride: Db | undefined, deps: PullDeps): Promise<void> {
 
     status.set({ serverReachable: true, lastError: null, lastSyncAt: deps.now().toISOString() });
     logDebug('sync', 'sync complete');
-
-    // Camera-roll backup runs last and never fails a sync: it's bulk transfer on its own queue, and a
-    // stalled upload must not hold back the mirror the UI reads.
-    void runPhotoBackup(db).catch((e) => logDebug('photos', `backup pass failed: ${String(e)}`));
   } catch (e) {
     logDebug('sync', `sync failed: ${String(e)}`);
     // Offline is expected; anything else is invisible off the phone without this.

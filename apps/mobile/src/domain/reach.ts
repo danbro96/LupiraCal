@@ -1,5 +1,17 @@
+import { KIND_COLORS } from '@danbro96/lupira-tokens-calendar/kinds';
 import { CHANNEL_MEDIUMS, PROFILE_SERVICES } from '@lupira/cal-domain/reach';
-import { reachColor } from '@lupira/cal-tokens/reach';
+
+/** Service marks drawn in the service's own colour; everything else in the neutral generic tone. */
+const REACH_COLORS: Record<string, string> = {
+  Telegram: '#26A5E4',
+  Signal: '#3A76F0',
+  WhatsApp: '#25D366',
+};
+
+function reachColor(kind: string | null | undefined): string {
+  const key = Object.keys(REACH_COLORS).find((k) => k.toLowerCase() === kind?.toLowerCase());
+  return key ? REACH_COLORS[key] : KIND_COLORS.Generic;
+}
 
 /** The shared reach kinds (`@lupira/cal-domain/reach`) with this app's icons. `glyph` names a FontAwesome 6
  *  icon; `brand` marks the ones from the brands style (real service marks, drawn in the service's own colour)

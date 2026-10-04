@@ -8,7 +8,7 @@ import tailwindcss from "@tailwindcss/vite";
 // browser only talks to the Vite origin (:5174), which proxies these through — so the session cookie
 // stays first-party and there is no CORS.
 const backend = process.env.BACKEND_ORIGIN ?? "http://localhost:5181";
-const proxied = ["/api", "/geo-api", "/contact-api", "/tasks-api", "/location-api", "/photo-api", "/auth", "/signin-oidc", "/signout-callback-oidc", "/livez", "/readyz"];
+const proxied = ["/api", "/geo-api", "/contact-api", "/tasks-api", "/photo-api", "/auth", "/signin-oidc", "/signout-callback-oidc", "/livez", "/readyz"];
 
 export default defineConfig({
   plugins: [react(), babel({ presets: [reactCompilerPreset({ panicThreshold: "all_errors" })] }), tailwindcss()],

@@ -375,6 +375,22 @@ describe('migrations', () => {
     await migrate(db, MIGRATIONS);
     expect((await db.first<{ user_version: number }>('PRAGMA user_version'))?.user_version).toBe(MIGRATIONS.length);
   });
+
+  it('v6 drops the upload queues and the photo/map leftovers but keeps the mirror', async () => {
+    const old = openNodeDb();
+    await migrate(old, MIGRATIONS.slice(0, 5));
+    const tables = async () => (await old.all<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table'")).map((t) => t.name);
+    expect(await tables()).toEqual(expect.arrayContaining(['photo_upload_queue', 'location_fix_queue']));
+    await old.run("INSERT INTO mirror_meta (key, value) VALUES ('photos.snapshot', '[]'), ('prefs.mapSince', 'year'), ('prefs.mapLayers', '{}'), ('horizon', '{}')");
+
+    await migrate(old, MIGRATIONS);
+
+    const after = await tables();
+    expect(after).not.toContain('photo_upload_queue');
+    expect(after).not.toContain('location_fix_queue');
+    expect(after).toEqual(expect.arrayContaining(['items', 'outbox', 'residencies']));
+    expect((await old.all<{ key: string }>('SELECT key FROM mirror_meta')).map((r) => r.key)).toEqual(['horizon']);
+  });
 });
 
 describe('discard rollback contract', () => {

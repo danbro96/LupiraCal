@@ -1,4 +1,3 @@
-import type { MapSince } from '@lupira/cal-domain/mapWindow';
 import { create } from 'zustand';
 import { getDb } from '../data/db/expoDb';
 import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
@@ -15,8 +14,6 @@ const HOUR_HEIGHT_KEY = 'prefs.weekHourHeight';
 const ALL_DAY_ROWS_KEY = 'prefs.allDayRows';
 const CALENDAR_MODE_KEY = 'prefs.calendarMode';
 const LAST_CALENDARS_KEY = 'prefs.lastCalendarIds';
-const MAP_SINCE_KEY = 'prefs.mapSince';
-const MAP_LAYERS_KEY = 'prefs.mapLayers';
 
 export const DEFAULT_HOUR_HEIGHT = 44;
 // Four is the most a SegmentedPicker fits on a 360dp phone (Paper's 76dp minimum per segment).
@@ -27,8 +24,6 @@ const isAllDayRows = (v: string | null): v is AllDayRows => ALL_DAY_ROW_OPTIONS.
 const readAllDayRows = (v: string | null): AllDayRows => (isAllDayRows(v) ? v : v === '4' ? 'all' : '3');
 
 export type CalendarMode = 'month' | 'week';
-export const MAP_SINCE_OPTIONS: readonly MapSince[] = ['week', 'month', 'year', 'all'];
-const isMapSince = (v: string | null): v is MapSince => MAP_SINCE_OPTIONS.includes(v as MapSince);
 
 function parseJson<T>(raw: string | null, valid: (v: unknown) => v is T, fallback: T): T {
   if (!raw) return fallback;
@@ -58,10 +53,6 @@ type Prefs = {
   calendarMode: CalendarMode;
   /** Calendars the last new event was filed to — the next one starts there. */
   lastCalendarIds: string[];
-  /** How far back the map's dated layers (events, photos, hotspots, movement) reach. */
-  mapSince: MapSince;
-  /** Map layer toggles the user changed; keys the map doesn't know are ignored. */
-  mapLayers: Record<string, boolean>;
 };
 
 type PrefsActions = {
@@ -73,8 +64,6 @@ type PrefsActions = {
   setAllDayRows(value: AllDayRows): Promise<void>;
   setCalendarMode(value: CalendarMode): Promise<void>;
   setLastCalendarIds(value: string[]): Promise<void>;
-  setMapSince(value: MapSince): Promise<void>;
-  setMapLayers(value: Record<string, boolean>): Promise<void>;
 };
 
 export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
@@ -86,8 +75,6 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
   allDayRows: '3',
   calendarMode: 'month',
   lastCalendarIds: [],
-  mapSince: 'month',
-  mapLayers: {},
 
   init: async () => {
     const db = await getDb();
@@ -100,8 +87,6 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
       allDayRows: readAllDayRows(await getMeta(db, ALL_DAY_ROWS_KEY)),
       calendarMode: (await getMeta(db, CALENDAR_MODE_KEY)) === 'week' ? 'week' : 'month',
       lastCalendarIds: parseJson(await getMeta(db, LAST_CALENDARS_KEY), isStringArray, []),
-      mapSince: await getMeta(db, MAP_SINCE_KEY).then((v) => (isMapSince(v) ? v : 'month')),
-      mapLayers: parseJson(await getMeta(db, MAP_LAYERS_KEY), isFlagRecord, {}),
       loaded: true,
     });
   },
@@ -147,17 +132,5 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
     set({ lastCalendarIds: value });
     const db = await getDb();
     await db.exclusive((tx) => setMeta(tx, LAST_CALENDARS_KEY, JSON.stringify(value)));
-  },
-
-  setMapSince: async (value) => {
-    set({ mapSince: value });
-    const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, MAP_SINCE_KEY, value));
-  },
-
-  setMapLayers: async (value) => {
-    set({ mapLayers: value });
-    const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, MAP_LAYERS_KEY, JSON.stringify(value)));
   },
 }));

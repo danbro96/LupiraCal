@@ -3,7 +3,6 @@ export * from './cal/cal';
 export * from './comms/comms';
 export * from './contact/contact';
 export * from './geo/geo';
-export * from './location/location';
 export * from './lupira-cal-bff/lupira-cal-bff';
 export * from './photo/photo';
 export * from './tasks/tasks';

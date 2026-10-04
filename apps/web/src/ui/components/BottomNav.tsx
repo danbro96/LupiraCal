@@ -10,10 +10,8 @@ import Paper from '@mui/material/Paper';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import InboxIcon from '@mui/icons-material/Inbox';
-import MapIcon from '@mui/icons-material/Map';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import PeopleIcon from '@mui/icons-material/People';
-import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import SearchIcon from '@mui/icons-material/Search';
 import SettingsIcon from '@mui/icons-material/Settings';
 
@@ -25,8 +23,6 @@ const PRIMARY = [
 ];
 
 const MORE = [
-  { to: '/locations', icon: <MapIcon />, label: 'Map' },
-  { to: '/photos', icon: <PhotoLibraryIcon />, label: 'Photos' },
   { to: '/calendars', icon: <SettingsIcon />, label: 'Manage' },
 ];
 

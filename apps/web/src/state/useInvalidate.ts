@@ -47,28 +47,3 @@ export function useInvalidateAddressBooks() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0] ?? '').startsWith('/contact-api/address-books') });
 }
-
-/** Geo place mutations: the place queries themselves plus the `/curation` lists and hotspots that mirror place state. */
-export function useInvalidatePlaces() {
-  const queryClient = useQueryClient();
-  return () =>
-    queryClient.invalidateQueries({
-      predicate: (q) => {
-        const key = String(q.queryKey[0] ?? '');
-        return key.startsWith('/geo-api/places') || key.startsWith('/geo-api/me/places') || key.startsWith('/geo-api/curation')
-          || key.startsWith('/api/hotspots');
-      },
-    });
-}
-
-/** Photo writes: every gallery query plus the photo↔event edge map, which a link or a delete changes. */
-export function useInvalidatePhotos() {
-  const queryClient = useQueryClient();
-  return () =>
-    queryClient.invalidateQueries({
-      predicate: (q) => {
-        const key = String(q.queryKey[0] ?? '');
-        return key.startsWith('/photo-api/photos') || key.startsWith('/api/relations/edges');
-      },
-    });
-}

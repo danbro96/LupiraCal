@@ -17,7 +17,6 @@ services:
       ReverseProxy__Clusters__geo-api__Destinations__primary__Address: ${GEO_API_BASE_URL:-https://geo-api.lupira.com}
       ReverseProxy__Clusters__contact-api__Destinations__primary__Address: ${CONTACT_API_BASE_URL:-https://contact-api.lupira.com}
       ReverseProxy__Clusters__tasks-api__Destinations__primary__Address: ${TASKS_API_BASE_URL:-https://tasks-api.lupira.com}
-      ReverseProxy__Clusters__location-api__Destinations__primary__Address: ${LOCATION_API_BASE_URL:-https://location-api.lupira.com}
       ReverseProxy__Clusters__photo-api__Destinations__primary__Address: ${PHOTO_API_BASE_URL:-https://photo-api.lupira.com}
       ReverseProxy__Clusters__comms-api__Destinations__primary__Address: ${COMMS_API_BASE_URL:-https://comms-api.lupira.com}
       DataProtection__KeyPath: /keys

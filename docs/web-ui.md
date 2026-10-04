@@ -14,17 +14,17 @@ Shared MUI conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`. T
 - Mutation errors → `useSnackbar()` (`@danbro96/lupira-web-mui` SnackbarHost); field validation stays inline.
 - Detail cards share `drawer/DetailDrawer.tsx`.
 - A place renders as `places/PlaceTile` (name, one-line address, meta, a lazy `map/MiniMap` thumbnail framed by `@lupira/cal-domain/mapZoom`, copy button via `useCopy`).
-- Per-browser conveniences (last calendar, calendar view per layout, map layers/range) live in `state/localPrefs`, behind the URL.
+- Per-browser conveniences (last calendar, calendar view per layout) live in `state/localPrefs`, behind the URL.
 - Build splits a `vendor-mui` chunk (rolldown `advancedChunks`).
 - Icons: `@danbro96/lupira-web-mui/icons` re-exports `@mui/icons-material` `*Outlined`; `ui/icons.ts` holds only Cal's extras. `packages/tokens/src/icons.ts` names concepts, not glyphs, so it stays dependency-free; `ICON_BY_NAME` in `ui/theme/kinds.ts` is `Record<IconName, SvgIconComponent>`, making an unmapped concept a compile error. `SavedPlaceDto.icon` is geo-api data, rendered verbatim.
-- Screens: the three lazy routes (`MapScreen`, `PlacesScreen`, `PhotosScreen`) keep `export default` because `React.lazy` needs one; the filename still matches the symbol. `ContactsLayout` lives in `ui/navigation/` — routing structure, not a screen.
+- Maps and photos are separate apps (maps.lupira.com, photos.lupira.com). Cal links out through `config/siblings.ts` + `@danbro96/lupira-domain-links`; the BFF 301s `/locations`, `/photos` and `/places` there. Lazy routes keep `export default` because `React.lazy` needs one; the filename still matches the symbol. `ContactsLayout` lives in `ui/navigation/` — routing structure, not a screen.
 
 ## Calendar visibility and writability
 
 `@lupira/cal-domain/calendars`: Agenda calendars start shown, System hidden; a per-calendar choice overrides.
 
 - Web: `CalendarToggles` (side panel on desktop, sheet on phones; only the calendar screen renders it), remembered in `localPrefs`.
-- Mobile: Settings → Calendar, `prefs.calendarChoices`, applied by `useCalendarFilter` to the grids, search, map events and the jump strip (Birthdays hides synthesized birthdays).
+- Mobile: Settings → Calendar, `prefs.calendarChoices`, applied by `useCalendarFilter` to the grids and search (Birthdays hides synthesized birthdays).
 - Every filing picker offers only `canWriteCalendar` (Owner/ReadWrite) calendars.
 
 ## Grids
@@ -60,18 +60,16 @@ All three live on contact-api as their own records, never on the contact. Its do
   - `GET /contact-api/relationships` lists them all; the activity tiers use it for `relatedIds`.
 - **Residencies are where a contact lives, holidays and works.**
   - Types: Home, Vacation, Work, Other, plus an optional `label`.
-  - Web reads `GET /contact-api/residencies` through `state/useResidencies` (`useResidencyRows`). One fetch feeds the map,
-    the place picker, quick places and contact cards.
+  - Web reads `GET /contact-api/residencies` through `state/useResidencies` (`useResidencyRows`). One fetch feeds the place picker and contact cards.
   - The edit form changes residencies one at a time; `MoveDialog` tells a household move once (`POST /moves`).
-  - A vacation home draws as a ring pin (`@lupira/cal-tokens/mapPaint` `contactPinFill`) and never makes a household.
+  - A vacation home never makes a household.
   - "Parents' home" is derived, never stored: `@lupira/cal-domain/residents` `parentsHomes`, from Parent relationships
     and their current Home residencies.
 - **Door codes belong to a place.**
-  - `places/EntryCodes` shows them masked, click to reveal, with copy. It appears on contact cards, the place panel
-    (editable there) and the map card.
+  - `places/EntryCodes` shows them masked, click to reveal, with copy. It appears on contact cards.
   - Visibility follows the residents: the API answers 404 unless you can read someone living there now.
 - **Mobile mirrors all three** via unpaged feeds (`pullRelationships`/`pullResidencies`/`pullPlaceEntries`; schema
-  v4–v5) and reads them offline. `ui/components/EntryCodes` shows codes on contact cards and the map sheet. Codes are
+  v4–v5) and reads them offline. `ui/components/EntryCodes` shows codes on contact cards. Codes are
   never logged.
 
 ## Known API gaps (UI works around)

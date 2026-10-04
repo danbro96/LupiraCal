@@ -24,8 +24,6 @@ const NAV = [
   { to: '/items', label: 'Items' },
   { to: '/inbox', label: 'Inbox' },
   { to: '/contacts', label: 'Contacts' },
-  { to: '/locations', label: 'Map' },
-  { to: '/photos', label: 'Photos' },
   { to: '/calendars', label: 'Manage' },
 ];
 

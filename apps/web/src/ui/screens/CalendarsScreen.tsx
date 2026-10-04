@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { siblingLinks } from '../../config/siblings';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
@@ -63,7 +63,7 @@ export function CalendarsScreen() {
         <Button variant="contained" onClick={() => setCreating((c) => !c)}>
           + New
         </Button>
-        <Button component={NavLink} to="/places">
+        <Button component="a" href={siblingLinks.mapsPlacesUrl()}>
           Places…
         </Button>
       </PageHead>

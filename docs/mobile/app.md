@@ -5,18 +5,18 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 ## UI stack specifics
 
 - Paper is themed from tokens via `createPaperThemes` (`@danbro96/lupira-expo-paper`, called in `ui/theme/paperTheme.ts`; + adapted React Navigation themes); dark mode via `useColorScheme`.
-- Two files may call Paper's `useTheme()` directly, each because it needs an MD3 slot the estate palette has no equivalent for: `SyncBanner` (errorContainer) and `MapScreen` (elevation ramp).
+- Two files may call Paper's `useTheme()` directly, each because it needs an MD3 slot the estate palette has no equivalent for: `SyncBanner` (errorContainer) and the settings index (elevation ramp).
 - Feedback: `toast()` / `toastError()` from `@danbro96/lupira-expo-feedback` (host: the expo-paper `ToastHost`, Paper `Snackbar`); hold-to-copy (place tiles, reach rows) is its `copyText()`. `useUnsavedGuard` keeps `Alert.alert` (it fires inside `beforeRemove`).
 - Text inputs use the `Input` wrapper in `ui/components/form.tsx` (Paper `TextInput`, outlined+dense, label prop; `Field` is only for non-text controls). It keeps a column-rhythm `marginTop` where the sibling apps' `TextField` carries a row-layout `flex: 1`.
 - No hex literals except white text over calendar-coloured backgrounds.
-- A place renders as `ui/components/PlaceTile` everywhere (name, address, meta line, `ui/map/MiniMap` thumbnail — a texture-mode, gesture-less `MapView`, so detail screens only, never lists — framed by place type via `@lupira/cal-domain/mapZoom`; tap → Map tab `at`). Tags render as `TagRow` text, never chips.
+- A place renders as `ui/components/PlaceTile` everywhere (name, address, meta line, `ui/map/MiniMap` thumbnail — a texture-mode, gesture-less `MapView`, so detail screens only, never lists — framed by place type via `@lupira/cal-domain/mapZoom`; tap → the Maps app at that point). Tags render as `TagRow` text, never chips.
 - Detail screens carry no container padding: Paper rows and subheaders bring their own 16dp, other blocks take `spacing.lg`.
 - Icons: `ui/icons.ts` maps concepts to `MaterialIcons`.
 - Root navigator is `ui/navigation/RootStack.tsx`.
 
 ## Tabs, settings, calendar
 
-- Tabs are Calendar/Contacts/Map/Photos, each showing the native header. Settings is a pushed stack screen reached by `SettingsButton` in the tab navigator's `headerRight`: an index whose rows show each area's state (warning colour when it needs you) and open `CalendarSettings` / `PhotoSettings` / `LocationSettings` / `AndroidSettings`.
+- Tabs are Calendar/Contacts, each showing the native header. Settings is a pushed stack screen reached by `SettingsButton` in the tab navigator's `headerRight`: an index whose rows show each area's state (warning colour when it needs you) and open `CalendarSettings` / `AndroidSettings`. The map, photo library, GPS upload and camera-roll backup live in the sibling apps Lupira Maps and Lupira Photos; Cal opens them through `ui/openSibling` (`lupiramaps://`, `lupiraphotos://`, https fallback).
 - Contacts' search sits in `ScreenToolbar` under the header.
 - Calendar has no toolbar: the header title is the period (tap = date picker) and Search/Today/Month↔Week sit beside the cog (`useCalendarHeader`, via `setOptions`) — the grid needs the rows.
 - `CalendarScreen` owns only anchor and jumps (the Month/Week mode is `prefs.calendarMode`); `MonthPane` (grid + `DaySheet`) and `WeekView` own their paging and selection.

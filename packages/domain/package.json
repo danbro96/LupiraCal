@@ -12,14 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "devDependencies": {
-    "@types/geojson": "^7946.0.16"
-  },
+  "devDependencies": {},
   "dependencies": {
-    "@danbro96/lupira-domain-contacts": "0.1.0",
     "@danbro96/lupira-domain-core": "0.1.0",
-    "@danbro96/lupira-domain-events": "0.1.0",
-    "@danbro96/lupira-domain-maps": "0.1.0",
-    "@danbro96/lupira-domain-places": "0.1.0"
+    "@danbro96/lupira-domain-events": "0.1.0"
   }
 }

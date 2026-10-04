@@ -4,13 +4,11 @@
     "contact-api": { "prefix": "/contact-api" },
     "geo-api": { "prefix": "/geo-api" },
     "tasks-api": { "prefix": "/tasks-api" },
-    "location-api": { "prefix": "/location-api" },
     "photo-api": { "prefix": "/photo-api" },
     "comms-api": { "prefix": "/comms-api" }
   },
   "groups": {
-    "static": { "catchAll": true },
-    "device": { "policy": "Anonymous", "prefixed": false, "credential": "deviceKey" }
+    "static": { "catchAll": true }
   },
   "operations": {
     "cal-api": [
@@ -25,7 +23,6 @@
       "GET /calendars/{calendarId}/proposed",
       "GET /hotspots",
       "GET /items",
-      "GET /items/by-place/{placeId}",
       "GET /items/{id}",
       "GET /items/{id}/relations",
       "GET /participation/summary",
@@ -41,8 +38,6 @@
       "POST /items/{id}/participants/{participationId}/leave",
       "POST /items/{id}/participants/{participationId}/respond",
       "POST /items/{id}/relations",
-      "POST /items/{id}/relations/batch",
-      "POST /items/{id}/relations/batch/delete",
       "POST /items/{itemId}/calendars/{calendarId}",
       "POST /items/{itemId}/calendars/{calendarId}/accept",
       "POST /me/bootstrap",
@@ -88,7 +83,6 @@
       "POST /groups/{groupId}/members",
       "POST /me/bootstrap",
       "POST /moves",
-      "POST /residencies/{id}/move-out",
       "PUT /address-books/{addressBookId}",
       "PUT /contacts/{id}",
       "PUT /contacts/{id}/channels",
@@ -102,52 +96,21 @@
       "PUT /residencies/{id}"
     ],
     "geo-api": [
-      "GET /curation/orphans",
       "GET /geocode/forward",
       "GET /me/places",
-      "GET /places",
       "GET /places/suggest",
       "GET /places/{id}",
-      "GET /places/{id}/history",
-      "PATCH /places/{id}",
-      "POST /curation/prune",
       "POST /places",
       "POST /places/from-geocode",
-      "POST /places/lookup",
-      "POST /places/{id}/regeocode"
+      "POST /places/lookup"
     ],
     "tasks-api": [
       "GET /items",
-      "GET /lists/{listId}",
-      "GET /lists/{listId}/items/{itemId}",
-      "POST /lists/{listId}/items/{itemId}/move",
-      "POST /lists/{listId}/items/{itemId}/relations"
-    ],
-    "location-api": [
-      "DELETE /devices/{id}",
-      "DELETE /location",
-      "GET /location/current",
-      "GET /location/track/thinned",
-      "GET /location/trips",
-      "GET /location/visits",
-      "POST /devices"
+      "GET /lists/{listId}/items/{itemId}"
     ],
     "photo-api": [
-      "DELETE /photos/trash",
-      "DELETE /photos/{id}",
       "GET /photos",
-      "GET /photos/albums",
-      "GET /photos/map",
-      "GET /photos/places",
-      "GET /photos/stats",
-      "GET /photos/{id}",
-      "PATCH /photos/{id}",
-      "POST /photos",
-      "POST /photos/lookup",
-      "POST /photos/{id}/complete",
-      "POST /photos/{id}/reprocess",
-      "POST /photos/{id}/restore",
-      "POST /photos/{id}/trash"
+      "POST /photos/lookup"
     ],
     "comms-api": [
       "GET /search",
@@ -158,13 +121,6 @@
   "static": {
     "geo-api": [
       "GET /basemap/{**path}"
-    ]
-  },
-  "device": {
-    "location-api": [
-      "POST /ingest/location",
-      "GET /ingest/location/cursor",
-      "GET /ingest/location/state"
     ]
   }
 }

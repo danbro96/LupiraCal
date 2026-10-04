@@ -15,7 +15,7 @@ const paths = Object.keys(merged.paths) as string[];
 
 // A path is proxied iff its operations carry an upstream's tag, which the merge sets per cluster.
 // The prefix cannot tell them apart any more: a BFF-declared endpoint also lives under /api/.
-const UPSTREAM_TAGS = new Set(['cal', 'contact', 'geo', 'tasks', 'location', 'photo', 'comms']);
+const UPSTREAM_TAGS = new Set(['cal', 'contact', 'geo', 'tasks', 'photo', 'comms']);
 const isProxied = (path: string) =>
   Object.values(merged.paths[path] as Record<string, { tags?: string[] }>)
     .some((op) => (op?.tags ?? []).some((t) => UPSTREAM_TAGS.has(t)));
@@ -61,7 +61,7 @@ describe('merged BFF spec', () => {
       '/auth/user',
     ]);
     // Every proxied path still sits under its cluster's mount.
-    const prefixes = ['/api/', '/contact-api/', '/geo-api/', '/tasks-api/', '/location-api/', '/photo-api/', '/comms-api/'];
+    const prefixes = ['/api/', '/contact-api/', '/geo-api/', '/tasks-api/', '/photo-api/', '/comms-api/'];
     expect(paths.filter(isProxied).filter((p) => !prefixes.some((x) => p.startsWith(x)))).toEqual([]);
   });
 

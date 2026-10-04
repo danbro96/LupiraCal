@@ -1,5 +1,3 @@
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -13,8 +11,8 @@ import { useEventPhotos, useSuggestedPhotos } from '../../state/usePhotoEventLin
 import { invalidatePhotos } from '../../sync/reactivity';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import { useColors } from '../theme';
+import { openSibling } from '../openSibling';
 import { thumbCacheKey } from './imageCache';
-import type { RootStackParamList } from '../navigation/types';
 
 const THUMB = 88;
 
@@ -22,7 +20,6 @@ const THUMB = 88;
  *  there is neither — an empty strip on every event would be noise. */
 export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWindowSource }) {
   const c = useColors();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const linked = useEventPhotos(itemId);
   const [suggesting, setSuggesting] = useState(false);
   const [linkingId, setLinkingId] = useState<string | null>(null);
@@ -56,8 +53,7 @@ export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWi
               key={photo.id}
               photo={photo}
               surface={c.surface}
-              // Paged within the event's own set, not the whole library.
-              onPress={() => navigation.navigate('PhotoViewer', { photoId: photo.id, filters: { sort: 'TakenAtDesc', event: itemId } })}
+              onPress={() => openSibling((links) => links.photosEventUrl(itemId, photo.id))}
             />
           ))}
         </Strip>
@@ -66,7 +62,7 @@ export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWi
         <Button
           title={seeAllLinked(linked.length)}
           variant="text"
-          onPress={() => navigation.navigate('Tabs', { screen: 'Photos', params: { event: itemId } })}
+          onPress={() => openSibling((links) => links.photosEventUrl(itemId))}
         />
       )}
 

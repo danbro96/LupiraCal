@@ -15,10 +15,6 @@ import { CalendarsScreen } from '../screens/CalendarsScreen';
 import Typography from '@mui/material/Typography';
 import { Page } from '../components/Page';
 
-// Lazy: MapScreen pulls in maplibre-gl (+ CSS), which stays out of the main bundle.
-const MapScreen = lazy(() => import('../screens/MapScreen'));
-const PlacesScreen = lazy(() => import('../screens/PlacesScreen'));
-const PhotosScreen = lazy(() => import('../screens/PhotosScreen'));
 // Lazy: keeps the comms client out of the main chunk — a rarely-visited corner of a contact.
 const ContactTopicsPane = lazy(() => import('../components/contacts/ContactTopicsPane'));
 
@@ -54,31 +50,7 @@ export const router = createBrowserRouter([
                   },
                 ],
               },
-              {
-                path: 'locations',
-                element: (
-                  <Suspense fallback={<Page><Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Loading map…</Typography></Page>}>
-                    <MapScreen />
-                  </Suspense>
-                ),
-              },
-              {
-                path: 'photos',
-                element: (
-                  <Suspense fallback={<Page><Typography variant="caption">Loading photos…</Typography></Page>}>
-                    <PhotosScreen />
-                  </Suspense>
-                ),
-              },
               { path: 'calendars', element: <CalendarsScreen /> },
-              {
-                path: 'places',
-                element: (
-                  <Suspense fallback={<Page><Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Loading…</Typography></Page>}>
-                    <PlacesScreen />
-                  </Suspense>
-                ),
-              },
               { path: '*', element: <CalendarScreen /> },
             ],
           },

@@ -3,7 +3,6 @@ import { getListItemsQueryKey } from '@lupira/cal-api/query/tasks';
 import { getSearchItemsQueryKey, getListContainersQueryKey } from '@lupira/cal-api/query/cal';
 import { getSearchContactsQueryKey, getListAddressBooksQueryKey } from '@lupira/cal-api/query/contact';
 import { getGetContactContextQueryKey } from '@lupira/cal-api/query/bff-contacts';
-import { getSearchPlacesQueryKey } from '@lupira/cal-api/query/geo';
 
 // The predicates in useInvalidate match generated keys by prefix, and those keys are the BFF's
 // paths. Nothing else asserts that the two agree: a prefix that stops matching invalidates nothing,
@@ -16,8 +15,6 @@ const contacts = (key: string) =>
   key.startsWith('/contact-api/contacts') || key.startsWith('/api/contacts') || key.includes('/groups');
 const containers = (key: string) => key.startsWith('/api/calendars');
 const addressBooks = (key: string) => key.startsWith('/contact-api/address-books');
-const places = (key: string) =>
-  key.startsWith('/geo-api/places') || key.startsWith('/geo-api/me/places') || key.startsWith('/geo-api/curation');
 
 describe('invalidation predicates match the generated keys', () => {
   it('items matches cal item queries', () => {
@@ -43,14 +40,9 @@ describe('invalidation predicates match the generated keys', () => {
     expect(addressBooks(first(getListAddressBooksQueryKey()))).toBe(true);
   });
 
-  it('places matches geo', () => {
-    expect(places(first(getSearchPlacesQueryKey()))).toBe(true);
-  });
-
   it('no predicate reaches into another API', () => {
     const contactKey = first(getSearchContactsQueryKey());
     expect(items(contactKey)).toBe(false);
     expect(containers(contactKey)).toBe(false);
-    expect(places(contactKey)).toBe(false);
   });
 });

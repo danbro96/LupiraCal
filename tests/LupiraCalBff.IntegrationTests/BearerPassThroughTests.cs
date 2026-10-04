@@ -20,10 +20,9 @@ public class BearerPassThroughTests(BffTestFactory factory) : IClassFixture<BffT
 
     [Theory]
     [InlineData("/api/items", "/items")]
-    [InlineData("/geo-api/places", "/places")]
+    [InlineData("/geo-api/places/suggest", "/places/suggest")]
     [InlineData("/contact-api/contacts", "/contacts")]
     [InlineData("/tasks-api/items", "/items")]
-    [InlineData("/location-api/location/visits", "/location/visits")]
     [InlineData("/photo-api/photos", "/photos")]
     [InlineData("/comms-api/topics", "/topics")]
     public async Task Valid_bearer_is_accepted_and_forwarded_verbatim(string path, string upstreamPath)
@@ -43,10 +42,9 @@ public class BearerPassThroughTests(BffTestFactory factory) : IClassFixture<BffT
 
     [Theory]
     [InlineData("/api/items")]
-    [InlineData("/geo-api/places")]
+    [InlineData("/geo-api/places/suggest")]
     [InlineData("/contact-api/contacts")]
     [InlineData("/tasks-api/items")]
-    [InlineData("/location-api/location/visits")]
     [InlineData("/photo-api/photos")]
     [InlineData("/comms-api/topics")]
     public async Task Anonymous_api_calls_get_401_not_a_redirect(string path)

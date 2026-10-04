@@ -17,14 +17,9 @@ import { ItemSearchScreen } from '../screens/ItemSearchScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
 import { ItemEditScreen } from '../screens/ItemEditScreen';
 import { LoginScreen } from '../screens/LoginScreen';
-import { MapScreen } from '../screens/MapScreen';
-import { PhotosScreen } from '../screens/PhotosScreen';
-import { PhotoViewerScreen } from '../screens/PhotoViewerScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AndroidSettingsScreen } from '../screens/AndroidSettingsScreen';
 import { CalendarSettingsScreen } from '../screens/CalendarSettingsScreen';
-import { LocationSettingsScreen } from '../screens/LocationSettingsScreen';
-import { PhotoSettingsScreen } from '../screens/PhotoSettingsScreen';
 import { SyncIssuesScreen } from '../screens/SyncIssuesScreen';
 import type { RootStackParamList, TabParamList } from './types';
 import { ICONS } from '../icons';
@@ -39,12 +34,10 @@ const tabIcon = (name: ComponentProps<typeof MaterialIcons>['name']) =>
 
 function Tabs() {
   return (
-    // A visited tab stays mounted; freezing stops it re-rendering (the map on every GPS fix) while hidden.
+    // A visited tab stays mounted; freezing stops it re-rendering while hidden.
     <Tab.Navigator screenOptions={{ headerShown: true, freezeOnBlur: true, headerRight: () => <SettingsButton /> }}>
       <Tab.Screen name="Calendar" component={CalendarScreen} options={{ title: 'Calendar', tabBarIcon: tabIcon(ICONS.calendar) }} />
       <Tab.Screen name="Contacts" component={ContactsScreen} options={{ title: 'Contacts', tabBarIcon: tabIcon(ICONS.group) }} />
-      <Tab.Screen name="Map" component={MapScreen} options={{ title: 'Map', tabBarIcon: tabIcon(ICONS.map) }} />
-      <Tab.Screen name="Photos" component={PhotosScreen} options={{ title: 'Photos', tabBarIcon: tabIcon(ICONS.photos) }} />
     </Tab.Navigator>
   );
 }
@@ -60,8 +53,6 @@ export function RootStack() {
       )}
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="CalendarSettings" component={CalendarSettingsScreen} options={{ title: 'Calendar' }} />
-      <Stack.Screen name="PhotoSettings" component={PhotoSettingsScreen} options={{ title: 'Photo backup' }} />
-      <Stack.Screen name="LocationSettings" component={LocationSettingsScreen} options={{ title: 'Location' }} />
       <Stack.Screen name="AndroidSettings" component={AndroidSettingsScreen} options={{ title: 'Android integration' }} />
       <Stack.Screen name="SyncIssues" component={SyncIssuesScreen} options={{ title: 'Sync issues' }} />
       <Stack.Screen name="DebugLog" component={DebugLogScreen} options={{ title: 'Debug log' }} />
@@ -75,7 +66,6 @@ export function RootStack() {
       />
       <Stack.Screen name="ContactDetail" component={ContactDetailScreen} options={{ title: 'Contact' }} />
       <Stack.Screen name="ContactEdit" component={ContactEditScreen} options={{ title: 'Edit contact' }} />
-      <Stack.Screen name="PhotoViewer" component={PhotoViewerScreen} options={{ title: 'Photo' }} />
       <Stack.Screen name="Developer" component={DeveloperScreen} options={{ title: 'Developer' }} />
       <Stack.Screen name="BridgeDiagnostics" component={BridgeDiagnosticsScreen} options={{ title: 'Bridge diagnostics' }} />
       <Stack.Screen name="AvailabilityEdit" component={AvailabilityEditScreen} options={{ title: 'Set availability' }} />

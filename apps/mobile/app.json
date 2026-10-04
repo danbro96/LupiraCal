@@ -35,25 +35,6 @@
       "@maplibre/maplibre-react-native",
       "expo-image",
       [
-        "expo-media-library",
-        {
-          "granularPermissions": [
-            "photo",
-            "video"
-          ],
-          "isAccessMediaLocationEnabled": true
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "locationWhenInUsePermission": "Lupira Calendar shows where you are on the map.",
-          "locationAlwaysAndWhenInUsePermission": "Lupira Calendar records your route in the background so your movement history and photo places have no gaps.",
-          "isAndroidBackgroundLocationEnabled": true,
-          "isAndroidForegroundServiceEnabled": true
-        }
-      ],
-      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",

@@ -47,7 +47,6 @@ import type {
   ListContactRelationsParams,
   MeDto,
   MoveContactRequest,
-  MoveOutRequest,
   MoveRequest,
   PlaceEntryChangesResponse,
   PlaceEntryDto,
@@ -3468,94 +3467,6 @@ export const useRemoveResidency = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getRemoveResidencyMutationOptions(options), queryClient);
-    }
-    export const getMoveOutOfResidencyUrl = (id: string,) => {
-
-
-
-
-  return `/contact-api/residencies/${id}/move-out`
-}
-
-/**
- * @summary End a residency: the contact moved out on the given date (a year, year-month, or day).
- */
-export const moveOutOfResidency = async (id: string,
-    moveOutRequest: MoveOutRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return apiRequest<ResidencyDto>(getMoveOutOfResidencyUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(moveOutRequest)
-  }
-);}
-
-
-
-
-
-export const getMoveOutOfResidencyMutationKey = () => ['moveOutOfResidency'] as const;
-
-export const getMoveOutOfResidencyMutationOptions = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveOutOfResidency>>, TError,MoveOutOfResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
-): UseMutationOptions<Awaited<ReturnType<typeof moveOutOfResidency>>, TError,MoveOutOfResidencyMutationVariables, TContext> => {
-
-const mutationKey = getMoveOutOfResidencyMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof moveOutOfResidency>>, MoveOutOfResidencyMutationVariables> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  moveOutOfResidency(id,data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type MoveOutOfResidencyMutationResult = NonNullable<Awaited<ReturnType<typeof moveOutOfResidency>>>
-    export type MoveOutOfResidencyMutationBody = MoveOutRequest
-    export type MoveOutOfResidencyMutationError = ProblemDetails
-    export type MoveOutOfResidencyMutationVariables = {id: string;data: MoveOutRequest}
-
-    /**
- * @summary End a residency: the contact moved out on the given date (a year, year-month, or day).
- */
-export const useMoveOutOfResidency = <TError = ProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveOutOfResidency>>, TError,MoveOutOfResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof moveOutOfResidency>>,
-        TError,
-        MoveOutOfResidencyMutationVariables,
-        TContext
-      > => {
-      return useMutation(getMoveOutOfResidencyMutationOptions(options), queryClient);
     }
     export const getListResidenciesUrl = () => {
 

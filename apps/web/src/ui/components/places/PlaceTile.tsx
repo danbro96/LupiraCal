@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
@@ -7,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import { placeSpanM } from '@danbro96/lupira-domain-maps/mapZoom';
 import { placeTitle } from '@danbro96/lupira-domain-places/places';
 import { GEO_API_BASE_URL } from '../../../config';
+import { siblingLinks } from '../../../config/siblings';
 import { useGeoPlace } from '../../../state/usePlaces';
 import { useCopy } from '../../hooks/useCopy';
 import { CopyIcon, EditIcon, PlaceIcon } from '@danbro96/lupira-web-mui/icons';
@@ -53,10 +53,10 @@ export function PlaceTile({ placeId, label, meta, muted, onEdit }: {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5, opacity: muted ? 0.6 : 1 }}>
-      {placeId ? (
+      {point ? (
         <Box
-          component={RouterLink}
-          to={{ pathname: '/locations', search: `?place=${placeId}` }}
+          component="a"
+          href={siblingLinks.mapsAtUrl(point)}
           sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1.5, color: 'inherit', textDecoration: 'none', borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
         >
           {body}

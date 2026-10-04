@@ -3,13 +3,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import { Link } from 'react-router-dom';
 import { useCreateItemRelation } from '@lupira/cal-api/query/cal';
 import { getListRelationEdgesQueryKey } from '@lupira/cal-api/query/cal';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import type { PhotoWindowSource } from '@danbro96/lupira-domain-photos/photoWindow';
 import { PHOTO_TEXT, seeAllLinked, PHOTO_LINK } from '@danbro96/lupira-domain-photos/photoLinks';
-import { useEventPhotos, useSuggestedPhotos } from '../../../state/usePhotoLibrary';
+import { useEventPhotos, useSuggestedPhotos } from '../../../state/useItemPhotos';
+import { siblingLinks } from '../../../config/siblings';
 import { DrawerSection } from '../DrawerSection';
 import { WrapRow } from '../WrapRow';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
@@ -47,7 +47,7 @@ export function ItemPhotosPanel({ itemId, item }: { itemId: string; item: PhotoW
         ))}
       </WrapRow>
       {linked.length > 0 && !suggesting && (
-        <Button size="small" component={Link} to={`/photos?event=${itemId}`}>{seeAllLinked(linked.length)}</Button>
+        <Button size="small" href={siblingLinks.photosEventUrl(itemId)}>{seeAllLinked(linked.length)}</Button>
       )}
 
       {suggesting ? (
@@ -81,7 +81,7 @@ function Thumb({ photo, eventId, onAdd }: { photo: PhotoListItemDto; eventId?: s
   );
 
   // Opened inside the event's own set, so the viewer pages through this event rather than the library.
-  if (!onAdd) return <Link to={`/photos?event=${eventId}&photo=${photo.id}`}>{image}</Link>;
+  if (!onAdd) return <a href={eventId ? siblingLinks.photosEventUrl(eventId, photo.id) : siblingLinks.photosPhotoUrl(photo.id)}>{image}</a>;
   return (
     <Box
       component="button"

@@ -367,3 +367,6 @@ favourites/albums; bulk select and download; "on this day" memories; trips as a 
 - [ ] Device: Month hides older photos/hotspots/track; week/month + last calendar survive kill/relaunch
 - [ ] Device: Settings fits 360 dp; a week with 6+ overlapping all-day items scrolls inside the strip
 
+## Split into Lupira Maps and Lupira Photos
+
+The map tab, Photos tab, GPS recording/upload and camera-roll backup (M11–M13) moved to the Lupira Maps and Lupira Photos apps. Cal mobile keeps the event photo strip and the place-tile mini-map, opens the sibling apps through `ui/openSibling`, and drops `photo_upload_queue` / `location_fix_queue` in schema v6.

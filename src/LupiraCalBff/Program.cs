@@ -7,6 +7,7 @@ using Lupira.Hosting.Defaults;
 using Lupira.Hosting.Health;
 using Lupira.Hosting.Observability;
 using LupiraCalBff.Endpoints;
+using LupiraCalBff.Handlers;
 using LupiraCalBff.Upstream;
 using Scalar.AspNetCore;
 
@@ -34,6 +35,7 @@ builder.AddLupiraBffAuth(o =>
 
 builder.Services.AddLupiraHealth();
 builder.Services.AddUpstreamClients(builder.Configuration);
+builder.Services.Configure<SiblingsOptions>(builder.Configuration.GetSection(SiblingsOptions.SectionName));
 
 builder.Services.AddLupiraDepz(o =>
 {
@@ -48,7 +50,6 @@ builder.Services.AddLupiraDepzYarpTargets(o =>
     o.ServiceNames["geo-api"] = "lupira-geo-api";
     o.ServiceNames["contact-api"] = "lupira-contact-api";
     o.ServiceNames["tasks-api"] = "lupira-tasks-api";
-    o.ServiceNames["location-api"] = "lupira-location-api";
     o.ServiceNames["photo-api"] = "lupira-photo-api";
     o.ServiceNames["comms-api"] = "lupira-comms-api";
 });
@@ -63,7 +64,6 @@ builder.Services.AddLupiraBffOpenApi(o =>
     o.Upstreams.Add(new UpstreamSpec { Cluster = "contact-api", Name = "LupiraContactApi" });
     o.Upstreams.Add(new UpstreamSpec { Cluster = "geo-api", Name = "LupiraGeoApi" });
     o.Upstreams.Add(new UpstreamSpec { Cluster = "tasks-api", Name = "LupiraTasksApi" });
-    o.Upstreams.Add(new UpstreamSpec { Cluster = "location-api", Name = "LupiraLocationApi" });
     o.Upstreams.Add(new UpstreamSpec { Cluster = "photo-api", Name = "LupiraPhotoApi" });
     o.Upstreams.Add(new UpstreamSpec { Cluster = "comms-api", Name = "LupiraCommsApi" });
     o.SecuritySchemes["Cookie"] = BffSecuritySchemes.Cookie("__Host-lupira-cal", "Session cookie minted by the BFF's OIDC login.");
@@ -86,12 +86,13 @@ app.MapLupiraHealth();
 
 app.UseStaticFiles();
 
-app.UseLupiraBffDeviceKeyGate();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapLupiraAuthEndpoints();
 app.MapContactEndpoints();
+app.MapSiblingRedirects();
+app.MapRetiredPrefixes();
 app.MapDepz();
 
 // Authenticated: the document is the whole internal API map, and the client reads the committed

@@ -9,7 +9,6 @@ import {
 import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@danbro96/lupira-domain-places/places';
 import { getDb } from '../data/db/expoDb';
 import { mapEventRowsBetween } from '../data/mirror';
-import { lastKnownPosition } from '../sync/livePosition';
 import { useSyncStatus } from '../sync/syncStatus';
 import { useParticipationSummary } from './useParticipationSummary';
 import { usePlaceCoords } from './usePlaceLookup';
@@ -67,10 +66,8 @@ export function usePlaceCandidates({ query, attendeeIds, day }: { query: string;
     enabled: !!day,
     queryFn: async () => mapEventRowsBetween(await getDb(), day!, day!),
   });
-  const fix = useQuery({ queryKey: ['location', 'last-known'], staleTime: 300_000, retry: false, queryFn: lastKnownPosition });
   const { data: summary } = useParticipationSummary(true);
 
-  // Same id set as the map's contact layer, so both share one lookup.
   const places = usePlaceCoords(rows.map((r) => r.placeId));
   const dayPlaces = usePlaceCoords((dayEvents.data ?? []).map((r) => r.place_id));
 
@@ -85,10 +82,10 @@ export function usePlaceCandidates({ query, attendeeIds, day }: { query: string;
       places,
       attendeeIds,
       contactScores: new Map((summary ?? []).map((e) => [e.contactId, e.score])),
-      origin: eventOrigin(dayPlaces.values(), fix.data ?? null),
+      origin: eventOrigin(dayPlaces.values(), null),
     });
     return { ...picked, loading: typing && suggested.isFetching };
-  }, [rows, places, dayPlaces, saved.data, hotspots.data, suggested.data, suggested.isFetching, fix.data, summary, attendeeIds, q, typing]);
+  }, [rows, places, dayPlaces, saved.data, hotspots.data, suggested.data, suggested.isFetching, summary, attendeeIds, q, typing]);
 }
 
 /** Addresses the geocoder knows — none of them a place yet; picking one creates it. */

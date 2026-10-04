@@ -1,5 +1,3 @@
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { placeSpanM } from '@danbro96/lupira-domain-maps/mapZoom';
@@ -10,17 +8,17 @@ import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { ICONS } from '../icons';
 import { MiniMap } from '../map/MiniMap';
-import type { RootStackParamList } from '../navigation/types';
+import { openSibling } from '../openSibling';
 import { spacing, useColors } from '../theme';
 import { IconButton } from '@danbro96/lupira-expo-paper/components/IconButton';
 
 const THUMB = 64;
 
 /** How the app shows a place: its name, the address, an optional meta line (address type, residency, who
- *  lives there) — one line each, ellipsized — and a map thumbnail. Tapping it opens the Map tab pinned on the
- *  place; holding it copies the address (the name, when there's no address yet); `directions` adds the
- *  hand-off to an external maps app. Offline the place can't be resolved — the label still shows, the rest
- *  waits for a connection. */
+ *  lives there) — one line each, ellipsized — and a map thumbnail. Tapping it opens the place in LupiraMaps;
+ *  holding it copies the address (the name, when there's no address yet); `directions` adds the hand-off to
+ *  an external maps app. Offline the place can't be resolved — the label still shows, the rest waits for a
+ *  connection. */
 export function PlaceTile({ placeId, label, meta, muted, directions }: {
   placeId: string | null | undefined;
   /** Shown instead of the place's own name — an event's location label. */
@@ -31,15 +29,12 @@ export function PlaceTile({ placeId, label, meta, muted, directions }: {
   directions?: boolean;
 }) {
   const c = useColors();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const place = usePlaceCoords([placeId]).get(placeId ?? '');
   const point = place?.latitude != null && place.longitude != null ? { lat: place.latitude, lon: place.longitude } : null;
   const title = placeTitle(label, place?.name, placeId);
   const address = place?.formattedAddress && place.formattedAddress !== title ? place.formattedAddress : null;
 
-  const openMap = point
-    ? () => navigation.navigate('Tabs', { screen: 'Map', params: { at: { ...point, focus: 'place' } } })
-    : undefined;
+  const openMap = point ? () => openSibling((links) => links.mapsAtUrl(point)) : undefined;
   const canCopy = !!(placeId || label);
   const copy = () => copyText(place?.formattedAddress || title, place?.formattedAddress ? 'Address' : 'Place name');
   const openDirections = () => {
@@ -54,7 +49,7 @@ export function PlaceTile({ placeId, label, meta, muted, directions }: {
       onPress={openMap}
       onLongPress={canCopy ? copy : undefined}
       accessibilityRole="button"
-      accessibilityLabel={`${title}${address ? `, ${address}` : ''}${openMap ? '. Show on map' : ''}`}
+      accessibilityLabel={`${title}${address ? `, ${address}` : ''}${openMap ? '. Open in Maps' : ''}`}
       accessibilityHint={canCopy ? 'Hold to copy the address' : undefined}
       accessibilityActions={canCopy ? [{ name: 'longpress', label: 'Copy address' }] : undefined}
       onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === 'longpress') copy(); }}

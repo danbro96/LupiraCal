@@ -28,7 +28,6 @@ import type {
   ListContactRelationsParams,
   MeDto,
   MoveContactRequest,
-  MoveOutRequest,
   MoveRequest,
   PlaceEntryChangesResponse,
   PlaceEntryDto,
@@ -2508,83 +2507,6 @@ export const removeResidency = async (id: string, options?: Parameters<typeof ap
     method: 'DELETE'
 
 
-  }
-);}
-
-
-export type moveOutOfResidencyResponse200 = {
-  data: ResidencyDto
-  status: 200
-}
-
-export type moveOutOfResidencyResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type moveOutOfResidencyResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type moveOutOfResidencyResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type moveOutOfResidencyResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type moveOutOfResidencyResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type moveOutOfResidencyResponseSuccess = (moveOutOfResidencyResponse200) & {
-  headers: Headers;
-};
-export type moveOutOfResidencyResponseError = (moveOutOfResidencyResponse400 | moveOutOfResidencyResponse401 | moveOutOfResidencyResponse403 | moveOutOfResidencyResponse404 | moveOutOfResidencyResponse500) & {
-  headers: Headers;
-};
-
-export type moveOutOfResidencyResponse = (moveOutOfResidencyResponseSuccess | moveOutOfResidencyResponseError)
-
-export const getMoveOutOfResidencyUrl = (id: string,) => {
-
-
-
-
-  return `/contact-api/residencies/${id}/move-out`
-}
-
-/**
- * @summary End a residency: the contact moved out on the given date (a year, year-month, or day).
- */
-export const moveOutOfResidency = async (id: string,
-    moveOutRequest: MoveOutRequest, options?: Parameters<typeof apiRequest>[1]): Promise<moveOutOfResidencyResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return apiRequest<moveOutOfResidencyResponse>(getMoveOutOfResidencyUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(moveOutRequest)
   }
 );}
 

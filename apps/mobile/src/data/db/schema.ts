@@ -139,4 +139,10 @@ export const MIGRATIONS: string[] = [
     doc TEXT NOT NULL
   );
   `,
+  // v6: photo backup, location recording and the map moved to LupiraPhotos / LupiraMaps.
+  `
+  DROP TABLE IF EXISTS photo_upload_queue;
+  DROP TABLE IF EXISTS location_fix_queue;
+  DELETE FROM mirror_meta WHERE key IN ('photos.snapshot', 'prefs.mapSince', 'prefs.mapLayers');
+  `,
 ];

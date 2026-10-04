@@ -1,29 +1,17 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useGetItemsByPlace } from '@lupira/cal-api/query/cal';
 import {
   createPlace,
   createPlaceFromGeocode,
   getGetPlaceQueryKey,
   getPlace,
   useGetPlace,
-  useSearchPlaces as useSearchGeoPlaces,
 } from '@lupira/cal-api/query/geo';
-import { PlaceCategory, type PlaceDto, type SearchPlacesParams } from '@lupira/cal-api/models';
+import { PlaceCategory, type PlaceDto } from '@lupira/cal-api/models';
 import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@danbro96/lupira-domain-places/places';
-
-/** Browse/search the LupiraGeoApi gazetteer (text `q`, category, spatial `near`/`bbox`). */
-export function useSearchPlaces(params: SearchPlacesParams) {
-  return useSearchGeoPlaces(params);
-}
 
 /** A single gazetteer place with its containment chain (outermost→innermost). */
 export function useGeoPlace(placeId: string | undefined) {
   return useGetPlace(placeId ?? '', { query: { enabled: !!placeId } });
-}
-
-/** Calendar items anchored to a geo place (its location, or a travel endpoint). */
-export function usePlaceItems(placeId: string | undefined) {
-  return useGetItemsByPlace(placeId ?? '', { query: { enabled: !!placeId } });
 }
 
 /** Structural mirror of a forward-geocode hit's create-relevant fields (the picker machine's

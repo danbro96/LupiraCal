@@ -1,7 +1,7 @@
 import { createLupiraMuiTheme, cssVars } from '@danbro96/lupira-web-mui/theme';
 import { PHONE_BREAKPOINT } from '@danbro96/lupira-tokens-core/breakpoints';
 import { darkColors, lightColors } from '@lupira/cal-tokens/color';
-import { CATEGORY_COLORS_DARK, CATEGORY_COLORS_LIGHT } from '@lupira/cal-tokens/contactCategories';
+import { CATEGORY_COLORS_DARK, CATEGORY_COLORS_LIGHT } from './contactCategories';
 
 export const theme = createLupiraMuiTheme({ light: lightColors, dark: darkColors }, {
   // Domain palette with no MUI slot; @theme re-exports these as Tailwind cat-* utilities.
