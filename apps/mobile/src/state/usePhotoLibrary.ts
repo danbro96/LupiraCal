@@ -2,7 +2,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { getPhoto, getPhotoStats, listPhotoPlaces, listPhotos } from '@lupira/cal-api/fetch/photo';
 import type { AssetKind, AssetStatus, ListPhotosParams, PhotoListItemDto, PhotoSort } from '@lupira/cal-api/models';
 import { filterPhotos } from '@lupira/cal-domain/photoFilter';
-import { groupByDay as groupDays, photoDayLabel, THUMB_SAFE_STALE_MS } from '@lupira/cal-domain/photoFormat';
+import { groupByDay as groupDays, photoDayLabel, THUMB_SAFE_STALE_MS, type DayGroup } from '@lupira/cal-domain/photoFormat';
 import { dayEndIso, dayStartIso } from '@lupira/cal-domain/time';
 import { PHOTO_SEARCH } from '@lupira/cal-domain/photoTimeline';
 import { getDb } from '../data/db/expoDb';
@@ -150,12 +150,10 @@ export function usePhotoStats() {
   });
 }
 
-export type PhotoDay = { key: string; label: string; data: PhotoListItemDto[] };
+export type PhotoDay = DayGroup<PhotoListItemDto>;
 
-/** SectionList wants the rows under `data`, so the shared groups are re-keyed on the way out. */
 export function groupByDay(items: PhotoListItemDto[]): PhotoDay[] {
-  return groupDays(items, photoDayLabel)
-    .map(({ key, label, items: rows }) => ({ key, label, data: rows }));
+  return groupDays(items, photoDayLabel);
 }
 
 /** Place names in the library matching a search, most photographed first. */

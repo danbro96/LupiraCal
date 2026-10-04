@@ -1,9 +1,10 @@
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { memo, useEffect, useState } from 'react';
-import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Icon, IconButton, Text } from 'react-native-paper';
 import {
   fmtDuration, outcomeMessage, PHOTO_TEXT, photoCount, purgeWarning, trashBadge,
@@ -12,6 +13,7 @@ import { fmtPhotoRange, photoTimeline, yearRange } from '@lupira/cal-domain/phot
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import { photoEmptyText } from '@lupira/cal-domain/photoFilter';
 import { SCRIM } from '@lupira/cal-tokens/color';
+import { photoGrid, type PhotoGridEntry } from '../../domain/photoGrid';
 import { hapticSelection } from '../../feedback/haptics';
 import { toast, toastError } from '../../feedback/toast';
 import { usePhotoBackup } from '../../state/photo-backup-store';
@@ -39,7 +41,10 @@ const COLUMNS = 3;
 const GAP = 2;
 const NO_SELECTION: ReadonlySet<string> = new Set();
 
-const photoKey = (item: PhotoListItemDto) => item.id;
+type Entry = PhotoGridEntry<PhotoListItemDto>;
+
+const entryKey = (e: Entry) => (e.kind === 'header' ? e.day.key : e.key);
+const entryType = (e: Entry) => e.kind;
 const yearLabel = (year: string) => `’${year.slice(2)}`;
 
 /** The whole library — including photos with no location, which the map can never show. */
@@ -82,7 +87,7 @@ export function PhotosScreen() {
   const { data: stats } = usePhotoStats();
   const [eventTitle] = useLinkedEvents(filters.event ? [filters.event] : []).map((e) => e.title);
 
-  const sections = groupByDay(items);
+  const { entries, headerIndices } = photoGrid(groupByDay(items), COLUMNS);
   const tile = (gridWidth - GAP * (COLUMNS + 1)) / COLUMNS;
   const failed = stats?.byStatus?.Failed ?? 0;
   const timeline = photoTimeline(stats?.byMonth ?? {}, filters.sort !== 'TakenAtAsc');
@@ -113,8 +118,8 @@ export function PhotosScreen() {
   });
   const toggleDay = (day: PhotoDay) => setSelected((prev) => {
     const next = new Set(prev);
-    const all = day.data.every((p) => next.has(p.id));
-    for (const p of day.data) {
+    const all = day.items.every((p) => next.has(p.id));
+    for (const p of day.items) {
       if (all) next.delete(p.id);
       else next.add(p.id);
     }
@@ -181,25 +186,22 @@ export function PhotosScreen() {
   const onPlace = (place: string) => applyFilters((f) => ({ ...f, place }));
   const onDayMap = (at: { lon: number; lat: number }) =>
     navigation.navigate('Tabs', { screen: 'Map', params: { at: { ...at, focus: 'photo' } } });
-  const renderSectionHeader = ({ section }: { section: (typeof sections)[number] }) => (
-    <DayHeader
-      day={section}
-      links={links}
-      selecting={selecting}
-      allSelected={section.data.every((p) => selected.has(p.id))}
-      onToggleDay={toggleDay}
-      onPlace={onPlace}
-      onEvent={onShowEvent}
-      onMap={onDayMap}
-    />
-  );
-  // SectionList renders one row per item, so each "row" is a full day laid out as a wrapped grid.
-  const renderItem = ({ index, section }: { index: number; section: (typeof sections)[number] }) => {
-    if (index % COLUMNS !== 0) return null;
-    const row = section.data.slice(index, index + COLUMNS);
-    return (
+  const renderItem = ({ item }: { item: Entry }) => item.kind === 'header'
+    ? (
+      <DayHeader
+        day={item.day}
+        links={links}
+        selecting={selecting}
+        allSelected={item.day.items.every((p) => selected.has(p.id))}
+        onToggleDay={toggleDay}
+        onPlace={onPlace}
+        onEvent={onShowEvent}
+        onMap={onDayMap}
+      />
+    )
+    : (
       <View style={styles.row}>
-        {row.map((photo) => (
+        {item.photos.map((photo) => (
           <PhotoTile
             key={photo.id}
             photo={photo}
@@ -214,7 +216,6 @@ export function PhotosScreen() {
         ))}
       </View>
     );
-  };
 
   if (isLoading) return <Centered text="Loading…" />;
   if (items.length === 0 && (offline || error)) return <Centered text="Photos need a connection." />;
@@ -273,17 +274,16 @@ export function PhotosScreen() {
       <View style={styles.body}>
         <View style={styles.listArea} onLayout={(e) => setGridWidth(e.nativeEvent.layout.width)}>
           {gridWidth > 0 && (
-            <SectionList
-              sections={sections}
-              keyExtractor={photoKey}
-              stickySectionHeadersEnabled
+            <FlashList
+              data={entries}
+              keyExtractor={entryKey}
+              getItemType={entryType}
+              stickyHeaderIndices={headerIndices}
               onRefresh={onRefresh}
               refreshing={isRefetching}
               onEndReached={onEndReached}
               onEndReachedThreshold={1.5}
-              renderSectionHeader={renderSectionHeader}
               renderItem={renderItem}
-              windowSize={7}
               ListEmptyComponent={<Text style={[styles.empty, { color: c.textMuted }]}>{emptyText}</Text>}
               ListFooterComponent={isFetchingNextPage ? <IndeterminateBar /> : null}
             />

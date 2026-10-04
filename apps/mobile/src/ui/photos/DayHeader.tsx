@@ -19,9 +19,9 @@ export const DayHeader = memo(function DayHeader({ day, links, selecting, allSel
   onMap: (at: { lon: number; lat: number }) => void;
 }) {
   const c = useColors();
-  const places = topPlaces(day.data, 2);
-  const events = useLinkedEvents(linkedEventIds(day.data.map((p) => p.id), links).slice(0, 3));
-  const located = day.data.find((p) => p.latitude != null && p.longitude != null);
+  const places = topPlaces(day.items, 2);
+  const events = useLinkedEvents(linkedEventIds(day.items.map((p) => p.id), links).slice(0, 3));
+  const located = day.items.find((p) => p.latitude != null && p.longitude != null);
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
