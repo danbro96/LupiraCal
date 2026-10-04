@@ -79,4 +79,13 @@ describe('parentsHomes', () => {
     ], today);
     expect(homes).toEqual([{ placeId: 'flat', label: "Mum's home", contactIds: ['mum'] }]);
   });
+
+  it('tells a parent\'s several homes apart by their residency labels', () => {
+    const homes = parentsHomes('me', parents, [
+      { contactId: 'dad', displayName: 'Dad', placeId: 'town', addressType: 'Home', label: 'Ljungby' },
+      { contactId: 'dad', displayName: 'Dad', placeId: 'coast', addressType: 'Home', label: ' ' },
+      { contactId: 'mum', displayName: 'Mum', placeId: 'coast', addressType: 'Home', label: 'Värmdö' },
+    ], today);
+    expect(homes.map((h) => h.label)).toEqual(["Parents' home · Värmdö", "Dad's home · Ljungby"]);
+  });
 });

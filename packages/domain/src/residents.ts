@@ -85,7 +85,7 @@ export function addressMeta(a: {
 
 export interface ParentsHome {
   placeId: string;
-  /** "Parents' home" when two or more parents live there, else "Anna's home". */
+  /** "Parents' home" when two or more parents live there, else "Anna's home"; a residency label follows ("· Ljungby"). */
   label: string;
   contactIds: string[];
 }
@@ -102,17 +102,18 @@ export function parentsHomes(
 ): ParentsHome[] {
   const current = residencies.filter((r) => r.addressType === 'Home' && withResidency(r, today).status === 'active');
   const ownHomes = new Set(current.filter((r) => r.contactId === contactId).map((r) => r.placeId));
-  const byPlace = new Map<string, { contactId: string; displayName: string }[]>();
+  const byPlace = new Map<string, { there: { contactId: string; displayName: string }[]; label?: string }>();
   for (const parent of parents) {
     for (const r of current.filter((x) => x.contactId === parent.contactId && !ownHomes.has(x.placeId))) {
-      const there = byPlace.get(r.placeId) ?? [];
-      if (!there.some((p) => p.contactId === parent.contactId)) there.push(parent);
-      byPlace.set(r.placeId, there);
+      const home = byPlace.get(r.placeId) ?? { there: [] };
+      if (!home.there.some((p) => p.contactId === parent.contactId)) home.there.push(parent);
+      home.label ||= r.label?.trim() || undefined;
+      byPlace.set(r.placeId, home);
     }
   }
-  return [...byPlace].map(([placeId, there]) => ({
+  return [...byPlace].map(([placeId, { there, label }]) => ({
     placeId,
-    label: there.length > 1 ? "Parents' home" : `${there[0].displayName}'s home`,
+    label: [there.length > 1 ? "Parents' home" : `${there[0].displayName}'s home`, label].filter(Boolean).join(' · '),
     contactIds: there.map((p) => p.contactId),
   }));
 }
