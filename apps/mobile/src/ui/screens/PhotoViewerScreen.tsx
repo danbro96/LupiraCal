@@ -259,17 +259,21 @@ const PhotoPage = memo(function PhotoPage({ photo, width, active, originalUrl, o
   const savedY = useSharedValue(0);
   const height = useSharedValue(0);
   const [zoomed, setZoomed] = useState(false);
+  const [wasActive, setWasActive] = useState(active);
+  if (active !== wasActive) {
+    setWasActive(active);
+    if (!active) setZoomed(false);
+  }
 
   // A neighbour swiped away keeps its zoom otherwise, and comes back magnified.
   useEffect(() => {
     if (active) return;
-    scale.value = 1;
-    saved.value = 1;
-    x.value = 0;
-    y.value = 0;
-    savedX.value = 0;
-    savedY.value = 0;
-    setZoomed(false);
+    scale.set(1);
+    saved.set(1);
+    x.set(0);
+    y.set(0);
+    savedX.set(0);
+    savedY.set(0);
   }, [active, scale, saved, x, y, savedX, savedY]);
 
   // Memoized: a fresh gesture makes GestureDetector re-attach its native handlers every render.
@@ -280,48 +284,48 @@ const PhotoPage = memo(function PhotoPage({ photo, width, active, originalUrl, o
     };
     const clampX = (v: number) => {
       'worklet';
-      const max = (width * (scale.value - 1)) / 2;
+      const max = (width * (scale.get() - 1)) / 2;
       return Math.min(Math.max(v, -max), max);
     };
     const clampY = (v: number) => {
       'worklet';
-      const max = (height.value * (scale.value - 1)) / 2;
+      const max = (height.get() * (scale.get() - 1)) / 2;
       return Math.min(Math.max(v, -max), max);
     };
     const settle = (next: number) => {
       'worklet';
-      saved.value = next;
+      saved.set(next);
       if (next <= 1) {
-        x.value = withTiming(0);
-        y.value = withTiming(0);
-        savedX.value = 0;
-        savedY.value = 0;
+        x.set(withTiming(0));
+        y.set(withTiming(0));
+        savedX.set(0);
+        savedY.set(0);
       } else {
-        x.value = clampX(x.value);
-        y.value = clampY(y.value);
-        savedX.value = x.value;
-        savedY.value = y.value;
+        x.set(clampX(x.get()));
+        y.set(clampY(y.get()));
+        savedX.set(x.get());
+        savedY.set(y.get());
       }
       scheduleOnRN(report, next > 1);
     };
 
     const pinch = Gesture.Pinch()
-      .onUpdate((e) => { scale.value = Math.min(Math.max(saved.value * e.scale, 1), MAX_SCALE); })
-      .onEnd(() => settle(scale.value));
+      .onUpdate((e) => { scale.set(Math.min(Math.max(saved.get() * e.scale, 1), MAX_SCALE)); })
+      .onEnd(() => settle(scale.get()));
     const pan = Gesture.Pan()
       .enabled(zoomed)
       .averageTouches(true)
       .onUpdate((e) => {
-        x.value = clampX(savedX.value + e.translationX);
-        y.value = clampY(savedY.value + e.translationY);
+        x.set(clampX(savedX.get() + e.translationX));
+        y.set(clampY(savedY.get() + e.translationY));
       })
       .onEnd(() => {
-        savedX.value = x.value;
-        savedY.value = y.value;
+        savedX.set(x.get());
+        savedY.set(y.get());
       });
     const doubleTap = Gesture.Tap().numberOfTaps(2).onEnd(() => {
-      const next = scale.value > 1 ? 1 : 2;
-      scale.value = withTiming(next);
+      const next = scale.get() > 1 ? 1 : 2;
+      scale.set(withTiming(next));
       settle(next);
     });
     const swipeUp = Gesture.Fling().direction(Directions.UP).enabled(!zoomed)
@@ -332,7 +336,7 @@ const PhotoPage = memo(function PhotoPage({ photo, width, active, originalUrl, o
   }, [scale, saved, x, y, savedX, savedY, height, width, zoomed, onZoomChange, onSwipeInfo]);
 
   const zoom = useAnimatedStyle(() => ({
-    transform: [{ translateX: x.value }, { translateY: y.value }, { scale: scale.value }],
+    transform: [{ translateX: x.get() }, { translateY: y.get() }, { scale: scale.get() }],
   }));
 
   const original = originalIsViewable(photo.contentType) && originalUrl ? originalUrl : null;
@@ -341,7 +345,7 @@ const PhotoPage = memo(function PhotoPage({ photo, width, active, originalUrl, o
 
   return (
     <GestureDetector gesture={gesture}>
-      <View style={[styles.page, { width }]} onLayout={(e) => { height.value = e.nativeEvent.layout.height; }}>
+      <View style={[styles.page, { width }]} onLayout={(e) => { height.set(e.nativeEvent.layout.height); }}>
         {uri ? (
           <Animated.View style={[styles.fill, zoom]}>
             <Image source={{ uri, cacheKey }} style={styles.fill} contentFit="contain" transition={150} recyclingKey={photo.id} />

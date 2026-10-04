@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { Alert } from 'react-native';
 
 type Options = {
@@ -15,33 +15,33 @@ type Options = {
 export function useUnsavedGuard(dirty: boolean, opts: Options = {}): { leave: () => void } {
   const navigation = useNavigation();
   const bypass = useRef(false);
-  const optsRef = useRef(opts);
-  optsRef.current = opts;
+  const confirmLeave = useEffectEvent((proceed: () => void) => {
+    const { message = 'Discard your changes?', onSave } = opts;
+    Alert.alert('Unsaved changes', message, [
+      { text: 'Keep editing', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: proceed },
+      ...(onSave
+        ? [{
+          text: 'Save',
+          onPress: () => {
+            void onSave().then((saved) => {
+              if (saved) proceed();
+            });
+          },
+        }]
+        : []),
+    ]);
+  });
 
   useEffect(() => {
     if (!dirty) return;
     return navigation.addListener('beforeRemove', (e) => {
       if (bypass.current) return;
       e.preventDefault();
-      const proceed = () => {
+      confirmLeave(() => {
         bypass.current = true;
         navigation.dispatch(e.data.action);
-      };
-      const { message = 'Discard your changes?', onSave } = optsRef.current;
-      Alert.alert('Unsaved changes', message, [
-        { text: 'Keep editing', style: 'cancel' },
-        { text: 'Discard', style: 'destructive', onPress: proceed },
-        ...(onSave
-          ? [{
-            text: 'Save',
-            onPress: () => {
-              void onSave().then((saved) => {
-                if (saved) proceed();
-              });
-            },
-          }]
-          : []),
-      ]);
+      });
     });
   }, [navigation, dirty]);
 

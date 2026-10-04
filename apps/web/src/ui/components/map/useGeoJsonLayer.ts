@@ -1,6 +1,6 @@
 import type { FeatureCollection } from 'geojson';
 import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap, MapGeoJSONFeature } from 'maplibre-gl';
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import { PIN_CLUSTERS } from '@lupira/cal-domain/mapZoom';
 
 export type LayerSpecSansSource = Omit<LayerSpecification, 'source'>;
@@ -26,34 +26,32 @@ export function useGeoJsonLayer(
   layers: readonly LayerSpecSansSource[],
   options?: GeoJsonLayerOptions,
 ) {
-  const dataRef = useRef(data);
-  dataRef.current = data;
+  const ensure = useEffectEvent(() => {
+    try {
+      if (!map.getSource(sourceId)) {
+        map.addSource(sourceId, {
+          type: 'geojson',
+          data,
+          ...(options?.cluster ? { cluster: true, clusterMaxZoom: PIN_CLUSTERS.maxZoom, clusterRadius: PIN_CLUSTERS.radius } : {}),
+        });
+      }
+      const beforeId = options?.beneathData ? firstDataLayerId(map, sourceId) : undefined;
+      for (const spec of layers) {
+        if (!map.getLayer(spec.id)) map.addLayer({ ...spec, source: sourceId } as LayerSpecification, beforeId);
+      }
+    } catch {
+      // Style mid-transition — the next styledata tick retries.
+    }
+  });
 
   useEffect(() => {
-    const ensure = () => {
-      try {
-        if (!map.getSource(sourceId)) {
-          map.addSource(sourceId, {
-            type: 'geojson',
-            data: dataRef.current,
-            ...(options?.cluster ? { cluster: true, clusterMaxZoom: PIN_CLUSTERS.maxZoom, clusterRadius: PIN_CLUSTERS.radius } : {}),
-          });
-        }
-        const beforeId = options?.beneathData ? firstDataLayerId(map, sourceId) : undefined;
-        for (const spec of layers) {
-          if (!map.getLayer(spec.id)) map.addLayer({ ...spec, source: sourceId } as LayerSpecification, beforeId);
-        }
-      } catch {
-        // Style mid-transition — the next styledata tick retries.
-      }
-    };
-
+    const onStyle = () => ensure();
     if (map.isStyleLoaded()) ensure();
-    map.on('load', ensure);
-    map.on('styledata', ensure);
+    map.on('load', onStyle);
+    map.on('styledata', onStyle);
     return () => {
-      map.off('load', ensure);
-      map.off('styledata', ensure);
+      map.off('load', onStyle);
+      map.off('styledata', onStyle);
       try {
         for (const spec of layers) if (map.getLayer(spec.id)) map.removeLayer(spec.id);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
@@ -61,7 +59,6 @@ export function useGeoJsonLayer(
         // Map already removed.
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- options identity is irrelevant to setup
   }, [map, sourceId, layers]);
 
   useEffect(() => {

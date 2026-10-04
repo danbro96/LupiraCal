@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import Autocomplete from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useForwardGeocode, useSuggestPlaces } from '@lupira/cal-api/query/geo';
+import { getForwardGeocodeQueryOptions, useSuggestPlaces } from '@lupira/cal-api/query/geo';
 import { SuggestionType, type PlaceSuggestionDto } from '@lupira/cal-api/models';
 import { MIN_PLACE_QUERY } from '@lupira/cal-domain/placeCandidates';
 import Box from '@mui/material/Box';
@@ -24,26 +25,24 @@ const isFallback = (o: SearchOption): o is GeocodeFallback => 'geocode' in o;
 /** Gazetteer typeahead (places + localities) with a nominatim forward-geocode fallback. */
 export function MapSearch({ onPick }: { onPick: (target: SearchTarget) => void }) {
   const [q, setQ] = useState('');
-  const [geocodeQ, setGeocodeQ] = useState<string>();
+  const [geocoding, setGeocoding] = useState(false);
+  const queryClient = useQueryClient();
 
   const suggestQ = useSuggestPlaces({ q }, { query: { enabled: q.trim().length >= MIN_PLACE_QUERY } });
   const suggestions = q.trim().length >= MIN_PLACE_QUERY ? (suggestQ.data ?? []) : [];
 
-  const geocode = useForwardGeocode(
-    { q: geocodeQ ?? '', limit: 1 },
-    { query: { enabled: !!geocodeQ, staleTime: Infinity } },
-  );
-  const geocodeData = geocodeQ ? geocode.data : undefined;
-  useEffect(() => {
-    if (geocodeData === undefined) return;
-    setGeocodeQ(undefined);
-    const hit = geocodeData[0];
-    if (hit?.latitude != null && hit.longitude != null) {
-      setQ('');
-      onPick({ lat: hit.latitude, lon: hit.longitude });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per geocode result
-  }, [geocodeData]);
+  const geocode = (text: string) => {
+    setGeocoding(true);
+    queryClient
+      .fetchQuery(getForwardGeocodeQueryOptions({ q: text, limit: 1 }, { query: { staleTime: Infinity } }))
+      .then(([hit]) => {
+        setGeocoding(false);
+        if (hit?.latitude != null && hit.longitude != null) {
+          setQ('');
+          onPick({ lat: hit.latitude, lon: hit.longitude });
+        }
+      }, () => setGeocoding(false));
+  };
 
   const pick = (id: string, type: SuggestionType, lat?: number | null, lon?: number | null) => {
     setQ('');
@@ -70,20 +69,20 @@ export function MapSearch({ onPick }: { onPick: (target: SearchTarget) => void }
         onInputChange={(_, v) => setQ(v)}
         onChange={(_, value) => {
           if (typeof value === 'string') {
-            if (suggestions.length === 0 && value.trim().length >= MIN_PLACE_QUERY) setGeocodeQ(value.trim());
+            if (suggestions.length === 0 && value.trim().length >= MIN_PLACE_QUERY) geocode(value.trim());
           } else if (value && isFallback(value)) {
-            setGeocodeQ(q.trim());
+            geocode(q.trim());
           } else if (value) {
             pick(value.id, value.type, value.latitude, value.longitude);
           }
         }}
         getOptionKey={(o) => (typeof o === 'string' ? o : isFallback(o) ? 'geocode' : `${o.type}:${o.id}`)}
         getOptionLabel={(o) => (typeof o === 'string' ? o : isFallback(o) ? q.trim() : o.name)}
-        getOptionDisabled={(o) => isFallback(o) && geocode.isLoading}
+        getOptionDisabled={(o) => isFallback(o) && geocoding}
         renderOption={({ key, ...props }, o) => (
           <li key={key} {...props}>
             {isFallback(o) ? (
-              geocode.isLoading ? 'Searching…' : `Search address "${q.trim()}"`
+              geocoding ? 'Searching…' : `Search address "${q.trim()}"`
             ) : (
               <>
                 <RowName>{o.name}</RowName>

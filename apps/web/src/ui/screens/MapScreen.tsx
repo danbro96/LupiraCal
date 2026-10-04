@@ -195,12 +195,15 @@ export default function MapScreen() {
 
   // ?at=lon,lat flies to one point and pins it — how the gallery hands a photo over.
   const atParam = params.get('at');
-  useEffect(() => {
+  const [appliedAtParam, setAppliedAtParam] = useState<string | null>(null);
+  if (atParam !== appliedAtParam) {
+    setAppliedAtParam(atParam);
     const at = parseAt(atParam);
-    if (!at) return;
-    setFlyTarget({ center: at, zoom: TARGET_ZOOM });
-    setSelected(at);
-  }, [atParam]);
+    if (at) {
+      setFlyTarget({ center: at, zoom: TARGET_ZOOM });
+      setSelected(at);
+    }
+  }
 
   const fitCollections = useMemo(
     () => [events.features, movement.visits, contacts.features, saved.features],
@@ -270,7 +273,8 @@ export default function MapScreen() {
         onClick: flyTo(f, p.placeId),
       };
     };
-    const historyFeatures = showHistory ? contacts.former.features : [];
+    const formerFeatures = contacts.former.features;
+    const historyFeatures = showHistory ? formerFeatures : [];
     const formerRows = historyFeatures.filter((f) => f.properties!.status === 'former').map(historyRow);
     const upcomingRows = historyFeatures.filter((f) => f.properties!.status === 'future').map(historyRow);
 

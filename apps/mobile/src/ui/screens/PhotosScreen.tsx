@@ -65,12 +65,16 @@ export function PhotosScreen() {
   // Handoffs (a map pin's day, an event's photos) are consumed and cleared, so the same one arriving
   // twice still applies after the user has changed the filters in between.
   const { from, to, event } = route.params ?? {};
-  useEffect(() => {
-    if (!from && !event) return;
+  const [appliedParams, setAppliedParams] = useState(route.params);
+  if (route.params !== appliedParams) {
+    setAppliedParams(route.params);
     if (event) applyFilters((f) => ({ sort: f.sort, event }));
     else if (from) applyFilters((f) => ({ ...f, from, to: to ?? from, event: undefined }));
+  }
+  useEffect(() => {
+    if (!from && !event) return;
     tabNavigation.setParams({ from: undefined, to: undefined, event: undefined });
-  }, [from, to, event, applyFilters, tabNavigation]);
+  }, [from, to, event, tabNavigation]);
 
   const { items, offline, isLoading, error, hasNextPage, fetchNextPage, isFetchingNextPage, refetch, isRefetching } =
     usePhotoLibrary(filters);

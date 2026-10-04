@@ -3,7 +3,7 @@ import { deviceTimeZone, wallToInstant } from '@lupira/cal-domain/zonedTime';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, List, Switch, Text } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,51 +59,42 @@ export function ItemEditScreen() {
   const [seeded, setSeeded] = useState(!itemId);
 
   /** Pristine snapshots; the exit guard and the header's Save state key off differences from them. */
-  const baseline = useRef({ form: JSON.stringify(form), calendars: '[]', people: '[]' });
+  const [baseline, setBaseline] = useState(() => ({ form: JSON.stringify(form), calendars: '[]', people: '[]' }));
 
-  useEffect(() => {
-    if (!seeded && itemId && state) {
-      const seededForm = itemFormFromDoc(state.doc);
-      const seededCalendars = acceptedCalendarIds(state.doc.calendars);
-      const seededPeople = (state.doc.attendees ?? []).map((a) => a.contactId);
-      setForm(seededForm);
-      setCalendarIds(seededCalendars);
-      setAttendeeIds(seededPeople);
-      baseline.current = {
-        form: JSON.stringify(seededForm), calendars: JSON.stringify(seededCalendars), people: JSON.stringify(seededPeople),
-      };
-      setSeeded(true);
-    }
-  }, [seeded, itemId, state]);
+  if (!seeded && itemId && state) {
+    const seededForm = itemFormFromDoc(state.doc);
+    const seededCalendars = acceptedCalendarIds(state.doc.calendars);
+    const seededPeople = (state.doc.attendees ?? []).map((a) => a.contactId);
+    setForm(seededForm);
+    setCalendarIds(seededCalendars);
+    setAttendeeIds(seededPeople);
+    setBaseline({
+      form: JSON.stringify(seededForm), calendars: JSON.stringify(seededCalendars), people: JSON.stringify(seededPeople),
+    });
+    setSeeded(true);
+  }
   // A new event has you on it, already accepted; taking yourself off is the opt-out.
   const me = useMyContactId();
-  const meSeeded = useRef(false);
-  useEffect(() => {
-    if (itemId || !me || meSeeded.current) return;
-    meSeeded.current = true;
+  const [meSeeded, setMeSeeded] = useState(false);
+  if (!itemId && me && !meSeeded) {
+    setMeSeeded(true);
     setAttendeeIds((ids) => (ids.includes(me) ? ids : [me, ...ids]));
-    baseline.current = { ...baseline.current, people: JSON.stringify([me]) };
-  }, [itemId, me]);
+    setBaseline((b) => ({ ...b, people: JSON.stringify([me]) }));
+  }
 
   const prefsLoaded = usePrefs((p) => p.loaded);
   const lastCalendarIds = usePrefs((p) => p.lastCalendarIds);
-  useEffect(() => {
-    if (itemId || calendarIds.length > 0 || !prefsLoaded) return;
-    const initial = defaultCalendarIds(selectableCalendars(calendars), lastCalendarIds);
-    if (initial.length === 0) return;
-    setCalendarIds(initial);
-    baseline.current = { ...baseline.current, calendars: JSON.stringify(initial) };
-  }, [itemId, calendarIds, calendars, prefsLoaded, lastCalendarIds]);
+  const initialCalendarIds = !itemId && calendarIds.length === 0 && prefsLoaded
+    ? defaultCalendarIds(selectableCalendars(calendars), lastCalendarIds)
+    : [];
+  if (initialCalendarIds.length > 0) {
+    setCalendarIds(initialCalendarIds);
+    setBaseline((b) => ({ ...b, calendars: JSON.stringify(initialCalendarIds) }));
+  }
 
-  const dirty = JSON.stringify(form) !== baseline.current.form
-    || JSON.stringify(calendarIds) !== baseline.current.calendars
-    || JSON.stringify(attendeeIds) !== baseline.current.people;
-  /** Bridges the guard to the submit closure (assigned below) without re-subscribing every render. */
-  const submitRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
-  const guard = useUnsavedGuard(dirty, {
-    message: 'Save this event before leaving?',
-    onSave: () => submitRef.current(),
-  });
+  const dirty = JSON.stringify(form) !== baseline.form
+    || JSON.stringify(calendarIds) !== baseline.calendars
+    || JSON.stringify(attendeeIds) !== baseline.people;
 
   const set = <K extends keyof ItemForm>(key: K, value: ItemForm[K]) => setForm((f) => ({ ...f, [key]: value }));
   const setSchedule = (field: ScheduleField, value: string) => {
@@ -157,7 +148,10 @@ export function ItemEditScreen() {
       return false;
     }
   };
-  submitRef.current = submit;
+  const guard = useUnsavedGuard(dirty, {
+    message: 'Save this event before leaving?',
+    onSave: submit,
+  });
 
   const saveAndLeave = () => {
     void submit().then((saved) => {

@@ -1,4 +1,4 @@
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -45,10 +45,10 @@ export function AvailabilityModal({ onClose }: { onClose: () => void }) {
   });
 
   const calendar = availabilityCalendar(calendars);
-  const { control, handleSubmit, watch } = useForm<FormValues>({
+  const { control, handleSubmit } = useForm<FormValues>({
     defaultValues: { status: '', startDate: ymd(new Date()), endDate: '' },
   });
-  const startDate = watch('startDate');
+  const startDate = useWatch({ control, name: 'startDate' });
 
   const submit = handleSubmit((values) => {
     if (!calendar) return;

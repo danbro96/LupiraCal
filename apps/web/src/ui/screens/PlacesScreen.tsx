@@ -1,5 +1,5 @@
 import { formatCoords } from '@lupira/cal-domain/places';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
@@ -252,14 +252,15 @@ const ORPHAN_CHIP: Record<OrphanClass, { label: string; color: 'success' | 'warn
 
 function OrphansSection({ onHistory }: { onHistory: (p: { id: string; name: string }) => void }) {
   const { data: orphans, isLoading, error } = useOrphanPlaces();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(defaultPruneSelection(orphans ?? [])));
+  const [selectedFor, setSelectedFor] = useState(orphans);
+  if (orphans !== selectedFor) {
+    setSelectedFor(orphans);
+    setSelected(new Set(defaultPruneSelection(orphans ?? [])));
+  }
   const [confirming, setConfirming] = useState(false);
   const prune = usePrune();
   const showSnack = useSnackbar();
-
-  useEffect(() => {
-    setSelected(new Set(defaultPruneSelection(orphans ?? [])));
-  }, [orphans]);
 
   const toggle = (placeId: string) =>
     setSelected((prev) => {

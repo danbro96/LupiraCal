@@ -52,8 +52,7 @@ export default [
           { from: { element: { type: 'config' } }, allow: [] },
         ],
       }],
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      ...reactHooks.configs['recommended-latest'].rules,
     },
   },
 ];

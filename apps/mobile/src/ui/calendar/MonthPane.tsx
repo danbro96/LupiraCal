@@ -1,5 +1,5 @@
 import { addMonths, parseYmd, ymd } from '@lupira/cal-domain/time';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue } from 'react-native-reanimated';
@@ -38,7 +38,9 @@ export function MonthPane({ anchor, jump, onStep, onOpenOccurrence }: {
   }, [onStep]));
 
   const anchorRef = useRef(anchor);
-  anchorRef.current = anchor;
+  useLayoutEffect(() => {
+    anchorRef.current = anchor;
+  });
   const { slide } = pager;
   // Stable, so the memoized pages a swipe keeps skip their re-render.
   const selectDay = useCallback((day: string) => {
@@ -57,7 +59,7 @@ export function MonthPane({ anchor, jump, onStep, onOpenOccurrence }: {
   });
 
   const onLayout = (e: LayoutChangeEvent) => {
-    areaH.value = e.nativeEvent.layout.height;
+    areaH.set(e.nativeEvent.layout.height);
     pager.onPageLayout(e);
   };
 

@@ -91,6 +91,7 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
   const colorOf = useCalendarColors();
   const [initialHours] = useState(() => (weekKeys[1].includes(ymd(new Date())) ? hoursBeforeNow() : 7.5));
   const zoom = useTimeZoom(initialHours);
+  const { scrollRef } = zoom;
   const pager = usePager(onStep);
   useJump(jump, (j) => {
     pager.snapTo(page);
@@ -156,7 +157,7 @@ export const WeekView = memo(function WeekView({ weekStart, jump, onStep, onPres
         <GestureDetector gesture={zoom.pinch}>
           <View style={styles.viewport} onLayout={zoom.onViewportLayout}>
             <GestureDetector gesture={zoom.scroll}>
-              <Animated.ScrollView ref={zoom.scrollRef} contentOffset={zoom.initialOffset}>
+              <Animated.ScrollView ref={scrollRef} contentOffset={zoom.initialOffset}>
                 <Animated.View style={[styles.lanes, zoom.lanesStyle]}>
                   <SlidingDays
                     slideStyle={pager.slideStyle}
@@ -244,7 +245,7 @@ const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, sl
         { left: colPct(col), width: colPct(1), borderColor: c.divider },
         avail !== undefined && { backgroundColor: withAlpha(availabilityColor(avail), EMPHASIS.availabilityBand) },
       ]}
-      onPress={(e) => onTapSlot(dayKey, Math.max(0, Math.min(47, Math.floor(e.nativeEvent.locationY / (hourH.value / 2)))))}
+      onPress={(e) => onTapSlot(dayKey, Math.max(0, Math.min(47, Math.floor(e.nativeEvent.locationY / (hourH.get() / 2)))))}
     >
       {slot !== null && (
         <View style={[styles.slotCell, { top: pct(slot * 30), height: pct(30) }]}>
@@ -452,7 +453,7 @@ function useTimeZoom(initialHours: number) {
   const [initialOffset] = useState(() => ({ x: 0, y: initialHours * savedHourH }));
   const hourH = useSharedValue(savedHourH);
   useEffect(() => {
-    hourH.value = savedHourH;
+    hourH.set(savedHourH);
   }, [hourH, savedHourH]);
   const viewportH = useSharedValue(0);
   const startH = useSharedValue(0);
@@ -460,33 +461,34 @@ function useTimeZoom(initialHours: number) {
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollY = useScrollOffset(scrollRef);
 
+  // eslint-disable-next-line react-hooks/refs -- scrollRef is only used by the pinch worklet's scrollTo on the UI thread
   const [gestures] = useState(() => {
     const save = (value: number) => void usePrefs.getState().setHourHeight(value);
     const pinch = Gesture.Pinch()
       .onStart((e) => {
-        startH.value = hourH.value;
-        anchorHours.value = (scrollY.value + e.focalY) / hourH.value;
+        startH.set(hourH.get());
+        anchorHours.set((scrollY.get() + e.focalY) / hourH.get());
       })
       .onUpdate((e) => {
         // Zoomed all the way out, the whole day fits the viewport — never smaller.
-        const minH = Math.max(MIN_HOUR_H, viewportH.value / 24);
-        const next = Math.min(MAX_HOUR_H, Math.max(minH, startH.value * e.scale));
-        hourH.value = next;
-        scrollTo(scrollRef, 0, Math.max(0, anchorHours.value * next - e.focalY), false);
+        const minH = Math.max(MIN_HOUR_H, viewportH.get() / 24);
+        const next = Math.min(MAX_HOUR_H, Math.max(minH, startH.get() * e.scale));
+        hourH.set(next);
+        scrollTo(scrollRef, 0, Math.max(0, anchorHours.get() * next - e.focalY), false);
       })
       .onEnd(() => {
-        scheduleOnRN(save, Math.round(hourH.value * 10) / 10);
+        scheduleOnRN(save, Math.round(hourH.get() * 10) / 10);
       });
     // The ScrollView joins RNGH's arbitration, so a pinch cancels its scroll and a vertical drag fails the swipe.
     return { pinch, scroll: Gesture.Native() };
   });
 
-  const lanesStyle = useAnimatedStyle(() => ({ height: 24 * hourH.value }));
+  const lanesStyle = useAnimatedStyle(() => ({ height: 24 * hourH.get() }));
   const scrollToHours = useCallback((hours: number) => {
-    scrollRef.current?.scrollTo({ y: hours * hourH.value, animated: true });
+    scrollRef.current?.scrollTo({ y: hours * hourH.get(), animated: true });
   }, [scrollRef, hourH]);
   const onViewportLayout = useCallback((e: LayoutChangeEvent) => {
-    viewportH.value = e.nativeEvent.layout.height;
+    viewportH.set(e.nativeEvent.layout.height);
   }, [viewportH]);
 
   return { ...gestures, hourH, scrollRef, initialOffset, lanesStyle, scrollToHours, onViewportLayout };

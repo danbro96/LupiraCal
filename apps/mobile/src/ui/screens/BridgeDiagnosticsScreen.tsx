@@ -20,14 +20,12 @@ export function BridgeDiagnosticsScreen() {
   const [contacts, setContacts] = useState<{ total: number; rows: ContactsSampleRow[] } | null>(null);
 
   const append = (line: string) => setLog((l) => [...l.slice(-20), line]);
-  const refresh = useCallback(async () => {
-    try {
-      setState(await LupiraBridge.getBridgeState());
+  const refresh = useCallback(() => LupiraBridge.getBridgeState()
+    .then(async (next) => {
+      setState(next);
       setInboxCount((await LupiraBridge.drainInbox()).length);
-    } catch (e) {
-      append(String(e));
-    }
-  }, []);
+    })
+    .catch((e: unknown) => append(String(e))), []);
 
   useEffect(() => {
     void refresh();

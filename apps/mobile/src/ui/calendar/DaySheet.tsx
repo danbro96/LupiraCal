@@ -4,7 +4,7 @@ import { fmtDayTitle, fmtTime, isThisYear, parseYmd } from '@lupira/cal-domain/t
 import { textOn } from '@lupira/cal-tokens/contrast';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Chip, FAB, Text } from 'react-native-paper';
@@ -15,6 +15,7 @@ import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrenc
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
 import { Glyph } from '../components/Glyph';
 import { availabilityColor, useCalendarColors } from '../hooks/palette';
+import { useLatestCallback } from '../hooks/useLatestCallback';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors, spacing } from '../theme';
@@ -41,34 +42,30 @@ export function DaySheet({ day, areaH, onDismiss, onOpenOccurrence }: {
   const startH = useSharedValue(0);
 
   useEffect(() => {
-    height.value = withSpring(areaH.value * LOW, SPRING);
+    height.set(withSpring(areaH.get() * LOW, SPRING));
   }, [height, areaH]);
 
-  const onDismissRef = useRef(onDismiss);
-  onDismissRef.current = onDismiss;
+  const dismiss = useLatestCallback(onDismiss);
 
-  const [drag] = useState(() => {
-    const dismiss = () => onDismissRef.current();
-    return Gesture.Pan()
-      .activeOffsetY([-6, 6])
-      .onStart(() => {
-        startH.value = height.value;
-      })
-      .onUpdate((e) => {
-        height.value = Math.max(0, Math.min(areaH.value * CEILING, startH.value - e.translationY));
-      })
-      .onEnd(() => {
-        const H = areaH.value;
-        if (height.value < H * CLOSE_BELOW) {
-          height.value = withTiming(0, { duration: 150 }, (done) => {
-            if (done) scheduleOnRN(dismiss);
-          });
-        } else {
-          height.value = withSpring(height.value > H * (LOW + HIGH) / 2 ? H * HIGH : H * LOW, SPRING);
-        }
-      });
-  });
-  const sheetStyle = useAnimatedStyle(() => ({ height: height.value }));
+  const [drag] = useState(() => Gesture.Pan()
+    .activeOffsetY([-6, 6])
+    .onStart(() => {
+      startH.set(height.get());
+    })
+    .onUpdate((e) => {
+      height.set(Math.max(0, Math.min(areaH.get() * CEILING, startH.get() - e.translationY)));
+    })
+    .onEnd(() => {
+      const H = areaH.get();
+      if (height.get() < H * CLOSE_BELOW) {
+        height.set(withTiming(0, { duration: 150 }, (done) => {
+          if (done) scheduleOnRN(dismiss);
+        }));
+      } else {
+        height.set(withSpring(height.get() > H * (LOW + HIGH) / 2 ? H * HIGH : H * LOW, SPRING));
+      }
+    }));
+  const sheetStyle = useAnimatedStyle(() => ({ height: height.get() }));
 
   return (
     <Animated.View style={[styles.sheet, { backgroundColor: c.surface, borderColor: c.divider }, sheetStyle]}>

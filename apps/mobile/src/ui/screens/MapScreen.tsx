@@ -118,12 +118,18 @@ export function MapScreen() {
   const flyTo = useCallback((t: MapTarget) => {
     cameraRef.current?.easeTo({ center: [t.lon, t.lat], zoom: TARGET_ZOOM, duration: 600 });
   }, []);
+  const [appliedAt, setAppliedAt] = useState<typeof at>(undefined);
+  if (at !== appliedAt) {
+    setAppliedAt(at);
+    if (at) {
+      if (at.focus === 'photo') setPhotosForced(true);
+      setFollow('off');
+      setHits(null);
+      setSelected({ lon: at.lon, lat: at.lat });
+    }
+  }
   useEffect(() => {
     if (!at) return;
-    if (at.focus === 'photo') setPhotosForced(true);
-    setFollow('off');
-    setHits(null);
-    setSelected({ lon: at.lon, lat: at.lat });
     if (mapLoaded.current) flyTo(at);
     else pendingTarget.current = at;
   }, [at, flyTo]);

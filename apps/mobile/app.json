@@ -63,6 +63,9 @@
         }
       ]
     ],
+    "experiments": {
+      "reactCompiler": true
+    },
     "owner": "danbro96",
     "extra": {
       "eas": {

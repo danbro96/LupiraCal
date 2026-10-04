@@ -1,8 +1,9 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { cancelAnimation, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
+import { useLatestCallback } from '../hooks/useLatestCallback';
 
 const LOCK_PX = 12;
 const COMMIT_FRACTION = 0.25;
@@ -22,25 +23,23 @@ export function usePager(onStep: (dir: 1 | -1) => void) {
   const page = useSharedValue(0);
   const pending = useSharedValue(0);
   const dragBase = useSharedValue(0);
-  const onStepRef = useRef(onStep);
-  onStepRef.current = onStep;
+  const step = useLatestCallback(onStep);
 
   const [actions] = useState(() => {
-    const step = (dir: 1 | -1) => onStepRef.current(dir);
     const commitPending = () => {
       'worklet';
-      const dir = pending.value;
+      const dir = pending.get();
       if (dir === 0) return;
-      pending.value = 0;
-      page.value += dir;
+      pending.set(0);
+      page.set(page.get() + dir);
       scheduleOnRN(step, dir as 1 | -1);
     };
     const settle = (dir: number) => {
       'worklet';
-      pending.value = dir;
-      offset.value = withTiming(-(page.value + dir) * width.value, { duration: SLIDE_MS }, (done) => {
+      pending.set(dir);
+      offset.set(withTiming(-(page.get() + dir) * width.get(), { duration: SLIDE_MS }, (done) => {
         if (done) commitPending();
-      });
+      }));
     };
     const gesture = Gesture.Pan()
       .maxPointers(1)
@@ -49,14 +48,14 @@ export function usePager(onStep: (dir: 1 | -1) => void) {
       .onStart(() => {
         commitPending();
         cancelAnimation(offset);
-        dragBase.value = offset.value;
+        dragBase.set(offset.get());
       })
       .onUpdate((e) => {
-        offset.value = dragBase.value + e.translationX;
+        offset.set(dragBase.get() + e.translationX);
       })
       .onEnd((e, success) => {
-        const w = width.value;
-        const moved = offset.value + page.value * w;
+        const w = width.get();
+        const moved = offset.get() + page.get() * w;
         const far = Math.abs(moved) > w * COMMIT_FRACTION;
         const flung = Math.abs(e.velocityX) > COMMIT_VELOCITY && Math.sign(e.velocityX) === Math.sign(moved);
         settle(success && w > 0 && (far || flung) ? (moved < 0 ? 1 : -1) : 0);
@@ -69,16 +68,16 @@ export function usePager(onStep: (dir: 1 | -1) => void) {
 
   const snapTo = useCallback((p: number) => {
     cancelAnimation(offset);
-    pending.value = 0;
-    page.value = p;
-    offset.value = -p * width.value;
+    pending.set(0);
+    page.set(p);
+    offset.set(-p * width.get());
   }, [offset, pending, page, width]);
 
   const onPageLayout = useCallback((e: LayoutChangeEvent) => {
-    width.value = e.nativeEvent.layout.width;
-    offset.value = -page.value * e.nativeEvent.layout.width;
+    width.set(e.nativeEvent.layout.width);
+    offset.set(-page.get() * e.nativeEvent.layout.width);
   }, [width, offset, page]);
 
-  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.value }] }));
+  const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
   return { gesture: actions.gesture, slideStyle, slide, snapTo, onPageLayout };
 }

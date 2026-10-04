@@ -4,7 +4,7 @@ import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Chip, HelperText, IconButton, List, Switch, Text } from 'react-native-paper';
 import type { ReachChannel, SocialProfile } from '../../domain/docTypes';
@@ -46,36 +46,26 @@ export function ContactEditScreen() {
   const [error, setError] = useState<string | null>(null);
   const [seeded, setSeeded] = useState(!contactId);
   /** Snapshot of the pristine form; anything different means unsaved work worth guarding. */
-  const baseline = useRef(snapshot(emptyContactForm(), [], [], ''));
+  const [baseline, setBaseline] = useState(() => snapshot(emptyContactForm(), [], [], ''));
 
-  useEffect(() => {
-    if (!seeded && contactId && state) {
-      const seededForm = contactFormFromDoc(state.doc);
-      const seededChannels = (state.doc.channels ?? []).map((ch) => ({ ...ch }));
-      const seededProfiles = (state.doc.profiles ?? []).map((p) => ({ ...p }));
-      const seededTags = visibleTags(state.doc.tags).join(', ');
-      setForm(seededForm);
-      setChannels(seededChannels);
-      setProfiles(seededProfiles);
-      setTagsCsv(seededTags);
-      baseline.current = snapshot(seededForm, seededChannels, seededProfiles, seededTags);
-      setSeeded(true);
-    }
-  }, [seeded, contactId, state]);
-  useEffect(() => {
-    if (!contactId && !bookId && books?.length) setBookId(books[0].id);
-  }, [contactId, bookId, books]);
+  if (!seeded && contactId && state) {
+    const seededForm = contactFormFromDoc(state.doc);
+    const seededChannels = (state.doc.channels ?? []).map((ch) => ({ ...ch }));
+    const seededProfiles = (state.doc.profiles ?? []).map((p) => ({ ...p }));
+    const seededTags = visibleTags(state.doc.tags).join(', ');
+    setForm(seededForm);
+    setChannels(seededChannels);
+    setProfiles(seededProfiles);
+    setTagsCsv(seededTags);
+    setBaseline(snapshot(seededForm, seededChannels, seededProfiles, seededTags));
+    setSeeded(true);
+  }
+  if (!contactId && !bookId && books?.length) setBookId(books[0].id);
 
   const dirty = useMemo(
-    () => snapshot(form, channels, profiles, tagsCsv) !== baseline.current,
-    [form, channels, profiles, tagsCsv],
+    () => snapshot(form, channels, profiles, tagsCsv) !== baseline,
+    [form, channels, profiles, tagsCsv, baseline],
   );
-  /** Bridges the guard to the submit closure (assigned below) without re-subscribing every render. */
-  const submitRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
-  const guard = useUnsavedGuard(dirty, {
-    message: 'Save this contact edit before leaving?',
-    onSave: () => submitRef.current(),
-  });
 
   const set = <K extends keyof ContactForm>(key: K, value: ContactForm[K]) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -122,6 +112,11 @@ export function ContactEditScreen() {
     }
   };
 
+  const guard = useUnsavedGuard(dirty, {
+    message: 'Save this contact edit before leaving?',
+    onSave: submit,
+  });
+
   const saveAndLeave = () => {
     void submit().then((saved) => {
       if (!saved) return;
@@ -133,8 +128,6 @@ export function ContactEditScreen() {
   // Save lives in the header; leaving without saving is guarded instead of needing a Cancel button.
   // Intentionally dependency-free: `save` closes over the live form state, so it must be re-bound
   // on every render.
-  submitRef.current = submit;
-
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (

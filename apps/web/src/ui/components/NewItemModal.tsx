@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Dialog from '@mui/material/Dialog';
@@ -78,7 +78,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
 
   const remembered = readPref(LAST_CALENDAR);
   const [initial] = useState(() => emptyItemForm(ymd(new Date())));
-  const { control, handleSubmit, watch, getValues, setValue } = useForm<FormValues>({
+  const { control, handleSubmit, getValues, setValue } = useForm<FormValues>({
     defaultValues: {
       title: '',
       calendarId: defaultCalendarIds(calendars, remembered ? [remembered] : [])[0] ?? '',
@@ -94,9 +94,9 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       description: '',
     },
   });
-  const isAllDay = watch('isAllDay');
-  const startDate = watch('startDate');
-  const attending = watch('attending');
+  const isAllDay = useWatch({ control, name: 'isAllDay' });
+  const startDate = useWatch({ control, name: 'startDate' });
+  const attending = useWatch({ control, name: 'attending' });
 
   // Moving the start carries the end along, as on the phone (`@lupira/cal-domain/itemForm`).
   const moveStart = (field: 'start' | 'startDate', value: string) => {

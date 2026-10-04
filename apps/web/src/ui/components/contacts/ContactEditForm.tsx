@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
@@ -146,7 +146,6 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
   const {
     control,
     handleSubmit,
-    watch,
     getValues,
     setValue,
     setError,
@@ -181,10 +180,10 @@ export function ContactEditForm({ contact, onDone }: { contact: ContactDto; onDo
   const { fields: channelFields, append: appendChannel, remove: removeChannel } = useFieldArray({ control, name: 'channels' });
   const { fields: addressFields, append: appendAddress, remove: removeAddress } = useFieldArray({ control, name: 'addresses' });
   const { fields: profileFields, append: appendProfile, remove: removeProfile } = useFieldArray({ control, name: 'profiles' });
-  const birthdayYearKnown = watch('birthdayYearKnown');
-  const watchedChannels = watch('channels');
-  const watchedAddresses = watch('addresses');
-  const deceased = watch('deceased');
+  const birthdayYearKnown = useWatch({ control, name: 'birthdayYearKnown' });
+  const watchedChannels = useWatch({ control, name: 'channels' });
+  const watchedAddresses = useWatch({ control, name: 'addresses' });
+  const deceased = useWatch({ control, name: 'deceased' });
 
   const id = contact.id;
   const nameOf = (cid: string) => readable?.find((c) => c.id === cid)?.displayName ?? cid.slice(0, 8);
