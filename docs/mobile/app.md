@@ -16,7 +16,7 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 
 ## Tabs, settings, calendar
 
-- Tabs are Calendar/Contacts, each showing the native header. Settings is a pushed stack screen reached from the `AccountButton` avatar menu in the tab navigator's `headerRight`: sections whose rows show each area's state (warning colour when it needs you) and open `CalendarSettings` / `AndroidSettings`. The map, photo library, GPS upload and camera-roll backup live in the sibling apps Lupira Maps and Lupira Photos; Cal opens them through `ui/openSibling` (`lupiramaps://`, `lupiraphotos://`, https fallback).
+- Tabs are Calendar/Contacts, each showing the native header. Settings is a pushed stack screen reached from the `AccountButton` avatar (it opens Settings; sign-out is in Settings' Account section) in the tab navigator's `headerRight`: sections whose rows show each area's state (warning colour when it needs you) and open `CalendarSettings` / `AndroidSettings`. The map, photo library, GPS upload and camera-roll backup live in the sibling apps Lupira Maps and Lupira Photos; Cal opens them through `ui/openSibling` (`lupiramaps://`, `lupiraphotos://`, https fallback).
 - Contacts' search sits in `ScreenToolbar` under the header.
 - Calendar has no toolbar: the header title is the period (tap = date picker) and Search plus an overflow menu (Today, Month↔Week) sit beside the avatar (`useCalendarHeader`, via `setOptions`) — the grid needs the rows.
 - `CalendarScreen` owns only anchor and jumps (the Month/Week mode is `prefs.calendarMode`); `MonthPane` (grid + `DaySheet`) and `WeekView` own their paging and selection.
