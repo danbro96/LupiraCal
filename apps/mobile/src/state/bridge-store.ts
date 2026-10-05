@@ -4,6 +4,7 @@ import type { BridgeState } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { BRIDGE_ENABLED_KEY } from '../sync/bridge';
+import { engine } from '../sync/engine';
 import { readMeta, writeMeta } from '../sync/meta';
 
 /** The Android-integration preference and its lifecycle. Flags persist in the sync kernel's meta table (the sync
@@ -85,7 +86,9 @@ export const useBridge = create<BridgePref & BridgeActions>((set, get) => ({
       return false;
     }
     await LupiraBridge.ensureAccount();
-    await LupiraBridge.bridgeSyncNow();   // first publish — stock apps populate immediately
+    // Publishing a mirror that hasn't finished its first sync would remove every published contact and event.
+    if (engine.status.getSnapshot().lastSyncAt !== null) await LupiraBridge.bridgeSyncNow();
+    else void engine.sync();
     await persistFlag(BRIDGE_ENABLED_KEY, true);
     set({ enabled: true, permissionsOk: true, prompted: true });
     await persistFlag(PROMPTED_KEY, true);

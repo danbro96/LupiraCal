@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import { useBridge } from '../../state/bridge-store';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
 /** One-time post-sign-in card: sets up the Android integration (permissions + account + first
  *  publish) or goes quiet forever. An inline card, not an Alert — it may wait across launches. */
@@ -19,7 +20,7 @@ export function BridgePrompt() {
         </Text>
       </Card.Content>
       <Card.Actions>
-        <Button title="Enable" onPress={() => void useBridge.getState().enable()} />
+        <Button title="Enable" onPress={() => void useBridge.getState().enable().catch(() => toastError('Could not set up the Android integration.'))} />
         <Button title="Not now" variant="secondary" onPress={() => void useBridge.getState().markPrompted()} />
       </Card.Actions>
     </Card>

@@ -4,6 +4,7 @@ import { useBridge } from '../../state/bridge-store';
 import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { SettingsAction } from '@danbro96/lupira-expo-paper/components/SettingsAction';
 import { SettingsNote } from '@danbro96/lupira-expo-paper/components/SettingsNote';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { spacing } from '../theme';
 
 export function AndroidSettingsScreen() {
@@ -20,7 +21,7 @@ export function AndroidSettingsScreen() {
           confirmLabel: 'Open app settings',
         });
         if (open) void Linking.openSettings();
-      });
+      }).catch(() => toastError('Could not set up the Android integration.'));
     } else {
       void confirm({
         title: 'Turn off Android integration',
