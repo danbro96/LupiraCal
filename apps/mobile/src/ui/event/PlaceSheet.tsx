@@ -8,7 +8,8 @@ import { MIN_PLACE_QUERY, PLACE_SEARCH_DEBOUNCE_MS } from '@danbro96/lupira-doma
 import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { createPlaceFromHit, type PlaceOption, useGeocodeHits, usePlaceCandidates } from '../../state/usePlaceSearch';
 import { useSyncStatus } from '../../sync/syncStatus';
-import { Input } from '../components/Input';
+import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
+import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
@@ -49,7 +50,7 @@ export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
 
   return (
     <Sheet anchor="top" onDismiss={onDismiss}>
-      <Input
+      <TextField style={fieldGap}
         label="Search places"
         autoFocus
         value={text}

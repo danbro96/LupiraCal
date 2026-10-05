@@ -20,7 +20,8 @@ import { useContactState } from '../../state/useContactList';
 import { ChoiceChips } from '@danbro96/lupira-expo-paper/components/ChoiceChips';
 import { DateField } from '../components/DateField';
 import { Field } from '../components/Field';
-import { Input } from '../components/Input';
+import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
+import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { ReachIcon } from '../components/ReachIcon';
 import type { RootStackParamList } from '../navigation/types';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
@@ -141,17 +142,17 @@ export function ContactEditScreen() {
           />
         </Field>
       )}
-      <Input label="Given name" value={form.givenName} onChangeText={(v) => set('givenName', v)} />
-      <Input label="Middle name" value={form.middleName} onChangeText={(v) => set('middleName', v)} />
-      <Input label="Family name" value={form.familyName} onChangeText={(v) => set('familyName', v)} />
-      <Input label="Nickname" value={form.nickname} onChangeText={(v) => set('nickname', v)} />
+      <TextField style={fieldGap} label="Given name" value={form.givenName} onChangeText={(v) => set('givenName', v)} />
+      <TextField style={fieldGap} label="Middle name" value={form.middleName} onChangeText={(v) => set('middleName', v)} />
+      <TextField style={fieldGap} label="Family name" value={form.familyName} onChangeText={(v) => set('familyName', v)} />
+      <TextField style={fieldGap} label="Nickname" value={form.nickname} onChangeText={(v) => set('nickname', v)} />
       <Field label="Shown as">
         <ChoiceChips options={NAME_FORMAT_OPTIONS} value={form.displayNameFormat} onChange={(v) => set('displayNameFormat', v)} />
       </Field>
       <Field label="Kind">
         <ChoiceChips options={KIND_OPTIONS} value={form.kind} onChange={(v) => set('kind', v)} />
       </Field>
-      <Input label="Pronouns" autoCapitalize="none" value={form.pronouns} onChangeText={(v) => set('pronouns', v)} />
+      <TextField style={fieldGap} label="Pronouns" autoCapitalize="none" value={form.pronouns} onChangeText={(v) => set('pronouns', v)} />
 
       <Field label="Birthday">
         <List.Item
@@ -167,17 +168,17 @@ export function ContactEditScreen() {
           <DateField value={form.birthday} onChange={(v) => set('birthday', v)} />
         ) : (
           <View style={styles.pair}>
-            <Input
+            <TextField
               label="Month (1–12)"
-              style={styles.pairItem}
+              style={[fieldGap, styles.pairItem]}
               keyboardType="number-pad"
               maxLength={2}
               value={form.birthdayMonth}
               onChangeText={(v) => set('birthdayMonth', v.replace(/[^0-9]/g, ''))}
             />
-            <Input
+            <TextField
               label="Day (1–31)"
-              style={styles.pairItem}
+              style={[fieldGap, styles.pairItem]}
               keyboardType="number-pad"
               maxLength={2}
               value={form.birthdayDay}
@@ -192,9 +193,9 @@ export function ContactEditScreen() {
       {channels.map((ch, i) => (
         <View key={`ch-${i}`} style={styles.reachRow}>
           <ReachIcon kind={ch.medium} />
-          <Input
+          <TextField
             label={ch.medium === 'Phone' ? '+46…' : 'name@example.com'}
-            style={styles.reachValue}
+            style={[fieldGap, styles.reachValue]}
             autoCapitalize="none"
             keyboardType={ch.medium === 'Phone' ? 'phone-pad' : 'email-address'}
             value={ch.value}
@@ -230,9 +231,9 @@ export function ContactEditScreen() {
         <View key={`pr-${i}`} style={styles.reachRow}>
           <ReachIcon kind={p.service} />
           <Text style={[styles.reachService, { color: c.textMuted }]} numberOfLines={1}>{p.service}</Text>
-          <Input
+          <TextField
             label="@handle or URL"
-            style={styles.reachValue}
+            style={[fieldGap, styles.reachValue]}
             autoCapitalize="none"
             value={p.handle}
             onChangeText={(v) => setProfiles((d) => d.map((x, j) => (j === i ? { ...x, handle: v } : x)))}
@@ -261,13 +262,13 @@ export function ContactEditScreen() {
         ))}
       </View>
 
-      <Input label="Tags (comma-separated)" autoCapitalize="none" value={tagsCsv} onChangeText={setTagsCsv} />
+      <TextField style={fieldGap} label="Tags (comma-separated)" autoCapitalize="none" value={tagsCsv} onChangeText={setTagsCsv} />
 
-      <Input
+      <TextField
         label="Notes"
         multiline
         numberOfLines={3}
-        style={{ minHeight: 72 }}
+        style={[fieldGap, { minHeight: 72 }]}
         value={form.notes}
         onChangeText={(v) => set('notes', v)}
       />

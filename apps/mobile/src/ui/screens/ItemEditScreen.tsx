@@ -24,7 +24,8 @@ import { selectableCalendars, useCalendars } from '../../state/useContainers';
 import { useItemState } from '../../state/useItemState';
 import { useMyContactId } from '../../state/useMe';
 import { DateField } from '../components/DateField';
-import { Input } from '../components/Input';
+import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
+import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { TimeField } from '../components/TimeField';
 import { CalendarsSheet } from '../event/CalendarsSheet';
 import { CategorySheet, categoryIcon } from '../event/CategorySheet';
@@ -192,7 +193,7 @@ export function ItemEditScreen() {
         {cancelled && (
           <Text style={[styles.notice, { color: c.danger }]}>This event is cancelled — restore it from the event screen.</Text>
         )}
-        <Input label="Title" autoFocus={!itemId} style={styles.title} value={form.title} onChangeText={(v) => set('title', v)} />
+        <TextField label="Title" autoFocus={!itemId} style={[fieldGap, styles.title]} value={form.title} onChangeText={(v) => set('title', v)} />
 
         <List.Item
           title="All-day"
@@ -245,11 +246,11 @@ export function ItemEditScreen() {
           left={(p) => <List.Icon {...p} icon={ICONS.place} />}
           onPress={() => setSheet('place')}
         />
-        <Input
+        <TextField
           label="Description"
           multiline
           numberOfLines={3}
-          style={styles.description}
+          style={[fieldGap, styles.description]}
           value={form.description}
           onChangeText={(v) => set('description', v)}
         />
@@ -284,7 +285,7 @@ export function ItemEditScreen() {
             )}
           />
         )}
-        <Input label="Tags (comma-separated)" autoCapitalize="none" value={form.tagsCsv} onChangeText={(v) => set('tagsCsv', v)} />
+        <TextField style={fieldGap} label="Tags (comma-separated)" autoCapitalize="none" value={form.tagsCsv} onChangeText={(v) => set('tagsCsv', v)} />
 
         <HelperText type="error" visible={!!error}>{error}</HelperText>
       </ScrollView>

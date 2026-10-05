@@ -4,7 +4,8 @@ import { List, Text } from 'react-native-paper';
 import {
   canonicalTimeZone, deviceTimeZone, fmtZoneOffset, zoneChoices, zoneCity, zoneLabel,
 } from '@lupira/cal-domain/zonedTime';
-import { Input } from '../components/Input';
+import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
+import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
@@ -37,7 +38,7 @@ export function TimeZoneSheet({ value, at, onPick, onDismiss }: {
 
   return (
     <Sheet anchor="top" onDismiss={onDismiss}>
-      <Input label="Time zone" placeholder="City or region/city" autoFocus autoCapitalize="none" autoCorrect={false} value={q} onChangeText={setQ} />
+      <TextField style={fieldGap} label="Time zone" placeholder="City or region/city" autoFocus autoCapitalize="none" autoCorrect={false} value={q} onChangeText={setQ} />
       <Text style={[styles.hint, { color: c.textMuted }]}>The times you enter are read in this zone, and a repeating event keeps its local time across DST.</Text>
       <ScrollView keyboardShouldPersistTaps="handled">
         {typed && !zones.includes(typed) && (

@@ -3,7 +3,8 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { List, Text } from 'react-native-paper';
 import { RRULE_PRESETS, describeRrule, NO_REPEAT } from '@lupira/cal-domain/rrule';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
-import { Input } from '../components/Input';
+import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
+import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
@@ -34,7 +35,7 @@ export function RepeatSheet({ value, onPick, onDismiss }: {
         <List.Item title="Custom rule…" right={check(!isPreset)} onPress={() => setCustom(true)} />
         {custom && (
           <>
-            <Input
+            <TextField style={fieldGap}
               label="RRULE"
               placeholder="FREQ=WEEKLY;BYDAY=MO,TH"
               autoFocus

@@ -24,7 +24,8 @@ import { useMyContactId } from '../../state/useMe';
 import { Centered } from '../components/Centered';
 import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
-import { Input } from '../components/Input';
+import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
+import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { PlaceTile } from '../components/PlaceTile';
 import { TagRow } from '../components/TagRow';
 import { useToastClearance } from '@danbro96/lupira-expo-paper/components/ToastHost';
@@ -237,8 +238,8 @@ function MetadataPanel({ itemId, metadata, editable }: {
       ))}
       {editable && (
         <View style={[styles.inset, styles.metaEdit]}>
-          <Input label="key" style={styles.metaKeyInput} autoCapitalize="none" value={key} onChangeText={setKey} />
-          <Input label="value" style={styles.metaValueInput} value={value} onChangeText={setValue} />
+          <TextField label="key" style={[fieldGap, styles.metaKeyInput]} autoCapitalize="none" value={key} onChangeText={setKey} />
+          <TextField label="value" style={[fieldGap, styles.metaValueInput]} value={value} onChangeText={setValue} />
           <Button title="Set" onPress={save} disabled={!key.trim()} />
         </View>
       )}
