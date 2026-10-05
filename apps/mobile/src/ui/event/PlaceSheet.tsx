@@ -9,7 +9,7 @@ import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { createPlaceFromHit, type PlaceOption, useGeocodeHits, usePlaceCandidates } from '../../state/usePlaceSearch';
 import { useSyncStatus } from '../../sync/syncStatus';
 import { Input } from '../components/Input';
-import { Sheet } from '../components/Sheet';
+import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
 

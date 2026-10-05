@@ -1,7 +1,7 @@
 import { ScrollView } from 'react-native';
 import { List } from 'react-native-paper';
 import { ITEM_CATEGORY_ICONS, type ItemCategoryName } from '@lupira/cal-tokens/icons';
-import { Sheet } from '../components/Sheet';
+import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
 

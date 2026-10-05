@@ -3,7 +3,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { ComponentProps } from 'react';
 import { useAuth } from '../../state/auth-store';
-import { SettingsButton } from '@danbro96/lupira-expo-paper/components/SettingsButton';
+import { useStackScreenOptions } from '@danbro96/lupira-expo-paper/hooks/useStackScreenOptions';
+import { AccountMenu } from '../components/AccountMenu';
 import { AvailabilityEditScreen } from '../screens/AvailabilityEditScreen';
 import { BridgeDiagnosticsScreen } from '../screens/BridgeDiagnosticsScreen';
 import { CalendarScreen } from '../screens/CalendarScreen';
@@ -35,7 +36,7 @@ const tabIcon = (name: ComponentProps<typeof MaterialIcons>['name']) =>
 function Tabs() {
   return (
     // A visited tab stays mounted; freezing stops it re-rendering while hidden.
-    <Tab.Navigator screenOptions={{ headerShown: true, freezeOnBlur: true, headerRight: () => <SettingsButton /> }}>
+    <Tab.Navigator screenOptions={{ headerShown: true, freezeOnBlur: true, headerRight: () => <AccountMenu /> }}>
       <Tab.Screen name="Calendar" component={CalendarScreen} options={{ title: 'Calendar', tabBarIcon: tabIcon(ICONS.calendar) }} />
       <Tab.Screen name="Contacts" component={ContactsScreen} options={{ title: 'Contacts', tabBarIcon: tabIcon(ICONS.group) }} />
     </Tab.Navigator>
@@ -45,9 +46,9 @@ function Tabs() {
 export function RootStack() {
   const authed = useAuth((s) => s.authMode === 'dev' || s.token !== null);
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={useStackScreenOptions()}>
       {authed ? (
-        <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false }} />
+        <Stack.Screen name="Tabs" component={Tabs} options={{ headerShown: false, contentStyle: { paddingBottom: 0 } }} />
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
       )}

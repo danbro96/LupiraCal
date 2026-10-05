@@ -6,7 +6,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useLayoutEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, List, Switch, Text } from 'react-native-paper';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { calendarLabel, defaultCalendarIds } from '@lupira/cal-domain/calendars';
 import { attendeeName } from '@danbro96/lupira-domain-contacts/contactNames';
 import { NO_ATTENDEES } from '@lupira/cal-domain/participation';
@@ -43,7 +42,6 @@ type SheetName = 'calendars' | 'category' | 'repeat' | 'zone' | 'place' | 'peopl
 /** Title, when, where and notes up front; everything used rarely is one row each under More, opening a sheet. */
 export function ItemEditScreen() {
   const c = useColors();
-  const insets = useSafeAreaInsets();
   const route = useRoute<RouteProp<RootStackParamList, 'ItemEdit'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const itemId = route.params?.itemId;
@@ -188,7 +186,7 @@ export function ItemEditScreen() {
   return (
     <>
       <ScrollView
-        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + spacing.xxl }]}
+        contentContainerStyle={[styles.container, { paddingBottom: spacing.xxl }]}
         keyboardShouldPersistTaps="handled"
       >
         {cancelled && (

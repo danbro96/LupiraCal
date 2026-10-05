@@ -10,7 +10,7 @@ import { useContactList } from '../../state/useContactList';
 import { useParticipationSummary } from '../../state/useParticipationSummary';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import { Input } from '../components/Input';
-import { Sheet } from '../components/Sheet';
+import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
 

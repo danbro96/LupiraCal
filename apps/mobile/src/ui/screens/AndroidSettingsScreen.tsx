@@ -2,7 +2,8 @@ import { Linking, ScrollView, StyleSheet } from 'react-native';
 import { List, Switch } from 'react-native-paper';
 import { useBridge } from '../../state/bridge-store';
 import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
-import { SettingsAction, SettingsNote } from '../components/SettingsText';
+import { SettingsAction } from '@danbro96/lupira-expo-paper/components/SettingsAction';
+import { SettingsNote } from '@danbro96/lupira-expo-paper/components/SettingsNote';
 import { spacing } from '../theme';
 
 export function AndroidSettingsScreen() {

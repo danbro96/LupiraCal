@@ -46,7 +46,7 @@ export function ItemDetailScreen() {
   const me = useMyContactId();
   const confirm = useConfirm();
   const [actionBarHeight, setActionBarHeight] = useState(0);
-  useToastClearance(actionBarHeight);
+  useToastClearance(actionBarHeight + insets.bottom);
 
   if (isLoading) return <Centered text="Loading…" />;
   if (!state) return <Centered text="This item is not in the offline mirror." />;
@@ -131,9 +131,9 @@ export function ItemDetailScreen() {
         <MetadataPanel itemId={itemId} metadata={doc.metadata ?? null} editable={debugEnabled} />
       </ScrollView>
 
-      {/* Pinned above the system navigation bar (edge-to-edge: nothing else pads it); primary action rightmost. */}
+      {/* Pinned; the navigator's bottom padding keeps it above the system navigation bar. Primary action rightmost. */}
       <View
-        style={[styles.actionBar, { backgroundColor: c.bg, borderTopColor: c.divider, paddingBottom: insets.bottom + spacing.sm }]}
+        style={[styles.actionBar, { backgroundColor: c.bg, borderTopColor: c.divider, paddingBottom: spacing.sm }]}
         onLayout={(e) => setActionBarHeight(e.nativeEvent.layout.height)}
       >
         <Button title="Delete" variant="destructive" onPress={() => void confirmDelete()} />

@@ -5,7 +5,7 @@ import {
   canonicalTimeZone, deviceTimeZone, fmtZoneOffset, zoneChoices, zoneCity, zoneLabel,
 } from '@lupira/cal-domain/zonedTime';
 import { Input } from '../components/Input';
-import { Sheet } from '../components/Sheet';
+import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';
 

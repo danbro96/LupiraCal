@@ -3,7 +3,7 @@ import { List, Text } from 'react-native-paper';
 import { calendarLabel } from '@lupira/cal-domain/calendars';
 import type { CalendarMembership } from '../../domain/docTypes';
 import type { CalendarContainer } from '../../state/useContainers';
-import { Sheet } from '../components/Sheet';
+import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { useCalendarColors } from '../hooks/palette';
 import { ICONS } from '../icons';
 import { useColors } from '../theme';

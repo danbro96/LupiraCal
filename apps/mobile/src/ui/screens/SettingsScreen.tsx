@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ScrollView, StyleSheet } from 'react-native';
-import { Divider, List, Switch, Text } from 'react-native-paper';
+import { ScrollView } from 'react-native';
+import { List, Switch } from 'react-native-paper';
 import { isCalendarShown } from '@lupira/cal-domain/calendars';
 import { fmtDateTime } from '@danbro96/lupira-domain-core/time';
 import { APP_VERSION } from '../../config';
@@ -12,21 +12,22 @@ import { usePrefs } from '../../state/prefs-store';
 import { useCalendars } from '../../state/useContainers';
 import { runSync } from '../../sync/sync';
 import { useSyncStatus } from '../../sync/syncStatus';
-import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import { IconButton } from '@danbro96/lupira-expo-paper/components/IconButton';
+import { IdentityHeader } from '@danbro96/lupira-expo-paper/components/IdentityHeader';
+import { VersionLine } from '@danbro96/lupira-expo-paper/components/VersionLine';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
-import { spacing, useColors } from '../theme';
+import { useColors } from '../theme';
 
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
 
-/** An index, not a form: one row per area with its state in the description, each opening its own screen —
- *  the sibling apps' pattern. Something that needs you (a missing permission) shows here in
- *  the warning colour, so nothing has to be opened to find it. Developer tooling stays behind the debug switch. */
+/** Identity, then one row per area with its state in the description, each opening its own screen. Something
+ *  that needs you (a missing permission) shows in the warning colour, so nothing has to be opened to find it.
+ *  Developer tooling stays behind the debug switch. */
 export function SettingsScreen() {
   const c = useColors();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { authMode, user, token } = useAuth();
+  const { authMode, user } = useAuth();
   const prefs = usePrefs();
   const { data: calendars } = useCalendars();
   const bridge = useBridge();
@@ -54,16 +55,13 @@ export function SettingsScreen() {
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <List.Item
-        title={authMode === 'dev' ? 'Dev auto-auth' : user?.name ?? user?.sub ?? 'Signed out'}
-        description={authMode === 'dev' ? 'No sign-in' : user?.name ? user.sub : undefined}
-        left={icon(ICONS.account)}
-        right={() => (token !== null
-          ? <Button title="Sign out" variant="text" onPress={() => void useAuth.getState().clearSession()} />
-          : null)}
+    <ScrollView>
+      <IdentityHeader
+        name={authMode === 'dev' ? 'Dev auto-auth' : user?.name ?? user?.sub ?? 'Signed out'}
+        sub={authMode === 'dev' ? 'No sign-in' : user?.name ? user.sub : undefined}
       />
-      <Divider />
+
+      <List.Subheader>Calendar</List.Subheader>
       <List.Item
         title="Calendar"
         description={calendar}
@@ -89,7 +87,8 @@ export function SettingsScreen() {
         )}
         onPress={() => navigation.navigate('SyncIssues')}
       />
-      <Divider />
+
+      <List.Subheader>Developer</List.Subheader>
       <List.Item
         title="Enable debug"
         description="Developer tools and the on-device log"
@@ -105,12 +104,9 @@ export function SettingsScreen() {
       {prefs.debugEnabled && (
         <List.Item title="Developer options" left={icon(ICONS.tune)} right={chevron} onPress={() => navigation.navigate('Developer')} />
       )}
-      <Text style={[styles.version, { color: c.textSubtle }]}>Lupira Calendar {APP_VERSION} · {UPDATE_LABEL}</Text>
+
+      <List.Subheader>About</List.Subheader>
+      <VersionLine app="Lupira Calendar" version={APP_VERSION} updateLabel={UPDATE_LABEL} />
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { paddingVertical: spacing.sm },
-  version: { fontSize: 12, textAlign: 'center', paddingVertical: spacing.lg },
-});
