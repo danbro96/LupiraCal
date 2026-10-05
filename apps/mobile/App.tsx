@@ -19,6 +19,7 @@ import { startSyncTriggers } from '@danbro96/lupira-sync-engine/expo/triggers';
 import { engine, SYNC_TASK } from './src/sync/engine';
 import { persistOptions, queryClient } from './src/sync/queryClient';
 import { RootStack } from './src/ui/navigation/RootStack';
+import { clearImportFiles } from './src/data/imports';
 import { useAutoUpdate } from '@danbro96/lupira-expo-diagnostics/useAutoUpdate';
 import type { RootStackParamList } from './src/ui/navigation/types';
 import { paperSettings } from '@danbro96/lupira-expo-paper/theme/paperSettings';
@@ -37,13 +38,14 @@ export default function App() {
 
   useEffect(() => {
     void useAuth.getState().load();
+    void clearImportFiles();
   }, []);
 
   useEffect(() => {
     if (!loaded || !authed) return;
     void useBridge.getState().init();   // hydrate the integration flag + self-repair account/permissions
     void usePrefs.getState().init();
-    return startSyncTriggers(engine, { backgroundTaskName: SYNC_TASK });
+    return startSyncTriggers(engine, { backgroundTaskName: SYNC_TASK, registerBackgroundTask: !__DEV__ });
   }, [loaded, authed]);
 
   if (!loaded) return null;   // hydration gate — avoids a login flash over a persisted session
@@ -67,14 +69,17 @@ export default function App() {
   );
 }
 
-/// Deep links from the OS bridges ("Open in Lupira" contact rows, later calendar rows). The OIDC
+/// Deep links from the bridge's intent router and App Links (the web's paths are aliases). The OIDC
 /// redirect (lupiracalendar://oauthredirect) matches nothing here and is ignored by navigation.
 const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ['lupiracalendar://'],
+  prefixes: ['lupiracalendar://', 'https://cal.lupira.com'],
   config: {
     screens: {
-      ContactDetail: 'contact/:contactId',
-      ItemDetail: 'item/:itemId',
+      ContactDetail: { path: 'contact/:contactId', alias: ['contacts/:contactId'] },
+      ItemDetail: { path: 'item/:itemId', alias: ['items/:itemId'] },
+      ItemEdit: { path: 'draft/event', alias: ['item/:itemId/edit'] },
+      ContactEdit: 'draft/contact',
+      Import: 'import/:kind',
     },
   },
 };

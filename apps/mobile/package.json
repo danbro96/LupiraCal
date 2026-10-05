@@ -28,7 +28,7 @@
     "@danbro96/lupira-expo-sqlite": "0.4.0",
     "@danbro96/lupira-http": "0.2.0",
     "@danbro96/lupira-sync-core": "0.1.0",
-    "@danbro96/lupira-sync-engine": "0.1.0",
+    "@danbro96/lupira-sync-engine": "0.1.1",
     "@danbro96/lupira-tokens-calendar": "0.1.0",
     "@danbro96/lupira-tokens-core": "0.2.0",
     "@danbro96/lupira-tokens-map": "0.1.0",
