@@ -62,7 +62,7 @@ export function ItemDetailScreen() {
   const openContact = (contactId: string) => {
     if (contacts?.some((row) => row.id === contactId)) navigation.navigate('ContactDetail', { contactId });
   };
-  const join = me && !state.deleted && !attendees.some((a) => a.contactId === me)
+  const join = me && !attendees.some((a) => a.contactId === me)
     ? () => void joinItem(itemId, me).then(() => toast('You joined this event'))
     : undefined;
 
@@ -90,7 +90,6 @@ export function ItemDetailScreen() {
     <View style={styles.screen}>
       <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
         <View style={styles.inset}>
-          {state.deleted && <Text style={[styles.flag, { color: c.danger }]}>Deleted — pending sync</Text>}
           {cancelled && <Text style={[styles.flag, { color: c.danger }]}>Cancelled</Text>}
           <Text
             style={[styles.h1, cancelled && styles.struck]}

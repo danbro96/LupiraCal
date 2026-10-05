@@ -4,9 +4,8 @@ import { spacing } from '../theme';
 import { List, Text } from 'react-native-paper';
 import type { BridgeState, ContactsSampleRow } from '../../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../../modules/lupira-bridge/src';
-import { getDb } from '../../data/db/expoDb';
 import { drainBridgeInbox } from '../../sync/bridge';
-import { runSync } from '../../sync/sync';
+import { engine } from '../../sync/engine';
 import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 
@@ -64,8 +63,8 @@ export function BridgeDiagnosticsScreen() {
         <Button
           title="Drain inbox → outbox + full sync"
           onPress={run('drain', async () => {
-            const ops = await drainBridgeInbox(await getDb());
-            void runSync();
+            const ops = await drainBridgeInbox(engine);
+            void engine.sync();
             return `${ops} ops enqueued`;
           })}
         />

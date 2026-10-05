@@ -9,13 +9,14 @@ import type { ClientOp, ContactCore, ItemCore } from './ops';
  *  mirror the REST contracts faithfully, including their warts (null = keep on non-sentinel fields; contact
  *  revise UNION-merges channels/tags). */
 
-export type MirrorItem = { doc: ItemDoc; guards: ItemGuards; deleted: boolean };
-export type MirrorContact = { doc: ContactDoc; guards: ContactGuards; deleted: boolean };
+/** A doc and its section guards; null is absent or deleted, as the server tombstones it. */
+export type MirrorItem = { doc: ItemDoc; guards: ItemGuards };
+export type MirrorContact = { doc: ContactDoc; guards: ContactGuards };
 
 export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem | null {
   switch (op.kind) {
     case 'item.create': {
-      if (state && !state.deleted) return state;   // idempotent hit, like the server's SourceKey dedup
+      if (state) return state;   // idempotent hit, like the server's SourceKey dedup
       const { availability, placeId, location, ...core } = op.core;
       const doc: ItemDoc = {
         ...core,
@@ -28,10 +29,10 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
       const guards = emptyItemGuards();
       guards.core = { ts: op.occurredAt, cmd: op.commandId };
       guards.filing = { [op.calendarId]: { ts: op.occurredAt, cmd: op.commandId } };
-      return { doc, guards, deleted: false };
+      return { doc, guards };
     }
     case 'item.revise': {
-      if (!state || state.deleted) return state;
+      if (!state) return state;
       const g = state.guards.core;
       if (!wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
       return {
@@ -41,7 +42,7 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
       };
     }
     case 'item.metadata': {
-      if (!state || state.deleted) return state;
+      if (!state) return state;
       const g = state.guards.metadata;
       if (!wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
       const metadata = { ...(state.doc.metadata ?? {}), ...op.patch };
@@ -51,13 +52,11 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
         guards: { ...state.guards, metadata: { ts: op.occurredAt, cmd: op.commandId } },
       };
     }
-    case 'item.delete': {
-      if (!state) return state;
-      return { ...state, deleted: true };   // absorbing, like the server tombstone
-    }
+    case 'item.delete':
+      return null;
     case 'item.file':
     case 'item.unfile': {
-      if (!state || state.deleted) return state;
+      if (!state) return state;
       const calId = op.calendarId;
       const g = state.guards.filing[calId];
       if (g && !wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
@@ -75,7 +74,7 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
     }
     // Participation carries no section guard server-side: invites and removals apply in outbox order.
     case 'item.invite': {
-      if (!state || state.deleted) return state;
+      if (!state) return state;
       const attendees = state.doc.attendees ?? [];
       const present = new Set(attendees.map((a) => a.contactId));
       const added: ItemAttendee[] = op.contactIds
@@ -87,7 +86,7 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
       return { ...state, doc: { ...state.doc, attendees: [...attendees, ...added] } };
     }
     case 'item.uninvite': {
-      if (!state || state.deleted) return state;
+      if (!state) return state;
       const attendees = (state.doc.attendees ?? []).filter((a) => a.contactId !== op.contactId);
       return { ...state, doc: { ...state.doc, attendees } };
     }
@@ -128,14 +127,14 @@ function mergeItemCore(doc: ItemDoc, core: ItemCore): ItemDoc {
 export function applyContactOp(state: MirrorContact | null, op: ClientOp): MirrorContact | null {
   switch (op.kind) {
     case 'contact.create': {
-      if (state && !state.deleted) return state;
+      if (state) return state;
       const doc: ContactDoc = { id: op.contactId, addressBookId: op.addressBookId, ...op.core };
       const guards = emptyContactGuards();
       guards.core = { ts: op.occurredAt, cmd: op.commandId };
-      return { doc, guards, deleted: false };
+      return { doc, guards };
     }
     case 'contact.revise': {
-      if (!state || state.deleted) return state;
+      if (!state) return state;
       const g = state.guards.core;
       if (!wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
       return {
@@ -146,7 +145,7 @@ export function applyContactOp(state: MirrorContact | null, op: ClientOp): Mirro
     }
     // Channels and tags ride the same server event as core revisions, so they share the core guard.
     case 'contact.channels': {
-      if (!state || state.deleted) return state;
+      if (!state) return state;
       const g = state.guards.core;
       if (!wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
       return {
@@ -156,7 +155,7 @@ export function applyContactOp(state: MirrorContact | null, op: ClientOp): Mirro
       };
     }
     case 'contact.tags': {
-      if (!state || state.deleted) return state;
+      if (!state) return state;
       const g = state.guards.core;
       if (!wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
       return {
@@ -166,7 +165,7 @@ export function applyContactOp(state: MirrorContact | null, op: ClientOp): Mirro
       };
     }
     case 'contact.profiles': {
-      if (!state || state.deleted) return state;
+      if (!state) return state;
       const g = state.guards.profiles;
       if (!wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
       return {
@@ -175,10 +174,8 @@ export function applyContactOp(state: MirrorContact | null, op: ClientOp): Mirro
         guards: { ...state.guards, profiles: { ts: op.occurredAt, cmd: op.commandId } },
       };
     }
-    case 'contact.delete': {
-      if (!state) return state;
-      return { ...state, deleted: true };
-    }
+    case 'contact.delete':
+      return null;
     default:
       return state;
   }

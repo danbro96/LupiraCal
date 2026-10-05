@@ -1,34 +1,24 @@
 import { useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, Text } from 'react-native-paper';
-import { tasksGetItem as getItem } from '@lupira/cal-api/fetch/tasks';
 import { assigneeLabel, dueLine, isTaskOverdue, taskDeepLink } from '@lupira/cal-domain/tasks';
+import { useTask } from '../../state/useTaskDeadlines';
 import { Centered } from '../components/Centered';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors, spacing } from '../theme';
 import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
-/** Read-only view of a LupiraTasks deadline. Online-only by design (tasks never enter the mirror);
- *  editing lives in the Lupira Tasks app, reached via the deep link below. */
+/** Read-only view of a LupiraTasks deadline from the tasks mirror; editing lives in the Lupira Tasks app,
+ *  reached via the deep link below. */
 export function TaskDetailScreen() {
   const c = useColors();
   const route = useRoute<RouteProp<RootStackParamList, 'TaskDetail'>>();
-  const { listId, itemId } = route.params;
-
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['tasks', 'detail', listId, itemId],
-    staleTime: 60_000,
-    retry: 1,
-    queryFn: () => getItem(listId, itemId),
-  });
+  const { data: task, isLoading } = useTask(route.params.itemId);
 
   if (isLoading) return <Centered text="Loading…" />;
-  if (isError) return <Centered text="Needs a connection to the server." />;
-  if (!data || data.status !== 200) return <Centered text="Task not found (or no access)." />;
-  const task = data.data;
+  if (!task) return <Centered text="Task not found (or no access)." />;
 
   const now = new Date();
   const overdue = isTaskOverdue(task, now);

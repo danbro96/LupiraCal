@@ -1,6 +1,6 @@
 import type { LinkingOptions } from '@react-navigation/native';
 import { NavigationContainer } from '@react-navigation/native';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
@@ -13,9 +13,11 @@ import { ToastHost } from '@danbro96/lupira-expo-paper/components/ToastHost';
 import { navDark, navLight, paperDark, paperLight } from './src/ui/theme/paperTheme';
 import { useBridge } from './src/state/bridge-store';
 import { usePrefs } from './src/state/prefs-store';
-import { registerBackgroundSync } from './src/sync/backgroundTask';
-import { queryClient } from './src/sync/reactivity';
-import { startSync } from './src/sync/sync';
+import { connectFocusManager } from '@danbro96/lupira-expo-query/focus';
+import { connectOnlineManager } from '@danbro96/lupira-expo-query/online';
+import { startSyncTriggers } from '@danbro96/lupira-sync-engine/expo/triggers';
+import { engine, SYNC_TASK } from './src/sync/engine';
+import { persistOptions, queryClient } from './src/sync/queryClient';
 import { RootStack } from './src/ui/navigation/RootStack';
 import { useAutoUpdate } from '@danbro96/lupira-expo-diagnostics/useAutoUpdate';
 import type { RootStackParamList } from './src/ui/navigation/types';
@@ -24,6 +26,8 @@ import { SENTRY_DSN } from './src/config';
 import { initSentry } from '@danbro96/lupira-expo-diagnostics/initSentry';
 
 initSentry(SENTRY_DSN);
+connectOnlineManager();
+connectFocusManager();
 
 export default function App() {
   useAutoUpdate();
@@ -37,17 +41,16 @@ export default function App() {
 
   useEffect(() => {
     if (!loaded || !authed) return;
-    void registerBackgroundSync();
     void useBridge.getState().init();   // hydrate the integration flag + self-repair account/permissions
     void usePrefs.getState().init();
-    return startSync();
+    return startSyncTriggers(engine, { backgroundTaskName: SYNC_TASK });
   }, [loaded, authed]);
 
   if (!loaded) return null;   // hydration gate — avoids a login flash over a persisted session
   return (
     // GestureHandlerRootView must be the outermost view or the week view's pinch gesture never fires.
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
         <SafeAreaProvider>
           <PaperProvider theme={scheme === 'dark' ? paperDark : paperLight} settings={paperSettings}>
             <ConfirmDialogHost>
@@ -59,7 +62,7 @@ export default function App() {
             <ToastHost />
           </PaperProvider>
         </SafeAreaProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
   );
 }

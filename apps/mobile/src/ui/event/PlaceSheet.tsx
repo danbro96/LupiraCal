@@ -7,7 +7,7 @@ import type { PickerPlace } from '@danbro96/lupira-domain-places/placeCandidates
 import { MIN_PLACE_QUERY, PLACE_SEARCH_DEBOUNCE_MS } from '@danbro96/lupira-domain-places/placeCandidates';
 import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { createPlaceFromHit, type PlaceOption, useGeocodeHits, usePlaceCandidates } from '../../state/usePlaceSearch';
-import { useSyncStatus } from '../../sync/syncStatus';
+import { useOnline } from '@danbro96/lupira-expo-query/online';
 import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
 import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
@@ -26,7 +26,7 @@ export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
   onDismiss: () => void;
 }) {
   const c = useColors();
-  const reachable = useSyncStatus((s) => s.serverReachable);
+  const online = useOnline();
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
   const [addressQuery, setAddressQuery] = useState('');
@@ -61,11 +61,11 @@ export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
         returnKeyType="search"
         onSubmitEditing={() => { if (text.trim().length >= MIN_PLACE_QUERY) setAddressQuery(text.trim()); }}
       />
-      {!reachable && <Text style={[styles.muted, { color: c.textMuted }]}>Finding places needs a connection.</Text>}
+      {!online && <Text style={[styles.muted, { color: c.textMuted }]}>Finding places needs a connection.</Text>}
       <ScrollView keyboardShouldPersistTaps="handled">
         {!typing && places.length > 0 && <List.Subheader>Suggested</List.Subheader>}
         {places.map((p) => <PlaceRow key={p.placeId} place={p} onPress={() => pick({ placeId: p.placeId, label: p.label })} />)}
-        {typing && reachable && !addressQuery && (
+        {typing && online && !addressQuery && (
           <List.Item
             title={`Search addresses for “${text.trim()}”`}
             left={(p) => <List.Icon {...p} icon={ICONS.search} />}

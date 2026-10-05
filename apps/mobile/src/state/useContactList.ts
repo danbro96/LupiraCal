@@ -1,17 +1,18 @@
 import { RELATION_KINDS, viewRelationship, type ResolvedRelation } from '@lupira/cal-domain/contactRelations';
+import { mirrorQuery } from '@danbro96/lupira-expo-query/mirrorQuery';
 import { useQuery } from '@tanstack/react-query';
-import { getDb } from '../data/db/expoDb';
-import { listContacts, loadContact, relationshipsOf, type ContactListRow } from '../data/mirror';
-
-/** Contact reads from the mirror. Both the list and the per-contact doc sit under ['contacts'],
- *  which is what sync/reactivity.ts invalidates after a pull. */
+import { listContacts } from '../data/queries/contacts';
+import { relationshipsOf } from '../data/queries/relationships';
+import { Aggregate } from '../domain/aggregates';
+import type { ContactDoc, ContactGuards } from '../domain/docTypes';
+import { engine, readyDb } from '../sync/engine';
 
 export function useContactList() {
-  return useQuery<ContactListRow[]>({ queryKey: ['contacts', 'list'], queryFn: async () => listContacts(await getDb()) });
+  return useQuery(mirrorQuery([Aggregate.contact, 'list'], async () => listContacts(await readyDb())));
 }
 
 export function useContactState(id: string) {
-  return useQuery({ queryKey: ['contacts', id], queryFn: async () => loadContact(await getDb(), id) });
+  return useQuery(mirrorQuery([Aggregate.contact, id], () => engine.doc<ContactDoc, ContactGuards>(Aggregate.contact, id)));
 }
 
 export type ContactRelationRow = ResolvedRelation & { displayName: string };
@@ -19,11 +20,8 @@ export type ContactRelationRow = ResolvedRelation & { displayName: string };
 /** The contact's relationships as seen from it, from the mirror — the same view the API's listing gives, offline.
  *  Ordered by name, then kind. */
 export function useContactRelations(id: string) {
-  return useQuery<ContactRelationRow[]>({
-    queryKey: ['contacts', id, 'relations'],
-    queryFn: async () =>
-      (await relationshipsOf(await getDb(), id))
-        .map(({ record, otherName }) => ({ ...viewRelationship(id, record), displayName: otherName }))
-        .sort((a, b) => a.displayName.localeCompare(b.displayName) || RELATION_KINDS.indexOf(a.kind) - RELATION_KINDS.indexOf(b.kind)),
-  });
+  return useQuery(mirrorQuery([Aggregate.relationship, id], async (): Promise<ContactRelationRow[]> =>
+    (await relationshipsOf(await readyDb(), id))
+      .map(({ record, otherName }) => ({ ...viewRelationship(id, record), displayName: otherName }))
+      .sort((a, b) => a.displayName.localeCompare(b.displayName) || RELATION_KINDS.indexOf(a.kind) - RELATION_KINDS.indexOf(b.kind))));
 }

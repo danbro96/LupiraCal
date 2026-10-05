@@ -1,7 +1,7 @@
 import { dueDay, isOpenDeadline, isOverdue, type TaskLike } from '@lupira/cal-domain/tasks';
 
-/** Task deadlines are the grids' third entry source (after items and birthdays), fetched online-only —
- *  they never touch the SQLite mirror. Rows are GridRow-shaped so the render sites take them unchanged.
+/** Task deadlines are the grids' third entry source (after items and birthdays), read from the read-only
+ *  tasks mirror. Rows are GridRow-shaped so the render sites take them unchanged.
  *  Which tasks qualify, and what "due day" and "overdue" mean, is shared with the web in
  *  `@lupira/cal-domain/tasks`; only this mirror-shaped row is the app's own. */
 export type TaskDeadlineRow = {

@@ -10,18 +10,6 @@ import type {
 
 import { apiRequest } from '../../../transport';
 
-export type getSessionResponse200 = {
-  data: UserInfo
-  status: 200
-}
-
-export type getSessionResponseSuccess = (getSessionResponse200) & {
-  headers: Headers;
-};
-;
-
-export type getSessionResponse = (getSessionResponseSuccess)
-
 export const getGetSessionUrl = () => {
 
 
@@ -30,9 +18,9 @@ export const getGetSessionUrl = () => {
   return `/auth/user`
 }
 
-export const getSession = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getSessionResponse> => {
+export const getSession = async ( options?: Parameters<typeof apiRequest>[1]): Promise<UserInfo> => {
 
-  return apiRequest<getSessionResponse>(getGetSessionUrl(),
+  return apiRequest<UserInfo>(getGetSessionUrl(),
   {
     ...options,
     method: 'GET'

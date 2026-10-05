@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Card, List, Text } from 'react-native-paper';
-import { getDb } from '../../data/db/expoDb';
-import type { OutboxRow } from '../../data/mirror';
-import { opOfRow } from '../../data/mirror';
+import type { ParkedOp } from '@danbro96/lupira-sync-engine/types';
+import { AGGREGATE_LABELS } from '../../domain/aggregates';
 import { OP_LABELS, type OpKind } from '../../domain/ops';
-import { retryOne } from '../../sync/outbox';
-import { discardParkedAndRestore, runSync } from '../../sync/sync';
-import { PHASE_LABELS, useSyncStatus } from '../../sync/syncStatus';
-import { useOutboxRows } from '../../state/useOutboxRows';
+import { engine } from '../../sync/engine';
+import { useParkedOps } from '../../state/useParkedOps';
+import { useSyncStatus } from '../../state/useSyncStatus';
 import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import { IndeterminateBar } from '../components/IndeterminateBar';
@@ -19,11 +17,9 @@ import { plural } from '@danbro96/lupira-domain-core/wording';
  *  get per-row retry / discard — discard also rolls the optimistic mirror write back to server truth. */
 export function SyncIssuesScreen() {
   const c = useColors();
-  const { data } = useOutboxRows();
-  const { syncing, serverReachable, lastSyncAt, lastError, progress } = useSyncStatus();
-
-  const parked = data?.parked ?? [];
-  const pending = data?.pending ?? [];
+  const { data: parked = [] } = useParkedOps();
+  const { phase, serverReachable, lastSyncAt, lastError, progress, pending } = useSyncStatus();
+  const syncing = phase !== 'idle';
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -32,7 +28,7 @@ export function SyncIssuesScreen() {
           {syncing ? 'Syncing…' : serverReachable ? 'Server reachable' : 'Offline'}
           {lastSyncAt ? ` · last sync ${new Date(lastSyncAt).toLocaleTimeString()}` : ''}
         </Text>
-        <Button title="Sync now" variant="secondary" onPress={() => void runSync()} disabled={syncing} />
+        <Button title="Sync now" variant="secondary" onPress={() => void engine.sync()} disabled={syncing} />
       </View>
       {lastError && <Text style={[styles.lastError, { color: c.warning }]}>{lastError}</Text>}
 
@@ -40,39 +36,30 @@ export function SyncIssuesScreen() {
         <View style={styles.progressBlock}>
           <IndeterminateBar />
           <Text style={[styles.progressText, { color: c.textMuted }]}>
-            {progress ? `${progress.count} ${PHASE_LABELS[progress.phase]}…` : 'Starting…'}
+            {progress ? `${progress.count} ${AGGREGATE_LABELS[progress.aggregate] ?? progress.aggregate}…` : 'Starting…'}
           </Text>
         </View>
       )}
 
-      {!syncing && parked.length === 0 && pending.length === 0 && (
+      {!syncing && parked.length === 0 && pending === 0 && (
         <Text style={[styles.empty, { color: c.textMuted }]}>All changes are synced.</Text>
       )}
 
       {parked.length > 0 && <List.Subheader style={styles.subheader}>Needs attention</List.Subheader>}
-      {parked.map((row) => <ParkedCard key={row.seq} row={row} />)}
+      {parked.map((row) => <ParkedCard key={row.op.commandId} row={row} />)}
 
-      {pending.length > 0 && <List.Subheader style={styles.subheader}>Waiting to sync</List.Subheader>}
-      {pending.map((row) => (
-        <View key={row.seq} style={[styles.pendingRow, { borderColor: c.divider }]}>
-          <Text style={styles.opLabel}>{labelOf(row)}</Text>
-          <Text style={[styles.muted, { color: c.textMuted }]}>
-            {new Date(row.occurred_at).toLocaleString()}
-            {row.attempts > 0 ? ` · attempt ${row.attempts}` : ''}
-            {row.next_attempt_at ? ` · retries ${new Date(row.next_attempt_at).toLocaleTimeString()}` : ''}
-          </Text>
-        </View>
-      ))}
+      {pending > 0 && <List.Subheader style={styles.subheader}>Waiting to sync</List.Subheader>}
+      {pending > 0 && <Text style={[styles.muted, { color: c.textMuted }]}>{plural(pending, 'change')} queued</Text>}
     </ScrollView>
   );
 }
 
-function ParkedCard({ row }: { row: OutboxRow }) {
+function ParkedCard({ row }: { row: ParkedOp }) {
   const c = useColors();
   const confirm = useConfirm();
   const [expanded, setExpanded] = useState(false);
 
-  const retry = async () => retryOne(await getDb(), row.seq);
+  const retry = () => engine.retry(row.op.commandId);
   const discard = async () => {
     const ok = await confirm({
       title: 'Discard change',
@@ -80,7 +67,7 @@ function ParkedCard({ row }: { row: OutboxRow }) {
       confirmLabel: 'Discard',
       destructive: true,
     });
-    if (ok) void discardParkedAndRestore(row.seq);
+    if (ok) void engine.discard(row.op.commandId);
   };
 
   return (
@@ -89,13 +76,13 @@ function ParkedCard({ row }: { row: OutboxRow }) {
         <Pressable onPress={() => setExpanded(!expanded)}>
         <Text style={styles.opLabel}>{labelOf(row)}</Text>
         <Text style={[styles.muted, { color: c.textMuted }]}>
-          {new Date(row.occurred_at).toLocaleString()} · {plural(row.attempts, 'attempt')}
+          {new Date(row.op.occurredAt).toLocaleString()} · {plural(row.attempts, 'attempt')}
         </Text>
-        {row.last_error && (
-          <Text style={[styles.error, { color: c.danger }]} numberOfLines={expanded ? undefined : 2}>{row.last_error}</Text>
+        {row.lastError && (
+          <Text style={[styles.error, { color: c.danger }]} numberOfLines={expanded ? undefined : 2}>{row.lastError}</Text>
         )}
       </Pressable>
-        {expanded && <Text style={[styles.payload, { backgroundColor: c.bg }]}>{payloadOf(row)}</Text>}
+        {expanded && <Text style={[styles.payload, { backgroundColor: c.bg }]}>{JSON.stringify(row.op, null, 2)}</Text>}
       </Card.Content>
       <Card.Actions>
         <Button title="Retry" onPress={() => void retry()} />
@@ -106,16 +93,8 @@ function ParkedCard({ row }: { row: OutboxRow }) {
   );
 }
 
-function labelOf(row: OutboxRow): string {
-  return OP_LABELS[row.kind as OpKind] ?? row.kind;
-}
-
-function payloadOf(row: OutboxRow): string {
-  try {
-    return JSON.stringify(opOfRow(row), null, 2);
-  } catch {
-    return row.payload;
-  }
+function labelOf(row: ParkedOp): string {
+  return OP_LABELS[row.op.kind as OpKind] ?? row.op.kind;
 }
 
 const styles = StyleSheet.create({
@@ -133,5 +112,4 @@ const styles = StyleSheet.create({
   muted: { fontSize: 12 },
   error: { fontSize: 12 },
   payload: { fontFamily: 'monospace', fontSize: 11, borderRadius: 6, padding: 8 },
-  pendingRow: { paddingVertical: 6, borderBottomWidth: 0.5 },
 });

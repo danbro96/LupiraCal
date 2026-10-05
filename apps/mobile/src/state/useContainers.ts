@@ -1,10 +1,10 @@
 import { isSelectableCalendar, isCalendarShown } from '@lupira/cal-domain/calendars';
+import { mirrorQuery } from '@danbro96/lupira-expo-query/mirrorQuery';
 import { useQuery } from '@tanstack/react-query';
-import { getDb } from '../data/db/expoDb';
-import { listContainerDocs, type CalendarFilter } from '../data/mirror';
+import type { CalendarFilter } from '../data/queries/calendarFilter';
+import { Aggregate } from '../domain/aggregates';
+import { engine } from '../sync/engine';
 import { usePrefs } from './prefs-store';
-
-/** Container docs from the mirror, keyed ['containers', kind]. */
 
 export type CalendarContainer = {
   id: string;
@@ -21,13 +21,11 @@ export function selectableCalendars(calendars: CalendarContainer[] | undefined):
 }
 
 export function useCalendars() {
-  return useQuery<CalendarContainer[]>({
-    queryKey: ['containers', 'calendars'],
-    queryFn: async () => listContainerDocs<CalendarContainer>(await getDb(), 'calendars'),
-  });
+  return useQuery(mirrorQuery([Aggregate.calendar], async () =>
+    (await engine.docs<CalendarContainer, null>(Aggregate.calendar)).map((d) => d.state.doc)));
 }
 
-/** The grids' and search's filter; null until the containers load. */
+/** The grids' and search's filter; null until the calendars load. */
 export function useCalendarFilter(): CalendarFilter | null {
   const { data } = useCalendars();
   const choices = usePrefs((p) => p.calendarChoices);

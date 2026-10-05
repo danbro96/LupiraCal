@@ -8,8 +8,8 @@ import { useAuth } from '../../state/auth-store';
 import { useBridge } from '../../state/bridge-store';
 import { usePrefs } from '../../state/prefs-store';
 import { useCalendars } from '../../state/useContainers';
-import { runSync } from '../../sync/sync';
-import { useSyncStatus } from '../../sync/syncStatus';
+import { useSyncStatus } from '../../state/useSyncStatus';
+import { engine } from '../../sync/engine';
 import { IconButton } from '@danbro96/lupira-expo-paper/components/IconButton';
 import { IdentityHeader } from '@danbro96/lupira-expo-paper/components/IdentityHeader';
 import { VersionLine } from '@danbro96/lupira-expo-diagnostics/VersionLine';
@@ -29,7 +29,7 @@ export function SettingsScreen() {
   const prefs = usePrefs();
   const { data: calendars } = useCalendars();
   const bridge = useBridge();
-  const { syncing, pending, parked, lastSyncAt } = useSyncStatus();
+  const { phase, pending, parked, lastSyncAt } = useSyncStatus();
 
   const chevron = () => <List.Icon icon={ICONS.chevronRight} />;
   const icon = (name: string) => (p: { color: string; style?: object }) => <List.Icon {...p} icon={name} />;
@@ -48,7 +48,7 @@ export function SettingsScreen() {
   );
   const issues = pending + parked;
   const sync = join(
-    syncing ? 'Syncing…' : lastSyncAt ? `Synced ${fmtDateTime(new Date(lastSyncAt))}` : 'Not synced yet',
+    phase !== 'idle' ? 'Syncing…' : lastSyncAt ? `Synced ${fmtDateTime(new Date(lastSyncAt))}` : 'Not synced yet',
     issues > 0 && `${issues} waiting`,
   );
 
@@ -81,7 +81,7 @@ export function SettingsScreen() {
         descriptionStyle={parked > 0 ? attention : undefined}
         left={icon(ICONS.sync)}
         right={() => (
-          <IconButton name={ICONS.sync} onPress={() => void runSync()} accessibilityLabel="Sync now" />
+          <IconButton name={ICONS.sync} onPress={() => void engine.sync()} accessibilityLabel="Sync now" />
         )}
         onPress={() => navigation.navigate('SyncIssues')}
       />

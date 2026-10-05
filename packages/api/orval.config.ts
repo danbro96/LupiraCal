@@ -34,7 +34,7 @@ export default defineConfig({
       client: 'fetch',
       mode: 'tags-split',
       clean: false,
-      override: { mutator },
+      override: { mutator, fetch: { includeHttpResponseReturnType: false } },
     },
   },
 });

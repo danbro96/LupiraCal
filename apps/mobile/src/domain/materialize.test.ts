@@ -12,7 +12,7 @@ describe('occurrenceRowsForItem', () => {
   it('materializes a weekly rule across the horizon with preserved duration', () => {
     const rows = occurrenceRowsForItem(item({
       startsAt: '2026-01-05T09:00:00Z', endsAt: '2026-01-05T10:00:00Z', recurrenceRule: 'FREQ=WEEKLY',
-    }), false, horizon);
+    }), horizon);
     expect(rows.length).toBe(13);   // 5 Jan … 30 Mar, every Monday
     expect(rows[1].startUtc).toBe('2026-01-12T09:00:00.000Z');
     expect(rows[1].endUtc).toBe('2026-01-12T10:00:00.000Z');
@@ -21,22 +21,21 @@ describe('occurrenceRowsForItem', () => {
   it('degrades an unsupported rule to the anchor occurrence instead of vanishing', () => {
     const rows = occurrenceRowsForItem(item({
       startsAt: '2026-01-05T09:00:00Z', recurrenceRule: 'FREQ=HOURLY',
-    }), false, horizon);
+    }), horizon);
     expect(rows).toHaveLength(1);
   });
 
   it('gives all-day items their calendar date verbatim as the grid bucket', () => {
     const rows = occurrenceRowsForItem(item({
       isAllDay: true, startDate: '2026-02-14', endDate: '2026-02-15',
-    }), false, horizon);
+    }), horizon);
     expect(rows).toHaveLength(1);
     expect(rows[0].startDay).toBe('2026-02-14');
     expect(rows[0].allDay).toBe(true);
   });
 
-  it('produces nothing for deleted or startless items', () => {
-    expect(occurrenceRowsForItem(item({ startsAt: '2026-01-05T09:00:00Z' }), true, horizon)).toHaveLength(0);
-    expect(occurrenceRowsForItem(item({}), false, horizon)).toHaveLength(0);
+  it('produces nothing for startless items', () => {
+    expect(occurrenceRowsForItem(item({}), horizon)).toHaveLength(0);
   });
 });
 
@@ -44,15 +43,15 @@ describe('birthdayRows', () => {
   const contact = (birthday: ContactDoc['birthday']): ContactDoc => ({ id: 'c1', addressBookId: 'b1', birthday });
 
   it('synthesizes yearly all-day rows', () => {
-    const rows = birthdayRows(contact({ year: 1990, month: 2, day: 14 }), false, horizon);
+    const rows = birthdayRows(contact({ year: 1990, month: 2, day: 14 }), horizon);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ source: 'birthday', startDay: '2026-02-14', allDay: true });
   });
 
   it('skips Feb 29 outside leap years', () => {
-    const rows = birthdayRows(contact({ year: null, month: 2, day: 29 }), false, horizon);
+    const rows = birthdayRows(contact({ year: null, month: 2, day: 29 }), horizon);
     expect(rows).toHaveLength(0);   // 2026 is not a leap year
-    const leap = birthdayRows(contact({ year: null, month: 2, day: 29 }), false,
+    const leap = birthdayRows(contact({ year: null, month: 2, day: 29 }),
       { start: new Date('2028-01-01T00:00:00Z'), end: new Date('2028-06-01T00:00:00Z') });
     expect(leap).toHaveLength(1);
   });

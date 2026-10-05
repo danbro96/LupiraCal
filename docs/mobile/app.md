@@ -7,9 +7,9 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 - Paper is themed from tokens via `createPaperThemes` (`@danbro96/lupira-expo-paper`, called in `ui/theme/paperTheme.ts`; + adapted React Navigation themes); dark mode via `useColorScheme`.
 - Two files may call Paper's `useTheme()` directly, each because it needs an MD3 slot the estate palette has no equivalent for: `SyncBanner` (errorContainer) and the settings index (elevation ramp).
 - Feedback: `toast()` / `toastError()` from `@danbro96/lupira-expo-feedback` (host: the expo-paper `ToastHost`, Paper `Snackbar`); hold-to-copy (place tiles, reach rows) is its `copyText()`. `useUnsavedGuard` keeps `Alert.alert` (it fires inside `beforeRemove`).
-- Text inputs use the `Input` wrapper in `ui/components/form.tsx` (Paper `TextInput`, outlined+dense, label prop; `Field` is only for non-text controls). It keeps a column-rhythm `marginTop` where the sibling apps' `TextField` carries a row-layout `flex: 1`.
+- Text inputs use the expo-paper `TextField` (label prop, `fieldGap` between stacked fields); `ui/components/Field` wraps only non-text controls.
 - No hex literals except white text over calendar-coloured backgrounds.
-- A place renders as `ui/components/PlaceTile` everywhere (name, address, meta line, `ui/map/MiniMap` thumbnail — a texture-mode, gesture-less `MapView`, so detail screens only, never lists — framed by place type via `@lupira/cal-domain/mapZoom`; tap → the Maps app at that point). Tags render as `TagRow` text, never chips.
+- A place renders as `ui/components/PlaceTile` everywhere (name, address, meta line, `ui/map/MiniMap` thumbnail — a texture-mode, gesture-less `MapView`, so detail screens only, never lists — framed by place type via `@danbro96/lupira-domain-maps/mapZoom`; tap → the Maps app at that point). Tags render as `TagRow` text, never chips.
 - Detail screens carry no container padding: Paper rows and subheaders bring their own 16dp, other blocks take `spacing.lg`.
 - Icons: `ui/icons.ts` maps concepts to `MaterialIcons`.
 - Root navigator is `ui/navigation/RootStack.tsx`.
@@ -27,16 +27,36 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 
 ## Sync
 
-`sync/pull.ts`: both `/sync/changes` cursors are opaque and scoped to the caller's readable containers — a grant/revoke answers `reset`, which makes the run a full sync. A full sync that never completed restarts (`getResumeCursor`): its prune needs every id. The container pull seeds a missing standard set (`@lupira/cal-domain/bootstrap`, shared with web). Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
+The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (`data/db/expoDb.ts`; the pre-kernel `lupira-calendar-mirror.db` is deleted on first open). `sync/engine.ts` wires one module per aggregate (`sync/modules/`), pulled in this order:
 
-`sync/outbox.ts` replays ops in `seq` order through `mirror.nextEligibleOp`: an op waits while an earlier op of the same aggregate is parked or still inside its backoff window, so a revise never overtakes a create that failed transiently. Other aggregates proceed; the held op is due once the earlier one succeeds, is retried (`retryOne`) or is discarded.
+| Module | Feed | Writes | Index tables |
+|---|---|---|---|
+| `cal.calendar` | `/api/sync/calendars` (snapshot; seeds a missing standard set) | — | `calendar_index`, view `bridge_calendars` |
+| `contact.addressBook` | `/contact-api/sync/address-books` (snapshot; seeds) | — | — |
+| `contact.group` | `/contact-api/sync/groups` (snapshot) | — | — |
+| `cal.item` | `/api/sync/items` | `item.*` ops | `item_index`, `item_calendars`, `item_occurrences`, view `bridge_items` |
+| `contact` | `/contact-api/sync/contacts` | `contact.*` ops | `contact_index`, `birthday_occurrences`, view `bridge_contacts` |
+| `contact.relationship` | `/contact-api/sync/relationships` | — | `relationship_index` |
+| `contact.residency` | `/contact-api/sync/residencies` | — | `residency_index` |
+| `contact.placeEntry` | `/contact-api/sync/place-entries` (doc id = place id) | — | — |
+| `tasks.list` | `/tasks-api/sync/lists` | — | — |
+| `tasks.item` | `/tasks-api/sync/items` | — (edits live in Lupira Tasks) | `task_deadlines` (open deadlines) |
+| `contact.me` | `/contact-api/me` (one-doc snapshot) | — | — |
+
+- Every change to an input (pulled doc, queued op, discard, ack) recomputes `local = reduce(server, ...ops)` with `domain/mirrorReducers` and rewrites the module's index rows; a deleted doc is `null`. Table DDL and row writers live in `data/indexes/`, the reads over them in `data/queries/`.
+- Ops (`domain/ops.ts`) carry `aggregate`/`aggregateId` from `stamp()`; `state/actions.ts` is the write surface, `sync/replayOp.ts` the REST replay (`Idempotency-Key: commandId`). Ops of one aggregate replay in order; a parked or backed-off op holds the ones behind it.
+- Occurrences are materialized over a rolling horizon (`domain/materialize`); `sync/horizon.ts` keeps it in kernel meta and reindexes `cal.item` and `contact` when it drifts a month.
+- Prefs and bridge flags are kernel meta keys (`sync/meta.ts`). Signing in as a different account wipes the engine and the query cache (`state/auth-store.ts`, `onAccountChange`).
+- Triggers: `startSyncTriggers` (foreground, reconnect, sign-in) from `App.tsx`; the 15-minute background task is defined in `index.ts` and loads the auth session first. The Android bridge drains its inbox before each push and republishes after each pull (`hooks`).
+- The banner, Settings and `SyncIssuesScreen` read the kernel's status store (`state/useSyncStatus`), `bannerState` and `parked()`/`retry`/`discard`. Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
+- `MirrorReader.kt` reads only the `bridge_*` views (`id`, `display_name` for contacts, `state` = the stored `{doc, guards}` JSON); `sync/modules/bridgeViews.test.ts` pins that contract.
 
 ## Event editor
 
 `ItemEditScreen`:
 
-- A new event starts on the last-used calendars (`prefs.lastCalendarIds`) with you invited as going — your contact id is `me.contactId` in `mirror_meta`, refreshed by each sync from `/contact-api/me`; an `item.invite` op's `accept` ids get an RSVP right after the invite. Events you're not on offer Join (detail) and Add me (`PeopleSheet`).
-- The place sheet is one list ranked by `@lupira/cal-domain/placeRank` (saved, hotspots decayed by last visit, typeahead `Place`s only, contacts' addresses by name; invited people's homes lead), each row saying who lives there (`residents` — current addresses only).
+- A new event starts on the last-used calendars (`prefs.lastCalendarIds`) with you invited as going — your contact id comes from the mirrored `/contact-api/me` doc (`contact.me`); an `item.invite` op's `accept` ids get an RSVP right after the invite. Events you're not on offer Join (detail) and Add me (`PeopleSheet`).
+- The place sheet is one list ranked by `@danbro96/lupira-domain-places/placeRank` (saved, hotspots decayed by last visit, typeahead `Place`s only, contacts' addresses by name; invited people's homes lead), each row saying who lives there (`residents` — current addresses only).
 - Title, when, place, description up front; the rare fields are More rows opening `ui/event/*Sheet` (`ui/components/Sheet`).
 - One Save = one `saveItem` enqueue: core revise + `item.file`/`item.unfile` + `item.invite`/`item.uninvite`. Participation has no section guard; each invite request carries a key derived from the op's command id + contact, and uninvite removes by contact — neither needs the participation id an offline invite doesn't have yet.
 - Place = a geo `placeId` + label — cal-api 400s free-text `location` without one.

@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { mirrorQuery } from '@danbro96/lupira-expo-query/mirrorQuery';
+import { onlineQuery } from '@danbro96/lupira-expo-query/onlineQuery';
 import { useQuery } from '@tanstack/react-query';
 import { getHotspots } from '@lupira/cal-api/fetch/cal';
 import { createPlace, createPlaceFromGeocode, forwardGeocode, listSavedPlaces, suggestPlaces } from '@lupira/cal-api/fetch/geo';
@@ -7,9 +9,9 @@ import {
   ADDRESS_SEARCH_LIMIT, MIN_PLACE_QUERY, PLACE_SUGGEST_LIMIT, eventOrigin, pickPlaces,
 } from '@danbro96/lupira-domain-places/placeCandidates';
 import { GEOCODER_UNAVAILABLE, placeRequestFromHit } from '@danbro96/lupira-domain-places/places';
-import { getDb } from '../data/db/expoDb';
-import { mapEventRowsBetween } from '../data/mirror';
-import { useSyncStatus } from '../sync/syncStatus';
+import { placedEventsBetween } from '../data/queries/places';
+import { Aggregate } from '../domain/aggregates';
+import { readyDb } from '../sync/engine';
 import { useParticipationSummary } from './useParticipationSummary';
 import { usePlaceCoords } from './usePlaceLookup';
 import { useResidencyRows } from './useResidencies';
@@ -22,49 +24,21 @@ export type PlaceOption = { placeId: string; label: string; context?: string | n
  *  places, your hotspots, the server's typeahead and your contacts' addresses (matched by the contact's name,
  *  or because they're invited). Contacts come from the mirror; the rest needs a connection and fails open to less. */
 export function usePlaceCandidates({ query, attendeeIds, day }: { query: string; attendeeIds: string[]; day: string | null }) {
-  const reachable = useSyncStatus((s) => s.serverReachable);
   const q = query.trim();
   const typing = q.length >= MIN_PLACE_QUERY;
 
-  const hotspots = useQuery({
-    queryKey: ['map', 'hotspots'],
-    enabled: reachable,
-    staleTime: 600_000,
-    retry: 1,
-    queryFn: async () => {
-      const r = await getHotspots();
-      if (r.status !== 200) throw new Error(`hotspots ${r.status}`);
-      return r.data;
-    },
-  });
-  const saved = useQuery({
-    queryKey: ['map', 'saved-places'],
-    enabled: reachable,
-    staleTime: 60_000,
-    retry: 1,
-    queryFn: async () => {
-      const r = await listSavedPlaces();
-      if (r.status !== 200) throw new Error(`saved places ${r.status}`);
-      return r.data;
-    },
-  });
+  const hotspots = useQuery(onlineQuery(['map', 'hotspots'], () => getHotspots()));
+  const saved = useQuery(onlineQuery(['map', 'saved-places'], () => listSavedPlaces()));
   const suggested = useQuery({
-    queryKey: ['places', 'suggest', q],
-    enabled: reachable && typing,
-    staleTime: 5 * 60_000,
-    retry: 1,
-    queryFn: async () => {
-      const r = await suggestPlaces({ q, limit: PLACE_SUGGEST_LIMIT });
-      if (r.status !== 200) throw new Error(`place suggest ${r.status}`);
-      // A locality is a search scope, not somewhere an event can be.
-      return r.data.filter((s) => s.type === SuggestionType.Place);
-    },
+    // A locality is a search scope, not somewhere an event can be.
+    ...onlineQuery(['places', 'suggest', q], async () =>
+      (await suggestPlaces({ q, limit: PLACE_SUGGEST_LIMIT })).filter((s) => s.type === SuggestionType.Place)),
+    enabled: typing,
   });
   const rows = useResidencyRows();
   const dayEvents = useQuery({
-    queryKey: ['items', 'places-on', day],
+    ...mirrorQuery([Aggregate.item, 'places-on', day], async () => placedEventsBetween(await readyDb(), day!, day!)),
     enabled: !!day,
-    queryFn: async () => mapEventRowsBetween(await getDb(), day!, day!),
   });
   const { data: summary } = useParticipationSummary(true);
 
@@ -90,18 +64,10 @@ export function usePlaceCandidates({ query, attendeeIds, day }: { query: string;
 
 /** Addresses the geocoder knows — none of them a place yet; picking one creates it. */
 export function useGeocodeHits(query: string) {
-  const reachable = useSyncStatus((s) => s.serverReachable);
   const q = query.trim();
   return useQuery({
-    queryKey: ['places', 'geocode', q],
-    enabled: reachable && q.length >= MIN_PLACE_QUERY,
-    staleTime: 5 * 60_000,
-    retry: 1,
-    queryFn: async () => {
-      const r = await forwardGeocode({ q, limit: ADDRESS_SEARCH_LIMIT });
-      if (r.status !== 200) throw new Error(`geocode ${r.status}`);
-      return r.data;
-    },
+    ...onlineQuery(['places', 'geocode', q], () => forwardGeocode({ q, limit: ADDRESS_SEARCH_LIMIT })),
+    enabled: q.length >= MIN_PLACE_QUERY,
   });
 }
 
@@ -110,11 +76,10 @@ export function useGeocodeHits(query: string) {
 export async function createPlaceFromHit(hit: GeocodeResultDto, typedName: string): Promise<PlaceOption> {
   const req = placeRequestFromHit(hit, typedName, Object.values(PlaceCategory));
   if (req.kind === 'fromGeocode') {
-    const r = await createPlaceFromGeocode(req.body);
-    if (r.status !== 200 || !r.data.placeId) throw new Error(GEOCODER_UNAVAILABLE);
-    return { placeId: r.data.placeId, label: r.data.name };
+    const resolved = await createPlaceFromGeocode(req.body);
+    if (!resolved.placeId) throw new Error(GEOCODER_UNAVAILABLE);
+    return { placeId: resolved.placeId, label: resolved.name };
   }
-  const r = await createPlace({ ...req.body, category: req.body.category as PlaceCategory | undefined });
-  if (r.status !== 200) throw new Error(`create place ${r.status}`);
-  return { placeId: r.data.id, label: r.data.name };
+  const place = await createPlace({ ...req.body, category: req.body.category as PlaceCategory | undefined });
+  return { placeId: place.id, label: place.name };
 }

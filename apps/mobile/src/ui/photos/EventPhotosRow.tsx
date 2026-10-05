@@ -2,13 +2,11 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { List, Text } from 'react-native-paper';
-import { createItemRelation } from '@lupira/cal-api/fetch/cal';
 import type { PhotoListItemDto } from '@lupira/cal-api/models';
 import type { PhotoWindowSource } from '@danbro96/lupira-domain-photos/photoWindow';
-import { PHOTO_TEXT, seeAllLinked, PHOTO_LINK } from '@danbro96/lupira-domain-photos/photoLinks';
+import { PHOTO_TEXT, seeAllLinked } from '@danbro96/lupira-domain-photos/photoLinks';
 import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
-import { useEventPhotos, useSuggestedPhotos } from '../../state/usePhotoEventLinks';
-import { invalidatePhotos } from '../../sync/reactivity';
+import { useEventPhotos, useLinkPhoto, useSuggestedPhotos } from '../../state/usePhotoEventLinks';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import { useColors, spacing } from '../theme';
 import { openSibling } from '../openSibling';
@@ -22,23 +20,16 @@ export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWi
   const c = useColors();
   const linked = useEventPhotos(itemId);
   const [suggesting, setSuggesting] = useState(false);
-  const [linkingId, setLinkingId] = useState<string | null>(null);
+  const link = useLinkPhoto(itemId);
   const { items: suggestions, isLoading, hasWindow } = useSuggestedPhotos(item, linked.map((p) => p.id), suggesting);
 
   if (!hasWindow && linked.length === 0) return null;
 
-  const onAdd = async (photoId: string) => {
-    setLinkingId(photoId);
-    const r = await createItemRelation(itemId, { ...PHOTO_LINK, toRef: photoId })
-      .catch(() => null);
-    setLinkingId(null);
-    if (r?.status === 200) {
-      toast('Linked to the event');
-      invalidatePhotos();
-    } else {
-      toastError('Could not link the photo.');
-    }
-  };
+  const onAdd = (photoId: string) =>
+    link.mutate(photoId, {
+      onSuccess: () => toast('Linked to the event'),
+      onError: () => toastError('Could not link the photo.'),
+    });
 
   return (
     <View>
@@ -77,8 +68,8 @@ export function EventPhotosRow({ itemId, item }: { itemId: string; item: PhotoWi
                 key={photo.id}
                 photo={photo}
                 surface={c.surface}
-                dimmed={linkingId !== null}
-                onPress={() => void onAdd(photo.id)}
+                dimmed={link.isPending}
+                onPress={() => onAdd(photo.id)}
               />
             ))}
           </Strip>

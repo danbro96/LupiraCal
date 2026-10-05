@@ -7,7 +7,6 @@
 import type {
   ItemDto,
   ListItemsParams,
-  ProblemDetails,
   SyncItemsParams,
   SyncListsParams,
   SyncPageOfListDto,
@@ -15,30 +14,6 @@ import type {
 } from '../../models';
 
 import { apiRequest } from '../../../transport';
-
-export type listItemsResponse200 = {
-  data: ItemDto[]
-  status: 200
-}
-
-export type listItemsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listItemsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listItemsResponseSuccess = (listItemsResponse200) & {
-  headers: Headers;
-};
-export type listItemsResponseError = (listItemsResponse401 | listItemsResponse500) & {
-  headers: Headers;
-};
-
-export type listItemsResponse = (listItemsResponseSuccess | listItemsResponseError)
 
 export const getListItemsUrl = (params?: ListItemsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -59,9 +34,9 @@ export const getListItemsUrl = (params?: ListItemsParams,) => {
  * Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).
  * @summary Search items across the caller's lists (Viewer+).
  */
-export const listItems = async (params?: ListItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<listItemsResponse> => {
+export const listItems = async (params?: ListItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ItemDto[]> => {
 
-  return apiRequest<listItemsResponse>(getListItemsUrl(params),
+  return apiRequest<ItemDto[]>(getListItemsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -70,35 +45,6 @@ export const listItems = async (params?: ListItemsParams, options?: Parameters<t
   }
 );}
 
-
-export type tasksGetItemResponse200 = {
-  data: ItemDto
-  status: 200
-}
-
-export type tasksGetItemResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type tasksGetItemResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type tasksGetItemResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type tasksGetItemResponseSuccess = (tasksGetItemResponse200) & {
-  headers: Headers;
-};
-export type tasksGetItemResponseError = (tasksGetItemResponse401 | tasksGetItemResponse404 | tasksGetItemResponse500) & {
-  headers: Headers;
-};
-
-export type tasksGetItemResponse = (tasksGetItemResponseSuccess | tasksGetItemResponseError)
 
 export const getTasksGetItemUrl = (listId: string,
     itemId: string,) => {
@@ -113,9 +59,9 @@ export const getTasksGetItemUrl = (listId: string,
  * @summary Get a single item (Viewer+).
  */
 export const tasksGetItem = async (listId: string,
-    itemId: string, options?: Parameters<typeof apiRequest>[1]): Promise<tasksGetItemResponse> => {
+    itemId: string, options?: Parameters<typeof apiRequest>[1]): Promise<ItemDto> => {
 
-  return apiRequest<tasksGetItemResponse>(getTasksGetItemUrl(listId,itemId),
+  return apiRequest<ItemDto>(getTasksGetItemUrl(listId,itemId),
   {
     ...options,
     method: 'GET'
@@ -124,35 +70,6 @@ export const tasksGetItem = async (listId: string,
   }
 );}
 
-
-export type syncListsResponse200 = {
-  data: SyncPageOfListDto
-  status: 200
-}
-
-export type syncListsResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type syncListsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type syncListsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type syncListsResponseSuccess = (syncListsResponse200) & {
-  headers: Headers;
-};
-export type syncListsResponseError = (syncListsResponse400 | syncListsResponse401 | syncListsResponse500) & {
-  headers: Headers;
-};
-
-export type syncListsResponse = (syncListsResponseSuccess | syncListsResponseError)
 
 export const getSyncListsUrl = (params?: SyncListsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -173,9 +90,9 @@ export const getSyncListsUrl = (params?: SyncListsParams,) => {
  * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. Lists leave the mirror through `reset`, so `deleted` is always empty.
  * @summary Lists the caller can read that changed since a cursor, for an offline mirror.
  */
-export const syncLists = async (params?: SyncListsParams, options?: Parameters<typeof apiRequest>[1]): Promise<syncListsResponse> => {
+export const syncLists = async (params?: SyncListsParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfListDto> => {
 
-  return apiRequest<syncListsResponse>(getSyncListsUrl(params),
+  return apiRequest<SyncPageOfListDto>(getSyncListsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -184,35 +101,6 @@ export const syncLists = async (params?: SyncListsParams, options?: Parameters<t
   }
 );}
 
-
-export type syncItemsResponse200 = {
-  data: TasksSyncPageOfItemSyncChange
-  status: 200
-}
-
-export type syncItemsResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type syncItemsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type syncItemsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type syncItemsResponseSuccess = (syncItemsResponse200) & {
-  headers: Headers;
-};
-export type syncItemsResponseError = (syncItemsResponse400 | syncItemsResponse401 | syncItemsResponse500) & {
-  headers: Headers;
-};
-
-export type syncItemsResponse = (syncItemsResponseSuccess | syncItemsResponseError)
 
 export const getSyncItemsUrl = (params?: SyncItemsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -233,9 +121,9 @@ export const getSyncItemsUrl = (params?: SyncItemsParams,) => {
  * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. `deleted` holds the ids of deleted items.
  * @summary Items of the caller's readable lists that changed since a cursor, with per-field guards.
  */
-export const syncItems = async (params?: SyncItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<syncItemsResponse> => {
+export const syncItems = async (params?: SyncItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<TasksSyncPageOfItemSyncChange> => {
 
-  return apiRequest<syncItemsResponse>(getSyncItemsUrl(params),
+  return apiRequest<TasksSyncPageOfItemSyncChange>(getSyncItemsUrl(params),
   {
     ...options,
     method: 'GET'

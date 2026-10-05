@@ -3,8 +3,8 @@ package expo.modules.lupirabridge
 import android.database.sqlite.SQLiteDatabase
 import org.json.JSONObject
 
-/// Read-side projection of the RN mirror for the publisher. Parses the stored doc JSON — the mirror's
-/// scalar columns don't carry description/location/membership, the doc does.
+/// Read-side projection of the RN mirror for the publisher, over the bridge_* views the app's sync modules
+/// define. Each `state` is the kernel's stored doc state; the doc itself sits under its "doc" key.
 
 data class MirrorCalendar(val id: String, val displayName: String, val color: Int)
 
@@ -37,10 +37,10 @@ data class MirrorItem(
 
 object MirrorReader {
   fun calendars(db: SQLiteDatabase): List<MirrorCalendar> =
-    db.rawQuery("SELECT id, doc FROM calendars", null).use { c ->
+    db.rawQuery("SELECT id, state FROM bridge_calendars", null).use { c ->
       val out = mutableListOf<MirrorCalendar>()
       while (c.moveToNext()) {
-        val doc = JSONObject(c.getString(1))
+        val doc = docOf(c.getString(1))
         out.add(
           MirrorCalendar(
             id = c.getString(0),
@@ -53,12 +53,12 @@ object MirrorReader {
     }
 
   fun items(db: SQLiteDatabase): List<MirrorItem> =
-    db.rawQuery("SELECT id, doc FROM items WHERE deleted = 0", null).use { c ->
+    db.rawQuery("SELECT id, state FROM bridge_items", null).use { c ->
       val out = mutableListOf<MirrorItem>()
       while (c.moveToNext()) {
         // One malformed doc must never kill the whole publish.
         val item = try {
-          fromDoc(c.getString(0), JSONObject(c.getString(1)))
+          fromDoc(c.getString(0), docOf(c.getString(1)))
         } catch (e: Exception) {
           android.util.Log.w(Bridge.TAG, "skipping item ${c.getString(0)}: ${e.message}")
           null
@@ -69,10 +69,10 @@ object MirrorReader {
     }
 
   fun contacts(db: SQLiteDatabase): List<MirrorContact> =
-    db.rawQuery("SELECT id, display_name, doc FROM contacts WHERE deleted = 0", null).use { c ->
+    db.rawQuery("SELECT id, display_name, state FROM bridge_contacts", null).use { c ->
       val out = mutableListOf<MirrorContact>()
       while (c.moveToNext()) {
-        val doc = JSONObject(c.getString(2))
+        val doc = docOf(c.getString(2))
         val channels = mutableListOf<MirrorChannel>()
         doc.optJSONArray("channels")?.let { arr ->
           for (i in 0 until arr.length()) {
@@ -98,6 +98,8 @@ object MirrorReader {
       }
       out
     }
+
+  private fun docOf(state: String): JSONObject = JSONObject(state).getJSONObject("doc")
 
   /// PartialDate → the contacts provider's Event.START_DATE conventions ("--MM-dd" when year unknown).
   private fun birthdayString(b: JSONObject?): String? {

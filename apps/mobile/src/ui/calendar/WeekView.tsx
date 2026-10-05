@@ -15,7 +15,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import type { PlaceDto } from '@lupira/cal-api/models';
 import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { withAlpha } from '@danbro96/lupira-tokens-core/color';
-import type { GridRow } from '../../data/mirror';
+import type { GridRow } from '../../data/queries/grid';
 import { isTaskRow } from '../../domain/taskRows';
 import { usePrefs } from '../../state/prefs-store';
 import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrences';

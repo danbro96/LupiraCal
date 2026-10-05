@@ -1,11 +1,7 @@
 import { create } from 'zustand';
-import { getDb } from '../data/db/expoDb';
-import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
-import { MIGRATIONS } from '../data/db/schema';
-import { getMeta, setMeta } from '../data/mirror';
+import { readMeta, writeMeta } from '../sync/meta';
 
-/** Small user preferences, persisted in mirror_meta (same reasoning as bridge-store: shared ground the
- *  data layer can read, and no brittle SecureStore key destructuring). */
+/** Small user preferences, persisted in the sync kernel's meta table (same reasoning as bridge-store). */
 
 const DEBUG_KEY = 'prefs.debugEnabled';
 const CALENDAR_CHOICES_KEY = 'prefs.calendarChoices';
@@ -77,60 +73,51 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
   lastCalendarIds: [],
 
   init: async () => {
-    const db = await getDb();
-    await migrate(db, MIGRATIONS);
     set({
-      debugEnabled: (await getMeta(db, DEBUG_KEY)) === '1',
-      calendarChoices: parseJson(await getMeta(db, CALENDAR_CHOICES_KEY), isFlagRecord, {}),
-      showTaskDeadlines: (await getMeta(db, SHOW_TASKS_KEY)) !== '0',
-      hourHeight: Number(await getMeta(db, HOUR_HEIGHT_KEY)) || DEFAULT_HOUR_HEIGHT,
-      allDayRows: readAllDayRows(await getMeta(db, ALL_DAY_ROWS_KEY)),
-      calendarMode: (await getMeta(db, CALENDAR_MODE_KEY)) === 'week' ? 'week' : 'month',
-      lastCalendarIds: parseJson(await getMeta(db, LAST_CALENDARS_KEY), isStringArray, []),
+      debugEnabled: (await readMeta(DEBUG_KEY)) === '1',
+      calendarChoices: parseJson(await readMeta(CALENDAR_CHOICES_KEY), isFlagRecord, {}),
+      showTaskDeadlines: (await readMeta(SHOW_TASKS_KEY)) !== '0',
+      hourHeight: Number(await readMeta(HOUR_HEIGHT_KEY)) || DEFAULT_HOUR_HEIGHT,
+      allDayRows: readAllDayRows(await readMeta(ALL_DAY_ROWS_KEY)),
+      calendarMode: (await readMeta(CALENDAR_MODE_KEY)) === 'week' ? 'week' : 'month',
+      lastCalendarIds: parseJson(await readMeta(LAST_CALENDARS_KEY), isStringArray, []),
       loaded: true,
     });
   },
 
   setDebugEnabled: async (value) => {
     set({ debugEnabled: value });
-    const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, DEBUG_KEY, value ? '1' : '0'));
+    await writeMeta(DEBUG_KEY, value ? '1' : '0');
   },
 
   setCalendarShown: async (calendarId, shown) => {
     const calendarChoices = { ...get().calendarChoices, [calendarId]: shown };
     set({ calendarChoices });
-    const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, CALENDAR_CHOICES_KEY, JSON.stringify(calendarChoices)));
+    await writeMeta(CALENDAR_CHOICES_KEY, JSON.stringify(calendarChoices));
   },
 
   setShowTaskDeadlines: async (value) => {
     set({ showTaskDeadlines: value });
-    const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, SHOW_TASKS_KEY, value ? '1' : '0'));
+    await writeMeta(SHOW_TASKS_KEY, value ? '1' : '0');
   },
 
   setHourHeight: async (value) => {
     set({ hourHeight: value });
-    const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, HOUR_HEIGHT_KEY, String(value)));
+    await writeMeta(HOUR_HEIGHT_KEY, String(value));
   },
 
   setAllDayRows: async (value) => {
     set({ allDayRows: value });
-    const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, ALL_DAY_ROWS_KEY, value));
+    await writeMeta(ALL_DAY_ROWS_KEY, value);
   },
 
   setCalendarMode: async (value) => {
     set({ calendarMode: value });
-    const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, CALENDAR_MODE_KEY, value));
+    await writeMeta(CALENDAR_MODE_KEY, value);
   },
 
   setLastCalendarIds: async (value) => {
     set({ lastCalendarIds: value });
-    const db = await getDb();
-    await db.exclusive((tx) => setMeta(tx, LAST_CALENDARS_KEY, JSON.stringify(value)));
+    await writeMeta(LAST_CALENDARS_KEY, JSON.stringify(value));
   },
 }));

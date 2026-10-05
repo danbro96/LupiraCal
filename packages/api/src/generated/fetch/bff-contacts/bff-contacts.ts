@@ -10,25 +10,6 @@ import type {
 
 import { apiRequest } from '../../../transport';
 
-export type getContactContextResponse200 = {
-  data: ContactContextDto
-  status: 200
-}
-
-export type getContactContextResponse404 = {
-  data: void
-  status: 404
-}
-
-export type getContactContextResponseSuccess = (getContactContextResponse200) & {
-  headers: Headers;
-};
-export type getContactContextResponseError = (getContactContextResponse404) & {
-  headers: Headers;
-};
-
-export type getContactContextResponse = (getContactContextResponseSuccess | getContactContextResponseError)
-
 export const getGetContactContextUrl = (id: string,) => {
 
 
@@ -37,9 +18,9 @@ export const getGetContactContextUrl = (id: string,) => {
   return `/api/contacts/${id}/context`
 }
 
-export const getContactContext = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<getContactContextResponse> => {
+export const getContactContext = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<ContactContextDto> => {
 
-  return apiRequest<getContactContextResponse>(getGetContactContextUrl(id),
+  return apiRequest<ContactContextDto>(getGetContactContextUrl(id),
   {
     ...options,
     method: 'GET'

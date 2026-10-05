@@ -30,7 +30,6 @@ import type {
   MoveContactRequest,
   MoveRequest,
   PlaceEntryDto,
-  ProblemDetails,
   RelationshipDto,
   RemoveContactRelationParams,
   RenameContactGroupParams,
@@ -58,30 +57,6 @@ import type {
 
 import { apiRequest } from '../../../transport';
 
-export type getMeResponse200 = {
-  data: MeDto
-  status: 200
-}
-
-export type getMeResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getMeResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getMeResponseSuccess = (getMeResponse200) & {
-  headers: Headers;
-};
-export type getMeResponseError = (getMeResponse401 | getMeResponse500) & {
-  headers: Headers;
-};
-
-export type getMeResponse = (getMeResponseSuccess | getMeResponseError)
-
 export const getGetMeUrl = () => {
 
 
@@ -93,9 +68,9 @@ export const getGetMeUrl = () => {
 /**
  * @summary The caller's resolved local identity (JIT-provisioned on first login). While no contact is linked, one carrying the login email in a readable book is linked.
  */
-export const getMe = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getMeResponse> => {
+export const getMe = async ( options?: Parameters<typeof apiRequest>[1]): Promise<MeDto> => {
 
-  return apiRequest<getMeResponse>(getGetMeUrl(),
+  return apiRequest<MeDto>(getGetMeUrl(),
   {
     ...options,
     method: 'GET'
@@ -104,30 +79,6 @@ export const getMe = async ( options?: Parameters<typeof apiRequest>[1]): Promis
   }
 );}
 
-
-export type contactBootstrapMeResponse200 = {
-  data: AddressBookDto[]
-  status: 200
-}
-
-export type contactBootstrapMeResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type contactBootstrapMeResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type contactBootstrapMeResponseSuccess = (contactBootstrapMeResponse200) & {
-  headers: Headers;
-};
-export type contactBootstrapMeResponseError = (contactBootstrapMeResponse401 | contactBootstrapMeResponse500) & {
-  headers: Headers;
-};
-
-export type contactBootstrapMeResponse = (contactBootstrapMeResponseSuccess | contactBootstrapMeResponseError)
 
 export const getContactBootstrapMeUrl = () => {
 
@@ -140,9 +91,9 @@ export const getContactBootstrapMeUrl = () => {
 /**
  * @summary Idempotently ensure the caller has a personal address book and a linked contact of its own (one carrying the login email in a readable book, else a new one in the personal book); returns all accessible books.
  */
-export const contactBootstrapMe = async ( options?: Parameters<typeof apiRequest>[1]): Promise<contactBootstrapMeResponse> => {
+export const contactBootstrapMe = async ( options?: Parameters<typeof apiRequest>[1]): Promise<AddressBookDto[]> => {
 
-  return apiRequest<contactBootstrapMeResponse>(getContactBootstrapMeUrl(),
+  return apiRequest<AddressBookDto[]>(getContactBootstrapMeUrl(),
   {
     ...options,
     method: 'POST'
@@ -151,40 +102,6 @@ export const contactBootstrapMe = async ( options?: Parameters<typeof apiRequest
   }
 );}
 
-
-export type setMyContactResponse204 = {
-  data: void
-  status: 204
-}
-
-export type setMyContactResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type setMyContactResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type setMyContactResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type setMyContactResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type setMyContactResponseSuccess = (setMyContactResponse204) & {
-  headers: Headers;
-};
-export type setMyContactResponseError = (setMyContactResponse401 | setMyContactResponse403 | setMyContactResponse404 | setMyContactResponse500) & {
-  headers: Headers;
-};
-
-export type setMyContactResponse = (setMyContactResponseSuccess | setMyContactResponseError)
 
 export const getSetMyContactUrl = () => {
 
@@ -197,7 +114,7 @@ export const getSetMyContactUrl = () => {
 /**
  * @summary Link the caller's identity to its own contact ("this card is me") — the default focus for contact circles.
  */
-export const setMyContact = async (setMyContactRequest: SetMyContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setMyContactResponse> => {
+export const setMyContact = async (setMyContactRequest: SetMyContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -213,7 +130,7 @@ export const setMyContact = async (setMyContactRequest: SetMyContactRequest, opt
     }
     return headers;
   };
-return apiRequest<setMyContactResponse>(getSetMyContactUrl(),
+return apiRequest<void>(getSetMyContactUrl(),
   {
     ...options,
     method: 'PUT',
@@ -222,30 +139,6 @@ return apiRequest<setMyContactResponse>(getSetMyContactUrl(),
   }
 );}
 
-
-export type listAddressBooksResponse200 = {
-  data: AddressBookDto[]
-  status: 200
-}
-
-export type listAddressBooksResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listAddressBooksResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listAddressBooksResponseSuccess = (listAddressBooksResponse200) & {
-  headers: Headers;
-};
-export type listAddressBooksResponseError = (listAddressBooksResponse401 | listAddressBooksResponse500) & {
-  headers: Headers;
-};
-
-export type listAddressBooksResponse = (listAddressBooksResponseSuccess | listAddressBooksResponseError)
 
 export const getListAddressBooksUrl = () => {
 
@@ -258,9 +151,9 @@ export const getListAddressBooksUrl = () => {
 /**
  * @summary List the address books the caller can access.
  */
-export const listAddressBooks = async ( options?: Parameters<typeof apiRequest>[1]): Promise<listAddressBooksResponse> => {
+export const listAddressBooks = async ( options?: Parameters<typeof apiRequest>[1]): Promise<AddressBookDto[]> => {
 
-  return apiRequest<listAddressBooksResponse>(getListAddressBooksUrl(),
+  return apiRequest<AddressBookDto[]>(getListAddressBooksUrl(),
   {
     ...options,
     method: 'GET'
@@ -269,30 +162,6 @@ export const listAddressBooks = async ( options?: Parameters<typeof apiRequest>[
   }
 );}
 
-
-export type createAddressBookResponse200 = {
-  data: AddressBookDto
-  status: 200
-}
-
-export type createAddressBookResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type createAddressBookResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type createAddressBookResponseSuccess = (createAddressBookResponse200) & {
-  headers: Headers;
-};
-export type createAddressBookResponseError = (createAddressBookResponse401 | createAddressBookResponse500) & {
-  headers: Headers;
-};
-
-export type createAddressBookResponse = (createAddressBookResponseSuccess | createAddressBookResponseError)
 
 export const getCreateAddressBookUrl = () => {
 
@@ -305,7 +174,7 @@ export const getCreateAddressBookUrl = () => {
 /**
  * @summary Create an address book; the caller becomes its owner.
  */
-export const createAddressBook = async (createAddressBookRequest: CreateAddressBookRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createAddressBookResponse> => {
+export const createAddressBook = async (createAddressBookRequest: CreateAddressBookRequest, options?: Parameters<typeof apiRequest>[1]): Promise<AddressBookDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -321,7 +190,7 @@ export const createAddressBook = async (createAddressBookRequest: CreateAddressB
     }
     return headers;
   };
-return apiRequest<createAddressBookResponse>(getCreateAddressBookUrl(),
+return apiRequest<AddressBookDto>(getCreateAddressBookUrl(),
   {
     ...options,
     method: 'POST',
@@ -330,45 +199,6 @@ return apiRequest<createAddressBookResponse>(getCreateAddressBookUrl(),
   }
 );}
 
-
-export type updateAddressBookResponse200 = {
-  data: AddressBookDto
-  status: 200
-}
-
-export type updateAddressBookResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type updateAddressBookResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type updateAddressBookResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type updateAddressBookResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type updateAddressBookResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type updateAddressBookResponseSuccess = (updateAddressBookResponse200) & {
-  headers: Headers;
-};
-export type updateAddressBookResponseError = (updateAddressBookResponse400 | updateAddressBookResponse401 | updateAddressBookResponse403 | updateAddressBookResponse404 | updateAddressBookResponse500) & {
-  headers: Headers;
-};
-
-export type updateAddressBookResponse = (updateAddressBookResponseSuccess | updateAddressBookResponseError)
 
 export const getUpdateAddressBookUrl = (addressBookId: string,) => {
 
@@ -382,7 +212,7 @@ export const getUpdateAddressBookUrl = (addressBookId: string,) => {
  * @summary Rename an address book or change its display name (owner only; merge — omitted fields are kept).
  */
 export const updateAddressBook = async (addressBookId: string,
-    updateAddressBookRequest: UpdateAddressBookRequest, options?: Parameters<typeof apiRequest>[1]): Promise<updateAddressBookResponse> => {
+    updateAddressBookRequest: UpdateAddressBookRequest, options?: Parameters<typeof apiRequest>[1]): Promise<AddressBookDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -398,7 +228,7 @@ export const updateAddressBook = async (addressBookId: string,
     }
     return headers;
   };
-return apiRequest<updateAddressBookResponse>(getUpdateAddressBookUrl(addressBookId),
+return apiRequest<AddressBookDto>(getUpdateAddressBookUrl(addressBookId),
   {
     ...options,
     method: 'PUT',
@@ -407,45 +237,6 @@ return apiRequest<updateAddressBookResponse>(getUpdateAddressBookUrl(addressBook
   }
 );}
 
-
-export type deleteAddressBookResponse204 = {
-  data: void
-  status: 204
-}
-
-export type deleteAddressBookResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type deleteAddressBookResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type deleteAddressBookResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type deleteAddressBookResponse409 = {
-  data: ProblemDetails
-  status: 409
-}
-
-export type deleteAddressBookResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type deleteAddressBookResponseSuccess = (deleteAddressBookResponse204) & {
-  headers: Headers;
-};
-export type deleteAddressBookResponseError = (deleteAddressBookResponse401 | deleteAddressBookResponse403 | deleteAddressBookResponse404 | deleteAddressBookResponse409 | deleteAddressBookResponse500) & {
-  headers: Headers;
-};
-
-export type deleteAddressBookResponse = (deleteAddressBookResponseSuccess | deleteAddressBookResponseError)
 
 export const getDeleteAddressBookUrl = (addressBookId: string,) => {
 
@@ -458,9 +249,9 @@ export const getDeleteAddressBookUrl = (addressBookId: string,) => {
 /**
  * @summary Delete an empty address book (owner only). 409 if it still holds contacts or groups, or is the personal book.
  */
-export const deleteAddressBook = async (addressBookId: string, options?: Parameters<typeof apiRequest>[1]): Promise<deleteAddressBookResponse> => {
+export const deleteAddressBook = async (addressBookId: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<deleteAddressBookResponse>(getDeleteAddressBookUrl(addressBookId),
+  return apiRequest<void>(getDeleteAddressBookUrl(addressBookId),
   {
     ...options,
     method: 'DELETE'
@@ -469,40 +260,6 @@ export const deleteAddressBook = async (addressBookId: string, options?: Paramet
   }
 );}
 
-
-export type listAddressBookOwnersResponse200 = {
-  data: ContactOwnerGrantDto[]
-  status: 200
-}
-
-export type listAddressBookOwnersResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listAddressBookOwnersResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type listAddressBookOwnersResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type listAddressBookOwnersResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listAddressBookOwnersResponseSuccess = (listAddressBookOwnersResponse200) & {
-  headers: Headers;
-};
-export type listAddressBookOwnersResponseError = (listAddressBookOwnersResponse401 | listAddressBookOwnersResponse403 | listAddressBookOwnersResponse404 | listAddressBookOwnersResponse500) & {
-  headers: Headers;
-};
-
-export type listAddressBookOwnersResponse = (listAddressBookOwnersResponseSuccess | listAddressBookOwnersResponseError)
 
 export const getListAddressBookOwnersUrl = (addressBookId: string,) => {
 
@@ -515,9 +272,9 @@ export const getListAddressBookOwnersUrl = (addressBookId: string,) => {
 /**
  * @summary List who has access to an address book and at what level (owner only).
  */
-export const listAddressBookOwners = async (addressBookId: string, options?: Parameters<typeof apiRequest>[1]): Promise<listAddressBookOwnersResponse> => {
+export const listAddressBookOwners = async (addressBookId: string, options?: Parameters<typeof apiRequest>[1]): Promise<ContactOwnerGrantDto[]> => {
 
-  return apiRequest<listAddressBookOwnersResponse>(getListAddressBookOwnersUrl(addressBookId),
+  return apiRequest<ContactOwnerGrantDto[]>(getListAddressBookOwnersUrl(addressBookId),
   {
     ...options,
     method: 'GET'
@@ -526,45 +283,6 @@ export const listAddressBookOwners = async (addressBookId: string, options?: Par
   }
 );}
 
-
-export type grantAddressBookOwnerResponse200 = {
-  data: ContactOwnerGrantDto
-  status: 200
-}
-
-export type grantAddressBookOwnerResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type grantAddressBookOwnerResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type grantAddressBookOwnerResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type grantAddressBookOwnerResponse409 = {
-  data: ProblemDetails
-  status: 409
-}
-
-export type grantAddressBookOwnerResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type grantAddressBookOwnerResponseSuccess = (grantAddressBookOwnerResponse200) & {
-  headers: Headers;
-};
-export type grantAddressBookOwnerResponseError = (grantAddressBookOwnerResponse401 | grantAddressBookOwnerResponse403 | grantAddressBookOwnerResponse404 | grantAddressBookOwnerResponse409 | grantAddressBookOwnerResponse500) & {
-  headers: Headers;
-};
-
-export type grantAddressBookOwnerResponse = (grantAddressBookOwnerResponseSuccess | grantAddressBookOwnerResponseError)
 
 export const getGrantAddressBookOwnerUrl = (addressBookId: string,) => {
 
@@ -578,7 +296,7 @@ export const getGrantAddressBookOwnerUrl = (addressBookId: string,) => {
  * @summary Grant a member access to an address book (access = owner|read-write|read; default owner).
  */
 export const grantAddressBookOwner = async (addressBookId: string,
-    grantOwnerRequest: GrantOwnerRequest, options?: Parameters<typeof apiRequest>[1]): Promise<grantAddressBookOwnerResponse> => {
+    grantOwnerRequest: GrantOwnerRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactOwnerGrantDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -594,7 +312,7 @@ export const grantAddressBookOwner = async (addressBookId: string,
     }
     return headers;
   };
-return apiRequest<grantAddressBookOwnerResponse>(getGrantAddressBookOwnerUrl(addressBookId),
+return apiRequest<ContactOwnerGrantDto>(getGrantAddressBookOwnerUrl(addressBookId),
   {
     ...options,
     method: 'POST',
@@ -603,45 +321,6 @@ return apiRequest<grantAddressBookOwnerResponse>(getGrantAddressBookOwnerUrl(add
   }
 );}
 
-
-export type revokeAddressBookOwnerResponse204 = {
-  data: void
-  status: 204
-}
-
-export type revokeAddressBookOwnerResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type revokeAddressBookOwnerResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type revokeAddressBookOwnerResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type revokeAddressBookOwnerResponse409 = {
-  data: ProblemDetails
-  status: 409
-}
-
-export type revokeAddressBookOwnerResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type revokeAddressBookOwnerResponseSuccess = (revokeAddressBookOwnerResponse204) & {
-  headers: Headers;
-};
-export type revokeAddressBookOwnerResponseError = (revokeAddressBookOwnerResponse401 | revokeAddressBookOwnerResponse403 | revokeAddressBookOwnerResponse404 | revokeAddressBookOwnerResponse409 | revokeAddressBookOwnerResponse500) & {
-  headers: Headers;
-};
-
-export type revokeAddressBookOwnerResponse = (revokeAddressBookOwnerResponseSuccess | revokeAddressBookOwnerResponseError)
 
 export const getRevokeAddressBookOwnerUrl = (addressBookId: string,
     params: RevokeAddressBookOwnerParams,) => {
@@ -663,9 +342,9 @@ export const getRevokeAddressBookOwnerUrl = (addressBookId: string,
  * @summary Revoke a member's access to an address book (by email). 409 if it would remove the last owner.
  */
 export const revokeAddressBookOwner = async (addressBookId: string,
-    params: RevokeAddressBookOwnerParams, options?: Parameters<typeof apiRequest>[1]): Promise<revokeAddressBookOwnerResponse> => {
+    params: RevokeAddressBookOwnerParams, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<revokeAddressBookOwnerResponse>(getRevokeAddressBookOwnerUrl(addressBookId,params),
+  return apiRequest<void>(getRevokeAddressBookOwnerUrl(addressBookId,params),
   {
     ...options,
     method: 'DELETE'
@@ -674,35 +353,6 @@ export const revokeAddressBookOwner = async (addressBookId: string,
   }
 );}
 
-
-export type searchContactsResponse200 = {
-  data: ContactDto[]
-  status: 200
-}
-
-export type searchContactsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type searchContactsResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type searchContactsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type searchContactsResponseSuccess = (searchContactsResponse200) & {
-  headers: Headers;
-};
-export type searchContactsResponseError = (searchContactsResponse401 | searchContactsResponse403 | searchContactsResponse500) & {
-  headers: Headers;
-};
-
-export type searchContactsResponse = (searchContactsResponseSuccess | searchContactsResponseError)
 
 export const getSearchContactsUrl = (params?: SearchContactsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -722,9 +372,9 @@ export const getSearchContactsUrl = (params?: SearchContactsParams,) => {
 /**
  * @summary Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive).
  */
-export const searchContacts = async (params?: SearchContactsParams, options?: Parameters<typeof apiRequest>[1]): Promise<searchContactsResponse> => {
+export const searchContacts = async (params?: SearchContactsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto[]> => {
 
-  return apiRequest<searchContactsResponse>(getSearchContactsUrl(params),
+  return apiRequest<ContactDto[]>(getSearchContactsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -733,35 +383,6 @@ export const searchContacts = async (params?: SearchContactsParams, options?: Pa
   }
 );}
 
-
-export type createContactResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type createContactResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type createContactResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type createContactResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type createContactResponseSuccess = (createContactResponse200) & {
-  headers: Headers;
-};
-export type createContactResponseError = (createContactResponse401 | createContactResponse403 | createContactResponse500) & {
-  headers: Headers;
-};
-
-export type createContactResponse = (createContactResponseSuccess | createContactResponseError)
 
 export const getCreateContactUrl = () => {
 
@@ -774,7 +395,7 @@ export const getCreateContactUrl = () => {
 /**
  * @summary Create a contact.
  */
-export const createContact = async (createContactRequest: CreateContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createContactResponse> => {
+export const createContact = async (createContactRequest: CreateContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -790,7 +411,7 @@ export const createContact = async (createContactRequest: CreateContactRequest, 
     }
     return headers;
   };
-return apiRequest<createContactResponse>(getCreateContactUrl(),
+return apiRequest<ContactDto>(getCreateContactUrl(),
   {
     ...options,
     method: 'POST',
@@ -799,35 +420,6 @@ return apiRequest<createContactResponse>(getCreateContactUrl(),
   }
 );}
 
-
-export type getContactResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type getContactResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getContactResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type getContactResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getContactResponseSuccess = (getContactResponse200) & {
-  headers: Headers;
-};
-export type getContactResponseError = (getContactResponse401 | getContactResponse404 | getContactResponse500) & {
-  headers: Headers;
-};
-
-export type getContactResponse = (getContactResponseSuccess | getContactResponseError)
 
 export const getGetContactUrl = (id: string,) => {
 
@@ -840,9 +432,9 @@ export const getGetContactUrl = (id: string,) => {
 /**
  * @summary Get a single contact.
  */
-export const getContact = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<getContactResponse> => {
+export const getContact = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-  return apiRequest<getContactResponse>(getGetContactUrl(id),
+  return apiRequest<ContactDto>(getGetContactUrl(id),
   {
     ...options,
     method: 'GET'
@@ -851,40 +443,6 @@ export const getContact = async (id: string, options?: Parameters<typeof apiRequ
   }
 );}
 
-
-export type reviseContactResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type reviseContactResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type reviseContactResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type reviseContactResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type reviseContactResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type reviseContactResponseSuccess = (reviseContactResponse200) & {
-  headers: Headers;
-};
-export type reviseContactResponseError = (reviseContactResponse401 | reviseContactResponse403 | reviseContactResponse404 | reviseContactResponse500) & {
-  headers: Headers;
-};
-
-export type reviseContactResponse = (reviseContactResponseSuccess | reviseContactResponseError)
 
 export const getReviseContactUrl = (id: string,) => {
 
@@ -898,7 +456,7 @@ export const getReviseContactUrl = (id: string,) => {
  * @summary Update a contact (merge — provided fields overwrite/append, unmentioned fields are kept).
  */
 export const reviseContact = async (id: string,
-    reviseContactRequest: ReviseContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<reviseContactResponse> => {
+    reviseContactRequest: ReviseContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -914,7 +472,7 @@ export const reviseContact = async (id: string,
     }
     return headers;
   };
-return apiRequest<reviseContactResponse>(getReviseContactUrl(id),
+return apiRequest<ContactDto>(getReviseContactUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -923,45 +481,6 @@ return apiRequest<reviseContactResponse>(getReviseContactUrl(id),
   }
 );}
 
-
-export type deleteContactResponse204 = {
-  data: void
-  status: 204
-}
-
-export type deleteContactResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type deleteContactResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type deleteContactResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type deleteContactResponse409 = {
-  data: ProblemDetails
-  status: 409
-}
-
-export type deleteContactResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type deleteContactResponseSuccess = (deleteContactResponse204) & {
-  headers: Headers;
-};
-export type deleteContactResponseError = (deleteContactResponse401 | deleteContactResponse403 | deleteContactResponse404 | deleteContactResponse409 | deleteContactResponse500) & {
-  headers: Headers;
-};
-
-export type deleteContactResponse = (deleteContactResponseSuccess | deleteContactResponseError)
 
 export const getDeleteContactUrl = (id: string,) => {
 
@@ -974,9 +493,9 @@ export const getDeleteContactUrl = (id: string,) => {
 /**
  * @summary Delete a contact (soft delete + tombstone). 409 if it is a member's own contact.
  */
-export const deleteContact = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<deleteContactResponse> => {
+export const deleteContact = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<deleteContactResponse>(getDeleteContactUrl(id),
+  return apiRequest<void>(getDeleteContactUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -985,45 +504,6 @@ export const deleteContact = async (id: string, options?: Parameters<typeof apiR
   }
 );}
 
-
-export type moveContactResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type moveContactResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type moveContactResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type moveContactResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type moveContactResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type moveContactResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type moveContactResponseSuccess = (moveContactResponse200) & {
-  headers: Headers;
-};
-export type moveContactResponseError = (moveContactResponse400 | moveContactResponse401 | moveContactResponse403 | moveContactResponse404 | moveContactResponse500) & {
-  headers: Headers;
-};
-
-export type moveContactResponse = (moveContactResponseSuccess | moveContactResponseError)
 
 export const getMoveContactUrl = (id: string,) => {
 
@@ -1037,7 +517,7 @@ export const getMoveContactUrl = (id: string,) => {
  * @summary Move a contact to another address book, keeping its id (so relations, group memberships and links to it survive), content and ETag. Needs write access to both books; moving it to its current book is a no-op. The sync feed reports it deleted to readers of the old book and changed to readers of the new one.
  */
 export const moveContact = async (id: string,
-    moveContactRequest: MoveContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<moveContactResponse> => {
+    moveContactRequest: MoveContactRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1053,7 +533,7 @@ export const moveContact = async (id: string,
     }
     return headers;
   };
-return apiRequest<moveContactResponse>(getMoveContactUrl(id),
+return apiRequest<ContactDto>(getMoveContactUrl(id),
   {
     ...options,
     method: 'POST',
@@ -1062,45 +542,6 @@ return apiRequest<moveContactResponse>(getMoveContactUrl(id),
   }
 );}
 
-
-export type getContactCirclesResponse200 = {
-  data: ContactCirclesDto
-  status: 200
-}
-
-export type getContactCirclesResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type getContactCirclesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getContactCirclesResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type getContactCirclesResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type getContactCirclesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getContactCirclesResponseSuccess = (getContactCirclesResponse200) & {
-  headers: Headers;
-};
-export type getContactCirclesResponseError = (getContactCirclesResponse400 | getContactCirclesResponse401 | getContactCirclesResponse403 | getContactCirclesResponse404 | getContactCirclesResponse500) & {
-  headers: Headers;
-};
-
-export type getContactCirclesResponse = (getContactCirclesResponseSuccess | getContactCirclesResponseError)
 
 export const getGetContactCirclesUrl = (params?: GetContactCirclesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -1120,9 +561,9 @@ export const getGetContactCirclesUrl = (params?: GetContactCirclesParams,) => {
 /**
  * @summary Computed social circles (close family, extended family, friends, colleagues, household) around a focus contact — the caller's own linked contact unless focusId overrides. Degree is a closeness bucket (1 immediate, 2 two-generation kin, 3 cousin). Ended relations are excluded.
  */
-export const getContactCircles = async (params?: GetContactCirclesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getContactCirclesResponse> => {
+export const getContactCircles = async (params?: GetContactCirclesParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactCirclesDto> => {
 
-  return apiRequest<getContactCirclesResponse>(getGetContactCirclesUrl(params),
+  return apiRequest<ContactCirclesDto>(getGetContactCirclesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1131,40 +572,6 @@ export const getContactCircles = async (params?: GetContactCirclesParams, option
   }
 );}
 
-
-export type markContactDeceasedResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type markContactDeceasedResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type markContactDeceasedResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type markContactDeceasedResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type markContactDeceasedResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type markContactDeceasedResponseSuccess = (markContactDeceasedResponse200) & {
-  headers: Headers;
-};
-export type markContactDeceasedResponseError = (markContactDeceasedResponse401 | markContactDeceasedResponse403 | markContactDeceasedResponse404 | markContactDeceasedResponse500) & {
-  headers: Headers;
-};
-
-export type markContactDeceasedResponse = (markContactDeceasedResponseSuccess | markContactDeceasedResponseError)
 
 export const getMarkContactDeceasedUrl = (id: string,) => {
 
@@ -1178,7 +585,7 @@ export const getMarkContactDeceasedUrl = (id: string,) => {
  * @summary Mark a contact as deceased (idempotent; the date may be unknown). Deceased contacts stay in the kinship graph — death is not deletion.
  */
 export const markContactDeceased = async (id: string,
-    setDeceasedRequest: SetDeceasedRequest, options?: Parameters<typeof apiRequest>[1]): Promise<markContactDeceasedResponse> => {
+    setDeceasedRequest: SetDeceasedRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1194,7 +601,7 @@ export const markContactDeceased = async (id: string,
     }
     return headers;
   };
-return apiRequest<markContactDeceasedResponse>(getMarkContactDeceasedUrl(id),
+return apiRequest<ContactDto>(getMarkContactDeceasedUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -1203,40 +610,6 @@ return apiRequest<markContactDeceasedResponse>(getMarkContactDeceasedUrl(id),
   }
 );}
 
-
-export type clearContactDeceasedResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type clearContactDeceasedResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type clearContactDeceasedResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type clearContactDeceasedResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type clearContactDeceasedResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type clearContactDeceasedResponseSuccess = (clearContactDeceasedResponse200) & {
-  headers: Headers;
-};
-export type clearContactDeceasedResponseError = (clearContactDeceasedResponse401 | clearContactDeceasedResponse403 | clearContactDeceasedResponse404 | clearContactDeceasedResponse500) & {
-  headers: Headers;
-};
-
-export type clearContactDeceasedResponse = (clearContactDeceasedResponseSuccess | clearContactDeceasedResponseError)
 
 export const getClearContactDeceasedUrl = (id: string,
     params?: ClearContactDeceasedParams,) => {
@@ -1258,9 +631,9 @@ export const getClearContactDeceasedUrl = (id: string,
  * @summary Undo a deceased marking recorded in error — the only way to clear it.
  */
 export const clearContactDeceased = async (id: string,
-    params?: ClearContactDeceasedParams, options?: Parameters<typeof apiRequest>[1]): Promise<clearContactDeceasedResponse> => {
+    params?: ClearContactDeceasedParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
-  return apiRequest<clearContactDeceasedResponse>(getClearContactDeceasedUrl(id,params),
+  return apiRequest<ContactDto>(getClearContactDeceasedUrl(id,params),
   {
     ...options,
     method: 'DELETE'
@@ -1269,45 +642,6 @@ export const clearContactDeceased = async (id: string,
   }
 );}
 
-
-export type setContactProfilesResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type setContactProfilesResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type setContactProfilesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type setContactProfilesResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type setContactProfilesResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type setContactProfilesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type setContactProfilesResponseSuccess = (setContactProfilesResponse200) & {
-  headers: Headers;
-};
-export type setContactProfilesResponseError = (setContactProfilesResponse400 | setContactProfilesResponse401 | setContactProfilesResponse403 | setContactProfilesResponse404 | setContactProfilesResponse500) & {
-  headers: Headers;
-};
-
-export type setContactProfilesResponse = (setContactProfilesResponseSuccess | setContactProfilesResponseError)
 
 export const getSetContactProfilesUrl = (id: string,) => {
 
@@ -1321,7 +655,7 @@ export const getSetContactProfilesUrl = (id: string,) => {
  * @summary Replace the contact's social/IM handles wholesale. Service names are canonicalized; well-known services (telegram, messenger, whatsapp…) get the profile URL derived from the handle. At most one preferred handle per service.
  */
 export const setContactProfiles = async (id: string,
-    setContactProfilesRequest: SetContactProfilesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setContactProfilesResponse> => {
+    setContactProfilesRequest: SetContactProfilesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1337,7 +671,7 @@ export const setContactProfiles = async (id: string,
     }
     return headers;
   };
-return apiRequest<setContactProfilesResponse>(getSetContactProfilesUrl(id),
+return apiRequest<ContactDto>(getSetContactProfilesUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -1346,45 +680,6 @@ return apiRequest<setContactProfilesResponse>(getSetContactProfilesUrl(id),
   }
 );}
 
-
-export type setEmergencyContactsResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type setEmergencyContactsResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type setEmergencyContactsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type setEmergencyContactsResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type setEmergencyContactsResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type setEmergencyContactsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type setEmergencyContactsResponseSuccess = (setEmergencyContactsResponse200) & {
-  headers: Headers;
-};
-export type setEmergencyContactsResponseError = (setEmergencyContactsResponse400 | setEmergencyContactsResponse401 | setEmergencyContactsResponse403 | setEmergencyContactsResponse404 | setEmergencyContactsResponse500) & {
-  headers: Headers;
-};
-
-export type setEmergencyContactsResponse = (setEmergencyContactsResponseSuccess | setEmergencyContactsResponseError)
 
 export const getSetEmergencyContactsUrl = (id: string,) => {
 
@@ -1398,7 +693,7 @@ export const getSetEmergencyContactsUrl = (id: string,) => {
  * @summary Replace the contact's emergency-contact designation wholesale (order = priority, empty clears). A designation, not a relation kind — your emergency contact is usually also a spouse or friend.
  */
 export const setEmergencyContacts = async (id: string,
-    setEmergencyContactsRequest: SetEmergencyContactsRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setEmergencyContactsResponse> => {
+    setEmergencyContactsRequest: SetEmergencyContactsRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1414,7 +709,7 @@ export const setEmergencyContacts = async (id: string,
     }
     return headers;
   };
-return apiRequest<setEmergencyContactsResponse>(getSetEmergencyContactsUrl(id),
+return apiRequest<ContactDto>(getSetEmergencyContactsUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -1423,45 +718,6 @@ return apiRequest<setEmergencyContactsResponse>(getSetEmergencyContactsUrl(id),
   }
 );}
 
-
-export type setContactChannelsResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type setContactChannelsResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type setContactChannelsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type setContactChannelsResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type setContactChannelsResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type setContactChannelsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type setContactChannelsResponseSuccess = (setContactChannelsResponse200) & {
-  headers: Headers;
-};
-export type setContactChannelsResponseError = (setContactChannelsResponse400 | setContactChannelsResponse401 | setContactChannelsResponse403 | setContactChannelsResponse404 | setContactChannelsResponse500) & {
-  headers: Headers;
-};
-
-export type setContactChannelsResponse = (setContactChannelsResponseSuccess | setContactChannelsResponseError)
 
 export const getSetContactChannelsUrl = (id: string,) => {
 
@@ -1475,7 +731,7 @@ export const getSetContactChannelsUrl = (id: string,) => {
  * @summary Replace the contact's reach channels (emails + phones) wholesale (empty clears). Unlike the merge update, this can remove a channel; values are trimmed, type tokens lowercased, duplicates dropped, at most one preferred per medium.
  */
 export const setContactChannels = async (id: string,
-    setContactChannelsRequest: SetContactChannelsRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setContactChannelsResponse> => {
+    setContactChannelsRequest: SetContactChannelsRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1491,7 +747,7 @@ export const setContactChannels = async (id: string,
     }
     return headers;
   };
-return apiRequest<setContactChannelsResponse>(getSetContactChannelsUrl(id),
+return apiRequest<ContactDto>(getSetContactChannelsUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -1500,40 +756,6 @@ return apiRequest<setContactChannelsResponse>(getSetContactChannelsUrl(id),
   }
 );}
 
-
-export type setContactTagsResponse200 = {
-  data: ContactDto
-  status: 200
-}
-
-export type setContactTagsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type setContactTagsResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type setContactTagsResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type setContactTagsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type setContactTagsResponseSuccess = (setContactTagsResponse200) & {
-  headers: Headers;
-};
-export type setContactTagsResponseError = (setContactTagsResponse401 | setContactTagsResponse403 | setContactTagsResponse404 | setContactTagsResponse500) & {
-  headers: Headers;
-};
-
-export type setContactTagsResponse = (setContactTagsResponseSuccess | setContactTagsResponseError)
 
 export const getSetContactTagsUrl = (id: string,) => {
 
@@ -1547,7 +769,7 @@ export const getSetContactTagsUrl = (id: string,) => {
  * @summary Replace the contact's tags wholesale (empty clears). Unlike the merge update, this can remove a tag; entries are trimmed and de-duplicated case-insensitively.
  */
 export const setContactTags = async (id: string,
-    setContactTagsRequest: SetContactTagsRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setContactTagsResponse> => {
+    setContactTagsRequest: SetContactTagsRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1563,7 +785,7 @@ export const setContactTags = async (id: string,
     }
     return headers;
   };
-return apiRequest<setContactTagsResponse>(getSetContactTagsUrl(id),
+return apiRequest<ContactDto>(getSetContactTagsUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -1572,40 +794,6 @@ return apiRequest<setContactTagsResponse>(getSetContactTagsUrl(id),
   }
 );}
 
-
-export type listContactRelationsResponse200 = {
-  data: ContactRelationEntryDto[]
-  status: 200
-}
-
-export type listContactRelationsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listContactRelationsResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type listContactRelationsResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type listContactRelationsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listContactRelationsResponseSuccess = (listContactRelationsResponse200) & {
-  headers: Headers;
-};
-export type listContactRelationsResponseError = (listContactRelationsResponse401 | listContactRelationsResponse403 | listContactRelationsResponse404 | listContactRelationsResponse500) & {
-  headers: Headers;
-};
-
-export type listContactRelationsResponse = (listContactRelationsResponseSuccess | listContactRelationsResponseError)
 
 export const getListContactRelationsUrl = (id: string,
     params?: ListContactRelationsParams,) => {
@@ -1627,9 +815,9 @@ export const getListContactRelationsUrl = (id: string,
  * @summary The contact's relationships, identical whichever side stores them: each entry's kind is the other contact's role relative to this one and its label this contact's own name for them. Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred.
  */
 export const listContactRelations = async (id: string,
-    params?: ListContactRelationsParams, options?: Parameters<typeof apiRequest>[1]): Promise<listContactRelationsResponse> => {
+    params?: ListContactRelationsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactRelationEntryDto[]> => {
 
-  return apiRequest<listContactRelationsResponse>(getListContactRelationsUrl(id,params),
+  return apiRequest<ContactRelationEntryDto[]>(getListContactRelationsUrl(id,params),
   {
     ...options,
     method: 'GET'
@@ -1638,45 +826,6 @@ export const listContactRelations = async (id: string,
   }
 );}
 
-
-export type addContactRelationResponse200 = {
-  data: ContactRelationEntryDto
-  status: 200
-}
-
-export type addContactRelationResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type addContactRelationResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type addContactRelationResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type addContactRelationResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type addContactRelationResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type addContactRelationResponseSuccess = (addContactRelationResponse200) & {
-  headers: Headers;
-};
-export type addContactRelationResponseError = (addContactRelationResponse400 | addContactRelationResponse401 | addContactRelationResponse403 | addContactRelationResponse404 | addContactRelationResponse500) & {
-  headers: Headers;
-};
-
-export type addContactRelationResponse = (addContactRelationResponseSuccess | addContactRelationResponseError)
 
 export const getAddContactRelationUrl = (id: string,) => {
 
@@ -1690,7 +839,7 @@ export const getAddContactRelationUrl = (id: string,) => {
  * @summary Upsert a relationship from either side: 'toContactId is this contact's kind'. The label is this contact's own name for the other; since and note are shared. Re-adding revises it and revives an ended one.
  */
 export const addContactRelation = async (id: string,
-    addContactRelationRequest: AddContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<addContactRelationResponse> => {
+    addContactRelationRequest: AddContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactRelationEntryDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1706,7 +855,7 @@ export const addContactRelation = async (id: string,
     }
     return headers;
   };
-return apiRequest<addContactRelationResponse>(getAddContactRelationUrl(id),
+return apiRequest<ContactRelationEntryDto>(getAddContactRelationUrl(id),
   {
     ...options,
     method: 'POST',
@@ -1715,40 +864,6 @@ return apiRequest<addContactRelationResponse>(getAddContactRelationUrl(id),
   }
 );}
 
-
-export type removeContactRelationResponse204 = {
-  data: void
-  status: 204
-}
-
-export type removeContactRelationResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type removeContactRelationResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type removeContactRelationResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type removeContactRelationResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type removeContactRelationResponseSuccess = (removeContactRelationResponse204) & {
-  headers: Headers;
-};
-export type removeContactRelationResponseError = (removeContactRelationResponse401 | removeContactRelationResponse403 | removeContactRelationResponse404 | removeContactRelationResponse500) & {
-  headers: Headers;
-};
-
-export type removeContactRelationResponse = (removeContactRelationResponseSuccess | removeContactRelationResponseError)
 
 export const getRemoveContactRelationUrl = (id: string,
     toContactId: string,
@@ -1772,9 +887,9 @@ export const getRemoveContactRelationUrl = (id: string,
  */
 export const removeContactRelation = async (id: string,
     toContactId: string,
-    params: RemoveContactRelationParams, options?: Parameters<typeof apiRequest>[1]): Promise<removeContactRelationResponse> => {
+    params: RemoveContactRelationParams, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<removeContactRelationResponse>(getRemoveContactRelationUrl(id,toContactId,params),
+  return apiRequest<void>(getRemoveContactRelationUrl(id,toContactId,params),
   {
     ...options,
     method: 'DELETE'
@@ -1783,40 +898,6 @@ export const removeContactRelation = async (id: string,
   }
 );}
 
-
-export type endContactRelationResponse200 = {
-  data: ContactRelationEntryDto
-  status: 200
-}
-
-export type endContactRelationResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type endContactRelationResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type endContactRelationResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type endContactRelationResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type endContactRelationResponseSuccess = (endContactRelationResponse200) & {
-  headers: Headers;
-};
-export type endContactRelationResponseError = (endContactRelationResponse401 | endContactRelationResponse403 | endContactRelationResponse404 | endContactRelationResponse500) & {
-  headers: Headers;
-};
-
-export type endContactRelationResponse = (endContactRelationResponseSuccess | endContactRelationResponseError)
 
 export const getEndContactRelationUrl = (id: string,
     toContactId: string,) => {
@@ -1832,7 +913,7 @@ export const getEndContactRelationUrl = (id: string,
  */
 export const endContactRelation = async (id: string,
     toContactId: string,
-    endContactRelationRequest: EndContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<endContactRelationResponse> => {
+    endContactRelationRequest: EndContactRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContactRelationEntryDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1848,7 +929,7 @@ export const endContactRelation = async (id: string,
     }
     return headers;
   };
-return apiRequest<endContactRelationResponse>(getEndContactRelationUrl(id,toContactId),
+return apiRequest<ContactRelationEntryDto>(getEndContactRelationUrl(id,toContactId),
   {
     ...options,
     method: 'POST',
@@ -1857,35 +938,6 @@ return apiRequest<endContactRelationResponse>(getEndContactRelationUrl(id,toCont
   }
 );}
 
-
-export type listContactGroupsResponse200 = {
-  data: ContactGroupDto[]
-  status: 200
-}
-
-export type listContactGroupsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listContactGroupsResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type listContactGroupsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listContactGroupsResponseSuccess = (listContactGroupsResponse200) & {
-  headers: Headers;
-};
-export type listContactGroupsResponseError = (listContactGroupsResponse401 | listContactGroupsResponse403 | listContactGroupsResponse500) & {
-  headers: Headers;
-};
-
-export type listContactGroupsResponse = (listContactGroupsResponseSuccess | listContactGroupsResponseError)
 
 export const getListContactGroupsUrl = (addressBookId: string,) => {
 
@@ -1898,9 +950,9 @@ export const getListContactGroupsUrl = (addressBookId: string,) => {
 /**
  * @summary List groups (personal groupings + organizations) in an address book.
  */
-export const listContactGroups = async (addressBookId: string, options?: Parameters<typeof apiRequest>[1]): Promise<listContactGroupsResponse> => {
+export const listContactGroups = async (addressBookId: string, options?: Parameters<typeof apiRequest>[1]): Promise<ContactGroupDto[]> => {
 
-  return apiRequest<listContactGroupsResponse>(getListContactGroupsUrl(addressBookId),
+  return apiRequest<ContactGroupDto[]>(getListContactGroupsUrl(addressBookId),
   {
     ...options,
     method: 'GET'
@@ -1909,35 +961,6 @@ export const listContactGroups = async (addressBookId: string, options?: Paramet
   }
 );}
 
-
-export type createContactGroupResponse200 = {
-  data: ContactGroupDto
-  status: 200
-}
-
-export type createContactGroupResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type createContactGroupResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type createContactGroupResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type createContactGroupResponseSuccess = (createContactGroupResponse200) & {
-  headers: Headers;
-};
-export type createContactGroupResponseError = (createContactGroupResponse401 | createContactGroupResponse403 | createContactGroupResponse500) & {
-  headers: Headers;
-};
-
-export type createContactGroupResponse = (createContactGroupResponseSuccess | createContactGroupResponseError)
 
 export const getCreateContactGroupUrl = (addressBookId: string,
     params: CreateContactGroupParams,) => {
@@ -1959,9 +982,9 @@ export const getCreateContactGroupUrl = (addressBookId: string,
  * @summary Create a group. kind = group|organization (an employer is an organization-kind group).
  */
 export const createContactGroup = async (addressBookId: string,
-    params: CreateContactGroupParams, options?: Parameters<typeof apiRequest>[1]): Promise<createContactGroupResponse> => {
+    params: CreateContactGroupParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactGroupDto> => {
 
-  return apiRequest<createContactGroupResponse>(getCreateContactGroupUrl(addressBookId,params),
+  return apiRequest<ContactGroupDto>(getCreateContactGroupUrl(addressBookId,params),
   {
     ...options,
     method: 'POST'
@@ -1970,35 +993,6 @@ export const createContactGroup = async (addressBookId: string,
   }
 );}
 
-
-export type renameContactGroupResponse200 = {
-  data: ContactGroupDto
-  status: 200
-}
-
-export type renameContactGroupResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type renameContactGroupResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type renameContactGroupResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type renameContactGroupResponseSuccess = (renameContactGroupResponse200) & {
-  headers: Headers;
-};
-export type renameContactGroupResponseError = (renameContactGroupResponse401 | renameContactGroupResponse404 | renameContactGroupResponse500) & {
-  headers: Headers;
-};
-
-export type renameContactGroupResponse = (renameContactGroupResponseSuccess | renameContactGroupResponseError)
 
 export const getRenameContactGroupUrl = (groupId: string,
     params: RenameContactGroupParams,) => {
@@ -2020,9 +1014,9 @@ export const getRenameContactGroupUrl = (groupId: string,
  * @summary Rename a group.
  */
 export const renameContactGroup = async (groupId: string,
-    params: RenameContactGroupParams, options?: Parameters<typeof apiRequest>[1]): Promise<renameContactGroupResponse> => {
+    params: RenameContactGroupParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactGroupDto> => {
 
-  return apiRequest<renameContactGroupResponse>(getRenameContactGroupUrl(groupId,params),
+  return apiRequest<ContactGroupDto>(getRenameContactGroupUrl(groupId,params),
   {
     ...options,
     method: 'PUT'
@@ -2031,35 +1025,6 @@ export const renameContactGroup = async (groupId: string,
   }
 );}
 
-
-export type deleteContactGroupResponse204 = {
-  data: void
-  status: 204
-}
-
-export type deleteContactGroupResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type deleteContactGroupResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type deleteContactGroupResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type deleteContactGroupResponseSuccess = (deleteContactGroupResponse204) & {
-  headers: Headers;
-};
-export type deleteContactGroupResponseError = (deleteContactGroupResponse401 | deleteContactGroupResponse404 | deleteContactGroupResponse500) & {
-  headers: Headers;
-};
-
-export type deleteContactGroupResponse = (deleteContactGroupResponseSuccess | deleteContactGroupResponseError)
 
 export const getDeleteContactGroupUrl = (groupId: string,) => {
 
@@ -2072,9 +1037,9 @@ export const getDeleteContactGroupUrl = (groupId: string,) => {
 /**
  * @summary Delete a group.
  */
-export const deleteContactGroup = async (groupId: string, options?: Parameters<typeof apiRequest>[1]): Promise<deleteContactGroupResponse> => {
+export const deleteContactGroup = async (groupId: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<deleteContactGroupResponse>(getDeleteContactGroupUrl(groupId),
+  return apiRequest<void>(getDeleteContactGroupUrl(groupId),
   {
     ...options,
     method: 'DELETE'
@@ -2083,35 +1048,6 @@ export const deleteContactGroup = async (groupId: string, options?: Parameters<t
   }
 );}
 
-
-export type addContactGroupMemberResponse200 = {
-  data: ContactGroupDto
-  status: 200
-}
-
-export type addContactGroupMemberResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type addContactGroupMemberResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type addContactGroupMemberResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type addContactGroupMemberResponseSuccess = (addContactGroupMemberResponse200) & {
-  headers: Headers;
-};
-export type addContactGroupMemberResponseError = (addContactGroupMemberResponse401 | addContactGroupMemberResponse404 | addContactGroupMemberResponse500) & {
-  headers: Headers;
-};
-
-export type addContactGroupMemberResponse = (addContactGroupMemberResponseSuccess | addContactGroupMemberResponseError)
 
 export const getAddContactGroupMemberUrl = (groupId: string,
     params: AddContactGroupMemberParams,) => {
@@ -2133,9 +1069,9 @@ export const getAddContactGroupMemberUrl = (groupId: string,
  * @summary Add a contact to a group; for an organization, role is the title held there (re-adding updates it).
  */
 export const addContactGroupMember = async (groupId: string,
-    params: AddContactGroupMemberParams, options?: Parameters<typeof apiRequest>[1]): Promise<addContactGroupMemberResponse> => {
+    params: AddContactGroupMemberParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactGroupDto> => {
 
-  return apiRequest<addContactGroupMemberResponse>(getAddContactGroupMemberUrl(groupId,params),
+  return apiRequest<ContactGroupDto>(getAddContactGroupMemberUrl(groupId,params),
   {
     ...options,
     method: 'POST'
@@ -2144,35 +1080,6 @@ export const addContactGroupMember = async (groupId: string,
   }
 );}
 
-
-export type removeContactGroupMemberResponse200 = {
-  data: ContactGroupDto
-  status: 200
-}
-
-export type removeContactGroupMemberResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type removeContactGroupMemberResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type removeContactGroupMemberResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type removeContactGroupMemberResponseSuccess = (removeContactGroupMemberResponse200) & {
-  headers: Headers;
-};
-export type removeContactGroupMemberResponseError = (removeContactGroupMemberResponse401 | removeContactGroupMemberResponse404 | removeContactGroupMemberResponse500) & {
-  headers: Headers;
-};
-
-export type removeContactGroupMemberResponse = (removeContactGroupMemberResponseSuccess | removeContactGroupMemberResponseError)
 
 export const getRemoveContactGroupMemberUrl = (groupId: string,
     contactId: string,) => {
@@ -2187,9 +1094,9 @@ export const getRemoveContactGroupMemberUrl = (groupId: string,
  * @summary Remove a contact from a group.
  */
 export const removeContactGroupMember = async (groupId: string,
-    contactId: string, options?: Parameters<typeof apiRequest>[1]): Promise<removeContactGroupMemberResponse> => {
+    contactId: string, options?: Parameters<typeof apiRequest>[1]): Promise<ContactGroupDto> => {
 
-  return apiRequest<removeContactGroupMemberResponse>(getRemoveContactGroupMemberUrl(groupId,contactId),
+  return apiRequest<ContactGroupDto>(getRemoveContactGroupMemberUrl(groupId,contactId),
   {
     ...options,
     method: 'DELETE'
@@ -2198,30 +1105,6 @@ export const removeContactGroupMember = async (groupId: string,
   }
 );}
 
-
-export type listRelationshipsResponse200 = {
-  data: RelationshipDto[]
-  status: 200
-}
-
-export type listRelationshipsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listRelationshipsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listRelationshipsResponseSuccess = (listRelationshipsResponse200) & {
-  headers: Headers;
-};
-export type listRelationshipsResponseError = (listRelationshipsResponse401 | listRelationshipsResponse500) & {
-  headers: Headers;
-};
-
-export type listRelationshipsResponse = (listRelationshipsResponseSuccess | listRelationshipsResponseError)
 
 export const getListRelationshipsUrl = () => {
 
@@ -2234,9 +1117,9 @@ export const getListRelationshipsUrl = () => {
 /**
  * @summary Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact.
  */
-export const listRelationships = async ( options?: Parameters<typeof apiRequest>[1]): Promise<listRelationshipsResponse> => {
+export const listRelationships = async ( options?: Parameters<typeof apiRequest>[1]): Promise<RelationshipDto[]> => {
 
-  return apiRequest<listRelationshipsResponse>(getListRelationshipsUrl(),
+  return apiRequest<RelationshipDto[]>(getListRelationshipsUrl(),
   {
     ...options,
     method: 'GET'
@@ -2245,40 +1128,6 @@ export const listRelationships = async ( options?: Parameters<typeof apiRequest>
   }
 );}
 
-
-export type listContactResidenciesResponse200 = {
-  data: ResidencyDto[]
-  status: 200
-}
-
-export type listContactResidenciesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listContactResidenciesResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type listContactResidenciesResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type listContactResidenciesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listContactResidenciesResponseSuccess = (listContactResidenciesResponse200) & {
-  headers: Headers;
-};
-export type listContactResidenciesResponseError = (listContactResidenciesResponse401 | listContactResidenciesResponse403 | listContactResidenciesResponse404 | listContactResidenciesResponse500) & {
-  headers: Headers;
-};
-
-export type listContactResidenciesResponse = (listContactResidenciesResponseSuccess | listContactResidenciesResponseError)
 
 export const getListContactResidenciesUrl = (id: string,) => {
 
@@ -2291,9 +1140,9 @@ export const getListContactResidenciesUrl = (id: string,) => {
 /**
  * @summary Where the contact lives, holidays and works: current residencies first, then the most recent move-in first.
  */
-export const listContactResidencies = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<listContactResidenciesResponse> => {
+export const listContactResidencies = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto[]> => {
 
-  return apiRequest<listContactResidenciesResponse>(getListContactResidenciesUrl(id),
+  return apiRequest<ResidencyDto[]>(getListContactResidenciesUrl(id),
   {
     ...options,
     method: 'GET'
@@ -2302,45 +1151,6 @@ export const listContactResidencies = async (id: string, options?: Parameters<ty
   }
 );}
 
-
-export type addResidencyResponse200 = {
-  data: ResidencyDto
-  status: 200
-}
-
-export type addResidencyResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type addResidencyResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type addResidencyResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type addResidencyResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type addResidencyResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type addResidencyResponseSuccess = (addResidencyResponse200) & {
-  headers: Headers;
-};
-export type addResidencyResponseError = (addResidencyResponse400 | addResidencyResponse401 | addResidencyResponse403 | addResidencyResponse404 | addResidencyResponse500) & {
-  headers: Headers;
-};
-
-export type addResidencyResponse = (addResidencyResponseSuccess | addResidencyResponseError)
 
 export const getAddResidencyUrl = (id: string,) => {
 
@@ -2354,7 +1164,7 @@ export const getAddResidencyUrl = (id: string,) => {
  * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place.
  */
 export const addResidency = async (id: string,
-    residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<addResidencyResponse> => {
+    residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2370,7 +1180,7 @@ export const addResidency = async (id: string,
     }
     return headers;
   };
-return apiRequest<addResidencyResponse>(getAddResidencyUrl(id),
+return apiRequest<ResidencyDto>(getAddResidencyUrl(id),
   {
     ...options,
     method: 'POST',
@@ -2379,45 +1189,6 @@ return apiRequest<addResidencyResponse>(getAddResidencyUrl(id),
   }
 );}
 
-
-export type reviseResidencyResponse200 = {
-  data: ResidencyDto
-  status: 200
-}
-
-export type reviseResidencyResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type reviseResidencyResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type reviseResidencyResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type reviseResidencyResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type reviseResidencyResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type reviseResidencyResponseSuccess = (reviseResidencyResponse200) & {
-  headers: Headers;
-};
-export type reviseResidencyResponseError = (reviseResidencyResponse400 | reviseResidencyResponse401 | reviseResidencyResponse403 | reviseResidencyResponse404 | reviseResidencyResponse500) & {
-  headers: Headers;
-};
-
-export type reviseResidencyResponse = (reviseResidencyResponseSuccess | reviseResidencyResponseError)
 
 export const getReviseResidencyUrl = (id: string,) => {
 
@@ -2431,7 +1202,7 @@ export const getReviseResidencyUrl = (id: string,) => {
  * @summary Correct a residency as entered: place, type, label and period, wholesale. A move is told with move-out or POST /moves instead.
  */
 export const reviseResidency = async (id: string,
-    residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<reviseResidencyResponse> => {
+    residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2447,7 +1218,7 @@ export const reviseResidency = async (id: string,
     }
     return headers;
   };
-return apiRequest<reviseResidencyResponse>(getReviseResidencyUrl(id),
+return apiRequest<ResidencyDto>(getReviseResidencyUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -2456,40 +1227,6 @@ return apiRequest<reviseResidencyResponse>(getReviseResidencyUrl(id),
   }
 );}
 
-
-export type removeResidencyResponse204 = {
-  data: void
-  status: 204
-}
-
-export type removeResidencyResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type removeResidencyResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type removeResidencyResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type removeResidencyResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type removeResidencyResponseSuccess = (removeResidencyResponse204) & {
-  headers: Headers;
-};
-export type removeResidencyResponseError = (removeResidencyResponse401 | removeResidencyResponse403 | removeResidencyResponse404 | removeResidencyResponse500) & {
-  headers: Headers;
-};
-
-export type removeResidencyResponse = (removeResidencyResponseSuccess | removeResidencyResponseError)
 
 export const getRemoveResidencyUrl = (id: string,) => {
 
@@ -2502,9 +1239,9 @@ export const getRemoveResidencyUrl = (id: string,) => {
 /**
  * @summary Erase a residency entered by mistake. One that ended should be moved out of instead.
  */
-export const removeResidency = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<removeResidencyResponse> => {
+export const removeResidency = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<removeResidencyResponse>(getRemoveResidencyUrl(id),
+  return apiRequest<void>(getRemoveResidencyUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -2513,30 +1250,6 @@ export const removeResidency = async (id: string, options?: Parameters<typeof ap
   }
 );}
 
-
-export type listResidenciesResponse200 = {
-  data: ResidencyDto[]
-  status: 200
-}
-
-export type listResidenciesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listResidenciesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listResidenciesResponseSuccess = (listResidenciesResponse200) & {
-  headers: Headers;
-};
-export type listResidenciesResponseError = (listResidenciesResponse401 | listResidenciesResponse500) & {
-  headers: Headers;
-};
-
-export type listResidenciesResponse = (listResidenciesResponseSuccess | listResidenciesResponseError)
 
 export const getListResidenciesUrl = () => {
 
@@ -2549,9 +1262,9 @@ export const getListResidenciesUrl = () => {
 /**
  * @summary Every residency of a contact the caller can read — who lives, holidays and works where.
  */
-export const listResidencies = async ( options?: Parameters<typeof apiRequest>[1]): Promise<listResidenciesResponse> => {
+export const listResidencies = async ( options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto[]> => {
 
-  return apiRequest<listResidenciesResponse>(getListResidenciesUrl(),
+  return apiRequest<ResidencyDto[]>(getListResidenciesUrl(),
   {
     ...options,
     method: 'GET'
@@ -2560,45 +1273,6 @@ export const listResidencies = async ( options?: Parameters<typeof apiRequest>[1
   }
 );}
 
-
-export type recordMoveResponse200 = {
-  data: ResidencyDto[]
-  status: 200
-}
-
-export type recordMoveResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type recordMoveResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type recordMoveResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type recordMoveResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type recordMoveResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type recordMoveResponseSuccess = (recordMoveResponse200) & {
-  headers: Headers;
-};
-export type recordMoveResponseError = (recordMoveResponse400 | recordMoveResponse401 | recordMoveResponse403 | recordMoveResponse404 | recordMoveResponse500) & {
-  headers: Headers;
-};
-
-export type recordMoveResponse = (recordMoveResponseSuccess | recordMoveResponseError)
 
 export const getRecordMoveUrl = () => {
 
@@ -2611,7 +1285,7 @@ export const getRecordMoveUrl = () => {
 /**
  * @summary Several contacts move together: each one's current residencies at fromPlaceId end on movedIn, and a residency at toPlaceId starts then. All or nothing. Returns the new residencies.
  */
-export const recordMove = async (moveRequest: MoveRequest, options?: Parameters<typeof apiRequest>[1]): Promise<recordMoveResponse> => {
+export const recordMove = async (moveRequest: MoveRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto[]> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2627,7 +1301,7 @@ export const recordMove = async (moveRequest: MoveRequest, options?: Parameters<
     }
     return headers;
   };
-return apiRequest<recordMoveResponse>(getRecordMoveUrl(),
+return apiRequest<ResidencyDto[]>(getRecordMoveUrl(),
   {
     ...options,
     method: 'POST',
@@ -2636,35 +1310,6 @@ return apiRequest<recordMoveResponse>(getRecordMoveUrl(),
   }
 );}
 
-
-export type getPlaceEntryResponse200 = {
-  data: PlaceEntryDto
-  status: 200
-}
-
-export type getPlaceEntryResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getPlaceEntryResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type getPlaceEntryResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getPlaceEntryResponseSuccess = (getPlaceEntryResponse200) & {
-  headers: Headers;
-};
-export type getPlaceEntryResponseError = (getPlaceEntryResponse401 | getPlaceEntryResponse404 | getPlaceEntryResponse500) & {
-  headers: Headers;
-};
-
-export type getPlaceEntryResponse = (getPlaceEntryResponseSuccess | getPlaceEntryResponseError)
 
 export const getGetPlaceEntryUrl = (placeId: string,) => {
 
@@ -2677,9 +1322,9 @@ export const getGetPlaceEntryUrl = (placeId: string,) => {
 /**
  * @summary The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404.
  */
-export const getPlaceEntry = async (placeId: string, options?: Parameters<typeof apiRequest>[1]): Promise<getPlaceEntryResponse> => {
+export const getPlaceEntry = async (placeId: string, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceEntryDto> => {
 
-  return apiRequest<getPlaceEntryResponse>(getGetPlaceEntryUrl(placeId),
+  return apiRequest<PlaceEntryDto>(getGetPlaceEntryUrl(placeId),
   {
     ...options,
     method: 'GET'
@@ -2688,45 +1333,6 @@ export const getPlaceEntry = async (placeId: string, options?: Parameters<typeof
   }
 );}
 
-
-export type setEntryCodeResponse200 = {
-  data: PlaceEntryDto
-  status: 200
-}
-
-export type setEntryCodeResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type setEntryCodeResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type setEntryCodeResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type setEntryCodeResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type setEntryCodeResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type setEntryCodeResponseSuccess = (setEntryCodeResponse200) & {
-  headers: Headers;
-};
-export type setEntryCodeResponseError = (setEntryCodeResponse400 | setEntryCodeResponse401 | setEntryCodeResponse403 | setEntryCodeResponse404 | setEntryCodeResponse500) & {
-  headers: Headers;
-};
-
-export type setEntryCodeResponse = (setEntryCodeResponseSuccess | setEntryCodeResponseError)
 
 export const getSetEntryCodeUrl = (placeId: string,
     codeId: string,) => {
@@ -2742,7 +1348,7 @@ export const getSetEntryCodeUrl = (placeId: string,
  */
 export const setEntryCode = async (placeId: string,
     codeId: string,
-    setEntryCodeRequest: SetEntryCodeRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setEntryCodeResponse> => {
+    setEntryCodeRequest: SetEntryCodeRequest, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceEntryDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2758,7 +1364,7 @@ export const setEntryCode = async (placeId: string,
     }
     return headers;
   };
-return apiRequest<setEntryCodeResponse>(getSetEntryCodeUrl(placeId,codeId),
+return apiRequest<PlaceEntryDto>(getSetEntryCodeUrl(placeId,codeId),
   {
     ...options,
     method: 'PUT',
@@ -2767,40 +1373,6 @@ return apiRequest<setEntryCodeResponse>(getSetEntryCodeUrl(placeId,codeId),
   }
 );}
 
-
-export type removeEntryCodeResponse200 = {
-  data: PlaceEntryDto
-  status: 200
-}
-
-export type removeEntryCodeResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type removeEntryCodeResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type removeEntryCodeResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type removeEntryCodeResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type removeEntryCodeResponseSuccess = (removeEntryCodeResponse200) & {
-  headers: Headers;
-};
-export type removeEntryCodeResponseError = (removeEntryCodeResponse401 | removeEntryCodeResponse403 | removeEntryCodeResponse404 | removeEntryCodeResponse500) & {
-  headers: Headers;
-};
-
-export type removeEntryCodeResponse = (removeEntryCodeResponseSuccess | removeEntryCodeResponseError)
 
 export const getRemoveEntryCodeUrl = (placeId: string,
     codeId: string,) => {
@@ -2815,9 +1387,9 @@ export const getRemoveEntryCodeUrl = (placeId: string,
  * @summary Remove a code. Needs write on a contact currently living there.
  */
 export const removeEntryCode = async (placeId: string,
-    codeId: string, options?: Parameters<typeof apiRequest>[1]): Promise<removeEntryCodeResponse> => {
+    codeId: string, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceEntryDto> => {
 
-  return apiRequest<removeEntryCodeResponse>(getRemoveEntryCodeUrl(placeId,codeId),
+  return apiRequest<PlaceEntryDto>(getRemoveEntryCodeUrl(placeId,codeId),
   {
     ...options,
     method: 'DELETE'
@@ -2826,35 +1398,6 @@ export const removeEntryCode = async (placeId: string,
   }
 );}
 
-
-export type getContactChangesResponse200 = {
-  data: SyncPageOfContactSyncChange
-  status: 200
-}
-
-export type getContactChangesResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type getContactChangesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getContactChangesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getContactChangesResponseSuccess = (getContactChangesResponse200) & {
-  headers: Headers;
-};
-export type getContactChangesResponseError = (getContactChangesResponse400 | getContactChangesResponse401 | getContactChangesResponse500) & {
-  headers: Headers;
-};
-
-export type getContactChangesResponse = (getContactChangesResponseSuccess | getContactChangesResponseError)
 
 export const getGetContactChangesUrl = (params?: GetContactChangesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -2874,9 +1417,9 @@ export const getGetContactChangesUrl = (params?: GetContactChangesParams,) => {
 /**
  * @summary Contacts for offline mirrors: every contact the caller can read that changed since the cursor, with its section guards, plus tombstone ids for contacts deleted or no longer readable (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
-export const getContactChanges = async (params?: GetContactChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getContactChangesResponse> => {
+export const getContactChanges = async (params?: GetContactChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfContactSyncChange> => {
 
-  return apiRequest<getContactChangesResponse>(getGetContactChangesUrl(params),
+  return apiRequest<SyncPageOfContactSyncChange>(getGetContactChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2885,35 +1428,6 @@ export const getContactChanges = async (params?: GetContactChangesParams, option
   }
 );}
 
-
-export type contactGetChangesResponse200 = {
-  data: SyncPageOfContactSyncChange
-  status: 200
-}
-
-export type contactGetChangesResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type contactGetChangesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type contactGetChangesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type contactGetChangesResponseSuccess = (contactGetChangesResponse200) & {
-  headers: Headers;
-};
-export type contactGetChangesResponseError = (contactGetChangesResponse400 | contactGetChangesResponse401 | contactGetChangesResponse500) & {
-  headers: Headers;
-};
-
-export type contactGetChangesResponse = (contactGetChangesResponseSuccess | contactGetChangesResponseError)
 
 export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -2933,9 +1447,9 @@ export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
 /**
  * @summary Same feed as GET /sync/contacts, kept for existing installs.
  */
-export const contactGetChanges = async (params?: ContactGetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<contactGetChangesResponse> => {
+export const contactGetChanges = async (params?: ContactGetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfContactSyncChange> => {
 
-  return apiRequest<contactGetChangesResponse>(getContactGetChangesUrl(params),
+  return apiRequest<SyncPageOfContactSyncChange>(getContactGetChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2944,35 +1458,6 @@ export const contactGetChanges = async (params?: ContactGetChangesParams, option
   }
 );}
 
-
-export type getRelationshipChangesResponse200 = {
-  data: SyncPageOfRelationshipDto
-  status: 200
-}
-
-export type getRelationshipChangesResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type getRelationshipChangesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getRelationshipChangesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getRelationshipChangesResponseSuccess = (getRelationshipChangesResponse200) & {
-  headers: Headers;
-};
-export type getRelationshipChangesResponseError = (getRelationshipChangesResponse400 | getRelationshipChangesResponse401 | getRelationshipChangesResponse500) & {
-  headers: Headers;
-};
-
-export type getRelationshipChangesResponse = (getRelationshipChangesResponseSuccess | getRelationshipChangesResponseError)
 
 export const getGetRelationshipChangesUrl = (params?: GetRelationshipChangesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -2992,9 +1477,9 @@ export const getGetRelationshipChangesUrl = (params?: GetRelationshipChangesPara
 /**
  * @summary Relationships for offline mirrors: those whose two contacts the caller can read that changed since the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
-export const getRelationshipChanges = async (params?: GetRelationshipChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getRelationshipChangesResponse> => {
+export const getRelationshipChanges = async (params?: GetRelationshipChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfRelationshipDto> => {
 
-  return apiRequest<getRelationshipChangesResponse>(getGetRelationshipChangesUrl(params),
+  return apiRequest<SyncPageOfRelationshipDto>(getGetRelationshipChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3003,35 +1488,6 @@ export const getRelationshipChanges = async (params?: GetRelationshipChangesPara
   }
 );}
 
-
-export type getResidencyChangesResponse200 = {
-  data: SyncPageOfResidencyDto
-  status: 200
-}
-
-export type getResidencyChangesResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type getResidencyChangesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getResidencyChangesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getResidencyChangesResponseSuccess = (getResidencyChangesResponse200) & {
-  headers: Headers;
-};
-export type getResidencyChangesResponseError = (getResidencyChangesResponse400 | getResidencyChangesResponse401 | getResidencyChangesResponse500) & {
-  headers: Headers;
-};
-
-export type getResidencyChangesResponse = (getResidencyChangesResponseSuccess | getResidencyChangesResponseError)
 
 export const getGetResidencyChangesUrl = (params?: GetResidencyChangesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -3051,9 +1507,9 @@ export const getGetResidencyChangesUrl = (params?: GetResidencyChangesParams,) =
 /**
  * @summary Residencies for offline mirrors: those of contacts the caller can read that changed since the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
-export const getResidencyChanges = async (params?: GetResidencyChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getResidencyChangesResponse> => {
+export const getResidencyChanges = async (params?: GetResidencyChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfResidencyDto> => {
 
-  return apiRequest<getResidencyChangesResponse>(getGetResidencyChangesUrl(params),
+  return apiRequest<SyncPageOfResidencyDto>(getGetResidencyChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3062,35 +1518,6 @@ export const getResidencyChanges = async (params?: GetResidencyChangesParams, op
   }
 );}
 
-
-export type getPlaceEntryChangesResponse200 = {
-  data: SyncPageOfPlaceEntryDto
-  status: 200
-}
-
-export type getPlaceEntryChangesResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type getPlaceEntryChangesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getPlaceEntryChangesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getPlaceEntryChangesResponseSuccess = (getPlaceEntryChangesResponse200) & {
-  headers: Headers;
-};
-export type getPlaceEntryChangesResponseError = (getPlaceEntryChangesResponse400 | getPlaceEntryChangesResponse401 | getPlaceEntryChangesResponse500) & {
-  headers: Headers;
-};
-
-export type getPlaceEntryChangesResponse = (getPlaceEntryChangesResponseSuccess | getPlaceEntryChangesResponseError)
 
 export const getGetPlaceEntryChangesUrl = (params?: GetPlaceEntryChangesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -3110,9 +1537,9 @@ export const getGetPlaceEntryChangesUrl = (params?: GetPlaceEntryChangesParams,)
 /**
  * @summary Door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
-export const getPlaceEntryChanges = async (params?: GetPlaceEntryChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getPlaceEntryChangesResponse> => {
+export const getPlaceEntryChanges = async (params?: GetPlaceEntryChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfPlaceEntryDto> => {
 
-  return apiRequest<getPlaceEntryChangesResponse>(getGetPlaceEntryChangesUrl(params),
+  return apiRequest<SyncPageOfPlaceEntryDto>(getGetPlaceEntryChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3121,30 +1548,6 @@ export const getPlaceEntryChanges = async (params?: GetPlaceEntryChangesParams, 
   }
 );}
 
-
-export type getAddressBookSnapshotResponse200 = {
-  data: SyncPageOfAddressBookDto
-  status: 200
-}
-
-export type getAddressBookSnapshotResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getAddressBookSnapshotResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getAddressBookSnapshotResponseSuccess = (getAddressBookSnapshotResponse200) & {
-  headers: Headers;
-};
-export type getAddressBookSnapshotResponseError = (getAddressBookSnapshotResponse401 | getAddressBookSnapshotResponse500) & {
-  headers: Headers;
-};
-
-export type getAddressBookSnapshotResponse = (getAddressBookSnapshotResponseSuccess | getAddressBookSnapshotResponseError)
 
 export const getGetAddressBookSnapshotUrl = () => {
 
@@ -3157,9 +1560,9 @@ export const getGetAddressBookSnapshotUrl = () => {
 /**
  * @summary Every address book the caller can read, with their access level. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
  */
-export const getAddressBookSnapshot = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getAddressBookSnapshotResponse> => {
+export const getAddressBookSnapshot = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfAddressBookDto> => {
 
-  return apiRequest<getAddressBookSnapshotResponse>(getGetAddressBookSnapshotUrl(),
+  return apiRequest<SyncPageOfAddressBookDto>(getGetAddressBookSnapshotUrl(),
   {
     ...options,
     method: 'GET'
@@ -3168,30 +1571,6 @@ export const getAddressBookSnapshot = async ( options?: Parameters<typeof apiReq
   }
 );}
 
-
-export type getContactGroupSnapshotResponse200 = {
-  data: SyncPageOfContactGroupDto
-  status: 200
-}
-
-export type getContactGroupSnapshotResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getContactGroupSnapshotResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getContactGroupSnapshotResponseSuccess = (getContactGroupSnapshotResponse200) & {
-  headers: Headers;
-};
-export type getContactGroupSnapshotResponseError = (getContactGroupSnapshotResponse401 | getContactGroupSnapshotResponse500) & {
-  headers: Headers;
-};
-
-export type getContactGroupSnapshotResponse = (getContactGroupSnapshotResponseSuccess | getContactGroupSnapshotResponseError)
 
 export const getGetContactGroupSnapshotUrl = () => {
 
@@ -3204,9 +1583,9 @@ export const getGetContactGroupSnapshotUrl = () => {
 /**
  * @summary Every contact group in an address book the caller can read. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
  */
-export const getContactGroupSnapshot = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getContactGroupSnapshotResponse> => {
+export const getContactGroupSnapshot = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfContactGroupDto> => {
 
-  return apiRequest<getContactGroupSnapshotResponse>(getGetContactGroupSnapshotUrl(),
+  return apiRequest<SyncPageOfContactGroupDto>(getGetContactGroupSnapshotUrl(),
   {
     ...options,
     method: 'GET'
@@ -3215,30 +1594,6 @@ export const getContactGroupSnapshot = async ( options?: Parameters<typeof apiRe
   }
 );}
 
-
-export type contactGetSyncContainersResponse200 = {
-  data: SyncContainersResponse
-  status: 200
-}
-
-export type contactGetSyncContainersResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type contactGetSyncContainersResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type contactGetSyncContainersResponseSuccess = (contactGetSyncContainersResponse200) & {
-  headers: Headers;
-};
-export type contactGetSyncContainersResponseError = (contactGetSyncContainersResponse401 | contactGetSyncContainersResponse500) & {
-  headers: Headers;
-};
-
-export type contactGetSyncContainersResponse = (contactGetSyncContainersResponseSuccess | contactGetSyncContainersResponseError)
 
 export const getContactGetSyncContainersUrl = () => {
 
@@ -3251,9 +1606,9 @@ export const getContactGetSyncContainersUrl = () => {
 /**
  * @summary Snapshot of the caller's address books + contact groups for mirror reconciliation (no cursor — fetch once per sync cycle and diff locally).
  */
-export const contactGetSyncContainers = async ( options?: Parameters<typeof apiRequest>[1]): Promise<contactGetSyncContainersResponse> => {
+export const contactGetSyncContainers = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncContainersResponse> => {
 
-  return apiRequest<contactGetSyncContainersResponse>(getContactGetSyncContainersUrl(),
+  return apiRequest<SyncContainersResponse>(getContactGetSyncContainersUrl(),
   {
     ...options,
     method: 'GET'

@@ -7,35 +7,10 @@
 import type {
   ListPhotosParams,
   LookupPhotosRequest,
-  PhotoListResponse,
-  ProblemDetails
+  PhotoListResponse
 } from '../../models';
 
 import { apiRequest } from '../../../transport';
-
-export type listPhotosResponse200 = {
-  data: PhotoListResponse
-  status: 200
-}
-
-export type listPhotosResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listPhotosResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listPhotosResponseSuccess = (listPhotosResponse200) & {
-  headers: Headers;
-};
-export type listPhotosResponseError = (listPhotosResponse401 | listPhotosResponse500) & {
-  headers: Headers;
-};
-
-export type listPhotosResponse = (listPhotosResponseSuccess | listPhotosResponseError)
 
 export const getListPhotosUrl = (params?: ListPhotosParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -55,9 +30,9 @@ export const getListPhotosUrl = (params?: ListPhotosParams,) => {
 /**
  * @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash.
  */
-export const listPhotos = async (params?: ListPhotosParams, options?: Parameters<typeof apiRequest>[1]): Promise<listPhotosResponse> => {
+export const listPhotos = async (params?: ListPhotosParams, options?: Parameters<typeof apiRequest>[1]): Promise<PhotoListResponse> => {
 
-  return apiRequest<listPhotosResponse>(getListPhotosUrl(params),
+  return apiRequest<PhotoListResponse>(getListPhotosUrl(params),
   {
     ...options,
     method: 'GET'
@@ -66,30 +41,6 @@ export const listPhotos = async (params?: ListPhotosParams, options?: Parameters
   }
 );}
 
-
-export type lookupPhotosResponse200 = {
-  data: PhotoListResponse
-  status: 200
-}
-
-export type lookupPhotosResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type lookupPhotosResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type lookupPhotosResponseSuccess = (lookupPhotosResponse200) & {
-  headers: Headers;
-};
-export type lookupPhotosResponseError = (lookupPhotosResponse401 | lookupPhotosResponse500) & {
-  headers: Headers;
-};
-
-export type lookupPhotosResponse = (lookupPhotosResponseSuccess | lookupPhotosResponseError)
 
 export const getLookupPhotosUrl = () => {
 
@@ -102,7 +53,7 @@ export const getLookupPhotosUrl = () => {
 /**
  * @summary Hydrate up to 200 assets by id — turns relation references into renderable items.
  */
-export const lookupPhotos = async (lookupPhotosRequest: LookupPhotosRequest, options?: Parameters<typeof apiRequest>[1]): Promise<lookupPhotosResponse> => {
+export const lookupPhotos = async (lookupPhotosRequest: LookupPhotosRequest, options?: Parameters<typeof apiRequest>[1]): Promise<PhotoListResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -118,7 +69,7 @@ export const lookupPhotos = async (lookupPhotosRequest: LookupPhotosRequest, opt
     }
     return headers;
   };
-return apiRequest<lookupPhotosResponse>(getLookupPhotosUrl(),
+return apiRequest<PhotoListResponse>(getLookupPhotosUrl(),
   {
     ...options,
     method: 'POST',

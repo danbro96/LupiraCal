@@ -7,11 +7,10 @@ import { addressMeta, splitAddresses } from '@danbro96/lupira-domain-contacts/re
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Avatar, Button, List, Text } from 'react-native-paper';
-import { getDb } from '../../data/db/expoDb';
-import { composeDisplayName, loadContact } from '../../data/mirror';
+import { composeDisplayName } from '../../domain/displayName';
 import type { PartialDateDto } from '../../domain/docTypes';
 import { copyText } from '@danbro96/lupira-expo-feedback/copy';
 import { deleteContact } from '../../state/actions';
@@ -96,7 +95,6 @@ export function ContactDetailScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {state.deleted && <Text style={[styles.inset, styles.deletedNote, { color: c.danger }]}>Deleted — pending sync</Text>}
       <View style={[styles.inset, styles.header]}>
         <Avatar.Text size={52} label={initialsOf(displayName)} style={{ backgroundColor: avatarColor(contactId) }} />
         <View style={styles.headerBody}>
@@ -248,17 +246,8 @@ function ResolvedName({ contactId, prefix, navigation }: {
   prefix: string;
   navigation: NativeStackNavigationProp<RootStackParamList>;
 }) {
-  const [name, setName] = useState<string | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const state = await loadContact(await getDb(), contactId);
-      if (!cancelled) setName(state ? composeDisplayName(state.doc) : null);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [contactId]);
+  const { data: state } = useContactState(contactId);
+  const name = state ? composeDisplayName(state.doc) : null;
 
   return (
     <List.Item
@@ -275,7 +264,6 @@ const styles = StyleSheet.create({
   // Paper's list rows and subheaders bring their own 16dp; everything else lines up with them.
   inset: { paddingHorizontal: spacing.lg },
   dense: { paddingVertical: 0 },
-  deletedNote: { fontWeight: '600' },
   header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   headerBody: { flex: 1 },
   h1: { fontSize: 20, fontWeight: '600' },

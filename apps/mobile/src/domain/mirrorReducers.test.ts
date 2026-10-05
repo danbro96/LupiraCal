@@ -14,11 +14,10 @@ const baseItem = (): MirrorItem => ({
     calendars: [{ calendarId: 'cal-1', status: 'Accepted' }],
   } as ItemDoc,
   guards: emptyItemGuards(),
-  deleted: false,
 });
 
 const revise = (title: string, minute: number, n: number): ClientOp => ({
-  kind: 'item.revise', itemId: 'item-1', occurredAt: T(minute), commandId: cmd(n),
+  aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.revise', itemId: 'item-1', occurredAt: T(minute), commandId: cmd(n),
   core: { title, isAllDay: false, startsAt: '2026-08-01T09:00:00Z' },
 });
 
@@ -40,7 +39,7 @@ describe('applyItemOp', () => {
     const state = baseItem();
     state.guards.core = { ts: T(10), cmd: cmd(9) };
     const after = applyItemOp(state, {
-      kind: 'item.metadata', itemId: 'item-1', occurredAt: T(5), commandId: cmd(1), patch: { note: 'x' },
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.metadata', itemId: 'item-1', occurredAt: T(5), commandId: cmd(1), patch: { note: 'x' },
     })!;
     expect(after.doc.metadata).toEqual({ note: 'x' });
   });
@@ -49,27 +48,26 @@ describe('applyItemOp', () => {
     const state = baseItem();
     state.guards.filing['cal-1'] = { ts: T(10), cmd: cmd(9) };
     const stale = applyItemOp(state, {
-      kind: 'item.unfile', itemId: 'item-1', calendarId: 'cal-1', occurredAt: T(5), commandId: cmd(1),
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.unfile', itemId: 'item-1', calendarId: 'cal-1', occurredAt: T(5), commandId: cmd(1),
     })!;
     expect(stale.doc.calendars[0].status).toBe('Accepted');   // stale unfile lost
 
     const other = applyItemOp(stale, {
-      kind: 'item.file', itemId: 'item-1', calendarId: 'cal-2', entryStatus: 'proposed', occurredAt: T(5), commandId: cmd(2),
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.file', itemId: 'item-1', calendarId: 'cal-2', entryStatus: 'proposed', occurredAt: T(5), commandId: cmd(2),
     })!;
     expect(other.doc.calendars).toContainEqual({ calendarId: 'cal-2', status: 'Proposed' });
   });
 
   it('delete absorbs later revisions', () => {
-    const deleted = applyItemOp(baseItem(), { kind: 'item.delete', itemId: 'item-1', occurredAt: T(5), commandId: cmd(1) })!;
-    const after = applyItemOp(deleted, revise('Zombie', 20, 2))!;
-    expect(after.deleted).toBe(true);
-    expect(after.doc.title).toBe('Original');
+    const deleted = applyItemOp(baseItem(), { aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.delete', itemId: 'item-1', occurredAt: T(5), commandId: cmd(1) });
+    expect(deleted).toBeNull();
+    expect(applyItemOp(deleted, revise('Zombie', 20, 2))).toBeNull();
   });
 
   it('create is an idempotent hit over a live item', () => {
     const state = baseItem();
     const after = applyItemOp(state, {
-      kind: 'item.create', itemId: 'item-1', sourceKey: 'k', calendarId: 'cal-9',
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.create', itemId: 'item-1', sourceKey: 'k', calendarId: 'cal-9',
       occurredAt: T(5), commandId: cmd(1), core: { title: 'Dupe', isAllDay: false },
     });
     expect(after).toBe(state);
@@ -83,13 +81,12 @@ const baseContact = (): MirrorContact => ({
     tags: ['friend'],
   } as ContactDoc,
   guards: emptyContactGuards(),
-  deleted: false,
 });
 
 describe('applyContactOp', () => {
   it('revise merges (null keeps, channels/tags union) — mirroring ReviseContact', () => {
     const after = applyContactOp(baseContact(), {
-      kind: 'contact.revise', contactId: 'c-1', occurredAt: T(5), commandId: cmd(1),
+      aggregate: 'contact', aggregateId: 'c-1', kind: 'contact.revise', contactId: 'c-1', occurredAt: T(5), commandId: cmd(1),
       core: { nickname: 'JJ', channels: [{ medium: 'Phone', value: '+4670', preferred: true }], tags: ['ski'] },
     })!;
     expect(after.doc.givenName).toBe('Jane');   // null = keep
@@ -100,13 +97,13 @@ describe('applyContactOp', () => {
 
   it('channels/tags wholesale ops share the core guard (one server event type)', () => {
     const first = applyContactOp(baseContact(), {
-      kind: 'contact.channels', contactId: 'c-1', occurredAt: T(10), commandId: cmd(2),
+      aggregate: 'contact', aggregateId: 'c-1', kind: 'contact.channels', contactId: 'c-1', occurredAt: T(10), commandId: cmd(2),
       channels: [{ medium: 'Email', value: 'new@x', preferred: true }],
     })!;
     expect(first.doc.channels).toEqual([{ medium: 'Email', value: 'new@x', preferred: true }]);
 
     const stale = applyContactOp(first, {
-      kind: 'contact.tags', contactId: 'c-1', occurredAt: T(5), commandId: cmd(1), tags: ['stale'],
+      aggregate: 'contact', aggregateId: 'c-1', kind: 'contact.tags', contactId: 'c-1', occurredAt: T(5), commandId: cmd(1), tags: ['stale'],
     })!;
     expect(stale.doc.tags).toEqual(['friend']);   // lost to the newer channels write on the shared guard
   });
@@ -115,7 +112,7 @@ describe('applyContactOp', () => {
     const state = baseContact();
     state.guards.core = { ts: T(10), cmd: cmd(9) };
     const after = applyContactOp(state, {
-      kind: 'contact.profiles', contactId: 'c-1', occurredAt: T(5), commandId: cmd(1),
+      aggregate: 'contact', aggregateId: 'c-1', kind: 'contact.profiles', contactId: 'c-1', occurredAt: T(5), commandId: cmd(1),
       profiles: [{ service: 'github', handle: 'jane', preferred: true }],
     })!;
     expect(after.doc.profiles).toHaveLength(1);
@@ -125,7 +122,7 @@ describe('applyContactOp', () => {
 describe('availability creates', () => {
   it('materializes presence status onto the doc and keeps it off the core fields', () => {
     const state = applyItemOp(null, {
-      kind: 'item.create', itemId: 'a1', sourceKey: 'k', calendarId: 'avail-cal',
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.create', itemId: 'a1', sourceKey: 'k', calendarId: 'avail-cal',
       commandId: '0198c0de-0000-7000-8000-000000000001', occurredAt: '2026-08-01T00:00:00.000Z',
       core: {
         title: 'Vacation', isAllDay: true, startDate: '2026-08-01', endDate: '2026-08-15',
@@ -139,7 +136,7 @@ describe('availability creates', () => {
 
 describe('places', () => {
   const withPlace = (placeId: string | null | undefined, location: string | null | undefined, n: number): ClientOp => ({
-    kind: 'item.revise', itemId: 'item-1', occurredAt: T(n), commandId: cmd(n),
+    aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.revise', itemId: 'item-1', occurredAt: T(n), commandId: cmd(n),
     core: { title: null, isAllDay: false, startsAt: '2026-08-01T09:00:00Z', placeId, location },
   });
 
@@ -162,7 +159,7 @@ describe('places', () => {
 
   it('a create carries the place', () => {
     const create: ClientOp = {
-      kind: 'item.create', itemId: 'item-2', sourceKey: 'sk', calendarId: 'cal-1', occurredAt: T(1), commandId: cmd(1),
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.create', itemId: 'item-2', sourceKey: 'sk', calendarId: 'cal-1', occurredAt: T(1), commandId: cmd(1),
       core: { title: 'Picnic', isAllDay: false, placeId: 'p1', location: 'Park' },
     };
     const doc = applyItemOp(null, create)!.doc;
@@ -172,8 +169,8 @@ describe('places', () => {
 });
 
 describe('attendees', () => {
-  const invite = (contactIds: string[], n: number): ClientOp => ({ kind: 'item.invite', itemId: 'item-1', contactIds, occurredAt: T(n), commandId: cmd(n) });
-  const uninvite = (contactId: string, n: number): ClientOp => ({ kind: 'item.uninvite', itemId: 'item-1', contactId, occurredAt: T(n), commandId: cmd(n) });
+  const invite = (contactIds: string[], n: number): ClientOp => ({ aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.invite', itemId: 'item-1', contactIds, occurredAt: T(n), commandId: cmd(n) });
+  const uninvite = (contactId: string, n: number): ClientOp => ({ aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.uninvite', itemId: 'item-1', contactId, occurredAt: T(n), commandId: cmd(n) });
 
   it('invites once per contact, pending a participation id', () => {
     const once = applyItemOp(baseItem(), invite(['c1', 'c2', 'c1'], 1))!;
@@ -185,7 +182,7 @@ describe('attendees', () => {
   });
 
   it('marks the invitees who accept on the spot as going', () => {
-    const op: ClientOp = { kind: 'item.invite', itemId: 'item-1', contactIds: ['me', 'c1'], accept: ['me'], occurredAt: T(1), commandId: cmd(1) };
+    const op: ClientOp = { aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.invite', itemId: 'item-1', contactIds: ['me', 'c1'], accept: ['me'], occurredAt: T(1), commandId: cmd(1) };
     expect(applyItemOp(baseItem(), op)!.doc.attendees?.map((a) => [a.contactId, a.status])).toEqual([
       ['me', 'Accepted'],
       ['c1', 'NeedsAction'],

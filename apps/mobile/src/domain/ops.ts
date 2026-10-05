@@ -1,14 +1,14 @@
 import { v7 as uuidv7 } from 'uuid';
+import type { Aggregate } from './aggregates';
 import type { ContactDoc, ItemDoc, ReachChannel, SocialProfile } from './docTypes';
 
 /** The offline command vocabulary — one op per replayable REST write. Ops are enqueued transactionally with
  *  their optimistic mirror effect and replayed with `Idempotency-Key: commandId` + `occurredAt`, so a
- *  redelivery is a server no-op and a stale one loses its section's LWW instead of clobbering.
- *  `envelope_version` (on the outbox row) versions this shape: migrations translate old envelopes, never drop. */
+ *  redelivery is a server no-op and a stale one loses its section's LWW instead of clobbering. */
 
-export const OP_ENVELOPE_VERSION = 1;
+export type OpAggregate = typeof Aggregate.item | typeof Aggregate.contact;
 
-type Base = { commandId: string; occurredAt: string };
+type Base = { commandId: string; occurredAt: string; aggregate: OpAggregate; aggregateId: string };
 
 /** Desired core-section state for a calendar item (whole-section write — PUT with every sentinel set).
  *  null on title/description/status/category/tags means "keep" (the REST contract has no clear for those).
@@ -50,16 +50,8 @@ export type ClientOp = Base & (
 
 export type OpKind = ClientOp['kind'];
 
-export function stamp(): Base {
-  return { commandId: uuidv7(), occurredAt: new Date().toISOString() };
-}
-
-export function aggregateIdOf(op: ClientOp): string {
-  return 'itemId' in op ? op.itemId : op.contactId;
-}
-
-export function domainOf(op: ClientOp): 'cal' | 'contact' {
-  return op.kind.startsWith('item.') ? 'cal' : 'contact';
+export function stamp(aggregate: OpAggregate, aggregateId: string, occurredAt = new Date().toISOString()): Base {
+  return { commandId: uuidv7(), occurredAt, aggregate, aggregateId };
 }
 
 /** Total over the union — adding an op kind without a user-facing label is a compile error. */

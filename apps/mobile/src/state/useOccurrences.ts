@@ -1,17 +1,17 @@
 import { addDays, addMonths, parseYmd, startOfMonth, ymd } from '@danbro96/lupira-domain-core/time';
+import { mirrorQuery } from '@danbro96/lupira-expo-query/mirrorQuery';
 import { useQueries } from '@tanstack/react-query';
-import { getDb } from '../data/db/expoDb';
-import { gridRowsBetween, type CalendarFilter, type GridRow } from '../data/mirror';
+import type { CalendarFilter } from '../data/queries/calendarFilter';
+import { gridRowsBetween, type GridRow } from '../data/queries/grid';
 import { lastDayOf } from '@lupira/cal-domain/occurrences';
 import type { TaskDeadlineRow } from '../domain/taskRows';
+import { readyDb } from '../sync/engine';
 import { useCalendarFilter } from './useContainers';
 
-/** Grid reads over the mirror, keyed ['occurrences', monthKey] — sync/reactivity.ts invalidates per month. */
-
+/** Grid reads over the mirror, one query per month bucket under ['occurrences'], which the engine invalidates
+ *  when items, calendars or contacts change. */
 const monthQuery = (monthKey: string, filter: CalendarFilter | null) => ({
-  // The filter rides the key AFTER the monthKey so per-month invalidation (prefix match) still works.
-  queryKey: ['occurrences', monthKey, filter] as const,
-  queryFn: async () => gridRowsBetween(await getDb(), `${monthKey}-01`, `${monthKey}-31`, filter!),
+  ...mirrorQuery(['occurrences', monthKey, filter], async () => gridRowsBetween(await readyDb(), `${monthKey}-01`, `${monthKey}-31`, filter!)),
   enabled: filter !== null,
 });
 
@@ -20,7 +20,7 @@ const PREFETCH_DAYS = 7;
 
 /** The grids' read: rows covering any of the (consecutive) days, including multi-day ones that began up
  *  to SPAN_LOOKBACK_DAYS earlier. Months a further PREFETCH_DAYS out either side are loaded too, so a
- *  pager's next step finds its data cached. One query per month bucket, so the invalidation contract holds. */
+ *  pager's next step finds its data cached. */
 export function useOverlappingOccurrences(dayKeys: string[]): { rows: GridRow[]; loading: boolean } {
   const filter = useCalendarFilter();
   const first = dayKeys[0];

@@ -1,8 +1,9 @@
+import { mirrorQuery } from '@danbro96/lupira-expo-query/mirrorQuery';
 import { useQuery } from '@tanstack/react-query';
-import { getDb } from '../data/db/expoDb';
-import { loadItem } from '../data/mirror';
+import { Aggregate } from '../domain/aggregates';
+import type { ItemDoc, ItemGuards } from '../domain/docTypes';
+import { engine } from '../sync/engine';
 
-/** One item's mirror doc, keyed ['items', id] — the contract sync/reactivity.ts invalidates. */
 export function useItemState(id: string) {
-  return useQuery({ queryKey: ['items', id], queryFn: async () => loadItem(await getDb(), id) });
+  return useQuery(mirrorQuery([Aggregate.item, id], () => engine.doc<ItemDoc, ItemGuards>(Aggregate.item, id)));
 }

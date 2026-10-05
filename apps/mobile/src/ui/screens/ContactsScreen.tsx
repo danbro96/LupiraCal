@@ -9,7 +9,7 @@ import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { memo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Avatar, FAB, Searchbar, Text } from 'react-native-paper';
-import type { ContactListRow } from '../../data/mirror';
+import type { ContactListRow } from '../../data/queries/contacts';
 import { useContactList } from '../../state/useContactList';
 import { avatarColor } from '../hooks/palette';
 import { ScreenToolbar } from '@danbro96/lupira-expo-paper/components/ScreenToolbar';

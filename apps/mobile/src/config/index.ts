@@ -20,10 +20,6 @@ export const API_PRESETS: ApiPreset[] = [
   { key: 'emulator', label: 'Emulator dev', urls: { api: 'http://10.0.2.2:5181' }, authMode: 'dev' },
 ];
 
-/** Where the chosen backend origin is persisted. Shared so headless code can resolve it without
- *  importing the auth store (see data/api/apiUrl). */
-export const API_URL_STORAGE_KEY = 'lupira.calendar.apiUrl';
-
 // Build-time default; the settings screen persists a runtime override on top.
 export const DEFAULT_API_URL = process.env.EXPO_PUBLIC_API_URL ?? API_PRESETS[0].urls.api;
 export const DEFAULT_AUTH_MODE: AuthMode =

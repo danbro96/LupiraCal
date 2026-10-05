@@ -30,7 +30,6 @@ import type {
   MergeItemMetadataParams,
   OwnerGrantDto,
   ParticipationSummaryEntry,
-  ProblemDetails,
   RelationDto,
   RemoveItemFromCalendarParams,
   RemoveParticipantByContactParams,
@@ -46,35 +45,6 @@ import type {
 
 import { apiRequest } from '../../../transport';
 
-export type bootstrapMeResponse200 = {
-  data: ContainerDto[]
-  status: 200
-}
-
-export type bootstrapMeResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type bootstrapMeResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type bootstrapMeResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type bootstrapMeResponseSuccess = (bootstrapMeResponse200) & {
-  headers: Headers;
-};
-export type bootstrapMeResponseError = (bootstrapMeResponse400 | bootstrapMeResponse401 | bootstrapMeResponse500) & {
-  headers: Headers;
-};
-
-export type bootstrapMeResponse = (bootstrapMeResponseSuccess | bootstrapMeResponseError)
-
 export const getBootstrapMeUrl = () => {
 
 
@@ -86,7 +56,7 @@ export const getBootstrapMeUrl = () => {
 /**
  * @summary Idempotently ensure the caller has the standard calendar set; returns it. Calendars it creates get the optional body's DefaultTimezone (IANA id), else the server default; existing calendars are unchanged.
  */
-export const bootstrapMe = async (nullBootstrapRequest?: null | BootstrapRequest, options?: Parameters<typeof apiRequest>[1]): Promise<bootstrapMeResponse> => {
+export const bootstrapMe = async (nullBootstrapRequest?: null | BootstrapRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContainerDto[]> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -102,7 +72,7 @@ export const bootstrapMe = async (nullBootstrapRequest?: null | BootstrapRequest
     }
     return headers;
   };
-return apiRequest<bootstrapMeResponse>(getBootstrapMeUrl(),
+return apiRequest<ContainerDto[]>(getBootstrapMeUrl(),
   {
     ...options,
     method: 'POST',
@@ -111,30 +81,6 @@ return apiRequest<bootstrapMeResponse>(getBootstrapMeUrl(),
   }
 );}
 
-
-export type getParticipationSummaryResponse200 = {
-  data: ParticipationSummaryEntry[]
-  status: 200
-}
-
-export type getParticipationSummaryResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getParticipationSummaryResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getParticipationSummaryResponseSuccess = (getParticipationSummaryResponse200) & {
-  headers: Headers;
-};
-export type getParticipationSummaryResponseError = (getParticipationSummaryResponse401 | getParticipationSummaryResponse500) & {
-  headers: Headers;
-};
-
-export type getParticipationSummaryResponse = (getParticipationSummaryResponseSuccess | getParticipationSummaryResponseError)
 
 export const getGetParticipationSummaryUrl = (params?: GetParticipationSummaryParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -154,9 +100,9 @@ export const getGetParticipationSummaryUrl = (params?: GetParticipationSummaryPa
 /**
  * @summary Per-contact participation across your readable calendars (contactId, item count, most recent occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Optional from/to restricts the window. A ranking signal for contact pickers/resolvers.
  */
-export const getParticipationSummary = async (params?: GetParticipationSummaryParams, options?: Parameters<typeof apiRequest>[1]): Promise<getParticipationSummaryResponse> => {
+export const getParticipationSummary = async (params?: GetParticipationSummaryParams, options?: Parameters<typeof apiRequest>[1]): Promise<ParticipationSummaryEntry[]> => {
 
-  return apiRequest<getParticipationSummaryResponse>(getGetParticipationSummaryUrl(params),
+  return apiRequest<ParticipationSummaryEntry[]>(getGetParticipationSummaryUrl(params),
   {
     ...options,
     method: 'GET'
@@ -165,30 +111,6 @@ export const getParticipationSummary = async (params?: GetParticipationSummaryPa
   }
 );}
 
-
-export type listContainersResponse200 = {
-  data: ContainerDto[]
-  status: 200
-}
-
-export type listContainersResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listContainersResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listContainersResponseSuccess = (listContainersResponse200) & {
-  headers: Headers;
-};
-export type listContainersResponseError = (listContainersResponse401 | listContainersResponse500) & {
-  headers: Headers;
-};
-
-export type listContainersResponse = (listContainersResponseSuccess | listContainersResponseError)
 
 export const getListContainersUrl = () => {
 
@@ -201,9 +123,9 @@ export const getListContainersUrl = () => {
 /**
  * @summary List the calendars the caller can access.
  */
-export const listContainers = async ( options?: Parameters<typeof apiRequest>[1]): Promise<listContainersResponse> => {
+export const listContainers = async ( options?: Parameters<typeof apiRequest>[1]): Promise<ContainerDto[]> => {
 
-  return apiRequest<listContainersResponse>(getListContainersUrl(),
+  return apiRequest<ContainerDto[]>(getListContainersUrl(),
   {
     ...options,
     method: 'GET'
@@ -212,35 +134,6 @@ export const listContainers = async ( options?: Parameters<typeof apiRequest>[1]
   }
 );}
 
-
-export type createCalendarResponse200 = {
-  data: ContainerDto
-  status: 200
-}
-
-export type createCalendarResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type createCalendarResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type createCalendarResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type createCalendarResponseSuccess = (createCalendarResponse200) & {
-  headers: Headers;
-};
-export type createCalendarResponseError = (createCalendarResponse400 | createCalendarResponse401 | createCalendarResponse500) & {
-  headers: Headers;
-};
-
-export type createCalendarResponse = (createCalendarResponseSuccess | createCalendarResponseError)
 
 export const getCreateCalendarUrl = () => {
 
@@ -253,7 +146,7 @@ export const getCreateCalendarUrl = () => {
 /**
  * @summary Create a calendar. DefaultTimezone (IANA id) defaults to the server default. (Address books are managed by LupiraContactApi.)
  */
-export const createCalendar = async (createCalendarRequest: CreateCalendarRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createCalendarResponse> => {
+export const createCalendar = async (createCalendarRequest: CreateCalendarRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ContainerDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -269,7 +162,7 @@ export const createCalendar = async (createCalendarRequest: CreateCalendarReques
     }
     return headers;
   };
-return apiRequest<createCalendarResponse>(getCreateCalendarUrl(),
+return apiRequest<ContainerDto>(getCreateCalendarUrl(),
   {
     ...options,
     method: 'POST',
@@ -278,45 +171,6 @@ return apiRequest<createCalendarResponse>(getCreateCalendarUrl(),
   }
 );}
 
-
-export type grantCalendarOwnerResponse200 = {
-  data: OwnerGrantDto
-  status: 200
-}
-
-export type grantCalendarOwnerResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type grantCalendarOwnerResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type grantCalendarOwnerResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type grantCalendarOwnerResponse409 = {
-  data: ProblemDetails
-  status: 409
-}
-
-export type grantCalendarOwnerResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type grantCalendarOwnerResponseSuccess = (grantCalendarOwnerResponse200) & {
-  headers: Headers;
-};
-export type grantCalendarOwnerResponseError = (grantCalendarOwnerResponse401 | grantCalendarOwnerResponse403 | grantCalendarOwnerResponse404 | grantCalendarOwnerResponse409 | grantCalendarOwnerResponse500) & {
-  headers: Headers;
-};
-
-export type grantCalendarOwnerResponse = (grantCalendarOwnerResponseSuccess | grantCalendarOwnerResponseError)
 
 export const getGrantCalendarOwnerUrl = (calendarId: string,) => {
 
@@ -330,7 +184,7 @@ export const getGrantCalendarOwnerUrl = (calendarId: string,) => {
  * @summary Grant a member access to a calendar (access = owner|read-write|read; default owner).
  */
 export const grantCalendarOwner = async (calendarId: string,
-    grantOwnerRequest: GrantOwnerRequest, options?: Parameters<typeof apiRequest>[1]): Promise<grantCalendarOwnerResponse> => {
+    grantOwnerRequest: GrantOwnerRequest, options?: Parameters<typeof apiRequest>[1]): Promise<OwnerGrantDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -346,7 +200,7 @@ export const grantCalendarOwner = async (calendarId: string,
     }
     return headers;
   };
-return apiRequest<grantCalendarOwnerResponse>(getGrantCalendarOwnerUrl(calendarId),
+return apiRequest<OwnerGrantDto>(getGrantCalendarOwnerUrl(calendarId),
   {
     ...options,
     method: 'POST',
@@ -355,45 +209,6 @@ return apiRequest<grantCalendarOwnerResponse>(getGrantCalendarOwnerUrl(calendarI
   }
 );}
 
-
-export type revokeCalendarOwnerResponse204 = {
-  data: void
-  status: 204
-}
-
-export type revokeCalendarOwnerResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type revokeCalendarOwnerResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type revokeCalendarOwnerResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type revokeCalendarOwnerResponse409 = {
-  data: ProblemDetails
-  status: 409
-}
-
-export type revokeCalendarOwnerResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type revokeCalendarOwnerResponseSuccess = (revokeCalendarOwnerResponse204) & {
-  headers: Headers;
-};
-export type revokeCalendarOwnerResponseError = (revokeCalendarOwnerResponse401 | revokeCalendarOwnerResponse403 | revokeCalendarOwnerResponse404 | revokeCalendarOwnerResponse409 | revokeCalendarOwnerResponse500) & {
-  headers: Headers;
-};
-
-export type revokeCalendarOwnerResponse = (revokeCalendarOwnerResponseSuccess | revokeCalendarOwnerResponseError)
 
 export const getRevokeCalendarOwnerUrl = (calendarId: string,
     params: RevokeCalendarOwnerParams,) => {
@@ -415,9 +230,9 @@ export const getRevokeCalendarOwnerUrl = (calendarId: string,
  * @summary Revoke a member's access to a calendar (by email). 409 if it would remove the last owner.
  */
 export const revokeCalendarOwner = async (calendarId: string,
-    params: RevokeCalendarOwnerParams, options?: Parameters<typeof apiRequest>[1]): Promise<revokeCalendarOwnerResponse> => {
+    params: RevokeCalendarOwnerParams, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<revokeCalendarOwnerResponse>(getRevokeCalendarOwnerUrl(calendarId,params),
+  return apiRequest<void>(getRevokeCalendarOwnerUrl(calendarId,params),
   {
     ...options,
     method: 'DELETE'
@@ -426,40 +241,6 @@ export const revokeCalendarOwner = async (calendarId: string,
   }
 );}
 
-
-export type searchItemsResponse200 = {
-  data: CalendarItemOccurrenceDto[]
-  status: 200
-}
-
-export type searchItemsResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type searchItemsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type searchItemsResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type searchItemsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type searchItemsResponseSuccess = (searchItemsResponse200) & {
-  headers: Headers;
-};
-export type searchItemsResponseError = (searchItemsResponse400 | searchItemsResponse401 | searchItemsResponse403 | searchItemsResponse500) & {
-  headers: Headers;
-};
-
-export type searchItemsResponse = (searchItemsResponseSuccess | searchItemsResponseError)
 
 export const getSearchItemsUrl = (params?: SearchItemsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -479,9 +260,9 @@ export const getSearchItemsUrl = (params?: SearchItemsParams,) => {
 /**
  * @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.
  */
-export const searchItems = async (params?: SearchItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<searchItemsResponse> => {
+export const searchItems = async (params?: SearchItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemOccurrenceDto[]> => {
 
-  return apiRequest<searchItemsResponse>(getSearchItemsUrl(params),
+  return apiRequest<CalendarItemOccurrenceDto[]>(getSearchItemsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -490,35 +271,6 @@ export const searchItems = async (params?: SearchItemsParams, options?: Paramete
   }
 );}
 
-
-export type createItemResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type createItemResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type createItemResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type createItemResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type createItemResponseSuccess = (createItemResponse200) & {
-  headers: Headers;
-};
-export type createItemResponseError = (createItemResponse401 | createItemResponse403 | createItemResponse500) & {
-  headers: Headers;
-};
-
-export type createItemResponse = (createItemResponseSuccess | createItemResponseError)
 
 export const getCreateItemUrl = () => {
 
@@ -531,7 +283,7 @@ export const getCreateItemUrl = () => {
 /**
  * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location must be a resolved PlaceId.
  */
-export const createItem = async (createCalendarItemRequest: CreateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createItemResponse> => {
+export const createItem = async (createCalendarItemRequest: CreateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -547,7 +299,7 @@ export const createItem = async (createCalendarItemRequest: CreateCalendarItemRe
     }
     return headers;
   };
-return apiRequest<createItemResponse>(getCreateItemUrl(),
+return apiRequest<CalendarItemDto>(getCreateItemUrl(),
   {
     ...options,
     method: 'POST',
@@ -556,35 +308,6 @@ return apiRequest<createItemResponse>(getCreateItemUrl(),
   }
 );}
 
-
-export type getItemResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type getItemResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getItemResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type getItemResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getItemResponseSuccess = (getItemResponse200) & {
-  headers: Headers;
-};
-export type getItemResponseError = (getItemResponse401 | getItemResponse404 | getItemResponse500) & {
-  headers: Headers;
-};
-
-export type getItemResponse = (getItemResponseSuccess | getItemResponseError)
 
 export const getGetItemUrl = (id: string,) => {
 
@@ -597,9 +320,9 @@ export const getGetItemUrl = (id: string,) => {
 /**
  * @summary Get a single calendar item.
  */
-export const getItem = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<getItemResponse> => {
+export const getItem = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<getItemResponse>(getGetItemUrl(id),
+  return apiRequest<CalendarItemDto>(getGetItemUrl(id),
   {
     ...options,
     method: 'GET'
@@ -608,35 +331,6 @@ export const getItem = async (id: string, options?: Parameters<typeof apiRequest
   }
 );}
 
-
-export type updateItemResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type updateItemResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type updateItemResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type updateItemResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type updateItemResponseSuccess = (updateItemResponse200) & {
-  headers: Headers;
-};
-export type updateItemResponseError = (updateItemResponse401 | updateItemResponse404 | updateItemResponse500) & {
-  headers: Headers;
-};
-
-export type updateItemResponse = (updateItemResponseSuccess | updateItemResponseError)
 
 export const getUpdateItemUrl = (id: string,) => {
 
@@ -650,7 +344,7 @@ export const getUpdateItemUrl = (id: string,) => {
  * @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones, clearing the parent with ParentItemIdProvided=true and a null ParentItemId). Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates.
  */
 export const updateItem = async (id: string,
-    updateCalendarItemRequest: UpdateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<updateItemResponse> => {
+    updateCalendarItemRequest: UpdateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -666,7 +360,7 @@ export const updateItem = async (id: string,
     }
     return headers;
   };
-return apiRequest<updateItemResponse>(getUpdateItemUrl(id),
+return apiRequest<CalendarItemDto>(getUpdateItemUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -675,35 +369,6 @@ return apiRequest<updateItemResponse>(getUpdateItemUrl(id),
   }
 );}
 
-
-export type deleteItemResponse204 = {
-  data: void
-  status: 204
-}
-
-export type deleteItemResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type deleteItemResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type deleteItemResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type deleteItemResponseSuccess = (deleteItemResponse204) & {
-  headers: Headers;
-};
-export type deleteItemResponseError = (deleteItemResponse401 | deleteItemResponse404 | deleteItemResponse500) & {
-  headers: Headers;
-};
-
-export type deleteItemResponse = (deleteItemResponseSuccess | deleteItemResponseError)
 
 export const getDeleteItemUrl = (id: string,) => {
 
@@ -716,9 +381,9 @@ export const getDeleteItemUrl = (id: string,) => {
 /**
  * @summary Delete a calendar item (soft delete + tombstone). A replay bearing the same Idempotency-Key succeeds instead of 404ing.
  */
-export const deleteItem = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<deleteItemResponse> => {
+export const deleteItem = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<deleteItemResponse>(getDeleteItemUrl(id),
+  return apiRequest<void>(getDeleteItemUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -727,40 +392,6 @@ export const deleteItem = async (id: string, options?: Parameters<typeof apiRequ
   }
 );}
 
-
-export type mergeItemMetadataResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type mergeItemMetadataResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type mergeItemMetadataResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type mergeItemMetadataResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type mergeItemMetadataResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type mergeItemMetadataResponseSuccess = (mergeItemMetadataResponse200) & {
-  headers: Headers;
-};
-export type mergeItemMetadataResponseError = (mergeItemMetadataResponse400 | mergeItemMetadataResponse401 | mergeItemMetadataResponse404 | mergeItemMetadataResponse500) & {
-  headers: Headers;
-};
-
-export type mergeItemMetadataResponse = (mergeItemMetadataResponseSuccess | mergeItemMetadataResponseError)
 
 export const getMergeItemMetadataUrl = (id: string,
     params?: MergeItemMetadataParams,) => {
@@ -783,7 +414,7 @@ export const getMergeItemMetadataUrl = (id: string,
  */
 export const mergeItemMetadata = async (id: string,
     jsonObject: JsonObject,
-    params?: MergeItemMetadataParams, options?: Parameters<typeof apiRequest>[1]): Promise<mergeItemMetadataResponse> => {
+    params?: MergeItemMetadataParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -799,7 +430,7 @@ export const mergeItemMetadata = async (id: string,
     }
     return headers;
   };
-return apiRequest<mergeItemMetadataResponse>(getMergeItemMetadataUrl(id,params),
+return apiRequest<CalendarItemDto>(getMergeItemMetadataUrl(id,params),
   {
     ...options,
     method: 'POST',
@@ -808,40 +439,6 @@ return apiRequest<mergeItemMetadataResponse>(getMergeItemMetadataUrl(id,params),
   }
 );}
 
-
-export type setItemPromptResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type setItemPromptResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type setItemPromptResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type setItemPromptResponse409 = {
-  data: ProblemDetails
-  status: 409
-}
-
-export type setItemPromptResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type setItemPromptResponseSuccess = (setItemPromptResponse200) & {
-  headers: Headers;
-};
-export type setItemPromptResponseError = (setItemPromptResponse401 | setItemPromptResponse404 | setItemPromptResponse409 | setItemPromptResponse500) & {
-  headers: Headers;
-};
-
-export type setItemPromptResponse = (setItemPromptResponseSuccess | setItemPromptResponseError)
 
 export const getSetItemPromptUrl = (id: string,) => {
 
@@ -855,7 +452,7 @@ export const getSetItemPromptUrl = (id: string,) => {
  * @summary Set the LLM-interpreted payload on an item (server-side only; never in the export). 409 if the item carries an action.
  */
 export const setItemPrompt = async (id: string,
-    setItemPromptRequest: SetItemPromptRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setItemPromptResponse> => {
+    setItemPromptRequest: SetItemPromptRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -871,7 +468,7 @@ export const setItemPrompt = async (id: string,
     }
     return headers;
   };
-return apiRequest<setItemPromptResponse>(getSetItemPromptUrl(id),
+return apiRequest<CalendarItemDto>(getSetItemPromptUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -880,35 +477,6 @@ return apiRequest<setItemPromptResponse>(getSetItemPromptUrl(id),
   }
 );}
 
-
-export type clearItemPromptResponse204 = {
-  data: void
-  status: 204
-}
-
-export type clearItemPromptResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type clearItemPromptResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type clearItemPromptResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type clearItemPromptResponseSuccess = (clearItemPromptResponse204) & {
-  headers: Headers;
-};
-export type clearItemPromptResponseError = (clearItemPromptResponse401 | clearItemPromptResponse404 | clearItemPromptResponse500) & {
-  headers: Headers;
-};
-
-export type clearItemPromptResponse = (clearItemPromptResponseSuccess | clearItemPromptResponseError)
 
 export const getClearItemPromptUrl = (id: string,
     params?: ClearItemPromptParams,) => {
@@ -930,9 +498,9 @@ export const getClearItemPromptUrl = (id: string,
  * @summary Clear the item's LLM payload.
  */
 export const clearItemPrompt = async (id: string,
-    params?: ClearItemPromptParams, options?: Parameters<typeof apiRequest>[1]): Promise<clearItemPromptResponse> => {
+    params?: ClearItemPromptParams, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<clearItemPromptResponse>(getClearItemPromptUrl(id,params),
+  return apiRequest<void>(getClearItemPromptUrl(id,params),
   {
     ...options,
     method: 'DELETE'
@@ -941,40 +509,6 @@ export const clearItemPrompt = async (id: string,
   }
 );}
 
-
-export type setItemActionResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type setItemActionResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type setItemActionResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type setItemActionResponse409 = {
-  data: ProblemDetails
-  status: 409
-}
-
-export type setItemActionResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type setItemActionResponseSuccess = (setItemActionResponse200) & {
-  headers: Headers;
-};
-export type setItemActionResponseError = (setItemActionResponse401 | setItemActionResponse404 | setItemActionResponse409 | setItemActionResponse500) & {
-  headers: Headers;
-};
-
-export type setItemActionResponse = (setItemActionResponseSuccess | setItemActionResponseError)
 
 export const getSetItemActionUrl = (id: string,) => {
 
@@ -988,7 +522,7 @@ export const getSetItemActionUrl = (id: string,) => {
  * @summary Set the deterministic payload on an item (server-side only; never in the export). 409 if the item carries a prompt.
  */
 export const setItemAction = async (id: string,
-    setItemActionRequest: SetItemActionRequest, options?: Parameters<typeof apiRequest>[1]): Promise<setItemActionResponse> => {
+    setItemActionRequest: SetItemActionRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1004,7 +538,7 @@ export const setItemAction = async (id: string,
     }
     return headers;
   };
-return apiRequest<setItemActionResponse>(getSetItemActionUrl(id),
+return apiRequest<CalendarItemDto>(getSetItemActionUrl(id),
   {
     ...options,
     method: 'PUT',
@@ -1013,35 +547,6 @@ return apiRequest<setItemActionResponse>(getSetItemActionUrl(id),
   }
 );}
 
-
-export type clearItemActionResponse204 = {
-  data: void
-  status: 204
-}
-
-export type clearItemActionResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type clearItemActionResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type clearItemActionResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type clearItemActionResponseSuccess = (clearItemActionResponse204) & {
-  headers: Headers;
-};
-export type clearItemActionResponseError = (clearItemActionResponse401 | clearItemActionResponse404 | clearItemActionResponse500) & {
-  headers: Headers;
-};
-
-export type clearItemActionResponse = (clearItemActionResponseSuccess | clearItemActionResponseError)
 
 export const getClearItemActionUrl = (id: string,
     params?: ClearItemActionParams,) => {
@@ -1063,9 +568,9 @@ export const getClearItemActionUrl = (id: string,
  * @summary Clear the item's deterministic payload.
  */
 export const clearItemAction = async (id: string,
-    params?: ClearItemActionParams, options?: Parameters<typeof apiRequest>[1]): Promise<clearItemActionResponse> => {
+    params?: ClearItemActionParams, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
 
-  return apiRequest<clearItemActionResponse>(getClearItemActionUrl(id,params),
+  return apiRequest<void>(getClearItemActionUrl(id,params),
   {
     ...options,
     method: 'DELETE'
@@ -1074,40 +579,6 @@ export const clearItemAction = async (id: string,
   }
 );}
 
-
-export type createItemRelationResponse200 = {
-  data: RelationDto
-  status: 200
-}
-
-export type createItemRelationResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type createItemRelationResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type createItemRelationResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type createItemRelationResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type createItemRelationResponseSuccess = (createItemRelationResponse200) & {
-  headers: Headers;
-};
-export type createItemRelationResponseError = (createItemRelationResponse400 | createItemRelationResponse401 | createItemRelationResponse404 | createItemRelationResponse500) & {
-  headers: Headers;
-};
-
-export type createItemRelationResponse = (createItemRelationResponseSuccess | createItemRelationResponseError)
 
 export const getCreateItemRelationUrl = (id: string,) => {
 
@@ -1121,7 +592,7 @@ export const getCreateItemRelationUrl = (id: string,) => {
  * @summary Link a calendar item to an external reference (e.g. a LupiraTasks item, or an Activity-API engagement/project).
  */
 export const createItemRelation = async (id: string,
-    createRelationRequest: CreateRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<createItemRelationResponse> => {
+    createRelationRequest: CreateRelationRequest, options?: Parameters<typeof apiRequest>[1]): Promise<RelationDto> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1137,7 +608,7 @@ export const createItemRelation = async (id: string,
     }
     return headers;
   };
-return apiRequest<createItemRelationResponse>(getCreateItemRelationUrl(id),
+return apiRequest<RelationDto>(getCreateItemRelationUrl(id),
   {
     ...options,
     method: 'POST',
@@ -1146,35 +617,6 @@ return apiRequest<createItemRelationResponse>(getCreateItemRelationUrl(id),
   }
 );}
 
-
-export type listItemRelationsResponse200 = {
-  data: RelationDto[]
-  status: 200
-}
-
-export type listItemRelationsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listItemRelationsResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type listItemRelationsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listItemRelationsResponseSuccess = (listItemRelationsResponse200) & {
-  headers: Headers;
-};
-export type listItemRelationsResponseError = (listItemRelationsResponse401 | listItemRelationsResponse404 | listItemRelationsResponse500) & {
-  headers: Headers;
-};
-
-export type listItemRelationsResponse = (listItemRelationsResponseSuccess | listItemRelationsResponseError)
 
 export const getListItemRelationsUrl = (id: string,) => {
 
@@ -1187,9 +629,9 @@ export const getListItemRelationsUrl = (id: string,) => {
 /**
  * @summary List a calendar item's relations.
  */
-export const listItemRelations = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<listItemRelationsResponse> => {
+export const listItemRelations = async (id: string, options?: Parameters<typeof apiRequest>[1]): Promise<RelationDto[]> => {
 
-  return apiRequest<listItemRelationsResponse>(getListItemRelationsUrl(id),
+  return apiRequest<RelationDto[]>(getListItemRelationsUrl(id),
   {
     ...options,
     method: 'GET'
@@ -1198,30 +640,6 @@ export const listItemRelations = async (id: string, options?: Parameters<typeof 
   }
 );}
 
-
-export type listRelationEdgesResponse200 = {
-  data: RelationDto[]
-  status: 200
-}
-
-export type listRelationEdgesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listRelationEdgesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listRelationEdgesResponseSuccess = (listRelationEdgesResponse200) & {
-  headers: Headers;
-};
-export type listRelationEdgesResponseError = (listRelationEdgesResponse401 | listRelationEdgesResponse500) & {
-  headers: Headers;
-};
-
-export type listRelationEdgesResponse = (listRelationEdgesResponseSuccess | listRelationEdgesResponseError)
 
 export const getListRelationEdgesUrl = (params: ListRelationEdgesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -1241,9 +659,9 @@ export const getListRelationEdgesUrl = (params: ListRelationEdgesParams,) => {
 /**
  * @summary Every edge of one kind the caller can see, with its item and reference — e.g. all photo links.
  */
-export const listRelationEdges = async (params: ListRelationEdgesParams, options?: Parameters<typeof apiRequest>[1]): Promise<listRelationEdgesResponse> => {
+export const listRelationEdges = async (params: ListRelationEdgesParams, options?: Parameters<typeof apiRequest>[1]): Promise<RelationDto[]> => {
 
-  return apiRequest<listRelationEdgesResponse>(getListRelationEdgesUrl(params),
+  return apiRequest<RelationDto[]>(getListRelationEdgesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1252,40 +670,6 @@ export const listRelationEdges = async (params: ListRelationEdgesParams, options
   }
 );}
 
-
-export type getHotspotsResponse200 = {
-  data: HotspotDto[]
-  status: 200
-}
-
-export type getHotspotsResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type getHotspotsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getHotspotsResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type getHotspotsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getHotspotsResponseSuccess = (getHotspotsResponse200) & {
-  headers: Headers;
-};
-export type getHotspotsResponseError = (getHotspotsResponse400 | getHotspotsResponse401 | getHotspotsResponse403 | getHotspotsResponse500) & {
-  headers: Headers;
-};
-
-export type getHotspotsResponse = (getHotspotsResponseSuccess | getHotspotsResponseError)
 
 export const getGetHotspotsUrl = (params?: GetHotspotsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -1305,9 +689,9 @@ export const getGetHotspotsUrl = (params?: GetHotspotsParams,) => {
 /**
  * @summary Places where your events and photos concentrate, derived at read time and ranked by active days (distinct UTC days with an event occurrence or a photo). Events come from calendars you can read (or calendarId), photos are your own. Defaults: all-time up to now, minDays 3, limit 100. A hotspot carries the LupiraGeoApi PlaceId it anchors to, else a reverse-geocoded label.
  */
-export const getHotspots = async (params?: GetHotspotsParams, options?: Parameters<typeof apiRequest>[1]): Promise<getHotspotsResponse> => {
+export const getHotspots = async (params?: GetHotspotsParams, options?: Parameters<typeof apiRequest>[1]): Promise<HotspotDto[]> => {
 
-  return apiRequest<getHotspotsResponse>(getGetHotspotsUrl(params),
+  return apiRequest<HotspotDto[]>(getGetHotspotsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1316,35 +700,6 @@ export const getHotspots = async (params?: GetHotspotsParams, options?: Paramete
   }
 );}
 
-
-export type listProposedItemsResponse200 = {
-  data: CalendarItemDto[]
-  status: 200
-}
-
-export type listProposedItemsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listProposedItemsResponse403 = {
-  data: ProblemDetails
-  status: 403
-}
-
-export type listProposedItemsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listProposedItemsResponseSuccess = (listProposedItemsResponse200) & {
-  headers: Headers;
-};
-export type listProposedItemsResponseError = (listProposedItemsResponse401 | listProposedItemsResponse403 | listProposedItemsResponse500) & {
-  headers: Headers;
-};
-
-export type listProposedItemsResponse = (listProposedItemsResponseSuccess | listProposedItemsResponseError)
 
 export const getListProposedItemsUrl = (calendarId: string,) => {
 
@@ -1357,9 +712,9 @@ export const getListProposedItemsUrl = (calendarId: string,) => {
 /**
  * @summary List items proposed into a calendar (awaiting accept/reject).
  */
-export const listProposedItems = async (calendarId: string, options?: Parameters<typeof apiRequest>[1]): Promise<listProposedItemsResponse> => {
+export const listProposedItems = async (calendarId: string, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto[]> => {
 
-  return apiRequest<listProposedItemsResponse>(getListProposedItemsUrl(calendarId),
+  return apiRequest<CalendarItemDto[]>(getListProposedItemsUrl(calendarId),
   {
     ...options,
     method: 'GET'
@@ -1368,35 +723,6 @@ export const listProposedItems = async (calendarId: string, options?: Parameters
   }
 );}
 
-
-export type acceptItemIntoCalendarResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type acceptItemIntoCalendarResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type acceptItemIntoCalendarResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type acceptItemIntoCalendarResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type acceptItemIntoCalendarResponseSuccess = (acceptItemIntoCalendarResponse200) & {
-  headers: Headers;
-};
-export type acceptItemIntoCalendarResponseError = (acceptItemIntoCalendarResponse401 | acceptItemIntoCalendarResponse404 | acceptItemIntoCalendarResponse500) & {
-  headers: Headers;
-};
-
-export type acceptItemIntoCalendarResponse = (acceptItemIntoCalendarResponseSuccess | acceptItemIntoCalendarResponseError)
 
 export const getAcceptItemIntoCalendarUrl = (itemId: string,
     calendarId: string,
@@ -1420,9 +746,9 @@ export const getAcceptItemIntoCalendarUrl = (itemId: string,
  */
 export const acceptItemIntoCalendar = async (itemId: string,
     calendarId: string,
-    params?: AcceptItemIntoCalendarParams, options?: Parameters<typeof apiRequest>[1]): Promise<acceptItemIntoCalendarResponse> => {
+    params?: AcceptItemIntoCalendarParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<acceptItemIntoCalendarResponse>(getAcceptItemIntoCalendarUrl(itemId,calendarId,params),
+  return apiRequest<CalendarItemDto>(getAcceptItemIntoCalendarUrl(itemId,calendarId,params),
   {
     ...options,
     method: 'POST'
@@ -1431,35 +757,6 @@ export const acceptItemIntoCalendar = async (itemId: string,
   }
 );}
 
-
-export type fileItemToCalendarResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type fileItemToCalendarResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type fileItemToCalendarResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type fileItemToCalendarResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type fileItemToCalendarResponseSuccess = (fileItemToCalendarResponse200) & {
-  headers: Headers;
-};
-export type fileItemToCalendarResponseError = (fileItemToCalendarResponse401 | fileItemToCalendarResponse404 | fileItemToCalendarResponse500) & {
-  headers: Headers;
-};
-
-export type fileItemToCalendarResponse = (fileItemToCalendarResponseSuccess | fileItemToCalendarResponseError)
 
 export const getFileItemToCalendarUrl = (itemId: string,
     calendarId: string,
@@ -1483,9 +780,9 @@ export const getFileItemToCalendarUrl = (itemId: string,
  */
 export const fileItemToCalendar = async (itemId: string,
     calendarId: string,
-    params?: FileItemToCalendarParams, options?: Parameters<typeof apiRequest>[1]): Promise<fileItemToCalendarResponse> => {
+    params?: FileItemToCalendarParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<fileItemToCalendarResponse>(getFileItemToCalendarUrl(itemId,calendarId,params),
+  return apiRequest<CalendarItemDto>(getFileItemToCalendarUrl(itemId,calendarId,params),
   {
     ...options,
     method: 'POST'
@@ -1494,35 +791,6 @@ export const fileItemToCalendar = async (itemId: string,
   }
 );}
 
-
-export type removeItemFromCalendarResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type removeItemFromCalendarResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type removeItemFromCalendarResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type removeItemFromCalendarResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type removeItemFromCalendarResponseSuccess = (removeItemFromCalendarResponse200) & {
-  headers: Headers;
-};
-export type removeItemFromCalendarResponseError = (removeItemFromCalendarResponse401 | removeItemFromCalendarResponse404 | removeItemFromCalendarResponse500) & {
-  headers: Headers;
-};
-
-export type removeItemFromCalendarResponse = (removeItemFromCalendarResponseSuccess | removeItemFromCalendarResponseError)
 
 export const getRemoveItemFromCalendarUrl = (itemId: string,
     calendarId: string,
@@ -1546,9 +814,9 @@ export const getRemoveItemFromCalendarUrl = (itemId: string,
  */
 export const removeItemFromCalendar = async (itemId: string,
     calendarId: string,
-    params?: RemoveItemFromCalendarParams, options?: Parameters<typeof apiRequest>[1]): Promise<removeItemFromCalendarResponse> => {
+    params?: RemoveItemFromCalendarParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<removeItemFromCalendarResponse>(getRemoveItemFromCalendarUrl(itemId,calendarId,params),
+  return apiRequest<CalendarItemDto>(getRemoveItemFromCalendarUrl(itemId,calendarId,params),
   {
     ...options,
     method: 'DELETE'
@@ -1557,40 +825,6 @@ export const removeItemFromCalendar = async (itemId: string,
   }
 );}
 
-
-export type inviteParticipantResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type inviteParticipantResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type inviteParticipantResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type inviteParticipantResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type inviteParticipantResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type inviteParticipantResponseSuccess = (inviteParticipantResponse200) & {
-  headers: Headers;
-};
-export type inviteParticipantResponseError = (inviteParticipantResponse400 | inviteParticipantResponse401 | inviteParticipantResponse404 | inviteParticipantResponse500) & {
-  headers: Headers;
-};
-
-export type inviteParticipantResponse = (inviteParticipantResponseSuccess | inviteParticipantResponseError)
 
 export const getInviteParticipantUrl = (id: string,
     params: InviteParticipantParams,) => {
@@ -1612,9 +846,9 @@ export const getInviteParticipantUrl = (id: string,
  * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const inviteParticipant = async (id: string,
-    params: InviteParticipantParams, options?: Parameters<typeof apiRequest>[1]): Promise<inviteParticipantResponse> => {
+    params: InviteParticipantParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<inviteParticipantResponse>(getInviteParticipantUrl(id,params),
+  return apiRequest<CalendarItemDto>(getInviteParticipantUrl(id,params),
   {
     ...options,
     method: 'POST'
@@ -1623,35 +857,6 @@ export const inviteParticipant = async (id: string,
   }
 );}
 
-
-export type removeParticipantByContactResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type removeParticipantByContactResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type removeParticipantByContactResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type removeParticipantByContactResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type removeParticipantByContactResponseSuccess = (removeParticipantByContactResponse200) & {
-  headers: Headers;
-};
-export type removeParticipantByContactResponseError = (removeParticipantByContactResponse401 | removeParticipantByContactResponse404 | removeParticipantByContactResponse500) & {
-  headers: Headers;
-};
-
-export type removeParticipantByContactResponse = (removeParticipantByContactResponseSuccess | removeParticipantByContactResponseError)
 
 export const getRemoveParticipantByContactUrl = (id: string,
     params: RemoveParticipantByContactParams,) => {
@@ -1673,9 +878,9 @@ export const getRemoveParticipantByContactUrl = (id: string,
  * @summary Remove a contact from the item — every participation it holds; a contact holding none is a no-op. For clients that never learned the participation id.
  */
 export const removeParticipantByContact = async (id: string,
-    params: RemoveParticipantByContactParams, options?: Parameters<typeof apiRequest>[1]): Promise<removeParticipantByContactResponse> => {
+    params: RemoveParticipantByContactParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<removeParticipantByContactResponse>(getRemoveParticipantByContactUrl(id,params),
+  return apiRequest<CalendarItemDto>(getRemoveParticipantByContactUrl(id,params),
   {
     ...options,
     method: 'DELETE'
@@ -1684,40 +889,6 @@ export const removeParticipantByContact = async (id: string,
   }
 );}
 
-
-export type respondToInvitationResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type respondToInvitationResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type respondToInvitationResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type respondToInvitationResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type respondToInvitationResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type respondToInvitationResponseSuccess = (respondToInvitationResponse200) & {
-  headers: Headers;
-};
-export type respondToInvitationResponseError = (respondToInvitationResponse400 | respondToInvitationResponse401 | respondToInvitationResponse404 | respondToInvitationResponse500) & {
-  headers: Headers;
-};
-
-export type respondToInvitationResponse = (respondToInvitationResponseSuccess | respondToInvitationResponseError)
 
 export const getRespondToInvitationUrl = (id: string,
     participationId: string,
@@ -1741,9 +912,9 @@ export const getRespondToInvitationUrl = (id: string,
  */
 export const respondToInvitation = async (id: string,
     participationId: string,
-    params?: RespondToInvitationParams, options?: Parameters<typeof apiRequest>[1]): Promise<respondToInvitationResponse> => {
+    params?: RespondToInvitationParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<respondToInvitationResponse>(getRespondToInvitationUrl(id,participationId,params),
+  return apiRequest<CalendarItemDto>(getRespondToInvitationUrl(id,participationId,params),
   {
     ...options,
     method: 'POST'
@@ -1752,35 +923,6 @@ export const respondToInvitation = async (id: string,
   }
 );}
 
-
-export type confirmAttendanceResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type confirmAttendanceResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type confirmAttendanceResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type confirmAttendanceResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type confirmAttendanceResponseSuccess = (confirmAttendanceResponse200) & {
-  headers: Headers;
-};
-export type confirmAttendanceResponseError = (confirmAttendanceResponse401 | confirmAttendanceResponse404 | confirmAttendanceResponse500) & {
-  headers: Headers;
-};
-
-export type confirmAttendanceResponse = (confirmAttendanceResponseSuccess | confirmAttendanceResponseError)
 
 export const getConfirmAttendanceUrl = (id: string,
     participationId: string,
@@ -1804,9 +946,9 @@ export const getConfirmAttendanceUrl = (id: string,
  */
 export const confirmAttendance = async (id: string,
     participationId: string,
-    params?: ConfirmAttendanceParams, options?: Parameters<typeof apiRequest>[1]): Promise<confirmAttendanceResponse> => {
+    params?: ConfirmAttendanceParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<confirmAttendanceResponse>(getConfirmAttendanceUrl(id,participationId,params),
+  return apiRequest<CalendarItemDto>(getConfirmAttendanceUrl(id,participationId,params),
   {
     ...options,
     method: 'POST'
@@ -1815,35 +957,6 @@ export const confirmAttendance = async (id: string,
   }
 );}
 
-
-export type leaveItemResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type leaveItemResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type leaveItemResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type leaveItemResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type leaveItemResponseSuccess = (leaveItemResponse200) & {
-  headers: Headers;
-};
-export type leaveItemResponseError = (leaveItemResponse401 | leaveItemResponse404 | leaveItemResponse500) & {
-  headers: Headers;
-};
-
-export type leaveItemResponse = (leaveItemResponseSuccess | leaveItemResponseError)
 
 export const getLeaveItemUrl = (id: string,
     participationId: string,
@@ -1867,9 +980,9 @@ export const getLeaveItemUrl = (id: string,
  */
 export const leaveItem = async (id: string,
     participationId: string,
-    params?: LeaveItemParams, options?: Parameters<typeof apiRequest>[1]): Promise<leaveItemResponse> => {
+    params?: LeaveItemParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<leaveItemResponse>(getLeaveItemUrl(id,participationId,params),
+  return apiRequest<CalendarItemDto>(getLeaveItemUrl(id,participationId,params),
   {
     ...options,
     method: 'POST'
@@ -1878,35 +991,6 @@ export const leaveItem = async (id: string,
   }
 );}
 
-
-export type removeParticipantResponse200 = {
-  data: CalendarItemDto
-  status: 200
-}
-
-export type removeParticipantResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type removeParticipantResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type removeParticipantResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type removeParticipantResponseSuccess = (removeParticipantResponse200) & {
-  headers: Headers;
-};
-export type removeParticipantResponseError = (removeParticipantResponse401 | removeParticipantResponse404 | removeParticipantResponse500) & {
-  headers: Headers;
-};
-
-export type removeParticipantResponse = (removeParticipantResponseSuccess | removeParticipantResponseError)
 
 export const getRemoveParticipantUrl = (id: string,
     participationId: string,) => {
@@ -1921,9 +1005,9 @@ export const getRemoveParticipantUrl = (id: string,
  * @summary Remove an attendee. Pass Idempotency-Key so a redelivered removal succeeds rather than 404s.
  */
 export const removeParticipant = async (id: string,
-    participationId: string, options?: Parameters<typeof apiRequest>[1]): Promise<removeParticipantResponse> => {
+    participationId: string, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
-  return apiRequest<removeParticipantResponse>(getRemoveParticipantUrl(id,participationId),
+  return apiRequest<CalendarItemDto>(getRemoveParticipantUrl(id,participationId),
   {
     ...options,
     method: 'DELETE'
@@ -1932,35 +1016,6 @@ export const removeParticipant = async (id: string,
   }
 );}
 
-
-export type getSyncItemsResponse200 = {
-  data: SyncPageOfItemSyncChange
-  status: 200
-}
-
-export type getSyncItemsResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type getSyncItemsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getSyncItemsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getSyncItemsResponseSuccess = (getSyncItemsResponse200) & {
-  headers: Headers;
-};
-export type getSyncItemsResponseError = (getSyncItemsResponse400 | getSyncItemsResponse401 | getSyncItemsResponse500) & {
-  headers: Headers;
-};
-
-export type getSyncItemsResponse = (getSyncItemsResponseSuccess | getSyncItemsResponseError)
 
 export const getGetSyncItemsUrl = (params?: GetSyncItemsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -1980,9 +1035,9 @@ export const getGetSyncItemsUrl = (params?: GetSyncItemsParams,) => {
 /**
  * @summary Paged item feed for offline mirrors. Omit since for a full sync (reset: replace the mirror; no tombstones); later pages and deltas return items the caller can read that changed past the cursor, plus ids of items deleted or no longer visible. Loop while hasMore, persisting cursor between calls.
  */
-export const getSyncItems = async (params?: GetSyncItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<getSyncItemsResponse> => {
+export const getSyncItems = async (params?: GetSyncItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfItemSyncChange> => {
 
-  return apiRequest<getSyncItemsResponse>(getGetSyncItemsUrl(params),
+  return apiRequest<SyncPageOfItemSyncChange>(getGetSyncItemsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1991,35 +1046,6 @@ export const getSyncItems = async (params?: GetSyncItemsParams, options?: Parame
   }
 );}
 
-
-export type getChangesResponse200 = {
-  data: SyncPageOfItemSyncChange
-  status: 200
-}
-
-export type getChangesResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type getChangesResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getChangesResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getChangesResponseSuccess = (getChangesResponse200) & {
-  headers: Headers;
-};
-export type getChangesResponseError = (getChangesResponse400 | getChangesResponse401 | getChangesResponse500) & {
-  headers: Headers;
-};
-
-export type getChangesResponse = (getChangesResponseSuccess | getChangesResponseError)
 
 export const getGetChangesUrl = (params?: GetChangesParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -2039,9 +1065,9 @@ export const getGetChangesUrl = (params?: GetChangesParams,) => {
 /**
  * @summary Alias of GET /sync/items for existing clients.
  */
-export const getChanges = async (params?: GetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getChangesResponse> => {
+export const getChanges = async (params?: GetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfItemSyncChange> => {
 
-  return apiRequest<getChangesResponse>(getGetChangesUrl(params),
+  return apiRequest<SyncPageOfItemSyncChange>(getGetChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2050,30 +1076,6 @@ export const getChanges = async (params?: GetChangesParams, options?: Parameters
   }
 );}
 
-
-export type getSyncCalendarsResponse200 = {
-  data: SyncPageOfContainerDto
-  status: 200
-}
-
-export type getSyncCalendarsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getSyncCalendarsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getSyncCalendarsResponseSuccess = (getSyncCalendarsResponse200) & {
-  headers: Headers;
-};
-export type getSyncCalendarsResponseError = (getSyncCalendarsResponse401 | getSyncCalendarsResponse500) & {
-  headers: Headers;
-};
-
-export type getSyncCalendarsResponse = (getSyncCalendarsResponseSuccess | getSyncCalendarsResponseError)
 
 export const getGetSyncCalendarsUrl = () => {
 
@@ -2086,9 +1088,9 @@ export const getGetSyncCalendarsUrl = () => {
 /**
  * @summary Snapshot of the caller's calendars: always reset with every calendar in changed and no cursor; replace the local set on each call.
  */
-export const getSyncCalendars = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getSyncCalendarsResponse> => {
+export const getSyncCalendars = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfContainerDto> => {
 
-  return apiRequest<getSyncCalendarsResponse>(getGetSyncCalendarsUrl(),
+  return apiRequest<SyncPageOfContainerDto>(getGetSyncCalendarsUrl(),
   {
     ...options,
     method: 'GET'
@@ -2097,30 +1099,6 @@ export const getSyncCalendars = async ( options?: Parameters<typeof apiRequest>[
   }
 );}
 
-
-export type getSyncContainersResponse200 = {
-  data: ContainerDto[]
-  status: 200
-}
-
-export type getSyncContainersResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getSyncContainersResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getSyncContainersResponseSuccess = (getSyncContainersResponse200) & {
-  headers: Headers;
-};
-export type getSyncContainersResponseError = (getSyncContainersResponse401 | getSyncContainersResponse500) & {
-  headers: Headers;
-};
-
-export type getSyncContainersResponse = (getSyncContainersResponseSuccess | getSyncContainersResponseError)
 
 export const getGetSyncContainersUrl = () => {
 
@@ -2133,9 +1111,9 @@ export const getGetSyncContainersUrl = () => {
 /**
  * @summary Snapshot of the caller's calendars for mirror reconciliation. Containers are plain documents with no event history (no cursor) — fetch once per sync cycle and diff locally.
  */
-export const getSyncContainers = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getSyncContainersResponse> => {
+export const getSyncContainers = async ( options?: Parameters<typeof apiRequest>[1]): Promise<ContainerDto[]> => {
 
-  return apiRequest<getSyncContainersResponse>(getGetSyncContainersUrl(),
+  return apiRequest<ContainerDto[]>(getGetSyncContainersUrl(),
   {
     ...options,
     method: 'GET'

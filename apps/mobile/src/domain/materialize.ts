@@ -2,7 +2,7 @@ import { expandRecurrence } from '@lupira/cal-domain/recurrence';
 import { ymd } from '@danbro96/lupira-domain-core/time';
 import type { ContactDoc, ItemDoc } from './docTypes';
 
-/** The single grid read path: every visible instant becomes one row in the `occurrences` table, recomputed
+/** The single grid read path: every visible instant becomes one occurrence row in the index, recomputed
  *  per source aggregate inside the same exclusive transaction that changed it. Grids never expand recurrence
  *  at render time — they run one indexed start_day range query. */
 
@@ -34,8 +34,7 @@ export function horizonDrifted(stored: Horizon, current: Horizon): boolean {
     || Math.abs(stored.end.getTime() - current.end.getTime()) > monthMs;
 }
 
-export function occurrenceRowsForItem(doc: ItemDoc, deleted: boolean, horizon: Horizon): OccurrenceRow[] {
-  if (deleted) return [];
+export function occurrenceRowsForItem(doc: ItemDoc, horizon: Horizon): OccurrenceRow[] {
   const allDay = doc.isAllDay === true;
   const start = allDay
     ? (doc.startDate ? new Date(`${doc.startDate}T00:00:00Z`) : null)
@@ -70,8 +69,8 @@ export function occurrenceRowsForItem(doc: ItemDoc, deleted: boolean, horizon: H
 
 /** Birthdays synthesize straight into the occurrence table — never stored as items (matching the server's
  *  read-time projection). Year-less birthdays still recur; Feb 29 lands only in leap years. */
-export function birthdayRows(contact: ContactDoc, deleted: boolean, horizon: Horizon): OccurrenceRow[] {
-  if (deleted || !contact.birthday) return [];
+export function birthdayRows(contact: ContactDoc, horizon: Horizon): OccurrenceRow[] {
+  if (!contact.birthday) return [];
   const { month, day } = contact.birthday;
   if (month < 1 || month > 12 || day < 1) return [];
 
@@ -90,10 +89,6 @@ export function birthdayRows(contact: ContactDoc, deleted: boolean, horizon: Hor
     });
   }
   return rows;
-}
-
-export function monthKeyOf(dayKey: string): string {
-  return dayKey.slice(0, 7);
 }
 
 function utcDayKey(d: Date): string {

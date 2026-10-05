@@ -9,20 +9,17 @@ vi.mock('@lupira/cal-api/fetch/contact', () => ({}));
 
 const { replayOp } = await import('./replayOp');
 
-const invited = (contactId: string) => ({
-  status: 200,
-  data: { attendees: [{ contactId, participationId: `p-${contactId}` }] },
-});
+const invited = (contactId: string) => ({ attendees: [{ contactId, participationId: `p-${contactId}` }] });
 
 describe('item.invite replay', () => {
   beforeEach(() => {
     cal.inviteParticipant.mockReset().mockImplementation(async (_id: string, p: { contactId: string }) => invited(p.contactId));
-    cal.respondToInvitation.mockReset().mockResolvedValue({ status: 200 });
+    cal.respondToInvitation.mockReset().mockResolvedValue(undefined);
   });
 
   it('accepts on behalf of the listed invitees only, under a key of its own', async () => {
     await replayOp({
-      kind: 'item.invite', itemId: 'item-1', contactIds: ['me', 'anna'], accept: ['me'],
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.invite', itemId: 'item-1', contactIds: ['me', 'anna'], accept: ['me'],
       occurredAt: '2026-09-30T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000001',
     });
 
@@ -36,7 +33,7 @@ describe('item.invite replay', () => {
 
   it('sends no RSVP for a plain invite', async () => {
     await replayOp({
-      kind: 'item.invite', itemId: 'item-1', contactIds: ['anna'],
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.invite', itemId: 'item-1', contactIds: ['anna'],
       occurredAt: '2026-09-30T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000002',
     });
 

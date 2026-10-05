@@ -33,7 +33,7 @@ object BridgeDb {
   /// non-WAL default on open, silently downgrading the app's own connections to rollback-journal
   /// locking ("database is locked" all over the engine — observed on a fresh install mid-first-sync).
   fun openMirror(context: Context): SQLiteDatabase? {
-    val file = File(context.filesDir, "SQLite/lupira-calendar-mirror.db")
+    val file = File(context.filesDir, "SQLite/lupira-calendar.db")
     if (!file.exists()) return null
     val db = SQLiteDatabase.openDatabase(
       file.path, null,

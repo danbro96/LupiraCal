@@ -8,47 +8,12 @@ import type {
   ArchiveSearchHitDto,
   GetTopicParams,
   ListTopicsParams,
-  ProblemDetails,
   SearchParams,
   TopicDetailDto,
   TopicSummaryDto
 } from '../../models';
 
 import { apiRequest } from '../../../transport';
-
-export type searchResponse200 = {
-  data: ArchiveSearchHitDto[]
-  status: 200
-}
-
-export type searchResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type searchResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type searchResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type searchResponse502 = {
-  data: ProblemDetails
-  status: 502
-}
-
-export type searchResponseSuccess = (searchResponse200) & {
-  headers: Headers;
-};
-export type searchResponseError = (searchResponse400 | searchResponse401 | searchResponse500 | searchResponse502) & {
-  headers: Headers;
-};
-
-export type searchResponse = (searchResponseSuccess | searchResponseError)
 
 export const getSearchUrl = (params?: SearchParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -68,9 +33,9 @@ export const getSearchUrl = (params?: SearchParams,) => {
 /**
  * @summary Hybrid research search over the corpus (semantic + full-text, reranked).
  */
-export const search = async (params?: SearchParams, options?: Parameters<typeof apiRequest>[1]): Promise<searchResponse> => {
+export const search = async (params?: SearchParams, options?: Parameters<typeof apiRequest>[1]): Promise<ArchiveSearchHitDto[]> => {
 
-  return apiRequest<searchResponse>(getSearchUrl(params),
+  return apiRequest<ArchiveSearchHitDto[]>(getSearchUrl(params),
   {
     ...options,
     method: 'GET'
@@ -79,35 +44,6 @@ export const search = async (params?: SearchParams, options?: Parameters<typeof 
   }
 );}
 
-
-export type listTopicsResponse200 = {
-  data: TopicSummaryDto[]
-  status: 200
-}
-
-export type listTopicsResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type listTopicsResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type listTopicsResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type listTopicsResponseSuccess = (listTopicsResponse200) & {
-  headers: Headers;
-};
-export type listTopicsResponseError = (listTopicsResponse400 | listTopicsResponse401 | listTopicsResponse500) & {
-  headers: Headers;
-};
-
-export type listTopicsResponse = (listTopicsResponseSuccess | listTopicsResponseError)
 
 export const getListTopicsUrl = (params?: ListTopicsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -135,9 +71,9 @@ export const getListTopicsUrl = (params?: ListTopicsParams,) => {
 /**
  * @summary List topics by status and/or contact (poll alternative to closed-topic push).
  */
-export const listTopics = async (params?: ListTopicsParams, options?: Parameters<typeof apiRequest>[1]): Promise<listTopicsResponse> => {
+export const listTopics = async (params?: ListTopicsParams, options?: Parameters<typeof apiRequest>[1]): Promise<TopicSummaryDto[]> => {
 
-  return apiRequest<listTopicsResponse>(getListTopicsUrl(params),
+  return apiRequest<TopicSummaryDto[]>(getListTopicsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -146,40 +82,6 @@ export const listTopics = async (params?: ListTopicsParams, options?: Parameters
   }
 );}
 
-
-export type getTopicResponse200 = {
-  data: TopicDetailDto
-  status: 200
-}
-
-export type getTopicResponse400 = {
-  data: ProblemDetails
-  status: 400
-}
-
-export type getTopicResponse401 = {
-  data: ProblemDetails
-  status: 401
-}
-
-export type getTopicResponse404 = {
-  data: ProblemDetails
-  status: 404
-}
-
-export type getTopicResponse500 = {
-  data: ProblemDetails
-  status: 500
-}
-
-export type getTopicResponseSuccess = (getTopicResponse200) & {
-  headers: Headers;
-};
-export type getTopicResponseError = (getTopicResponse400 | getTopicResponse401 | getTopicResponse404 | getTopicResponse500) & {
-  headers: Headers;
-};
-
-export type getTopicResponse = (getTopicResponseSuccess | getTopicResponseError)
 
 export const getGetTopicUrl = (id: string,
     params?: GetTopicParams,) => {
@@ -201,9 +103,9 @@ export const getGetTopicUrl = (id: string,
  * @summary Get a topic with its ordered message window (open-topic tail).
  */
 export const getTopic = async (id: string,
-    params?: GetTopicParams, options?: Parameters<typeof apiRequest>[1]): Promise<getTopicResponse> => {
+    params?: GetTopicParams, options?: Parameters<typeof apiRequest>[1]): Promise<TopicDetailDto> => {
 
-  return apiRequest<getTopicResponse>(getGetTopicUrl(id,params),
+  return apiRequest<TopicDetailDto>(getGetTopicUrl(id,params),
   {
     ...options,
     method: 'GET'

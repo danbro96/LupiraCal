@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { memo, useDeferredValue, useState } from 'react';
 import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 import { Searchbar, Text } from 'react-native-paper';
-import type { ItemSearchRow } from '../../data/mirror';
+import type { ItemSearchRow } from '../../data/queries/search';
 import { useItemSearch } from '../../state/useItemSearch';
 import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 import { ScreenToolbar } from '@danbro96/lupira-expo-paper/components/ScreenToolbar';

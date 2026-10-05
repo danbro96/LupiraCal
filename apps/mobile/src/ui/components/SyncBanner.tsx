@@ -2,9 +2,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ProgressBar, Text, useTheme } from 'react-native-paper';
-import { bannerState, type BannerKind } from '../../domain/bannerState';
-import { PHASE_LABELS } from '../../domain/syncPhase';
-import { useSyncStatus } from '../../sync/syncStatus';
+import { bannerState, type BannerKind } from '@danbro96/lupira-sync-engine/bannerState';
+import { useOnline } from '@danbro96/lupira-expo-query/online';
+import { AGGREGATE_LABELS } from '../../domain/aggregates';
+import { useSyncStatus } from '../../state/useSyncStatus';
 import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
@@ -12,6 +13,7 @@ import type { RootStackParamList } from '../navigation/types';
 const ICON_BY_KIND: Record<BannerKind, (typeof ICONS)['sync' | 'cloudOff' | 'alert']> = {
   syncing: ICONS.sync,
   offline: ICONS.cloudOff,
+  unreachable: ICONS.cloudOff,
   parked: ICONS.alert,
   error: ICONS.alert,
 };
@@ -24,9 +26,10 @@ export function SyncBanner() {
   // useTheme, not useColors: the alert tint is MD3's errorContainer pair, which the estate
   // palette has no equivalent for.
   const theme = useTheme();
-  const { syncing, serverReachable, pending, parked, lastError, progress } = useSyncStatus();
+  const status = useSyncStatus();
+  const online = useOnline();
 
-  const state = bannerState({ syncing, serverReachable, pending, parked, lastError, progress }, PHASE_LABELS);
+  const state = bannerState({ ...status, online }, AGGREGATE_LABELS);
   if (!state) return null;
 
   if (state.quiet) {
@@ -37,7 +40,7 @@ export function SyncBanner() {
     );
   }
 
-  const alert = state.kind === 'offline' || state.kind === 'parked' || state.kind === 'error';
+  const alert = state.kind !== 'syncing';
   const fg = alert ? theme.colors.onErrorContainer : theme.colors.onSurfaceVariant;
   return (
     <Pressable

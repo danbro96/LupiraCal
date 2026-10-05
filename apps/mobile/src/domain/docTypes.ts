@@ -91,6 +91,19 @@ export type ContactDoc = {
   [key: string]: unknown;
 };
 
+/** A LupiraTasks item as Cal mirrors it, read-only. */
+export type TaskDoc = {
+  id: string;
+  listId: string;
+  title: string;
+  status: string;
+  completed: boolean;
+  dueAt?: string | null;
+};
+
+/** The signed-in user as contact-api knows them; `contactId` is the card linked as "me". */
+export type MeDoc = { contactId?: string | null };
+
 export const ZERO_GUARD: SectionGuard = { ts: '0001-01-01T00:00:00+00:00', cmd: '00000000-0000-0000-0000-000000000000' };
 
 export function emptyItemGuards(): ItemGuards {

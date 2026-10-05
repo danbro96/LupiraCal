@@ -1,22 +1,23 @@
-import { v7 as uuidv7 } from 'uuid';
+import type { SyncEngine } from '@danbro96/lupira-sync-engine/engine';
 import type { BridgeInboxRow } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
-import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { deterministicIdFor } from '../data/ids';
-import * as mirror from '../data/mirror';
+import { Aggregate } from '../domain/aggregates';
 import type { CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow } from '../domain/bridgeTranslate';
 import { PENDING_PREFIX, contactReviseIsEcho, mergeChannelTypes, sourceKeyOfPendingMarker, translateCalRow, translateContactRow } from '../domain/bridgeTranslate';
-import { currentHorizon } from '../domain/materialize';
-import type { ClientOp } from '../domain/ops';
+import type { ContactDoc, ItemDoc } from '../domain/docTypes';
+import { stamp, type ClientOp } from '../domain/ops';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
-import { enqueue } from './outbox';
+import { readMeta } from './meta';
+
+export const BRIDGE_ENABLED_KEY = 'bridge.enabled';
 
 /** Impure half of the write-back: pull captured provider edits from the Kotlin inbox, resolve ids
  *  (pending markers → deterministic aggregate ids), translate, enqueue through the normal outbox/LWW
  *  path, re-point provider rows, ack. Idempotent across crashes: re-drained creates share the
  *  deterministic sourceKey and revises converge via LWW. */
-export async function drainBridgeInbox(db: Db): Promise<number> {
-  if (!(await bridgeEnabled(db))) return 0;
+export async function drainBridgeInbox(engine: SyncEngine): Promise<number> {
+  if (!(await bridgeEnabled())) return 0;
   let rows: BridgeInboxRow[];
   try {
     rows = await LupiraBridge.drainInbox();
@@ -31,7 +32,7 @@ export async function drainBridgeInbox(db: Db): Promise<number> {
 
   for (const row of rows) {
     if (row.domain === 'contact') {
-      const contactOps = await translateContactInboxRow(db, row);
+      const contactOps = await translateContactInboxRow(engine, row);
       ops.push(...contactOps);
       ackIds.push(row.id);
       continue;
@@ -45,18 +46,18 @@ export async function drainBridgeInbox(db: Db): Promise<number> {
       ackIds.push(row.id);
       continue;
     }
-    const existing = await mirror.loadItem(db, parsed.itemId);
+    const existing = await engine.doc<ItemDoc, unknown>(Aggregate.item, parsed.itemId);
     const t = translateCalRow(parsed, existing?.doc ?? null);
     switch (t.kind) {
       case 'create':
-        ops.push({ kind: 'item.create', itemId: t.itemId, sourceKey: t.sourceKey, calendarId: t.calendarId, core: t.core, commandId: uuidv7(), occurredAt: t.occurredAt });
+        ops.push({ kind: 'item.create', itemId: t.itemId, sourceKey: t.sourceKey, calendarId: t.calendarId, core: t.core, ...stamp(Aggregate.item, t.itemId, t.occurredAt) });
         assignments.push({ marker: row.syncId!, syncId: t.itemId });
         break;
       case 'revise':
-        ops.push({ kind: 'item.revise', itemId: t.itemId, core: t.core, commandId: uuidv7(), occurredAt: t.occurredAt });
+        ops.push({ kind: 'item.revise', itemId: t.itemId, core: t.core, ...stamp(Aggregate.item, t.itemId, t.occurredAt) });
         break;
       case 'delete':
-        ops.push({ kind: 'item.delete', itemId: t.itemId, commandId: uuidv7(), occurredAt: t.occurredAt });
+        ops.push({ kind: 'item.delete', itemId: t.itemId, ...stamp(Aggregate.item, t.itemId, t.occurredAt) });
         break;
       case 'skip':
         logDebug('bridge', `inbox row ${row.id} skipped: ${t.reason}`);
@@ -65,7 +66,7 @@ export async function drainBridgeInbox(db: Db): Promise<number> {
     ackIds.push(row.id);
   }
 
-  if (ops.length > 0) await enqueue(db, ops, currentHorizon());
+  if (ops.length > 0) await engine.enqueue(ops);
   for (const a of assignments) await LupiraBridge.assignEventSyncId(a.marker, a.syncId);
   await LupiraBridge.ackInbox(ackIds);
   logDebug('bridge', `drained ${rows.length} inbox rows → ${ops.length} ops`);
@@ -74,8 +75,8 @@ export async function drainBridgeInbox(db: Db): Promise<number> {
 
 /** Mirror → provider refresh at the end of an engine sync (fresh pull state lands in the stock apps
  *  without waiting for the OS scheduler). No-op unless the user enabled the integration. */
-export async function bridgePublish(db: Db): Promise<void> {
-  if (!(await bridgeEnabled(db))) return;
+export async function bridgePublish(): Promise<void> {
+  if (!(await bridgeEnabled())) return;
   try {
     await LupiraBridge.bridgeSyncNow();
   } catch (e) {
@@ -83,12 +84,12 @@ export async function bridgePublish(db: Db): Promise<void> {
   }
 }
 
-/** The user preference lives in mirror_meta so this layer can read it (boundaries: sync ↛ state). */
-async function bridgeEnabled(db: Db): Promise<boolean> {
-  return (await mirror.getMeta(db, 'bridge.enabled')) === '1';
+/** The user preference lives in the kernel meta so this layer can read it (boundaries: sync ↛ state). */
+async function bridgeEnabled(): Promise<boolean> {
+  return (await readMeta(BRIDGE_ENABLED_KEY)) === '1';
 }
 
-async function translateContactInboxRow(db: Db, row: BridgeInboxRow): Promise<ClientOp[]> {
+async function translateContactInboxRow(engine: SyncEngine, row: BridgeInboxRow): Promise<ClientOp[]> {
   if (!row.syncId || !GUID_RE.test(row.syncId)) {
     logDebug('bridge', `contact inbox row ${row.id}: unusable sync id`);
     return [];
@@ -107,18 +108,18 @@ async function translateContactInboxRow(db: Db, row: BridgeInboxRow): Promise<Cl
     occurredAt: new Date(row.capturedAt).toISOString(),
   };
   const t = translateContactRow(parsed);
-  if (t.kind === 'delete') return [{ kind: 'contact.delete', contactId: t.contactId, commandId: uuidv7(), occurredAt: t.occurredAt }];
+  if (t.kind === 'delete') return [{ kind: 'contact.delete', contactId: t.contactId, ...stamp(Aggregate.contact, t.contactId, t.occurredAt) }];
 
-  const doc = (await mirror.loadContact(db, t.contactId))?.doc ?? null;
+  const doc = (await engine.doc<ContactDoc, unknown>(Aggregate.contact, t.contactId))?.doc ?? null;
   const channels = doc ? mergeChannelTypes(t.channels, doc.channels ?? []) : t.channels;
   if (doc && contactReviseIsEcho(t.core, channels, doc)) {
     logDebug('bridge', `contact inbox row ${row.id}: echo, skipped`);
     return [];
   }
   return [
-    { kind: 'contact.revise', contactId: t.contactId, core: t.core, commandId: uuidv7(), occurredAt: t.occurredAt },
+    { kind: 'contact.revise', contactId: t.contactId, core: t.core, ...stamp(Aggregate.contact, t.contactId, t.occurredAt) },
     // +1ms so the wholesale channel replacement deterministically outranks the revise on the shared guard.
-    { kind: 'contact.channels', contactId: t.contactId, channels, commandId: uuidv7(), occurredAt: new Date(row.capturedAt + 1).toISOString() },
+    { kind: 'contact.channels', contactId: t.contactId, channels, ...stamp(Aggregate.contact, t.contactId, new Date(row.capturedAt + 1).toISOString()) },
   ];
 }
 

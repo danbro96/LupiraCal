@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { residencyStatus, type FuzzyDate } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import { parentsHomes, type ContactAddressRow, type ParentsHome } from '@danbro96/lupira-domain-contacts/residents';
-import { getDb } from '../data/db/expoDb';
-import { contactResidencies, placeEntryOf } from '../data/mirror';
+import { mirrorQuery } from '@danbro96/lupira-expo-query/mirrorQuery';
+import { contactResidencies } from '../data/queries/residencies';
+import { Aggregate } from '../domain/aggregates';
 import type { PlaceEntryDoc } from '../domain/docTypes';
+import { engine, readyDb } from '../sync/engine';
 import { useContactRelations } from './useContactList';
 
 const parseFuzzy = (raw: string | null): FuzzyDate | null => (raw ? (JSON.parse(raw) as FuzzyDate) : null);
@@ -12,11 +14,7 @@ const parseFuzzy = (raw: string | null): FuzzyDate | null => (raw ? (JSON.parse(
  *  query serves the map, the place picker, quick places and contact cards, so they agree and share one place
  *  lookup. */
 export function useResidencyRows(enabled = true): ContactAddressRow[] {
-  const q = useQuery({
-    queryKey: ['contacts', 'residencies'],
-    enabled,
-    queryFn: async () => contactResidencies(await getDb()),
-  });
+  const q = useQuery({ ...mirrorQuery([Aggregate.residency], async () => contactResidencies(await readyDb())), enabled });
   return (q.data ?? []).map((r) => ({
     contactId: r.contact_id,
     displayName: r.display_name,
@@ -40,10 +38,10 @@ export function useParentsHomes(contactId: string | null, rows: readonly Contact
  *  date passing changes nothing on the server's feed until the next full sync. */
 export function usePlaceEntry(placeId: string | null | undefined, rows: readonly ContactAddressRow[]): PlaceEntryDoc | null {
   const q = useQuery({
-    queryKey: ['contacts', 'place-entry', placeId],
+    ...mirrorQuery([Aggregate.placeEntry, placeId], () => engine.doc<PlaceEntryDoc, null>(Aggregate.placeEntry, placeId!)),
     enabled: !!placeId,
-    queryFn: async () => placeEntryOf(await getDb(), placeId!),
   });
+  const entry = q.data?.doc;
   const lived = rows.some((r) => r.placeId === placeId && residencyStatus(r.movedIn, r.movedOut) === 'active');
-  return lived && q.data && q.data.codes.length > 0 ? q.data : null;
+  return lived && entry && entry.codes.length > 0 ? entry : null;
 }

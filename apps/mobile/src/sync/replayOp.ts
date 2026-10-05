@@ -8,8 +8,8 @@ import { v5 as uuidv5 } from 'uuid';
 import { ApiError } from '@danbro96/lupira-http/apiError';
 import type { ClientOp, ItemCore } from '../domain/ops';
 
-/** Op → REST. Every call carries `Idempotency-Key: commandId` (the server ledger makes redelivery a no-op —
- *  and it's what licenses the mutator to auto-retry writes) and the op's occurredAt (the server's LWW input). */
+/** Op → REST. Every call carries `Idempotency-Key: commandId` (the server ledger makes redelivery a no-op) and
+ *  the op's occurredAt (the server's LWW input). */
 export async function replayOp(op: ClientOp): Promise<void> {
   const idem = { headers: { 'Idempotency-Key': op.commandId } };
   switch (op.kind) {
@@ -55,9 +55,9 @@ export async function replayOp(op: ClientOp): Promise<void> {
     case 'item.invite':
       for (const contactId of op.contactIds) {
         const key = uuidv5(contactId, op.commandId);
-        const r = await inviteParticipant(op.itemId, { contactId, occurredAt: op.occurredAt }, { headers: { 'Idempotency-Key': key } });
-        if (!op.accept?.includes(contactId) || r.status !== 200) continue;
-        const participationId = participationIdOf(r.data, contactId);
+        const item = await inviteParticipant(op.itemId, { contactId, occurredAt: op.occurredAt }, { headers: { 'Idempotency-Key': key } });
+        if (!op.accept?.includes(contactId)) continue;
+        const participationId = participationIdOf(item, contactId);
         if (!participationId) continue;
         await respondToInvitation(
           op.itemId, participationId, { status: 'accepted', occurredAt: op.occurredAt },
