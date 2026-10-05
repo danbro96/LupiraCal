@@ -364,7 +364,7 @@ async function persistItem(
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
+  container: { padding: spacing.lg },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   muted: { fontSize: 13 },
   notice: { fontSize: 13, fontWeight: '600' },

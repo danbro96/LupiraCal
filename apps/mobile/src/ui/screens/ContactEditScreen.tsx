@@ -25,7 +25,7 @@ import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { ReachIcon } from '../components/ReachIcon';
 import type { RootStackParamList } from '../navigation/types';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 import { ICONS } from '../icons';
 
 const KIND_OPTIONS = [{ value: 'Individual', label: 'Person' }, { value: 'Organization', label: 'Organization' }];
@@ -279,7 +279,7 @@ export function ContactEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, paddingBottom: 48 },
+  container: { padding: spacing.lg, paddingBottom: 48 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   muted: { fontSize: 13 },
   pair: { flexDirection: 'row', gap: 8 },

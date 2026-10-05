@@ -9,7 +9,7 @@ import { OIDC_CLIENT_ID, OIDC_ISSUER, OIDC_REDIRECT_PATH, OIDC_SCHEME, OIDC_SCOP
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { useAuth } from '../../state/auth-store';
 import type { RootStackParamList } from '../navigation/types';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -76,7 +76,7 @@ async function signInWith(
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, padding: spacing.xl },
   title: { fontSize: 24, fontWeight: '600' },
   error: { textAlign: 'center' },
 });

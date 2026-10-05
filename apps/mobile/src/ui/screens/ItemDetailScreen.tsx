@@ -268,6 +268,6 @@ const styles = StyleSheet.create({
   metaEdit: { flexDirection: 'row', gap: 6, alignItems: 'center', marginTop: 6 },
   metaKeyInput: { flex: 2 },
   metaValueInput: { flex: 3 },
-  actionBar: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 8, borderTopWidth: StyleSheet.hairlineWidth },
+  actionBar: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth },
   primary: { flex: 1 },
 });

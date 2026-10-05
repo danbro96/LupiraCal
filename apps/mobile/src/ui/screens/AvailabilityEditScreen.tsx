@@ -13,7 +13,7 @@ import { DateField } from '../components/DateField';
 import { Field } from '../components/Field';
 import { AVAILABILITY_COLORS } from '../hooks/palette';
 import type { RootStackParamList } from '../navigation/types';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 
 const STATUS_OPTIONS = Object.keys(AVAILABILITY_COLORS);
 
@@ -69,7 +69,7 @@ export function AvailabilityEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
+  container: { padding: spacing.lg },
   muted: { fontSize: 13, marginTop: 12 },
   error: { marginTop: 8 },
   buttons: { flexDirection: 'row', gap: 10, marginTop: 20 },

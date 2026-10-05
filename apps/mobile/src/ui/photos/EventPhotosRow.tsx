@@ -10,7 +10,7 @@ import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { useEventPhotos, useSuggestedPhotos } from '../../state/usePhotoEventLinks';
 import { invalidatePhotos } from '../../sync/reactivity';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
-import { useColors } from '../theme';
+import { useColors, spacing } from '../theme';
 import { openSibling } from '../openSibling';
 import { thumbCacheKey } from './imageCache';
 
@@ -114,8 +114,8 @@ function Thumb({ photo, surface, onPress, dimmed }: {
 }
 
 const styles = StyleSheet.create({
-  strip: { gap: 6, paddingHorizontal: 16 },
+  strip: { gap: 6, paddingHorizontal: spacing.lg },
   thumb: { width: THUMB, height: THUMB, borderRadius: 4 },
   dimmed: { opacity: 0.5 },
-  muted: { fontSize: 13, paddingHorizontal: 16 },
+  muted: { fontSize: 13, paddingHorizontal: spacing.lg },
 });
