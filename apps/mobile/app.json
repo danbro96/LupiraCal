@@ -2,7 +2,7 @@
   "expo": {
     "name": "Lupira Calendar",
     "slug": "lupira-calendar",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "scheme": "lupiracalendar",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
