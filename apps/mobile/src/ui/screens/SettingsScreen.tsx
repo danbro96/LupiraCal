@@ -4,8 +4,6 @@ import { ScrollView } from 'react-native';
 import { List, Switch } from 'react-native-paper';
 import { isCalendarShown } from '@lupira/cal-domain/calendars';
 import { fmtDateTime } from '@danbro96/lupira-domain-core/time';
-import { APP_VERSION } from '../../config';
-import { UPDATE_LABEL } from '@danbro96/lupira-expo-diagnostics/buildInfo';
 import { useAuth } from '../../state/auth-store';
 import { useBridge } from '../../state/bridge-store';
 import { usePrefs } from '../../state/prefs-store';
@@ -14,7 +12,7 @@ import { runSync } from '../../sync/sync';
 import { useSyncStatus } from '../../sync/syncStatus';
 import { IconButton } from '@danbro96/lupira-expo-paper/components/IconButton';
 import { IdentityHeader } from '@danbro96/lupira-expo-paper/components/IdentityHeader';
-import { VersionLine } from '@danbro96/lupira-expo-paper/components/VersionLine';
+import { VersionLine } from '@danbro96/lupira-expo-diagnostics/VersionLine';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors } from '../theme';
@@ -106,7 +104,7 @@ export function SettingsScreen() {
       )}
 
       <List.Subheader>About</List.Subheader>
-      <VersionLine app="Lupira Calendar" version={APP_VERSION} updateLabel={UPDATE_LABEL} />
+      <VersionLine />
     </ScrollView>
   );
 }

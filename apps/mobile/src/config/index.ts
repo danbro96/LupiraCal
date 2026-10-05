@@ -1,7 +1,5 @@
 import type { AppHosts } from '@danbro96/lupira-domain-links/appLinks';
-import Constants from 'expo-constants';
 
-export const APP_VERSION = Constants.expoConfig?.version ?? '0.0.0';
 
 export const REQUEST_TIMEOUT_MS = 10_000;
 
