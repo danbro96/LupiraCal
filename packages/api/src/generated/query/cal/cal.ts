@@ -39,6 +39,7 @@ import type {
   GetChangesParams,
   GetHotspotsParams,
   GetParticipationSummaryParams,
+  GetSyncItemsParams,
   GrantOwnerRequest,
   HotspotDto,
   InviteParticipantParams,
@@ -57,7 +58,8 @@ import type {
   SearchItemsParams,
   SetItemActionRequest,
   SetItemPromptRequest,
-  SyncChangesResponse,
+  SyncPageOfContainerDto,
+  SyncPageOfItemSyncChange,
   UpdateCalendarItemRequest
 } from '../../models';
 
@@ -2775,7 +2777,114 @@ export const useRemoveParticipant = <TError = ProblemDetails,
       > => {
       return useMutation(getRemoveParticipantMutationOptions(options), queryClient);
     }
-    export const getGetChangesUrl = (params?: GetChangesParams,) => {
+    export const getGetSyncItemsUrl = (params?: GetSyncItemsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/sync/items?${stringifiedParams}` : `/api/sync/items`
+}
+
+/**
+ * @summary Paged item feed for offline mirrors. Omit since for a full sync (reset: replace the mirror; no tombstones); later pages and deltas return items the caller can read that changed past the cursor, plus ids of items deleted or no longer visible. Loop while hasMore, persisting cursor between calls.
+ */
+export const getSyncItems = async (params?: GetSyncItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfItemSyncChange> => {
+
+  return apiRequest<SyncPageOfItemSyncChange>(getGetSyncItemsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSyncItemsQueryKey = (params?: GetSyncItemsParams,) => {
+    return [
+    `/api/sync/items`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetSyncItemsQueryOptions = <TData = Awaited<ReturnType<typeof getSyncItems>>, TError = ProblemDetails>(params?: GetSyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSyncItemsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSyncItems>>> = ({ signal }) => getSyncItems(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSyncItemsQueryResult = NonNullable<Awaited<ReturnType<typeof getSyncItems>>>
+export type GetSyncItemsQueryError = ProblemDetails
+
+
+export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>, TError = ProblemDetails>(
+ params: undefined |  GetSyncItemsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncItems>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncItems>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>, TError = ProblemDetails>(
+ params?: GetSyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncItems>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncItems>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>, TError = ProblemDetails>(
+ params?: GetSyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Paged item feed for offline mirrors. Omit since for a full sync (reset: replace the mirror; no tombstones); later pages and deltas return items the caller can read that changed past the cursor, plus ids of items deleted or no longer visible. Loop while hasMore, persisting cursor between calls.
+ */
+
+export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>, TError = ProblemDetails>(
+ params?: GetSyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSyncItemsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetChangesUrl = (params?: GetChangesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2791,11 +2900,11 @@ export const useRemoveParticipant = <TError = ProblemDetails,
 }
 
 /**
- * @summary Delta feed for offline mirrors: everything the caller can read that changed past the cursor, plus tombstone ids for items deleted or no longer visible. Omit since for a full sync (tombstones suppressed — replace the mirror wholesale); loop while hasMore, persisting cursor between calls.
+ * @summary Alias of GET /sync/items for existing clients.
  */
-export const getChanges = async (params?: GetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncChangesResponse> => {
+export const getChanges = async (params?: GetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfItemSyncChange> => {
 
-  return apiRequest<SyncChangesResponse>(getGetChangesUrl(params),
+  return apiRequest<SyncPageOfItemSyncChange>(getGetChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2862,7 +2971,7 @@ export function useGetChanges<TData = Awaited<ReturnType<typeof getChanges>>, TE
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Delta feed for offline mirrors: everything the caller can read that changed past the cursor, plus tombstone ids for items deleted or no longer visible. Omit since for a full sync (tombstones suppressed — replace the mirror wholesale); loop while hasMore, persisting cursor between calls.
+ * @summary Alias of GET /sync/items for existing clients.
  */
 
 export function useGetChanges<TData = Awaited<ReturnType<typeof getChanges>>, TError = ProblemDetails>(
@@ -2871,6 +2980,106 @@ export function useGetChanges<TData = Awaited<ReturnType<typeof getChanges>>, TE
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetChangesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetSyncCalendarsUrl = () => {
+
+
+
+
+  return `/api/sync/calendars`
+}
+
+/**
+ * @summary Snapshot of the caller's calendars: always reset with every calendar in changed and no cursor; replace the local set on each call.
+ */
+export const getSyncCalendars = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfContainerDto> => {
+
+  return apiRequest<SyncPageOfContainerDto>(getGetSyncCalendarsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSyncCalendarsQueryKey = () => {
+    return [
+    `/api/sync/calendars`
+    ] as const;
+    }
+
+
+export const getGetSyncCalendarsQueryOptions = <TData = Awaited<ReturnType<typeof getSyncCalendars>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSyncCalendarsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSyncCalendars>>> = ({ signal }) => getSyncCalendars({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSyncCalendarsQueryResult = NonNullable<Awaited<ReturnType<typeof getSyncCalendars>>>
+export type GetSyncCalendarsQueryError = ProblemDetails
+
+
+export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCalendars>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncCalendars>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncCalendars>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCalendars>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncCalendars>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncCalendars>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCalendars>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Snapshot of the caller's calendars: always reset with every calendar in changed and no cursor; replace the local set on each call.
+ */
+
+export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCalendars>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSyncCalendarsQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

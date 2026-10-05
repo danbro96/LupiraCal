@@ -20,6 +20,7 @@ import type {
   GetChangesParams,
   GetHotspotsParams,
   GetParticipationSummaryParams,
+  GetSyncItemsParams,
   GrantOwnerRequest,
   HotspotDto,
   InviteParticipantParams,
@@ -38,7 +39,8 @@ import type {
   SearchItemsParams,
   SetItemActionRequest,
   SetItemPromptRequest,
-  SyncChangesResponse,
+  SyncPageOfContainerDto,
+  SyncPageOfItemSyncChange,
   UpdateCalendarItemRequest
 } from '../../models';
 
@@ -1931,8 +1933,67 @@ export const removeParticipant = async (id: string,
 );}
 
 
+export type getSyncItemsResponse200 = {
+  data: SyncPageOfItemSyncChange
+  status: 200
+}
+
+export type getSyncItemsResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getSyncItemsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getSyncItemsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getSyncItemsResponseSuccess = (getSyncItemsResponse200) & {
+  headers: Headers;
+};
+export type getSyncItemsResponseError = (getSyncItemsResponse400 | getSyncItemsResponse401 | getSyncItemsResponse500) & {
+  headers: Headers;
+};
+
+export type getSyncItemsResponse = (getSyncItemsResponseSuccess | getSyncItemsResponseError)
+
+export const getGetSyncItemsUrl = (params?: GetSyncItemsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/sync/items?${stringifiedParams}` : `/api/sync/items`
+}
+
+/**
+ * @summary Paged item feed for offline mirrors. Omit since for a full sync (reset: replace the mirror; no tombstones); later pages and deltas return items the caller can read that changed past the cursor, plus ids of items deleted or no longer visible. Loop while hasMore, persisting cursor between calls.
+ */
+export const getSyncItems = async (params?: GetSyncItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<getSyncItemsResponse> => {
+
+  return apiRequest<getSyncItemsResponse>(getGetSyncItemsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
 export type getChangesResponse200 = {
-  data: SyncChangesResponse
+  data: SyncPageOfItemSyncChange
   status: 200
 }
 
@@ -1976,11 +2037,58 @@ export const getGetChangesUrl = (params?: GetChangesParams,) => {
 }
 
 /**
- * @summary Delta feed for offline mirrors: everything the caller can read that changed past the cursor, plus tombstone ids for items deleted or no longer visible. Omit since for a full sync (tombstones suppressed — replace the mirror wholesale); loop while hasMore, persisting cursor between calls.
+ * @summary Alias of GET /sync/items for existing clients.
  */
 export const getChanges = async (params?: GetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getChangesResponse> => {
 
   return apiRequest<getChangesResponse>(getGetChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type getSyncCalendarsResponse200 = {
+  data: SyncPageOfContainerDto
+  status: 200
+}
+
+export type getSyncCalendarsResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getSyncCalendarsResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getSyncCalendarsResponseSuccess = (getSyncCalendarsResponse200) & {
+  headers: Headers;
+};
+export type getSyncCalendarsResponseError = (getSyncCalendarsResponse401 | getSyncCalendarsResponse500) & {
+  headers: Headers;
+};
+
+export type getSyncCalendarsResponse = (getSyncCalendarsResponseSuccess | getSyncCalendarsResponseError)
+
+export const getGetSyncCalendarsUrl = () => {
+
+
+
+
+  return `/api/sync/calendars`
+}
+
+/**
+ * @summary Snapshot of the caller's calendars: always reset with every calendar in changed and no cursor; replace the local set on each call.
+ */
+export const getSyncCalendars = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getSyncCalendarsResponse> => {
+
+  return apiRequest<getSyncCalendarsResponse>(getGetSyncCalendarsUrl(),
   {
     ...options,
     method: 'GET'

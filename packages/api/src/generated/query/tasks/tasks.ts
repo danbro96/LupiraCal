@@ -22,7 +22,11 @@ import type {
 import type {
   ItemDto,
   ListItemsParams,
-  ProblemDetails
+  ProblemDetails,
+  SyncItemsParams,
+  SyncListsParams,
+  SyncPageOfListDto,
+  TasksSyncPageOfItemSyncChange
 } from '../../models';
 
 import { apiRequest } from '../../../transport';
@@ -256,6 +260,222 @@ export function useTasksGetItem<TData = Awaited<ReturnType<typeof tasksGetItem>>
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getTasksGetItemQueryOptions(listId,itemId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getSyncListsUrl = (params?: SyncListsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/tasks-api/sync/lists?${stringifiedParams}` : `/tasks-api/sync/lists`
+}
+
+/**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. Lists leave the mirror through `reset`, so `deleted` is always empty.
+ * @summary Lists the caller can read that changed since a cursor, for an offline mirror.
+ */
+export const syncLists = async (params?: SyncListsParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfListDto> => {
+
+  return apiRequest<SyncPageOfListDto>(getSyncListsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSyncListsQueryKey = (params?: SyncListsParams,) => {
+    return [
+    `/tasks-api/sync/lists`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSyncListsQueryOptions = <TData = Awaited<ReturnType<typeof syncLists>>, TError = ProblemDetails>(params?: SyncListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSyncListsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof syncLists>>> = ({ signal }) => syncLists(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SyncListsQueryResult = NonNullable<Awaited<ReturnType<typeof syncLists>>>
+export type SyncListsQueryError = ProblemDetails
+
+
+export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TError = ProblemDetails>(
+ params: undefined |  SyncListsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof syncLists>>,
+          TError,
+          Awaited<ReturnType<typeof syncLists>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TError = ProblemDetails>(
+ params?: SyncListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof syncLists>>,
+          TError,
+          Awaited<ReturnType<typeof syncLists>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TError = ProblemDetails>(
+ params?: SyncListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Lists the caller can read that changed since a cursor, for an offline mirror.
+ */
+
+export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TError = ProblemDetails>(
+ params?: SyncListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSyncListsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getSyncItemsUrl = (params?: SyncItemsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/tasks-api/sync/items?${stringifiedParams}` : `/tasks-api/sync/items`
+}
+
+/**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. `deleted` holds the ids of deleted items.
+ * @summary Items of the caller's readable lists that changed since a cursor, with per-field guards.
+ */
+export const syncItems = async (params?: SyncItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<TasksSyncPageOfItemSyncChange> => {
+
+  return apiRequest<TasksSyncPageOfItemSyncChange>(getSyncItemsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSyncItemsQueryKey = (params?: SyncItemsParams,) => {
+    return [
+    `/tasks-api/sync/items`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSyncItemsQueryOptions = <TData = Awaited<ReturnType<typeof syncItems>>, TError = ProblemDetails>(params?: SyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSyncItemsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof syncItems>>> = ({ signal }) => syncItems(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SyncItemsQueryResult = NonNullable<Awaited<ReturnType<typeof syncItems>>>
+export type SyncItemsQueryError = ProblemDetails
+
+
+export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TError = ProblemDetails>(
+ params: undefined |  SyncItemsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof syncItems>>,
+          TError,
+          Awaited<ReturnType<typeof syncItems>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TError = ProblemDetails>(
+ params?: SyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof syncItems>>,
+          TError,
+          Awaited<ReturnType<typeof syncItems>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TError = ProblemDetails>(
+ params?: SyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Items of the caller's readable lists that changed since a cursor, with per-field guards.
+ */
+
+export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TError = ProblemDetails>(
+ params?: SyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSyncItemsQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

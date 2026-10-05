@@ -76,6 +76,16 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
     [Theory]
     [InlineData("/photo-api/photos", "/photos")]
     [InlineData("/geo-api/places/suggest", "/places/suggest")]
+    [InlineData("/api/sync/items", "/sync/items")]
+    [InlineData("/api/sync/calendars", "/sync/calendars")]
+    [InlineData("/contact-api/sync/contacts", "/sync/contacts")]
+    [InlineData("/contact-api/sync/relationships", "/sync/relationships")]
+    [InlineData("/contact-api/sync/residencies", "/sync/residencies")]
+    [InlineData("/contact-api/sync/place-entries", "/sync/place-entries")]
+    [InlineData("/contact-api/sync/address-books", "/sync/address-books")]
+    [InlineData("/contact-api/sync/groups", "/sync/groups")]
+    [InlineData("/tasks-api/sync/items", "/sync/items")]
+    [InlineData("/tasks-api/sync/lists", "/sync/lists")]
     public async Task Listed_operations_the_clients_still_call_are_forwarded(string path, string upstreamPath)
     {
         var client = Client();

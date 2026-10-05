@@ -43,6 +43,21 @@ describe('the exposed allowlist', () => {
     expect(actual).toHaveLength(allowed.size);
   });
 
+  it('publishes every uniform sync feed under its cluster mount', () => {
+    expect(paths.filter((p) => /\/sync\/[a-z-]+$/.test(p) && !/\/sync\/(changes|containers)$/.test(p)).sort()).toEqual([
+      '/api/sync/calendars',
+      '/api/sync/items',
+      '/contact-api/sync/address-books',
+      '/contact-api/sync/contacts',
+      '/contact-api/sync/groups',
+      '/contact-api/sync/place-entries',
+      '/contact-api/sync/relationships',
+      '/contact-api/sync/residencies',
+      '/tasks-api/sync/items',
+      '/tasks-api/sync/lists',
+    ]);
+  });
+
   // These reach a different credential than the family session the BFF holds, or aren't a browser
   // surface at all. An allowlist should already exclude them; this fails loudly if one is re-added.
   it('never exposes ingest, share-links, the user directory or liveness probes', () => {
@@ -69,7 +84,7 @@ describe('merged BFF spec', () => {
   // them distinct, which is what removes the collision class.
   it('gives every previously-colliding route a distinct path', () => {
     expect(new Set(paths).size).toBe(paths.length);
-    for (const tail of ['/items', '/sync/changes', '/sync/containers']) {
+    for (const tail of ['/items', '/sync/changes', '/sync/containers', '/sync/items']) {
       expect(paths.filter((p) => p.endsWith(tail)).length).toBeGreaterThan(1);
     }
   });
@@ -88,7 +103,7 @@ describe('merged BFF spec', () => {
   });
 
   it('namespaces the cal/contact conflicts against their source', () => {
-    const RENAMED = ['OwnerGrantDto', 'SyncChangeDto', 'SyncChangesResponse', 'SectionGuardsDto'];
+    const RENAMED = ['OwnerGrantDto', 'SectionGuardsDto'];
     // A renamed schema's siblings must point at the new name, so compare the source with the same
     // rewrite applied — otherwise this asserts the refs were left dangling.
     const rewrite = (v: unknown) =>
@@ -100,6 +115,14 @@ describe('merged BFF spec', () => {
       expect(schemas[name]).toEqual(cal.components.schemas[name]);
       expect(schemas[`Contact${name}`]).toEqual(rewrite(contact.components.schemas[name]));
     }
+  });
+
+  it('keeps cal and tasks sync item pages apart, each matching its source', () => {
+    expect(schemas.SyncPageOfItemSyncChange).toEqual(cal.components.schemas.SyncPageOfItemSyncChange);
+    expect(schemas.ItemSyncChange).toEqual(cal.components.schemas.ItemSyncChange);
+    expect(schemas.TasksItemSyncChange).toEqual(tasks.components.schemas.ItemSyncChange);
+    expect((schemas.TasksSyncPageOfItemSyncChange as { properties: { changed: unknown } }).properties.changed)
+      .toEqual({ type: 'array', items: { $ref: '#/components/schemas/TasksItemSyncChange' } });
   });
 
   it('drops every /me but contact’s, which alone carries contactId', () => {

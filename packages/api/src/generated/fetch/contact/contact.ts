@@ -15,11 +15,11 @@ import type {
   ContactGroupDto,
   ContactOwnerGrantDto,
   ContactRelationEntryDto,
-  ContactSyncChangesResponse,
   CreateAddressBookRequest,
   CreateContactGroupParams,
   CreateContactRequest,
   EndContactRelationRequest,
+  GetContactChangesParams,
   GetContactCirclesParams,
   GetPlaceEntryChangesParams,
   GetRelationshipChangesParams,
@@ -29,14 +29,11 @@ import type {
   MeDto,
   MoveContactRequest,
   MoveRequest,
-  PlaceEntryChangesResponse,
   PlaceEntryDto,
   ProblemDetails,
-  RelationshipChangesResponse,
   RelationshipDto,
   RemoveContactRelationParams,
   RenameContactGroupParams,
-  ResidencyChangesResponse,
   ResidencyDto,
   ResidencyRequest,
   ReviseContactRequest,
@@ -50,6 +47,12 @@ import type {
   SetEntryCodeRequest,
   SetMyContactRequest,
   SyncContainersResponse,
+  SyncPageOfAddressBookDto,
+  SyncPageOfContactGroupDto,
+  SyncPageOfContactSyncChange,
+  SyncPageOfPlaceEntryDto,
+  SyncPageOfRelationshipDto,
+  SyncPageOfResidencyDto,
   UpdateAddressBookRequest
 } from '../../models';
 
@@ -2824,8 +2827,67 @@ export const removeEntryCode = async (placeId: string,
 );}
 
 
+export type getContactChangesResponse200 = {
+  data: SyncPageOfContactSyncChange
+  status: 200
+}
+
+export type getContactChangesResponse400 = {
+  data: ProblemDetails
+  status: 400
+}
+
+export type getContactChangesResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getContactChangesResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getContactChangesResponseSuccess = (getContactChangesResponse200) & {
+  headers: Headers;
+};
+export type getContactChangesResponseError = (getContactChangesResponse400 | getContactChangesResponse401 | getContactChangesResponse500) & {
+  headers: Headers;
+};
+
+export type getContactChangesResponse = (getContactChangesResponseSuccess | getContactChangesResponseError)
+
+export const getGetContactChangesUrl = (params?: GetContactChangesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/contact-api/sync/contacts?${stringifiedParams}` : `/contact-api/sync/contacts`
+}
+
+/**
+ * @summary Contacts for offline mirrors: every contact the caller can read that changed since the cursor, with its section guards, plus tombstone ids for contacts deleted or no longer readable (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
+ */
+export const getContactChanges = async (params?: GetContactChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getContactChangesResponse> => {
+
+  return apiRequest<getContactChangesResponse>(getGetContactChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
 export type contactGetChangesResponse200 = {
-  data: ContactSyncChangesResponse
+  data: SyncPageOfContactSyncChange
   status: 200
 }
 
@@ -2869,7 +2931,7 @@ export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
 }
 
 /**
- * @summary Delta feed for offline mirrors: every contact the caller can read that changed past the cursor, plus tombstone ids for contacts deleted or no longer visible (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls.
+ * @summary Same feed as GET /sync/contacts, kept for existing installs.
  */
 export const contactGetChanges = async (params?: ContactGetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<contactGetChangesResponse> => {
 
@@ -2884,7 +2946,7 @@ export const contactGetChanges = async (params?: ContactGetChangesParams, option
 
 
 export type getRelationshipChangesResponse200 = {
-  data: RelationshipChangesResponse
+  data: SyncPageOfRelationshipDto
   status: 200
 }
 
@@ -2928,7 +2990,7 @@ export const getGetRelationshipChangesUrl = (params?: GetRelationshipChangesPara
 }
 
 /**
- * @summary Delta feed of relationships for offline mirrors: those whose two contacts the caller can read that changed past the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ * @summary Relationships for offline mirrors: those whose two contacts the caller can read that changed since the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
 export const getRelationshipChanges = async (params?: GetRelationshipChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getRelationshipChangesResponse> => {
 
@@ -2943,7 +3005,7 @@ export const getRelationshipChanges = async (params?: GetRelationshipChangesPara
 
 
 export type getResidencyChangesResponse200 = {
-  data: ResidencyChangesResponse
+  data: SyncPageOfResidencyDto
   status: 200
 }
 
@@ -2987,7 +3049,7 @@ export const getGetResidencyChangesUrl = (params?: GetResidencyChangesParams,) =
 }
 
 /**
- * @summary Delta feed of residencies for offline mirrors: those of contacts the caller can read that changed past the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ * @summary Residencies for offline mirrors: those of contacts the caller can read that changed since the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
 export const getResidencyChanges = async (params?: GetResidencyChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getResidencyChangesResponse> => {
 
@@ -3002,7 +3064,7 @@ export const getResidencyChanges = async (params?: GetResidencyChangesParams, op
 
 
 export type getPlaceEntryChangesResponse200 = {
-  data: PlaceEntryChangesResponse
+  data: SyncPageOfPlaceEntryDto
   status: 200
 }
 
@@ -3046,11 +3108,105 @@ export const getGetPlaceEntryChangesUrl = (params?: GetPlaceEntryChangesParams,)
 }
 
 /**
- * @summary Delta feed of door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Unpaged. Omit since for a full sync.
+ * @summary Door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
 export const getPlaceEntryChanges = async (params?: GetPlaceEntryChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<getPlaceEntryChangesResponse> => {
 
   return apiRequest<getPlaceEntryChangesResponse>(getGetPlaceEntryChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type getAddressBookSnapshotResponse200 = {
+  data: SyncPageOfAddressBookDto
+  status: 200
+}
+
+export type getAddressBookSnapshotResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getAddressBookSnapshotResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getAddressBookSnapshotResponseSuccess = (getAddressBookSnapshotResponse200) & {
+  headers: Headers;
+};
+export type getAddressBookSnapshotResponseError = (getAddressBookSnapshotResponse401 | getAddressBookSnapshotResponse500) & {
+  headers: Headers;
+};
+
+export type getAddressBookSnapshotResponse = (getAddressBookSnapshotResponseSuccess | getAddressBookSnapshotResponseError)
+
+export const getGetAddressBookSnapshotUrl = () => {
+
+
+
+
+  return `/contact-api/sync/address-books`
+}
+
+/**
+ * @summary Every address book the caller can read, with their access level. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
+ */
+export const getAddressBookSnapshot = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getAddressBookSnapshotResponse> => {
+
+  return apiRequest<getAddressBookSnapshotResponse>(getGetAddressBookSnapshotUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export type getContactGroupSnapshotResponse200 = {
+  data: SyncPageOfContactGroupDto
+  status: 200
+}
+
+export type getContactGroupSnapshotResponse401 = {
+  data: ProblemDetails
+  status: 401
+}
+
+export type getContactGroupSnapshotResponse500 = {
+  data: ProblemDetails
+  status: 500
+}
+
+export type getContactGroupSnapshotResponseSuccess = (getContactGroupSnapshotResponse200) & {
+  headers: Headers;
+};
+export type getContactGroupSnapshotResponseError = (getContactGroupSnapshotResponse401 | getContactGroupSnapshotResponse500) & {
+  headers: Headers;
+};
+
+export type getContactGroupSnapshotResponse = (getContactGroupSnapshotResponseSuccess | getContactGroupSnapshotResponseError)
+
+export const getGetContactGroupSnapshotUrl = () => {
+
+
+
+
+  return `/contact-api/sync/groups`
+}
+
+/**
+ * @summary Every contact group in an address book the caller can read. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
+ */
+export const getContactGroupSnapshot = async ( options?: Parameters<typeof apiRequest>[1]): Promise<getContactGroupSnapshotResponse> => {
+
+  return apiRequest<getContactGroupSnapshotResponse>(getGetContactGroupSnapshotUrl(),
   {
     ...options,
     method: 'GET'

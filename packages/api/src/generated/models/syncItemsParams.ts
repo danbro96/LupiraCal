@@ -5,7 +5,7 @@
  * OpenAPI spec version: v1
  */
 
-export type GetPlaceEntryChangesParams = {
+export type SyncItemsParams = {
 since?: string;
 limit?: number;
 };

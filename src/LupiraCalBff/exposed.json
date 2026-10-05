@@ -27,8 +27,10 @@
       "GET /items/{id}/relations",
       "GET /participation/summary",
       "GET /relations/edges",
+      "GET /sync/calendars",
       "GET /sync/changes",
       "GET /sync/containers",
+      "GET /sync/items",
       "POST /calendars",
       "POST /calendars/{calendarId}/owners",
       "POST /items",
@@ -67,8 +69,11 @@
       "GET /places/{placeId}/entry",
       "GET /relationships",
       "GET /residencies",
+      "GET /sync/address-books",
       "GET /sync/changes",
+      "GET /sync/contacts",
       "GET /sync/containers",
+      "GET /sync/groups",
       "GET /sync/place-entries",
       "GET /sync/relationships",
       "GET /sync/residencies",
@@ -106,7 +111,9 @@
     ],
     "tasks-api": [
       "GET /items",
-      "GET /lists/{listId}/items/{itemId}"
+      "GET /lists/{listId}/items/{itemId}",
+      "GET /sync/items",
+      "GET /sync/lists"
     ],
     "photo-api": [
       "GET /photos",

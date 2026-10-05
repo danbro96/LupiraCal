@@ -7,4 +7,5 @@
 
 export type GetRelationshipChangesParams = {
 since?: string;
+limit?: number;
 };

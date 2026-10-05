@@ -34,11 +34,11 @@ import type {
   ContactGroupDto,
   ContactOwnerGrantDto,
   ContactRelationEntryDto,
-  ContactSyncChangesResponse,
   CreateAddressBookRequest,
   CreateContactGroupParams,
   CreateContactRequest,
   EndContactRelationRequest,
+  GetContactChangesParams,
   GetContactCirclesParams,
   GetPlaceEntryChangesParams,
   GetRelationshipChangesParams,
@@ -48,14 +48,11 @@ import type {
   MeDto,
   MoveContactRequest,
   MoveRequest,
-  PlaceEntryChangesResponse,
   PlaceEntryDto,
   ProblemDetails,
-  RelationshipChangesResponse,
   RelationshipDto,
   RemoveContactRelationParams,
   RenameContactGroupParams,
-  ResidencyChangesResponse,
   ResidencyDto,
   ResidencyRequest,
   ReviseContactRequest,
@@ -69,6 +66,12 @@ import type {
   SetEntryCodeRequest,
   SetMyContactRequest,
   SyncContainersResponse,
+  SyncPageOfAddressBookDto,
+  SyncPageOfContactGroupDto,
+  SyncPageOfContactSyncChange,
+  SyncPageOfPlaceEntryDto,
+  SyncPageOfRelationshipDto,
+  SyncPageOfResidencyDto,
   UpdateAddressBookRequest
 } from '../../models';
 
@@ -3920,7 +3923,114 @@ export const useRemoveEntryCode = <TError = ProblemDetails,
       > => {
       return useMutation(getRemoveEntryCodeMutationOptions(options), queryClient);
     }
-    export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
+    export const getGetContactChangesUrl = (params?: GetContactChangesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/contact-api/sync/contacts?${stringifiedParams}` : `/contact-api/sync/contacts`
+}
+
+/**
+ * @summary Contacts for offline mirrors: every contact the caller can read that changed since the cursor, with its section guards, plus tombstone ids for contacts deleted or no longer readable (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
+ */
+export const getContactChanges = async (params?: GetContactChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfContactSyncChange> => {
+
+  return apiRequest<SyncPageOfContactSyncChange>(getGetContactChangesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetContactChangesQueryKey = (params?: GetContactChangesParams,) => {
+    return [
+    `/contact-api/sync/contacts`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetContactChangesQueryOptions = <TData = Awaited<ReturnType<typeof getContactChanges>>, TError = ProblemDetails>(params?: GetContactChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetContactChangesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getContactChanges>>> = ({ signal }) => getContactChanges(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetContactChangesQueryResult = NonNullable<Awaited<ReturnType<typeof getContactChanges>>>
+export type GetContactChangesQueryError = ProblemDetails
+
+
+export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContactChanges>>, TError = ProblemDetails>(
+ params: undefined |  GetContactChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getContactChanges>>,
+          TError,
+          Awaited<ReturnType<typeof getContactChanges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContactChanges>>, TError = ProblemDetails>(
+ params?: GetContactChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getContactChanges>>,
+          TError,
+          Awaited<ReturnType<typeof getContactChanges>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContactChanges>>, TError = ProblemDetails>(
+ params?: GetContactChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Contacts for offline mirrors: every contact the caller can read that changed since the cursor, with its section guards, plus tombstone ids for contacts deleted or no longer readable (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
+ */
+
+export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContactChanges>>, TError = ProblemDetails>(
+ params?: GetContactChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetContactChangesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getContactGetChangesUrl = (params?: ContactGetChangesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -3936,11 +4046,11 @@ export const useRemoveEntryCode = <TError = ProblemDetails,
 }
 
 /**
- * @summary Delta feed for offline mirrors: every contact the caller can read that changed past the cursor, plus tombstone ids for contacts deleted or no longer visible (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls.
+ * @summary Same feed as GET /sync/contacts, kept for existing installs.
  */
-export const contactGetChanges = async (params?: ContactGetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<ContactSyncChangesResponse> => {
+export const contactGetChanges = async (params?: ContactGetChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfContactSyncChange> => {
 
-  return apiRequest<ContactSyncChangesResponse>(getContactGetChangesUrl(params),
+  return apiRequest<SyncPageOfContactSyncChange>(getContactGetChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -4007,7 +4117,7 @@ export function useContactGetChanges<TData = Awaited<ReturnType<typeof contactGe
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Delta feed for offline mirrors: every contact the caller can read that changed past the cursor, plus tombstone ids for contacts deleted or no longer visible (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls.
+ * @summary Same feed as GET /sync/contacts, kept for existing installs.
  */
 
 export function useContactGetChanges<TData = Awaited<ReturnType<typeof contactGetChanges>>, TError = ProblemDetails>(
@@ -4043,11 +4153,11 @@ export const getGetRelationshipChangesUrl = (params?: GetRelationshipChangesPara
 }
 
 /**
- * @summary Delta feed of relationships for offline mirrors: those whose two contacts the caller can read that changed past the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ * @summary Relationships for offline mirrors: those whose two contacts the caller can read that changed since the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
-export const getRelationshipChanges = async (params?: GetRelationshipChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<RelationshipChangesResponse> => {
+export const getRelationshipChanges = async (params?: GetRelationshipChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfRelationshipDto> => {
 
-  return apiRequest<RelationshipChangesResponse>(getGetRelationshipChangesUrl(params),
+  return apiRequest<SyncPageOfRelationshipDto>(getGetRelationshipChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -4114,7 +4224,7 @@ export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getR
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Delta feed of relationships for offline mirrors: those whose two contacts the caller can read that changed past the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ * @summary Relationships for offline mirrors: those whose two contacts the caller can read that changed since the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
 
 export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(
@@ -4150,11 +4260,11 @@ export const getGetResidencyChangesUrl = (params?: GetResidencyChangesParams,) =
 }
 
 /**
- * @summary Delta feed of residencies for offline mirrors: those of contacts the caller can read that changed past the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ * @summary Residencies for offline mirrors: those of contacts the caller can read that changed since the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
-export const getResidencyChanges = async (params?: GetResidencyChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyChangesResponse> => {
+export const getResidencyChanges = async (params?: GetResidencyChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfResidencyDto> => {
 
-  return apiRequest<ResidencyChangesResponse>(getGetResidencyChangesUrl(params),
+  return apiRequest<SyncPageOfResidencyDto>(getGetResidencyChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -4221,7 +4331,7 @@ export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResi
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Delta feed of residencies for offline mirrors: those of contacts the caller can read that changed past the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Unpaged. Omit since for a full sync.
+ * @summary Residencies for offline mirrors: those of contacts the caller can read that changed since the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
 
 export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(
@@ -4257,11 +4367,11 @@ export const getGetPlaceEntryChangesUrl = (params?: GetPlaceEntryChangesParams,)
 }
 
 /**
- * @summary Delta feed of door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Unpaged. Omit since for a full sync.
+ * @summary Door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
-export const getPlaceEntryChanges = async (params?: GetPlaceEntryChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceEntryChangesResponse> => {
+export const getPlaceEntryChanges = async (params?: GetPlaceEntryChangesParams, options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfPlaceEntryDto> => {
 
-  return apiRequest<PlaceEntryChangesResponse>(getGetPlaceEntryChangesUrl(params),
+  return apiRequest<SyncPageOfPlaceEntryDto>(getGetPlaceEntryChangesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -4328,7 +4438,7 @@ export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPla
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Delta feed of door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Unpaged. Omit since for a full sync.
+ * @summary Door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
  */
 
 export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(
@@ -4337,6 +4447,206 @@ export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPla
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetPlaceEntryChangesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetAddressBookSnapshotUrl = () => {
+
+
+
+
+  return `/contact-api/sync/address-books`
+}
+
+/**
+ * @summary Every address book the caller can read, with their access level. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
+ */
+export const getAddressBookSnapshot = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfAddressBookDto> => {
+
+  return apiRequest<SyncPageOfAddressBookDto>(getGetAddressBookSnapshotUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAddressBookSnapshotQueryKey = () => {
+    return [
+    `/contact-api/sync/address-books`
+    ] as const;
+    }
+
+
+export const getGetAddressBookSnapshotQueryOptions = <TData = Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAddressBookSnapshotQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAddressBookSnapshot>>> = ({ signal }) => getAddressBookSnapshot({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAddressBookSnapshotQueryResult = NonNullable<Awaited<ReturnType<typeof getAddressBookSnapshot>>>
+export type GetAddressBookSnapshotQueryError = ProblemDetails
+
+
+export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAddressBookSnapshot>>,
+          TError,
+          Awaited<ReturnType<typeof getAddressBookSnapshot>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAddressBookSnapshot>>,
+          TError,
+          Awaited<ReturnType<typeof getAddressBookSnapshot>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Every address book the caller can read, with their access level. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
+ */
+
+export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAddressBookSnapshotQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetContactGroupSnapshotUrl = () => {
+
+
+
+
+  return `/contact-api/sync/groups`
+}
+
+/**
+ * @summary Every contact group in an address book the caller can read. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
+ */
+export const getContactGroupSnapshot = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfContactGroupDto> => {
+
+  return apiRequest<SyncPageOfContactGroupDto>(getGetContactGroupSnapshotUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetContactGroupSnapshotQueryKey = () => {
+    return [
+    `/contact-api/sync/groups`
+    ] as const;
+    }
+
+
+export const getGetContactGroupSnapshotQueryOptions = <TData = Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetContactGroupSnapshotQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getContactGroupSnapshot>>> = ({ signal }) => getContactGroupSnapshot({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetContactGroupSnapshotQueryResult = NonNullable<Awaited<ReturnType<typeof getContactGroupSnapshot>>>
+export type GetContactGroupSnapshotQueryError = ProblemDetails
+
+
+export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getContactGroupSnapshot>>,
+          TError,
+          Awaited<ReturnType<typeof getContactGroupSnapshot>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getContactGroupSnapshot>>,
+          TError,
+          Awaited<ReturnType<typeof getContactGroupSnapshot>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Every contact group in an address book the caller can read. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
+ */
+
+export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetContactGroupSnapshotQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
