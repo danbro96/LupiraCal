@@ -61,3 +61,22 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 - One Save = one `saveItem` enqueue: core revise + `item.file`/`item.unfile` + `item.invite`/`item.uninvite`. Participation has no section guard; each invite request carries a key derived from the op's command id + contact, and uninvite removes by contact — neither needs the participation id an offline invite doesn't have yet.
 - Place = a geo `placeId` + label — cal-api 400s free-text `location` without one.
 - Timed events carry `startTimezone` (the device's by default; the calendar bridge keeps an existing zone): the server repeats a zoned series on that zone's wall clock, so `@lupira/cal-domain/recurrence` does too. Parity fixtures come from LupiraCalApi `tools/FixtureEmitter` (a UTC UNTIL bounds the instant; a floating or date one, the wall clock).
+
+## Opening from other apps
+
+`IntentRouterActivity` (lupira-bridge, invisible) turns what other apps send into an in-app deep link (`lupiracalendar://`, linking config in `App.tsx`):
+
+| Intent | Deep link |
+| --- | --- |
+| VIEW an event row (`vnd.android.cursor.item/event`) | ours (account `com.lupira.calendar`, real `_SYNC_ID`) → `item/<id>`; anyone else's → re-sent to the system calendar app |
+| EDIT one of our events | `item/<id>/edit` |
+| INSERT/EDIT any other event (`CalendarContract` extras) | `draft/event?begin=&end=&allDay=&title=&location=&description=&recurrence=` (epoch ms) |
+| INSERT a contact (`ContactsContract.Intents.Insert` extras) | `draft/contact?name=&phone=&email=&company=&notes=` |
+| VIEW a shared calendar or contact file | `import/<calendar\|contacts>?file=<uuid>` |
+| "Open in Lupira" contact row | `contact/<id>` |
+
+- Shared files are copied to `cacheDir/imports/<uuid>` (5 MB cap; over it, a toast and nothing opens). `readImport` hands the text over once; `clearImports` at app start drops files left by earlier runs.
+- `ImportScreen` posts the text to `POST /api/items/drafts?zone=<device zone>` (`text/calendar`) or `POST /contact-api/contacts/drafts` (`text/vcard`), which answer with drafts (`data/imports.ts`, raw body through `apiRequest` — the generated fetchers JSON-encode a string body); it needs a connection. A 400 reads "can't be read", a 413 "too large". Item drafts' locations become places through the place typeahead, or move into the description. One draft opens the editor pre-filled; several show a checklist and a calendar / address-book choice, then one create per draft keyed by its opaque per-user `sourceKey`, so importing again changes nothing.
+- Drafts (`domain/drafts.ts`) pre-fill `ItemEditScreen` / `ContactEditScreen` as a new, unsaved entry. A screen opened this way can be the only one in the stack; leaving it lands on the tabs (`leaveScreen`).
+- App Links: `https://cal.lupira.com/items/<id>` and `/contacts/<id>` open the app (`app.json` `intentFilters`, `autoVerify`). The BFF serves `/.well-known/assetlinks.json` with the signing-certificate fingerprints from `AppLinks:Sha256Fingerprints`.
+- Android asks which app handles a calendar or contact intent the first time; picking Lupira Calendar and "Always" makes it the default. An unverified App Link domain can be enabled under App info → Open by default.

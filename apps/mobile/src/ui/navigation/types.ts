@@ -1,4 +1,6 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { ImportKind } from '../../data/imports';
+import type { ContactDraft, ContactDraftLink, ItemDraft, ItemDraftLink } from '../../domain/drafts';
 
 export type RootStackParamList = {
   Settings: undefined;
@@ -14,10 +16,13 @@ export type RootStackParamList = {
   ItemSearch: undefined;
   /** Read-only view of a LupiraTasks deadline (online-only; the tasks API addresses items list-scoped). */
   TaskDetail: { listId: string; itemId: string };
-  /** No itemId = create; `day`/`time` pre-fill the start from the grid selection (slot taps send both). */
-  ItemEdit: { itemId?: string; day?: string; time?: string } | undefined;
+  /** No itemId = create; `day`/`time` pre-fill the start from the grid selection (slot taps send both); a
+   *  `draft` or the draft link's query pre-fills the whole event. */
+  ItemEdit: ({ itemId?: string; day?: string; time?: string; draft?: ItemDraft } & ItemDraftLink) | undefined;
   ContactDetail: { contactId: string };
-  ContactEdit: { contactId?: string } | undefined;
+  ContactEdit: ({ contactId?: string; draft?: ContactDraft } & ContactDraftLink) | undefined;
+  /** A file another app shared, waiting in the bridge under `file`. */
+  Import: { kind: ImportKind; file: string };
   BridgeDiagnostics: undefined;
   /** Availability quick-add: status + date range, prefilled from the tapped day. */
   AvailabilityEdit: { day?: string } | undefined;

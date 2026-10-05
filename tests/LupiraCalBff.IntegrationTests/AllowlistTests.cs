@@ -96,6 +96,19 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
         Assert.Equal(upstreamPath, (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
     }
 
+    [Theory]
+    [InlineData("/api/items/drafts?zone=Europe/Stockholm", "/items/drafts", "text/calendar")]
+    [InlineData("/contact-api/contacts/drafts", "/contacts/drafts", "text/vcard")]
+    public async Task Draft_reads_are_forwarded(string path, string upstreamPath, string contentType)
+    {
+        var client = Client();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", BffTestFactory.MintToken());
+
+        var resp = await client.PostAsync(path, new StringContent("BEGIN", MediaTypeHeaderValue.Parse(contentType)));
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal(upstreamPath, (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
+    }
+
     [Fact]
     public async Task Depz_without_the_probe_key_is_401()
     {

@@ -4,11 +4,14 @@ import android.accounts.AccountManager
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.net.Uri
+import android.os.Process
+import android.os.SystemClock
 import android.provider.CalendarContract
 import android.provider.ContactsContract
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import java.io.File
 
 /// JS-facing spike API. Everything runs in the app process; provider writes go through the
 /// CALLER_IS_SYNCADAPTER door so the rows belong to the Lupira account (that is also what exempts
@@ -144,6 +147,28 @@ class LupiraBridgeModule : Module() {
       }
       mapOf("total" to total, "rows" to rows)
     }
+
+    /// Hands a shared file's text over once; the name comes from a deep link, so it must be a bare uuid.
+    AsyncFunction("readImport") { name: String ->
+      if (!IMPORT_NAME.matches(name)) throw CodedException("ERR_IMPORT", "Not an import name", null)
+      val file = File(Bridge.importsDir(context), name)
+      if (!file.exists()) throw CodedException("ERR_IMPORT", "The shared file is gone", null)
+      try {
+        file.readText(Charsets.UTF_8)
+      } finally {
+        file.delete()
+      }
+    }
+
+    /// Files copied during this process's lifetime may still be on their way to readImport.
+    AsyncFunction("clearImports") {
+      val processStartedAt = System.currentTimeMillis() - (SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime())
+      Bridge.importsDir(context).listFiles()?.filter { it.lastModified() < processStartedAt }?.forEach { it.delete() }
+    }
+  }
+
+  private companion object {
+    val IMPORT_NAME = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
   }
 
   private fun asSyncAdapter(uri: Uri): Uri = CalendarPublisher.asSyncAdapter(uri)

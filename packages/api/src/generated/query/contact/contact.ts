@@ -29,6 +29,7 @@ import type {
   AddressBookDto,
   ClearContactDeceasedParams,
   ContactCirclesDto,
+  ContactDraftDto,
   ContactDto,
   ContactGetChangesParams,
   ContactGroupDto,
@@ -1172,6 +1173,93 @@ export const useCreateContact = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getCreateContactMutationOptions(options), queryClient);
+    }
+    export const getReadContactDraftsUrl = () => {
+
+
+
+
+  return `/contact-api/contacts/drafts`
+}
+
+/**
+ * @summary Reads a contacts file into contact drafts without saving them. The body is the file as shared from a phone (one or more contacts, max 5 MB). Each draft maps onto the create request; send its sourceKey along so importing the same file again creates nothing new.
+ */
+export const readContactDrafts = async (readContactDraftsBody: string, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDraftDto[]> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ContactDraftDto[]>(getReadContactDraftsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'text/vcard', ...getHeaders(options?.headers) },
+    body: JSON.stringify(readContactDraftsBody)
+  }
+);}
+
+
+
+
+
+export const getReadContactDraftsMutationKey = () => ['readContactDrafts'] as const;
+
+export const getReadContactDraftsMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof readContactDrafts>>, TError,ReadContactDraftsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof readContactDrafts>>, TError,ReadContactDraftsMutationVariables, TContext> => {
+
+const mutationKey = getReadContactDraftsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof readContactDrafts>>, ReadContactDraftsMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  readContactDrafts(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReadContactDraftsMutationResult = NonNullable<Awaited<ReturnType<typeof readContactDrafts>>>
+    export type ReadContactDraftsMutationBody = string
+    export type ReadContactDraftsMutationError = ProblemDetails
+    export type ReadContactDraftsMutationVariables = {data: string}
+
+    /**
+ * @summary Reads a contacts file into contact drafts without saving them. The body is the file as shared from a phone (one or more contacts, max 5 MB). Each draft maps onto the create request; send its sourceKey along so importing the same file again creates nothing new.
+ */
+export const useReadContactDrafts = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof readContactDrafts>>, TError,ReadContactDraftsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof readContactDrafts>>,
+        TError,
+        ReadContactDraftsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReadContactDraftsMutationOptions(options), queryClient);
     }
     export const getGetContactUrl = (id: string,) => {
 

@@ -36,6 +36,7 @@ builder.AddLupiraBffAuth(o =>
 builder.Services.AddLupiraHealth();
 builder.Services.AddUpstreamClients(builder.Configuration);
 builder.Services.Configure<SiblingsOptions>(builder.Configuration.GetSection(SiblingsOptions.SectionName));
+builder.Services.Configure<AppLinksOptions>(builder.Configuration.GetSection(AppLinksOptions.SectionName));
 
 builder.Services.AddLupiraDepz(o =>
 {
@@ -92,6 +93,7 @@ app.UseAuthorization();
 app.MapLupiraAuthEndpoints();
 app.MapContactEndpoints();
 app.MapSiblingRedirects();
+app.MapAssetLinks();
 app.MapRetiredPrefixes();
 app.MapDepz();
 

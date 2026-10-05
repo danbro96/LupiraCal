@@ -17,6 +17,7 @@ import { ItemDetailScreen } from '../screens/ItemDetailScreen';
 import { ItemSearchScreen } from '../screens/ItemSearchScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
 import { ItemEditScreen } from '../screens/ItemEditScreen';
+import { ImportScreen } from '../screens/ImportScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AndroidSettingsScreen } from '../screens/AndroidSettingsScreen';
@@ -70,6 +71,7 @@ export function RootStack() {
       <Stack.Screen name="Developer" component={DeveloperScreen} options={{ title: 'Developer' }} />
       <Stack.Screen name="BridgeDiagnostics" component={BridgeDiagnosticsScreen} options={{ title: 'Bridge diagnostics' }} />
       <Stack.Screen name="AvailabilityEdit" component={AvailabilityEditScreen} options={{ title: 'Set availability' }} />
+      <Stack.Screen name="Import" component={ImportScreen} options={{ title: 'Import' }} />
     </Stack.Navigator>
   );
 }

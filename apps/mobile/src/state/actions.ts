@@ -24,6 +24,17 @@ export async function createItem(calendarId: string, core: ItemCore): Promise<st
   return itemId;
 }
 
+/** One create per draft in one transaction; a draft's own sourceKey makes importing it again a no-op. */
+export async function createItems(calendarId: string, drafts: { core: ItemCore; sourceKey?: string }[]): Promise<void> {
+  const ops: ClientOp[] = [];
+  for (const draft of drafts) {
+    const sourceKey = draft.sourceKey ?? uuidv7();
+    const itemId = await deterministicIdFor(sourceKey);
+    ops.push({ kind: 'item.create', itemId, sourceKey, calendarId, core: draft.core, ...item(itemId) });
+  }
+  await engine.enqueue(ops);
+}
+
 export async function reviseItem(itemId: string, core: ItemCore): Promise<void> {
   await submit({ kind: 'item.revise', itemId, core, ...item(itemId) });
 }
@@ -90,6 +101,16 @@ export async function createContact(addressBookId: string, core: ContactCore): P
   const contactId = await deterministicIdFor(sourceKey);
   await submit({ kind: 'contact.create', contactId, sourceKey, addressBookId, core, ...contact(contactId) });
   return contactId;
+}
+
+export async function createContacts(addressBookId: string, drafts: { core: ContactCore; sourceKey?: string }[]): Promise<void> {
+  const ops: ClientOp[] = [];
+  for (const draft of drafts) {
+    const sourceKey = draft.sourceKey ?? uuidv7();
+    const contactId = await deterministicIdFor(sourceKey);
+    ops.push({ kind: 'contact.create', contactId, sourceKey, addressBookId, core: draft.core, ...contact(contactId) });
+  }
+  await engine.enqueue(ops);
 }
 
 export async function reviseContact(contactId: string, core: ContactCore): Promise<void> {

@@ -40,6 +40,9 @@ type LupiraBridgeNative = {
   ackInbox(ids: number[]): Promise<void>;
   assignEventSyncId(pendingMarker: string, syncId: string): Promise<void>;
   readContactsSample(limit: number): Promise<{ total: number; rows: ContactsSampleRow[] }>;
+  /// The text of a file another app shared (named by the import deep link); readable once.
+  readImport(name: string): Promise<string>;
+  clearImports(): Promise<void>;
 };
 
 export const LupiraBridge = requireNativeModule<LupiraBridgeNative>('LupiraBridge');

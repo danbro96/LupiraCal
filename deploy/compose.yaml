@@ -20,6 +20,8 @@ services:
       ReverseProxy__Clusters__photo-api__Destinations__primary__Address: ${PHOTO_API_BASE_URL:-https://photo-api.lupira.com}
       ReverseProxy__Clusters__comms-api__Destinations__primary__Address: ${COMMS_API_BASE_URL:-https://comms-api.lupira.com}
       DataProtection__KeyPath: /keys
+      # Signing-certificate SHA-256 the Android app's App Links verify against (/.well-known/assetlinks.json).
+      AppLinks__Sha256Fingerprints__0: ${APP_LINKS_SHA256:?required}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:?required}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}

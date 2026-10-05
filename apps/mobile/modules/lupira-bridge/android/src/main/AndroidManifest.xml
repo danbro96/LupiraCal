@@ -9,6 +9,14 @@
   <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
   <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
 
+  <!-- Lets the router find the system calendar app for events that aren't ours. -->
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.VIEW" />
+      <data android:mimeType="vnd.android.cursor.item/event" />
+    </intent>
+  </queries>
+
   <application>
     <service
       android:name="expo.modules.lupirabridge.AuthenticatorService"
@@ -46,10 +54,9 @@
         android:resource="@xml/lupira_contacts" />
     </service>
 
-    <!-- Taps on the "Open in Lupira" contact row land here; we resolve the Data row to the contact id
-         and bounce into the app via its deep-link scheme. -->
+    <!-- Everything other apps hand us: provider event/contact intents and shared calendar/contact files. -->
     <activity
-      android:name="expo.modules.lupirabridge.BridgeOpenActivity"
+      android:name="expo.modules.lupirabridge.IntentRouterActivity"
       android:exported="true"
       android:excludeFromRecents="true"
       android:theme="@android:style/Theme.NoDisplay">
@@ -57,6 +64,46 @@
         <action android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.DEFAULT" />
         <data android:mimeType="vnd.android.cursor.item/vnd.com.lupira.calendar.contact" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="vnd.android.cursor.item/event" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.INSERT" />
+        <action android:name="android.intent.action.EDIT" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="vnd.android.cursor.dir/event" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.EDIT" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="vnd.android.cursor.item/event" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:scheme="content" />
+        <data android:scheme="file" />
+        <data android:mimeType="text/calendar" />
+        <data android:mimeType="application/ics" />
+        <data android:mimeType="text/x-vcalendar" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:scheme="content" />
+        <data android:scheme="file" />
+        <data android:mimeType="text/vcard" />
+        <data android:mimeType="text/x-vcard" />
+        <data android:mimeType="text/directory" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.INSERT" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <data android:mimeType="vnd.android.cursor.dir/contact" />
+        <data android:mimeType="vnd.android.cursor.dir/raw_contact" />
       </intent-filter>
     </activity>
   </application>

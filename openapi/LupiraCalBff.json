@@ -760,6 +760,113 @@
         ]
       }
     },
+    "/api/items/drafts": {
+      "post": {
+        "tags": [
+          "cal"
+        ],
+        "summary": "Reads a calendar file into item drafts without saving them.",
+        "description": "The body is the file's text (text/calendar or text/plain, at most 5 MB). Each draft maps 1:1 onto CreateItem; send its SourceKey (derived per caller from the event) so creating from the same file twice is a no-op. A recurring event's changed occurrences are not part of its draft. Location is a free-text label to resolve to a place first. zone (IANA id, e.g. the device zone) reads times the file gives without a zone as wall-clock times there and becomes their StartTimezone; without it they are read as UTC. An unknown zone is a 400.",
+        "operationId": "ReadItemDrafts",
+        "parameters": [
+          {
+            "name": "zone",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/calendar": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemDraftDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/items/{id}": {
       "get": {
         "tags": [
@@ -3856,6 +3963,113 @@
           },
           "403": {
             "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/contact-api/contacts/drafts": {
+      "post": {
+        "tags": [
+          "contact"
+        ],
+        "summary": "Reads a contacts file into contact drafts without saving them. The body is the file as shared from a phone (one or more contacts, max 5 MB). Each draft maps onto the create request; send its sourceKey along so importing the same file again creates nothing new.",
+        "operationId": "ReadContactDrafts",
+        "requestBody": {
+          "content": {
+            "text/vcard": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/x-vcard": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/directory": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContactDraftDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9468,6 +9682,86 @@
           }
         }
       },
+      "ContactDraftDto": {
+        "required": [
+          "sourceKey",
+          "kind",
+          "channels"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceKey": {
+            "type": "string",
+            "description": "Pass as the create request's `sourceKey`: importing the same contact again then returns the existing\n            contact instead of duplicating it. Stable per caller and contact; differs between callers."
+          },
+          "kind": {
+            "description": "Organization when the file marks the contact as one, or when it carries only an organization name.",
+            "$ref": "#/components/schemas/ContactKind"
+          },
+          "givenName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "For an Organization, its name."
+          },
+          "middleName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "familyName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "nickname": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "organization": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The employer of an Individual, when the file names one."
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactReachChannel"
+            },
+            "description": "Trimmed and de-duplicated, at most one preferred per medium."
+          },
+          "birthday": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PartialDate"
+              }
+            ]
+          },
+          "notes": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pronouns": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A contact read from a contacts file, not yet saved. Fields match CreateContactRequest one to one,\n            except `organization`, which is set as membership in an organization group."
+      },
       "ContactDto": {
         "required": [
           "id",
@@ -10973,6 +11267,103 @@
           }
         },
         "description": "Composable detail input for create/update. BookingDetail? ItemDetailsRequest.Booking (reservation/confirmation) attaches to any category;\nTravelLegRequest? ItemDetailsRequest.Travel applies to a `Trip` (its `ToPlace`/`FromPlace` are free-text labels resolved to a\na LupiraGeoApi place, like `Location`). A presence/availability segment is authored via the request's top-level\n`Availability` field, not here. On update, a supplied member replaces that member wholesale; omitted members are kept."
+      },
+      "ItemDraftDto": {
+        "required": [
+          "sourceKey",
+          "isAllDay"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceKey": {
+            "type": "string",
+            "description": "Your key for this event of the file; create with it as `SourceKey` so re-reading the same file creates nothing new."
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ItemStatus"
+              }
+            ]
+          },
+          "category": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ItemCategory"
+              }
+            ]
+          },
+          "isAllDay": {
+            "type": "boolean"
+          },
+          "startsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "startDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "endDate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "startTimezone": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "IANA zone of a timed item when the file names one."
+          },
+          "recurrenceRule": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "location": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Free-text place label; resolve it to a place before creating the item."
+          }
+        },
+        "description": "An unsaved item read from a calendar file. Field names match CreateCalendarItemRequest."
       },
       "ItemDto": {
         "required": [
@@ -13237,7 +13628,7 @@
             }
           }
         },
-        "description": "One page of a `/sync/*` feed. bool SyncPage&lt;T&gt;.Reset = drop the local mirror before applying this page."
+        "description": "One page of a `/sync/*` feed. `reset` starts a full sync: rows the full sync never mentions are gone."
       },
       "SyncPageOfItemSyncChange": {
         "required": [
@@ -13272,7 +13663,7 @@
             }
           }
         },
-        "description": "One page of a `/sync/*` feed. bool SyncPage&lt;T&gt;.Reset = drop the local mirror before applying this page."
+        "description": "One page of a `/sync/*` feed. `reset` starts a full sync: rows the full sync never mentions are gone."
       },
       "SyncPageOfListDto": {
         "required": [

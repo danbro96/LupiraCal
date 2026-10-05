@@ -8,6 +8,7 @@ import { CalendarScreen } from '../screens/CalendarScreen';
 import { InboxScreen } from '../screens/InboxScreen';
 import { ItemsScreen } from '../screens/ItemsScreen';
 import { ContactsLayout } from './ContactsLayout';
+import { ItemLinkRedirect } from './ItemLinkRedirect';
 import { EmptyDetail } from '../components/contacts/EmptyDetail';
 import { ContactDetailPane } from '../components/contacts/ContactDetailPane';
 import { GroupDetailPane } from '../components/contacts/GroupDetailPane';
@@ -32,6 +33,7 @@ export const router = createBrowserRouter([
             children: [
               { index: true, element: <CalendarScreen /> },
               { path: 'items', element: <ItemsScreen /> },
+              { path: 'items/:itemId', element: <ItemLinkRedirect /> },
               { path: 'inbox', element: <InboxScreen /> },
               {
                 path: 'contacts',

@@ -7,7 +7,7 @@
 import type { ItemSyncChange } from './itemSyncChange';
 
 /**
- * One page of a `/sync/*` feed. bool SyncPage&lt;T&gt;.Reset = drop the local mirror before applying this page.
+ * One page of a `/sync/*` feed. `reset` starts a full sync: rows the full sync never mentions are gone.
  */
 export interface SyncPageOfItemSyncChange {
   cursor: string;

@@ -10,6 +10,7 @@ import type {
   AddressBookDto,
   ClearContactDeceasedParams,
   ContactCirclesDto,
+  ContactDraftDto,
   ContactDto,
   ContactGetChangesParams,
   ContactGroupDto,
@@ -417,6 +418,43 @@ return apiRequest<ContactDto>(getCreateContactUrl(),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(createContactRequest)
+  }
+);}
+
+
+export const getReadContactDraftsUrl = () => {
+
+
+
+
+  return `/contact-api/contacts/drafts`
+}
+
+/**
+ * @summary Reads a contacts file into contact drafts without saving them. The body is the file as shared from a phone (one or more contacts, max 5 MB). Each draft maps onto the create request; send its sourceKey along so importing the same file again creates nothing new.
+ */
+export const readContactDrafts = async (readContactDraftsBody: string, options?: Parameters<typeof apiRequest>[1]): Promise<ContactDraftDto[]> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ContactDraftDto[]>(getReadContactDraftsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'text/vcard', ...getHeaders(options?.headers) },
+    body: JSON.stringify(readContactDraftsBody)
   }
 );}
 

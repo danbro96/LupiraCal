@@ -20,6 +20,17 @@
     "android": {
       "package": "com.lupira.calendar",
       "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            { "scheme": "https", "host": "cal.lupira.com", "pathPrefix": "/items/" },
+            { "scheme": "https", "host": "cal.lupira.com", "pathPrefix": "/contacts/" }
+          ]
+        }
+      ],
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
       ],

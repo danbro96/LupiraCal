@@ -13,7 +13,8 @@ import type { ContactForm } from '../../domain/editors';
 import type { ContactCore } from '../../domain/ops';
 import { parseList } from '@lupira/cal-domain/itemForm';
 import { CHANNEL_TYPES as SHARED_CHANNEL_TYPES } from '@lupira/cal-domain/reach';
-import { contactCoreFromForm, contactFormFromDoc, emptyContactForm } from '../../domain/editors';
+import { contactCoreFromForm, contactFormFromDoc, contactFormFromDraft, emptyContactForm } from '../../domain/editors';
+import { contactDraftFromLink } from '../../domain/drafts';
 import { createContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '../../state/actions';
 import { useAddressBooks } from '../../state/useAddressBooks';
 import { useContactState } from '../../state/useContactList';
@@ -24,6 +25,7 @@ import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
 import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { ReachIcon } from '../components/ReachIcon';
 import type { RootStackParamList } from '../navigation/types';
+import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
 import { useColors, spacing } from '../theme';
 import { ICONS } from '../icons';
@@ -40,8 +42,11 @@ export function ContactEditScreen() {
   const { data: state } = useContactState(contactId ?? '');
   const { data: books } = useAddressBooks();
 
-  const [form, setForm] = useState<ContactForm>(() => ({ ...emptyContactForm(), displayNameFormat: contactId ? '' : 'FirstLast' }));
-  const [channels, setChannels] = useState<ReachChannel[]>([]);
+  const draft = contactId ? null : (route.params?.draft ?? contactDraftFromLink(route.params ?? {}));
+  const [seed] = useState(() => (draft ? contactFormFromDraft(draft) : null));
+
+  const [form, setForm] = useState<ContactForm>(() => seed?.form ?? { ...emptyContactForm(), displayNameFormat: contactId ? '' : 'FirstLast' });
+  const [channels, setChannels] = useState<ReachChannel[]>(() => seed?.channels ?? []);
   const [profiles, setProfiles] = useState<SocialProfile[]>([]);
   const [tagsCsv, setTagsCsv] = useState('');
   const [bookId, setBookId] = useState('');
@@ -105,7 +110,7 @@ export function ContactEditScreen() {
     void submit().then((saved) => {
       if (!saved) return;
       guard.leave();
-      navigation.goBack();
+      leaveScreen(navigation);
     });
   };
 

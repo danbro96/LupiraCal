@@ -13,8 +13,9 @@ import {
   categoryAllDayDefault, emptyItemForm, withAllDay, withSchedule, type ItemForm, type ScheduleField,
 } from '@lupira/cal-domain/itemForm';
 import {
-  acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc,
+  acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft,
 } from '../../domain/editors';
+import { itemDraftFromLink } from '../../domain/drafts';
 import type { ItemDoc } from '../../domain/docTypes';
 import type { ItemCore } from '../../domain/ops';
 import { saveItem } from '../../state/actions';
@@ -35,6 +36,7 @@ import { RepeatSheet } from '../event/RepeatSheet';
 import { TimeZoneSheet, zoneSummary } from '../event/TimeZoneSheet';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
+import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
 import { spacing, useColors } from '../theme';
 
@@ -50,8 +52,9 @@ export function ItemEditScreen() {
   const { data: calendars } = useCalendars();
   const { data: contacts } = useContactList();
   const pickable = selectableCalendars(calendars);
+  const draft = itemId ? null : (route.params?.draft ?? itemDraftFromLink(route.params ?? {}));
 
-  const [form, setForm] = useState<ItemForm>(() => emptyItemForm(route.params?.day, route.params?.time));
+  const [form, setForm] = useState<ItemForm>(() => (draft ? itemFormFromDraft(draft) : emptyItemForm(route.params?.day, route.params?.time)));
   const [calendarIds, setCalendarIds] = useState<string[]>([]);
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
   const [scheduleTouched, setScheduleTouched] = useState(false);
@@ -59,8 +62,9 @@ export function ItemEditScreen() {
   const [error, setError] = useState<string | null>(null);
   const [seeded, setSeeded] = useState(!itemId);
 
-  /** Pristine snapshots; the exit guard and the header's Save state key off differences from them. */
-  const [baseline, setBaseline] = useState(() => ({ form: JSON.stringify(form), calendars: '[]', people: '[]' }));
+  /** Pristine snapshots; the exit guard and the header's Save state key off differences from them. A draft
+   *  is unsaved work from the start. */
+  const [baseline, setBaseline] = useState(() => ({ form: draft ? '' : JSON.stringify(form), calendars: '[]', people: '[]' }));
 
   if (!seeded && itemId && state) {
     const seededForm = itemFormFromDoc(state.doc);
@@ -146,7 +150,7 @@ export function ItemEditScreen() {
     void submit().then((saved) => {
       if (!saved) return;
       guard.leave();
-      navigation.goBack();
+      leaveScreen(navigation);
     });
   };
 
@@ -182,7 +186,7 @@ export function ItemEditScreen() {
   const noEnd = form.isAllDay ? 'Same day' : 'No end';
   const otherZone = !form.isAllDay && !!form.timeZone && form.timeZone !== deviceTimeZone();
   const zoneAt = form.timeZone && form.startDay && form.startTime ? wallToInstant(form.startDay, form.startTime, form.timeZone) : undefined;
-  const legacyLocation = !form.place ? state?.doc.locationLabel : null;
+  const legacyLocation = !form.place ? (state?.doc.locationLabel ?? draft?.location) : null;
 
   return (
     <>

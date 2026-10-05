@@ -1,8 +1,9 @@
 import { contactNameError } from '@danbro96/lupira-domain-contacts/contactNames';
-import { scheduleFromForm, parseList, type EditResult, type ItemForm } from '@lupira/cal-domain/itemForm';
+import { emptyItemForm, scheduleFromForm, parseList, type EditResult, type ItemForm } from '@lupira/cal-domain/itemForm';
 import { birthdayFields, birthdayFromFields } from '@lupira/cal-domain/partialDate';
 import { deviceTimeZone, eventZone, isoToWall } from '@lupira/cal-domain/zonedTime';
-import type { CalendarMembership, ContactDoc, ItemAttendee, ItemDoc } from './docTypes';
+import type { CalendarMembership, ContactDoc, ItemAttendee, ItemDoc, ReachChannel } from './docTypes';
+import type { ContactDraft, ItemDraft } from './drafts';
 import type { ContactCore, ItemCore } from './ops';
 
 /** Mirror doc ⇄ form ⇄ op-core translation: which empty field means "keep" (title/description/status/category
@@ -32,6 +33,34 @@ export function itemFormFromDoc(doc: ItemDoc): ItemForm {
     timeZone,
     place: doc.placeId ? { placeId: doc.placeId, label: doc.locationLabel ?? '' } : null,
   };
+}
+
+/** A draft opens as a new event; a timed draft without an end gets the new-event hour. A location without a
+ *  place has no form field — the editor offers it as the hint for picking one. */
+export function itemFormFromDraft(draft: ItemDraft): ItemForm {
+  const text = {
+    title: draft.title ?? '',
+    description: draft.description ?? '',
+    status: draft.status ?? '',
+    category: draft.category ?? '',
+    recurrenceRule: draft.recurrenceRule ?? '',
+    place: draft.placeId ? { placeId: draft.placeId, label: draft.location ?? '' } : null,
+  };
+  if (draft.isAllDay) {
+    return {
+      ...emptyItemForm(), ...text, isAllDay: true,
+      startDay: draft.startDate ?? '', endDay: draft.endDate ?? '', timeZone: deviceTimeZone() ?? '',
+    };
+  }
+  const timeZone = eventZone(draft.startTimezone) ?? '';
+  const start = draft.startsAt ? isoToWall(draft.startsAt, timeZone) : null;
+  const end = draft.endsAt ? isoToWall(draft.endsAt, timeZone) : null;
+  const form = emptyItemForm(start?.day, start?.time);
+  return { ...form, ...text, endDay: end?.day ?? form.endDay, endTime: end?.time ?? form.endTime, timeZone };
+}
+
+export function itemCoreFromDraft(draft: ItemDraft): EditResult<ItemCore> {
+  return itemCoreFromForm(itemFormFromDraft(draft));
 }
 
 /** `base` supplies the fields the form doesn't edit (parentItemId) so the whole-section write keeps them. */
@@ -179,4 +208,37 @@ export function contactCoreFromForm(form: ContactForm): EditResult<ContactCore> 
       tags: null,
     },
   };
+}
+
+/** Contacts have no organization field: an organization alone makes an Organization contact named after it,
+ *  and a person's employer is kept in the notes. */
+export function contactFormFromDraft(draft: ContactDraft): { form: ContactForm; channels: ReachChannel[] } {
+  const named = !!(draft.givenName || draft.familyName || draft.nickname);
+  const organizationOnly = !named && !!draft.organization;
+  const employer = named && draft.kind !== 'Organization' ? draft.organization : null;
+  const birthday = birthdayFields(draft.birthday && { ...draft.birthday, year: draft.birthday.year ?? null });
+  return {
+    form: {
+      ...emptyContactForm(),
+      givenName: (organizationOnly ? draft.organization : draft.givenName) ?? '',
+      middleName: draft.middleName ?? '',
+      familyName: draft.familyName ?? '',
+      nickname: draft.nickname ?? '',
+      displayNameFormat: 'FirstLast',
+      kind: organizationOnly ? 'Organization' : (draft.kind ?? ''),
+      birthday: birthday.date,
+      birthdayYearKnown: birthday.yearKnown,
+      birthdayMonth: birthday.month,
+      birthdayDay: birthday.day,
+      notes: [draft.notes, employer && `Organization: ${employer}`].filter(Boolean).join('\n\n'),
+      pronouns: draft.pronouns ?? '',
+    },
+    channels: draft.channels.map((ch) => ({ ...ch })),
+  };
+}
+
+export function contactCoreFromDraft(draft: ContactDraft): EditResult<ContactCore> {
+  const { form, channels } = contactFormFromDraft(draft);
+  const core = contactCoreFromForm(form);
+  return core.ok ? { ok: true, value: { ...core.value, channels: channels.filter((ch) => ch.value.trim()) } } : core;
 }

@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { ContactDoc, ItemDoc } from './docTypes';
 import { emptyItemForm } from '@lupira/cal-domain/itemForm';
 import {
-  attendeeChanges, contactCoreFromForm, contactFormFromDoc, coreOfDoc, emptyContactForm, filingChanges, itemCoreFromForm,
-  itemFormFromDoc, metadataValueFromInput,
+  attendeeChanges, contactCoreFromDraft, contactCoreFromForm, contactFormFromDoc, contactFormFromDraft, coreOfDoc,
+  emptyContactForm, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft, metadataValueFromInput,
 } from './editors';
+import type { ContactDraft, ItemDraft } from './drafts';
 
 const timedDoc: ItemDoc = {
   id: 'i1',
@@ -241,5 +242,66 @@ describe('metadataValueFromInput', () => {
 
   it('rejects text where JSON is held', () => {
     expect(metadataValueFromInput('forty-three', 42).ok).toBe(false);
+  });
+});
+
+const timedDraft: ItemDraft = {
+  title: 'Lunch',
+  description: 'Bring cake',
+  location: 'Torsby',
+  isAllDay: false,
+  startsAt: new Date(2026, 9, 6, 12, 0).toISOString(),
+  endsAt: null,
+  startDate: null,
+  endDate: null,
+  startTimezone: null,
+  recurrenceRule: 'FREQ=WEEKLY',
+};
+
+describe('editors from drafts', () => {
+  it('opens a timed draft without an end as a one-hour event', () => {
+    const form = itemFormFromDraft(timedDraft);
+    expect(form).toMatchObject({
+      title: 'Lunch', description: 'Bring cake', recurrenceRule: 'FREQ=WEEKLY', isAllDay: false,
+      startDay: '2026-10-06', startTime: '12:00', endDay: '2026-10-06', endTime: '13:00', place: null,
+    });
+  });
+
+  it('carries a placed location into the form', () => {
+    expect(itemFormFromDraft({ ...timedDraft, placeId: 'p1' }).place).toEqual({ placeId: 'p1', label: 'Torsby' });
+  });
+
+  it('keeps an all-day draft on its dates', () => {
+    const form = itemFormFromDraft({ ...timedDraft, isAllDay: true, startsAt: null, startDate: '2026-10-06', endDate: '2026-10-07' });
+    expect(form).toMatchObject({ isAllDay: true, startDay: '2026-10-06', endDay: '2026-10-07', startTime: '', endTime: '' });
+  });
+
+  const contactDraft: ContactDraft = {
+    sourceKey: 'import-1', kind: 'Individual', givenName: 'Anna', familyName: 'Svensson', organization: 'Acme',
+    channels: [{ medium: 'Phone', value: '+46 70 123', preferred: false }, { medium: 'Email', value: ' ', preferred: false }],
+    birthday: { year: null, month: 7, day: 7 }, notes: 'Met at fika',
+  };
+
+  it('keeps a person\'s organization in the notes', () => {
+    const { form, channels } = contactFormFromDraft(contactDraft);
+    expect(form).toMatchObject({
+      givenName: 'Anna', familyName: 'Svensson', kind: 'Individual', notes: 'Met at fika\n\nOrganization: Acme',
+      birthdayYearKnown: false, birthdayMonth: '7', birthdayDay: '7',
+    });
+    expect(channels).toHaveLength(2);
+  });
+
+  it('names an organization-only draft after the organization', () => {
+    const { form } = contactFormFromDraft({ ...contactDraft, kind: null, givenName: null, familyName: null, notes: null });
+    expect(form).toMatchObject({ givenName: 'Acme', kind: 'Organization', notes: '' });
+  });
+
+  it('builds a create core with the non-empty channels', () => {
+    const r = contactCoreFromDraft(contactDraft);
+    expect(r.ok && r.value.channels).toEqual([{ medium: 'Phone', value: '+46 70 123', preferred: false }]);
+  });
+
+  it('rejects a draft without any name', () => {
+    expect(contactCoreFromDraft({ ...contactDraft, givenName: null, familyName: null, organization: null }).ok).toBe(false);
   });
 });

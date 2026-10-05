@@ -58,6 +58,12 @@ describe('the exposed allowlist', () => {
     ]);
   });
 
+  it('reads shared files into drafts on both clusters', () => {
+    expect(merged.paths['/api/items/drafts'].post.operationId).toBe('ReadItemDrafts');
+    expect(merged.paths['/api/items/drafts'].post.parameters.map((p: { name: string }) => p.name)).toEqual(['zone']);
+    expect(merged.paths['/contact-api/contacts/drafts'].post.operationId).toBe('ReadContactDrafts');
+  });
+
   // These reach a different credential than the family session the BFF holds, or aren't a browser
   // surface at all. An allowlist should already exclude them; this fails loudly if one is re-added.
   it('never exposes ingest, share-links, the user directory or liveness probes', () => {

@@ -43,6 +43,7 @@ import type {
   GrantOwnerRequest,
   HotspotDto,
   InviteParticipantParams,
+  ItemDraftDto,
   JsonObject,
   LeaveItemParams,
   ListRelationEdgesParams,
@@ -50,6 +51,7 @@ import type {
   OwnerGrantDto,
   ParticipationSummaryEntry,
   ProblemDetails,
+  ReadItemDraftsParams,
   RelationDto,
   RemoveItemFromCalendarParams,
   RemoveParticipantByContactParams,
@@ -833,6 +835,102 @@ export const useCreateItem = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getCreateItemMutationOptions(options), queryClient);
+    }
+    export const getReadItemDraftsUrl = (params?: ReadItemDraftsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/items/drafts?${stringifiedParams}` : `/api/items/drafts`
+}
+
+/**
+ * The body is the file's text (text/calendar or text/plain, at most 5 MB). Each draft maps 1:1 onto CreateItem; send its SourceKey (derived per caller from the event) so creating from the same file twice is a no-op. A recurring event's changed occurrences are not part of its draft. Location is a free-text label to resolve to a place first. zone (IANA id, e.g. the device zone) reads times the file gives without a zone as wall-clock times there and becomes their StartTimezone; without it they are read as UTC. An unknown zone is a 400.
+ * @summary Reads a calendar file into item drafts without saving them.
+ */
+export const readItemDrafts = async (readItemDraftsBody: string,
+    params?: ReadItemDraftsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ItemDraftDto[]> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ItemDraftDto[]>(getReadItemDraftsUrl(params),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'text/calendar', ...getHeaders(options?.headers) },
+    body: JSON.stringify(readItemDraftsBody)
+  }
+);}
+
+
+
+
+
+export const getReadItemDraftsMutationKey = () => ['readItemDrafts'] as const;
+
+export const getReadItemDraftsMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof readItemDrafts>>, TError,ReadItemDraftsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof readItemDrafts>>, TError,ReadItemDraftsMutationVariables, TContext> => {
+
+const mutationKey = getReadItemDraftsMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof readItemDrafts>>, ReadItemDraftsMutationVariables> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  readItemDrafts(data,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReadItemDraftsMutationResult = NonNullable<Awaited<ReturnType<typeof readItemDrafts>>>
+    export type ReadItemDraftsMutationBody = string
+    export type ReadItemDraftsMutationError = ProblemDetails
+    export type ReadItemDraftsMutationVariables = {data: string;params?: ReadItemDraftsParams}
+
+    /**
+ * @summary Reads a calendar file into item drafts without saving them.
+ */
+export const useReadItemDrafts = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof readItemDrafts>>, TError,ReadItemDraftsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof readItemDrafts>>,
+        TError,
+        ReadItemDraftsMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReadItemDraftsMutationOptions(options), queryClient);
     }
     export const getGetItemUrl = (id: string,) => {
 
