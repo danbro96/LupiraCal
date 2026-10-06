@@ -2,7 +2,7 @@ import { deleteDatabaseAsync } from 'expo-sqlite';
 import { expoDb } from '@danbro96/lupira-expo-sqlite/expoDb';
 import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 
-const open = expoDb('lupira-calendar.db');
+const open = expoDb('lupira-calendar.db', { serializeStatements: true });
 let legacyDropped: Promise<void> | null = null;
 
 /** Upgrading wipes and resyncs: the pre-kernel mirror file, queued writes included, goes on first open. */
