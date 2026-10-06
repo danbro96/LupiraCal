@@ -4,6 +4,7 @@
  * LupiraCal BFF
  * OpenAPI spec version: v1
  */
+import type { PlaceCategory } from './placeCategory';
 
 /**
  * A caller's saved place / personal label. References a gazetteer place, or carries a raw coordinate.
@@ -17,8 +18,7 @@ export interface SavedPlaceDto {
   /** @nullable */
   longitude?: number | null;
   label: string;
-  /** @nullable */
-  icon?: string | null;
+  category?: null | PlaceCategory;
   /** @nullable */
   notes?: string | null;
   isFavorite: boolean;

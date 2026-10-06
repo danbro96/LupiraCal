@@ -13148,10 +13148,14 @@
           "label": {
             "type": "string"
           },
-          "icon": {
-            "type": [
-              "null",
-              "string"
+          "category": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlaceCategory"
+              }
             ]
           },
           "notes": {
