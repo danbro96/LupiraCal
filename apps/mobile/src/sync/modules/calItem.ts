@@ -22,5 +22,5 @@ export const calItemModule: AggregateModule<ItemDoc, ItemGuards, ClientOp, ItemS
   },
   reduce: applyItemOp,
   replay: replayOp,
-  index: { version: 3, tables: ITEM_TABLES, ddl: ITEM_DDL + BRIDGE_VIEW, write: writeItemIndex },
+  index: { version: 4, tables: ITEM_TABLES, ddl: ITEM_DDL + BRIDGE_VIEW, write: writeItemIndex },
 };

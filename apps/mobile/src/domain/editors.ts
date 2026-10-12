@@ -1,6 +1,7 @@
 import { contactNameError } from '@danbro96/lupira-domain-contacts/contactNames';
 import { emptyItemForm, scheduleFromForm, parseList, type EditResult, type ItemForm } from '@lupira/cal-domain/itemForm';
 import { birthdayFields, birthdayFromFields } from '@lupira/cal-domain/partialDate';
+import { fromStored } from '@lupira/cal-domain/placeSelection';
 import { deviceTimeZone, eventZone, isoToWall } from '@lupira/cal-domain/zonedTime';
 import type { CalendarMembership, ContactDoc, ItemAttendee, ItemDoc, ReachChannel } from './docTypes';
 import type { ContactDraft, ItemDraft } from './drafts';
@@ -31,7 +32,7 @@ export function itemFormFromDoc(doc: ItemDoc): ItemForm {
     endTime: end.time,
     recurrenceRule: doc.recurrenceRule ?? '',
     timeZone,
-    place: doc.placeId ? { placeId: doc.placeId, label: doc.locationLabel ?? '' } : null,
+    place: doc.placeId ? fromStored(doc.placeId, doc.locationLabel) : null,
   };
 }
 
@@ -44,7 +45,7 @@ export function itemFormFromDraft(draft: ItemDraft): ItemForm {
     status: draft.status ?? '',
     category: draft.category ?? '',
     recurrenceRule: draft.recurrenceRule ?? '',
-    place: draft.placeId ? { placeId: draft.placeId, label: draft.location ?? '' } : null,
+    place: draft.placeId ? fromStored(draft.placeId, draft.location) : null,
   };
   if (draft.isAllDay) {
     return {

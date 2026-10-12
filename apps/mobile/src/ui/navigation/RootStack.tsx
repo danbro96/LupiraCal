@@ -20,6 +20,7 @@ import { TaskCreateScreen } from '../screens/TaskCreateScreen';
 import { ItemEditScreen } from '../screens/ItemEditScreen';
 import { ImportScreen } from '../screens/ImportScreen';
 import { LoginScreen } from '../screens/LoginScreen';
+import { PinPlaceScreen } from '../screens/PinPlaceScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AndroidSettingsScreen } from '../screens/AndroidSettingsScreen';
 import { CalendarSettingsScreen } from '../screens/CalendarSettingsScreen';
@@ -70,6 +71,7 @@ export function RootStack() {
       />
       <Stack.Screen name="ContactDetail" component={ContactDetailScreen} options={{ title: 'Contact' }} />
       <Stack.Screen name="ContactEdit" component={ContactEditScreen} options={{ title: 'Edit contact' }} />
+      <Stack.Screen name="PinPlace" component={PinPlaceScreen} options={{ title: 'Pick on map', contentStyle: { paddingBottom: 0 } }} />
       <Stack.Screen name="Developer" component={DeveloperScreen} options={{ title: 'Developer' }} />
       <Stack.Screen name="BridgeDiagnostics" component={BridgeDiagnosticsScreen} options={{ title: 'Bridge diagnostics' }} />
       <Stack.Screen name="AvailabilityEdit" component={AvailabilityEditScreen} options={{ title: 'Set availability' }} />

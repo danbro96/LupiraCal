@@ -1,7 +1,6 @@
 import { errorText } from '@danbro96/lupira-http/apiError';
 import { DISPLAY_NAME_FORMAT_LABELS } from '@danbro96/lupira-domain-contacts/contactNames';
-import { residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
-import { addressTypeLabel } from '@danbro96/lupira-domain-contacts/residents';
+import { householdHomes } from '@danbro96/lupira-domain-contacts/residents';
 import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -9,7 +8,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useLayoutEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Chip, HelperText, IconButton, List, Switch, Text } from 'react-native-paper';
-import type { ContactDoc, ReachChannel, ResidencyDoc, SocialProfile } from '../../domain/docTypes';
+import { v7 as uuidv7 } from 'uuid';
+import { addressRowsFrom, addressSaveError, newAddressRow, residencyChanges, type AddressRow, type ResidencyChange } from '../../domain/addressRows';
+import type { ContactDoc, ReachChannel, SocialProfile } from '../../domain/docTypes';
 import { REACH_KINDS } from '../../domain/reach';
 import type { ContactForm } from '../../domain/editors';
 import type { ContactCore } from '../../domain/ops';
@@ -18,11 +19,10 @@ import { clampBirthdayDay, daysInMonth, monthNames, partialDateToInput, withYear
 import { CHANNEL_TYPES as SHARED_CHANNEL_TYPES } from '@lupira/cal-domain/reach';
 import { contactCoreFromForm, contactFormFromDoc, contactFormFromDraft, emptyContactForm } from '../../domain/editors';
 import { contactDraftFromLink } from '../../domain/drafts';
-import { createContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '../../state/actions';
+import { createContact, reviseContact, saveResidencies, setContactChannels, setContactProfiles, setContactTags } from '../../state/actions';
 import { useAddressBooks } from '../../state/useAddressBooks';
-import { useContactState } from '../../state/useContactList';
-import { usePlaceCoords } from '../../state/usePlaceLookup';
-import { useContactResidencies } from '../../state/useResidencies';
+import { useContactRelations, useContactState } from '../../state/useContactList';
+import { useContactResidencies, useResidencyRows } from '../../state/useResidencies';
 import { ChoiceChips } from '@danbro96/lupira-expo-paper/components/ChoiceChips';
 import { DateField } from '../components/DateField';
 import { Field } from '../components/Field';
@@ -30,8 +30,9 @@ import { MenuField } from '../components/MenuField';
 import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
 import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { ReachIcon } from '../components/ReachIcon';
-import { ResidencySheet } from '../contact/ResidencySheet';
-import type { RootStackParamList } from '../navigation/types';
+import type { PickedPlace, RootStackParamList } from '../navigation/types';
+import { AddressForm } from '../places/AddressForm';
+import { PlaceSearchSheet } from '../places/PlaceSearchSheet';
 import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
 import { useColors, spacing } from '../theme';
@@ -52,8 +53,15 @@ export function ContactEditScreen() {
   const { data: state } = useContactState(contactId ?? '');
   const { data: books } = useAddressBooks();
   const residencies = useContactResidencies(contactId);
-  const residencyPlaces = usePlaceCoords(residencies.map((r) => r.placeId));
-  const [editingResidency, setEditingResidency] = useState<ResidencyDoc | 'new' | null>(null);
+  const residencyRows = useResidencyRows();
+  const { data: relations } = useContactRelations(contactId ?? '');
+  const household = contactId
+    ? householdHomes(contactId, (relations ?? []).map((r) => ({ contactId: r.otherId, displayName: r.displayName, kind: r.kind, ended: r.ended })), residencyRows)
+    : [];
+  const [addresses, setAddresses] = useState<AddressRow[] | null>(contactId ? null : []);
+  const [addressBaseline, setAddressBaseline] = useState('[]');
+  const [existingFor, setExistingFor] = useState<string | null>(null);
+  const [appliedPick, setAppliedPick] = useState<PickedPlace | undefined>();
 
   const draft = contactId ? null : (route.params?.draft ?? contactDraftFromLink(route.params ?? {}));
   const [seed] = useState(() => (draft ? contactFormFromDraft(draft) : null));
@@ -81,8 +89,20 @@ export function ContactEditScreen() {
     setSeeded(true);
   }
   if (!contactId && !bookId && books?.length) setBookId(books[0].id);
+  if (addresses === null && residencies) {
+    const seededRows = addressRowsFrom(residencies);
+    setAddresses(seededRows);
+    setAddressBaseline(JSON.stringify(seededRows));
+  }
+  const picked = route.params?.pickedPlace;
+  if (picked && picked !== appliedPick) {
+    setAppliedPick(picked);
+    setAddresses((rows) => (rows ?? []).map((r) => (r.key === picked.target ? { ...r, placeId: picked.selection.placeId, label: picked.selection.label } : r)));
+  }
+  const rows = addresses ?? [];
+  const setRow = (row: AddressRow) => setAddresses((all) => (all ?? []).map((r) => (r.key === row.key ? row : r)));
 
-  const dirty = snapshot(form, channels, profiles, tagsCsv) !== baseline;
+  const dirty = snapshot(form, channels, profiles, tagsCsv) !== baseline || JSON.stringify(rows) !== addressBaseline;
 
   const set = <K extends keyof ContactForm>(key: K, value: ContactForm[K]) => setForm((f) => ({ ...f, [key]: value }));
   const birthday: BirthdayFields = { yearKnown: form.birthdayYearKnown, date: form.birthday, month: form.birthdayMonth, day: form.birthdayDay };
@@ -108,13 +128,18 @@ export function ContactEditScreen() {
       setError('Pick an address book');
       return false;
     }
+    const addressError = addressSaveError(rows);
+    if (addressError) {
+      setError(addressError);
+      return false;
+    }
     setError(null);
 
     const cleanChannels = channels.filter((ch) => ch.value.trim());
     const cleanProfiles = profiles.filter((p) => p.service.trim() && p.handle.trim());
     const tags = withPinPreserved(parseList(tagsCsv), contactId ? state?.doc.tags : null);
 
-    return saveContact(contactId, bookId, r.value, cleanChannels, cleanProfiles, tags, state?.doc, setError);
+    return saveContact(contactId, bookId, r.value, cleanChannels, cleanProfiles, tags, residencyChanges(rows), state?.doc, setError);
   };
 
   const guard = useUnsavedGuard(dirty, {
@@ -275,21 +300,23 @@ export function ContactEditScreen() {
           ))}
         </View>
 
-        {contactId && (
-          <>
-            <List.Subheader>Addresses</List.Subheader>
-            {residencies.map((r) => (
-              <List.Item
-                key={r.id}
-                title={residencyPlaces.get(r.placeId)?.name ?? '…'}
-                description={residencyLine(r)}
-                left={(p) => <List.Icon {...p} icon={ICONS.place} />}
-                onPress={() => setEditingResidency(r)}
-              />
-            ))}
-            <List.Item title="Add address" left={(p) => <List.Icon {...p} icon={ICONS.add} />} onPress={() => setEditingResidency('new')} />
-          </>
-        )}
+        <List.Subheader>Addresses</List.Subheader>
+        {rows.filter((r) => !r.removed).map((row) => (
+          <AddressForm
+            key={row.key}
+            row={row}
+            household={household.filter((h) => h.placeId !== row.placeId)}
+            onChange={setRow}
+            onRemove={() => setRow({ ...row, removed: true })}
+            onUseExisting={() => setExistingFor(row.key)}
+            onPickOnMap={(start) => navigation.navigate('PinPlace', { origin: 'ContactEdit', target: row.key, start, nameRequired: false })}
+          />
+        ))}
+        <List.Item
+          title="Add address"
+          left={(p) => <List.Icon {...p} icon={ICONS.add} />}
+          onPress={() => setAddresses((all) => [...(all ?? []), newAddressRow(uuidv7())])}
+        />
 
         <TextField style={fieldGap} label="Tags (comma-separated)" autoCapitalize="none" value={tagsCsv} onChangeText={setTagsCsv} />
 
@@ -304,11 +331,16 @@ export function ContactEditScreen() {
 
         <HelperText type="error" visible={!!error}>{error}</HelperText>
       </ScrollView>
-      {contactId && editingResidency && (
-        <ResidencySheet
-          contactId={contactId}
-          residency={editingResidency === 'new' ? null : editingResidency}
-          onDismiss={() => setEditingResidency(null)}
+      {existingFor && (
+        <PlaceSearchSheet
+          ctx={{ kind: 'residency', contactId: contactId ?? '', householdContactIds: household.flatMap((h) => h.contacts.map((m) => m.contactId)) }}
+          hasPlace={false}
+          onPick={(place) => {
+            const row = rows.find((r) => r.key === existingFor);
+            if (place && row) setRow({ ...row, placeId: place.placeId, label: place.label });
+          }}
+          onPickOnMap={(start) => navigation.navigate('PinPlace', { origin: 'ContactEdit', target: existingFor, start, nameRequired: false })}
+          onDismiss={() => setExistingFor(null)}
         />
       )}
     </>
@@ -329,11 +361,6 @@ const styles = StyleSheet.create({
   addRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
 });
 
-function residencyLine(r: ResidencyDoc): string {
-  const former = residencyStatus(r.movedIn ?? null, r.movedOut ?? null) === 'former';
-  return former ? `${addressTypeLabel(r.type)} · former` : addressTypeLabel(r.type);
-}
-
 function snapshot(form: ContactForm, channels: ReachChannel[], profiles: SocialProfile[], tagsCsv: string): string {
   return JSON.stringify([form, channels, profiles, tagsCsv.trim()]);
 }
@@ -345,6 +372,7 @@ async function saveContact(
   cleanChannels: ReachChannel[],
   cleanProfiles: SocialProfile[],
   tags: string[],
+  addressChanges: ResidencyChange[],
   doc: ContactDoc | undefined,
   setError: (error: string | null) => void,
 ): Promise<boolean> {
@@ -352,11 +380,13 @@ async function saveContact(
     if (!contactId) {
       const id = await createContact(bookId, { ...core, channels: cleanChannels, tags });
       if (cleanProfiles.length > 0) await setContactProfiles(id, cleanProfiles);
+      await saveResidencies(id, addressChanges);
     } else {
       await reviseContact(contactId, core);
       if (JSON.stringify(cleanChannels) !== JSON.stringify(doc?.channels ?? [])) await setContactChannels(contactId, cleanChannels);
       if (JSON.stringify(tags) !== JSON.stringify(doc?.tags ?? [])) await setContactTags(contactId, tags);
       if (JSON.stringify(cleanProfiles) !== JSON.stringify(doc?.profiles ?? [])) await setContactProfiles(contactId, cleanProfiles);
+      await saveResidencies(contactId, addressChanges);
     }
     return true;
   } catch (e) {

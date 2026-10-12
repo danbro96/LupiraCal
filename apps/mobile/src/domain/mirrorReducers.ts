@@ -1,7 +1,7 @@
 import { wins } from '@danbro96/lupira-sync-core/lww';
-import type { ContactDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, SocialProfile } from './docTypes';
+import type { ContactDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, ResidencyDoc, SocialProfile } from './docTypes';
 import { emptyContactGuards, emptyItemGuards } from './docTypes';
-import type { ClientOp, ContactCore, ItemCore } from './ops';
+import type { ClientOp, ContactCore, ItemCore, ResidencyFields } from './ops';
 
 /** Client twins of the servers' section reducers: applying an op locally must land on the same state the
  *  server's Apply will produce for the same (occurredAt, commandId) — that is what makes the pull-time rebase
@@ -12,6 +12,7 @@ import type { ClientOp, ContactCore, ItemCore } from './ops';
 /** A doc and its section guards; null is absent or deleted, as the server tombstones it. */
 export type MirrorItem = { doc: ItemDoc; guards: ItemGuards };
 export type MirrorContact = { doc: ContactDoc; guards: ContactGuards };
+export type MirrorResidency = { doc: ResidencyDoc; guards: null };
 
 export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem | null {
   switch (op.kind) {
@@ -185,6 +186,29 @@ export function applyContactOp(state: MirrorContact | null, op: ClientOp): Mirro
     default:
       return state;
   }
+}
+
+// Residencies carry no section guards: their ops replay in outbox order, so the last one queued wins.
+export function applyResidencyOp(state: MirrorResidency | null, op: ClientOp): MirrorResidency | null {
+  switch (op.kind) {
+    case 'contact.residency.start':
+      if (state) return state;
+      return { doc: { id: op.residencyId, contactId: op.contactId, ...stated(op.residency) }, guards: null };
+    case 'contact.residency.revise':
+      if (!state) return state;
+      return { ...state, doc: { ...state.doc, ...stated(op.residency) } };
+    case 'contact.residency.moveOut':
+      if (!state) return state;
+      return { ...state, doc: { ...state.doc, movedOut: op.movedOut } };
+    case 'contact.residency.remove':
+      return null;
+    default:
+      return state;
+  }
+}
+
+function stated(r: ResidencyFields): ResidencyFields {
+  return { placeId: r.placeId, type: r.type, label: r.label?.trim() || null, movedIn: r.movedIn ?? null, movedOut: r.movedOut ?? null };
 }
 
 /** ReviseContact's enrichment semantics: null = keep; channels/tags UNION onto existing (adds, never removes). */

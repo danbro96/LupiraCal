@@ -1,12 +1,12 @@
 import { v7 as uuidv7 } from 'uuid';
 import type { Aggregate } from './aggregates';
-import type { ContactDoc, ItemDoc, ReachChannel, SocialProfile } from './docTypes';
+import type { ContactDoc, FuzzyDateDto, ItemDoc, ReachChannel, ResidencyDoc, SocialProfile } from './docTypes';
 
 /** The offline command vocabulary — one op per replayable REST write. Ops are enqueued transactionally with
  *  their optimistic mirror effect and replayed with `Idempotency-Key: commandId` + `occurredAt`, so a
  *  redelivery is a server no-op and a stale one loses its section's LWW instead of clobbering. */
 
-export type OpAggregate = typeof Aggregate.item | typeof Aggregate.contact;
+export type OpAggregate = typeof Aggregate.item | typeof Aggregate.contact | typeof Aggregate.residency;
 
 type Base = { commandId: string; occurredAt: string; aggregate: OpAggregate; aggregateId: string };
 
@@ -30,6 +30,9 @@ export type ContactCore = Pick<ContactDoc,
   'givenName' | 'middleName' | 'familyName' | 'nickname' | 'displayNameFormat' | 'kind'
   | 'channels' | 'birthday' | 'tags' | 'notes' | 'pronouns'>;
 
+/** A residency as stated, the whole of what a correction sends. */
+export type ResidencyFields = Pick<ResidencyDoc, 'placeId' | 'type' | 'label' | 'movedIn' | 'movedOut'>;
+
 /** The RSVPs a person can be set to; cal-api's ParticipationStatus names. */
 export type RsvpStatus = 'Accepted' | 'Tentative' | 'Declined' | 'NeedsAction';
 
@@ -50,6 +53,11 @@ export type ClientOp = Base & (
   | { kind: 'contact.tags'; contactId: string; tags: string[] }
   | { kind: 'contact.profiles'; contactId: string; profiles: SocialProfile[] }
   | { kind: 'contact.delete'; contactId: string }
+  /** `residencyId` is derived from `sourceKey` scoped to the contact, so follow-up ops reference it offline. */
+  | { kind: 'contact.residency.start'; residencyId: string; contactId: string; sourceKey: string; residency: ResidencyFields }
+  | { kind: 'contact.residency.revise'; residencyId: string; contactId: string; residency: ResidencyFields }
+  | { kind: 'contact.residency.moveOut'; residencyId: string; contactId: string; movedOut: FuzzyDateDto; residency: ResidencyFields }
+  | { kind: 'contact.residency.remove'; residencyId: string; contactId: string }
 );
 
 export type OpKind = ClientOp['kind'];
@@ -75,4 +83,8 @@ export const OP_LABELS: Record<OpKind, string> = {
   'contact.tags': 'Edit contact tags',
   'contact.profiles': 'Edit contact profiles',
   'contact.delete': 'Delete contact',
+  'contact.residency.start': 'Add address',
+  'contact.residency.revise': 'Edit address',
+  'contact.residency.moveOut': 'Move out',
+  'contact.residency.remove': 'Remove address',
 };

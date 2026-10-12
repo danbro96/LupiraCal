@@ -173,7 +173,7 @@ describe('place', () => {
   it('round-trips the place and its label', () => {
     const doc: ItemDoc = { ...timedDoc, placeId: 'p1', locationLabel: 'Folkets Park' };
     const form = itemFormFromDoc(doc);
-    expect(form.place).toEqual({ placeId: 'p1', label: 'Folkets Park' });
+    expect(form.place).toEqual({ placeId: 'p1', label: 'Folkets Park', via: 'existing' });
     const r = itemCoreFromForm(form, doc);
     if (!r.ok) throw new Error(r.error);
     expect(r.value).toMatchObject({ placeId: 'p1', location: 'Folkets Park' });
@@ -268,7 +268,7 @@ describe('editors from drafts', () => {
   });
 
   it('carries a placed location into the form', () => {
-    expect(itemFormFromDraft({ ...timedDraft, placeId: 'p1' }).place).toEqual({ placeId: 'p1', label: 'Torsby' });
+    expect(itemFormFromDraft({ ...timedDraft, placeId: 'p1' }).place).toEqual({ placeId: 'p1', label: 'Torsby', via: 'existing' });
   });
 
   it('keeps an all-day draft on its dates', () => {

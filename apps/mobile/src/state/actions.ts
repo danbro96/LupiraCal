@@ -1,7 +1,9 @@
 import { v7 as uuidv7 } from 'uuid';
 import { deterministicIdFor } from '../data/ids';
+import type { ResidencyChange } from '../domain/addressRows';
 import { Aggregate } from '../domain/aggregates';
 import type { ReachChannel, SocialProfile } from '../domain/docTypes';
+import { residencyStreamKey } from '../domain/ids';
 import type { ClientOp, ContactCore, ItemCore, RsvpStatus } from '../domain/ops';
 import { stamp } from '../domain/ops';
 import { engine } from '../sync/engine';
@@ -12,6 +14,7 @@ import { engine } from '../sync/engine';
 
 const item = (itemId: string) => stamp(Aggregate.item, itemId);
 const contact = (contactId: string) => stamp(Aggregate.contact, contactId);
+const residency = (residencyId: string) => stamp(Aggregate.residency, residencyId);
 
 function submit(op: ClientOp): Promise<void> {
   return engine.enqueue(op);
@@ -139,4 +142,31 @@ export async function setContactProfiles(contactId: string, profiles: SocialProf
 
 export async function deleteContact(contactId: string): Promise<void> {
   await submit({ kind: 'contact.delete', contactId, ...contact(contactId) });
+}
+
+/** A contact editor's address changes in one transaction; they replay behind the contact's own queued ops. */
+export async function saveResidencies(contactId: string, changes: ResidencyChange[]): Promise<void> {
+  const ops: ClientOp[] = [];
+  for (const change of changes) {
+    switch (change.kind) {
+      case 'start': {
+        const sourceKey = uuidv7();
+        const residencyId = await deterministicIdFor(residencyStreamKey(contactId, sourceKey));
+        ops.push({ kind: 'contact.residency.start', residencyId, contactId, sourceKey, residency: change.residency, ...residency(residencyId) });
+        break;
+      }
+      case 'revise':
+        ops.push({ kind: 'contact.residency.revise', residencyId: change.residencyId, contactId, residency: change.residency, ...residency(change.residencyId) });
+        break;
+      case 'moveOut':
+        ops.push({
+          kind: 'contact.residency.moveOut', residencyId: change.residencyId, contactId, movedOut: change.movedOut, residency: change.residency,
+          ...residency(change.residencyId),
+        });
+        break;
+      case 'remove':
+        ops.push({ kind: 'contact.residency.remove', residencyId: change.residencyId, contactId, ...residency(change.residencyId) });
+    }
+  }
+  if (ops.length > 0) await engine.enqueue(ops);
 }
