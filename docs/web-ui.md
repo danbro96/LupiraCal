@@ -6,19 +6,28 @@ Shared MUI conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`. T
 
 - Theme = `createLupiraMuiTheme` from `@danbro96/lupira-web-mui` (CSS-variable color schemes, `colorSchemeSelector: 'media'`) fed from tokens, plus Cal's category vars (teal primary), system-driven dark. Breakpoint `md: 821` is the phone breakpoint (`useIsPhone` wraps `useMediaQuery`).
 - Palette (incl. custom `border`, `text.subtle`, `warning`/`success`) emits `--mui-palette-*`; the domain relation accents emit as `--cat-*` via `MuiCssBaseline` styleOverrides, sourced from `@lupira/cal-tokens/contactCategories`.
-- No bespoke stylesheet. `index.css` is 39 lines: Tailwind's two entry points, an `@theme inline` that re-exports `--cat-*` as `cat-*` utilities, three element resets, and `.map-canvas` (maplibre-gl.css forces `position:relative` on its own wrapper, so the host must size as a flex child). Tailwind 4 serves utilities on non-MUI elements and vendor DOM reachable only with an arbitrary variant.
-- Two `className` hooks are deliberate and load-bearing: `.contact-row` (so the pin reveals on row hover) and `.map-canvas`.
+- No bespoke stylesheet. `index.css` is 31 lines: Tailwind's two entry points, an `@theme inline` that re-exports `--cat-*` as `cat-*` utilities, and three element resets. Tailwind 4 serves utilities on non-MUI elements and vendor DOM reachable only with an arbitrary variant.
+- One `className` hook is deliberate and load-bearing: `.contact-row` (so the pin reveals on row hover).
 - Vendor stylesheets (maplibre, xyflow) are unlayered and outrank every layer: overriding their rules needs `!`.
 - Shared layout primitives in `ui/components/`: `WrapRow`, `DrawerSection`, `Page`/`PageHead`, `Row`/`RowName`, `panes.tsx`.
 - Forms = react-hook-form (`Controller`-wrapped MUI fields). `ContactEditForm` gates its 8-endpoint fan-out by payload comparison, not `dirtyFields`.
 - Mutation errors → `useSnackbar()` (`@danbro96/lupira-web-mui` SnackbarHost); field validation stays inline.
 - Detail cards share `drawer/DetailDrawer.tsx`.
-- `places/PlacePicker`: typing always offers "Search addresses for …" (forward geocode → preview → pick or pin); leaving the field with unmatched text runs that search. Forms with a Save (`ContactEditForm`, `NewItemModal`) refuse to save while typed text isn't a place yet (`onUnresolvedChange`).
-- A place renders as `places/PlaceTile` (name, one-line address, meta, a lazy `map/MiniMap` thumbnail framed by `@lupira/cal-domain/mapZoom`, copy button via `useCopy`).
+- Place picking: see [Places](#places).
+- A place renders as `places/PlaceTile` (name, one-line address, meta, a lazy `@danbro96/lupira-web-maplibre` `MiniMap` thumbnail framed by `@danbro96/lupira-domain-maps/mapZoom`, copy button via `useCopy`, optional change and clear actions).
 - Per-browser conveniences (last calendar, calendar view per layout) live in `state/localPrefs`, behind the URL.
 - Build splits a `vendor-mui` chunk (rolldown `advancedChunks`).
 - Icons: `@danbro96/lupira-web-mui/icons` re-exports `@mui/icons-material` `*Outlined`; `ui/icons.ts` holds only Cal's extras. `packages/tokens/src/icons.ts` names concepts, not glyphs, so it stays dependency-free; `ICON_BY_NAME` in `ui/theme/kinds.ts` is `Record<IconName, SvgIconComponent>`, making an unmapped concept a compile error. `SavedPlaceDto.icon` is geo-api data, rendered verbatim.
 - Maps and photos are separate apps (maps.lupira.com, photos.lupira.com). Cal links out through `config/siblings.ts` + `@danbro96/lupira-domain-links`; the BFF 301s `/locations`, `/photos` and `/places` there. Lazy routes keep `export default` because `React.lazy` needs one; the filename still matches the symbol. `ContactsLayout` lives in `ui/navigation/` — routing structure, not a screen.
+
+## Places
+
+A form's place is a `PlaceSelection` from `@lupira/cal-domain/placeSelection` (a stored place id with its label), never typed text, so nothing unresolved can be saved. The rules (prediction policy, omnibox sections, search machine, address drafts) live in `@lupira/cal-domain`; web keeps the adapters.
+
+- **State.** `usePlaceSources(ctx)` gathers what is known for a `PlaceContext`: `GET /place-usage` (10 min stale), residencies, your own home, household homes (`householdHomes` over contact relations), saved places and hotspots, all named and located by one `/places/lookup`. An event without an origin is placed by its day's other events, else your home. `usePlacePredictions` runs `predictPlaces` over it; `usePlaceOmnibox` drives `placeSearchMachine` and `omniboxSections` (typeahead `GET /geocode/forward?intent=Typeahead`, debounced, biased to the origin; "your places" is a local `pickPlaces` match). `useAddressLookup` is the structured typeahead behind an address draft, `usePinSuggestion` names a pin by `GET /geocode/reverse?precision=Building`. `useResolveGeocodeHit` (`POST /places/from-geocode` with the hit's OSM id, coordinates and address parts) and `usePinPlace` (`POST /places/from-pin`) both return a `PlaceSelection`.
+- **Events** (`ItemDrawer` "Where", `NewItemModal`): `places/PlaceField` shows the tile once chosen, else predicted chips (why each is offered in its tooltip), "More…" and "Pick on map". "More…" opens `PlaceSearchDialog` (full-screen on phones): predictions, homes, saved and frequent before typing; your places, addresses and the pin row while typing. An imported item's free-text location shows as a hint and seeds the search.
+- **Pins.** `PinPlaceDialog` wraps the shared `MapPinDialog`, then asks for a name prefilled from the address under the pin. An event's pin needs a name; a contact's may stay unnamed and the server names it after its address.
+- **Addresses** (`ContactEditForm` residency rows, `MoveDialog`): `places/AddressForm` takes street (with suggestions), postcode (written in its country's form), city and country (your home's, else Sweden); or "Same as …" a household member's home, "Use existing place", or "Pick on map". Resolved, it shows the tile with "Adjust pin". Each row reports `empty | drafting | resolved`; `residencySaveError` blocks Save while one is half-typed.
 
 ## Calendar visibility and writability
 
