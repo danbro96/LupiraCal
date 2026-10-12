@@ -14,7 +14,7 @@ import {
 import type { SvgIconComponent } from '@mui/icons-material';
 import { RSVP_LABELS } from '@lupira/cal-domain/participation';
 import * as Icons from '@danbro96/lupira-web-mui/icons';
-import { HeadingIcon, LocateFixedIcon, LocateIcon, TodayIcon, ViewMonthIcon, ViewWeekIcon } from '../icons';
+import { HeadingIcon, LocateFixedIcon, LocateIcon, PinDropIcon, TodayIcon, ViewMonthIcon, ViewWeekIcon } from '../icons';
 
 // Re-typing the token records against the generated enums is the drift tripwire: when the API adds a
 // kind/status/category the tokens package doesn't know, these assignments stop compiling.
@@ -62,6 +62,7 @@ export const ICON_BY_NAME: Record<IconName, SvgIconComponent> = {
   more: Icons.MoreIcon,
   person: Icons.PersonIcon,
   photos: Icons.PhotosIcon,
+  pinDrop: PinDropIcon,
   place: Icons.PlaceIcon,
   restaurant: Icons.RestaurantIcon,
   robot: Icons.RobotIcon,
