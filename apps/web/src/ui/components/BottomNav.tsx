@@ -9,7 +9,6 @@ import ListItemText from '@mui/material/ListItemText';
 import Paper from '@mui/material/Paper';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import InboxIcon from '@mui/icons-material/Inbox';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import PeopleIcon from '@mui/icons-material/People';
 import SearchIcon from '@mui/icons-material/Search';
@@ -18,7 +17,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 const PRIMARY = [
   { to: '/', end: true, icon: <CalendarMonthIcon />, label: 'Calendar' },
   { to: '/items', icon: <SearchIcon />, label: 'Items' },
-  { to: '/inbox', icon: <InboxIcon />, label: 'Inbox' },
   { to: '/contacts', icon: <PeopleIcon />, label: 'Contacts' },
 ];
 

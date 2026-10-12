@@ -1,6 +1,6 @@
 # LupiraCal
 
-Web and Android frontends for [LupiraCalApi](https://github.com/danbro96/LupiraCalApi), consuming its REST surface only. Its purpose is visualizing the temporal-backbone data generic calendar clients can't see: calendar classes and kinds, typed item details, event-bound LLM prompt/action payloads, completeness scores, availability segments, inbox curation, tags, metadata, and cross-API relations.
+Web and Android frontends for [LupiraCalApi](https://github.com/danbro96/LupiraCalApi), consuming its REST surface only. Its purpose is visualizing the temporal-backbone data generic calendar clients can't see: calendar classes and kinds, typed item details, event-bound LLM prompt/action payloads, completeness scores, availability segments, curation, tags, metadata, and cross-API relations.
 
 ## Shape
 
@@ -16,8 +16,7 @@ SPA layering, enforced by `eslint-plugin-boundaries` (downward-only): `data → 
 ## Screens
 
 - **Calendar** (`/`) — hand-rolled month/week/day grids. Occurrences arrive recurrence-expanded from `GET /items?from&to`, one query per visible calendar (colors/filters per source calendar). Availability-kind calendars render as a background band; proposed items ghost dashed; System calendars toggle in the sidebar.
-- **Item drawer** (`?item=<id>` on any route) — every REST-exposed field: times/RRULE, place (with a mini-map and a link to Maps), photo strip (linked and suggested photos), tags, typed kind details, ⚡ prompt/action payload editor (XOR, 409-aware), completeness ring + gaps, attendees with RSVP actions, calendar memberships + curation, relations, metadata merge editor.
-- **Inbox** (`/inbox`) — the curation queue: items proposed into any calendar, accept/reject per membership.
+- **Item drawer** (`?item=<id>` on any route) — every REST-exposed field: times/RRULE, place (with a mini-map and a link to Maps), photo strip (linked and suggested photos), tags, typed kind details, ⚡ prompt/action payload editor (XOR, 409-aware), completeness ring + gaps, attendees with RSVP actions, calendar memberships + curation (accept/reject a proposed item), relations, metadata merge editor.
 - **Contacts** (`/contacts`) — search, reach fields (emails/phones/addresses/profiles), birthdays, groups & organizations, completeness.
 - **Map and photos** — separate apps: [Lupira Maps](https://github.com/danbro96/LupiraMaps) (maps.lupira.com) and [Lupira Photos](https://github.com/danbro96/LupiraPhotos) (photos.lupira.com). Cal links to them from the item drawer (event photo strip, place tile) and redirects the old `/locations`, `/photos` and `/places` URLs.
 - **Manage** (`/calendars`) — containers with class/kind/color/timezone/access, creation, and owner sharing by email.

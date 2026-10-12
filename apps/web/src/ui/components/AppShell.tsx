@@ -22,7 +22,6 @@ import { NewItemModal } from './NewItemModal';
 const NAV = [
   { to: '/', label: 'Calendar', end: true },
   { to: '/items', label: 'Items' },
-  { to: '/inbox', label: 'Inbox' },
   { to: '/contacts', label: 'Contacts' },
   { to: '/calendars', label: 'Manage' },
 ];

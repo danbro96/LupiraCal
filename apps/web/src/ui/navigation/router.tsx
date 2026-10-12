@@ -1,11 +1,10 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import App from '../../App';
 import { RequireAuth } from '@danbro96/lupira-web-session/RequireAuth';
 import { Centered } from '@danbro96/lupira-web-mui/Centered';
 import { AppShell } from '../components/AppShell';
 import { CalendarScreen } from '../screens/CalendarScreen';
-import { InboxScreen } from '../screens/InboxScreen';
 import { ItemsScreen } from '../screens/ItemsScreen';
 import { ContactsLayout } from './ContactsLayout';
 import { ItemLinkRedirect } from './ItemLinkRedirect';
@@ -34,7 +33,7 @@ export const router = createBrowserRouter([
               { index: true, element: <CalendarScreen /> },
               { path: 'items', element: <ItemsScreen /> },
               { path: 'items/:itemId', element: <ItemLinkRedirect /> },
-              { path: 'inbox', element: <InboxScreen /> },
+              { path: 'inbox', element: <Navigate to="/" replace /> },
               {
                 path: 'contacts',
                 element: <ContactsLayout />,
