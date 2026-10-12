@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const cal = vi.hoisted(() => ({
+  getItem: vi.fn(),
   inviteParticipant: vi.fn(),
   respondToInvitation: vi.fn(),
 }));
 vi.mock('@lupira/cal-api/fetch/cal', () => cal);
 vi.mock('@lupira/cal-api/fetch/contact', () => ({}));
 
+const { ApiError } = await import('@danbro96/lupira-http/apiError');
 const { replayOp } = await import('./replayOp');
 
 const invited = (contactId: string) => ({ attendees: [{ contactId, participationId: `p-${contactId}` }] });
@@ -36,6 +38,32 @@ describe('item.invite replay', () => {
       aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.invite', itemId: 'item-1', contactIds: ['anna'],
       occurredAt: '2026-09-30T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000002',
     });
+
+    expect(cal.respondToInvitation).not.toHaveBeenCalled();
+  });
+});
+
+describe('item.respond replay', () => {
+  const respond = { aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.respond', itemId: 'item-1', contactId: 'anna', status: 'Tentative', occurredAt: '2026-09-30T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000003' } as const;
+
+  beforeEach(() => {
+    cal.getItem.mockReset();
+    cal.respondToInvitation.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('answers the participation the server holds for the contact', async () => {
+    cal.getItem.mockResolvedValue(invited('anna'));
+    await replayOp(respond);
+
+    const [itemId, participationId, params, options] = cal.respondToInvitation.mock.calls[0];
+    expect([itemId, participationId, params.status]).toEqual(['item-1', 'p-anna', 'Tentative']);
+    expect(options.headers['Idempotency-Key']).toBe(respond.commandId);
+  });
+
+  it('has nothing to answer once the contact or the item is gone', async () => {
+    cal.getItem.mockResolvedValueOnce(invited('bo')).mockRejectedValueOnce(new ApiError(404, 'gone'));
+    await replayOp(respond);
+    await replayOp(respond);
 
     expect(cal.respondToInvitation).not.toHaveBeenCalled();
   });

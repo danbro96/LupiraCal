@@ -2,7 +2,7 @@ import type { SqlValue, Tx } from '@danbro96/lupira-expo-sqlite/types';
 import { currentHorizon, occurrenceRowsForItem } from '../../domain/materialize';
 import type { MirrorItem } from '../../domain/mirrorReducers';
 
-export const ITEM_TABLES = ['item_index', 'item_calendars', 'item_occurrences'];
+export const ITEM_TABLES = ['item_index', 'item_calendars', 'item_occurrences', 'item_attendees'];
 
 export const ITEM_DDL = `
   CREATE TABLE item_index (
@@ -32,6 +32,13 @@ export const ITEM_DDL = `
     PRIMARY KEY (item_id, start_utc)
   );
   CREATE INDEX item_occurrences_day ON item_occurrences (start_day);
+  CREATE TABLE item_attendees (
+    item_id TEXT NOT NULL,
+    contact_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    PRIMARY KEY (item_id, contact_id)
+  );
+  CREATE INDEX item_attendees_contact ON item_attendees (contact_id);
 `;
 
 /** Occurrences are materialized over the current horizon, so every write re-expands the item's recurrence. */
@@ -39,6 +46,7 @@ export async function writeItemIndex(tx: Tx, id: string, state: MirrorItem | nul
   await tx.run('DELETE FROM item_index WHERE id = ?', [id]);
   await tx.run('DELETE FROM item_calendars WHERE item_id = ?', [id]);
   await tx.run('DELETE FROM item_occurrences WHERE item_id = ?', [id]);
+  await tx.run('DELETE FROM item_attendees WHERE item_id = ?', [id]);
   if (!state) return;
   const d = state.doc;
   await tx.run(
@@ -51,6 +59,8 @@ export async function writeItemIndex(tx: Tx, id: string, state: MirrorItem | nul
     d.calendars.map((m) => [id, m.calendarId, m.status]));
   await insertChunked(tx, 'INSERT OR REPLACE INTO item_occurrences (item_id, start_utc, end_utc, start_day, all_day)', 5,
     occurrenceRowsForItem(d, currentHorizon()).map((r) => [id, r.startUtc, r.endUtc, r.startDay, r.allDay ? 1 : 0]));
+  await insertChunked(tx, 'INSERT OR REPLACE INTO item_attendees (item_id, contact_id, status)', 3,
+    (d.attendees ?? []).map((a) => [id, a.contactId, a.status]));
 }
 
 const presenceStatusOf = (details: unknown): string | null =>

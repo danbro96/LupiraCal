@@ -17,7 +17,8 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 ## Tabs, settings, calendar
 
 - Tabs are Calendar/Contacts, each showing the native header. Settings is a pushed stack screen reached from the `AccountButton` avatar (it opens Settings; sign-out is in Settings' Account section) in the tab navigator's `headerRight`: sections whose rows show each area's state (warning colour when it needs you) and open `CalendarSettings` / `AndroidSettings`. The map, photo library, GPS upload and camera-roll backup live in the sibling apps Lupira Maps and Lupira Photos; Cal opens them through `ui/openSibling` (`lupiramaps://`, `lupiraphotos://`, https fallback).
-- Contacts' search sits in `ScreenToolbar` under the header.
+- Contacts' search sits in `ScreenToolbar` under the header; below it a chip row of the mirrored contact groups filters the list to one group's members (read-only — membership is edited on the web).
+- Contact detail shows the contact's groups as chips under the name, and an Events section over `item_attendees` (`useContactEvents`, keyed `['cal.item', 'byContact', id]`): upcoming soonest-first, then past, five rows with Show all; a row opens `ItemDetail`. Its Add to event opens a mirror search (`AddToEventSheet` over `searchItems`) that queues an `item.invite`.
 - Calendar has no toolbar: the header title is the period (tap = date picker) and Search plus an overflow menu (Today, Month↔Week) sit beside the avatar (`useCalendarHeader`, via `setOptions`) — the grid needs the rows.
 - `CalendarScreen` owns only anchor and jumps (the Month/Week mode is `prefs.calendarMode`); `MonthPane` (grid + `DaySheet`) and `WeekView` own their paging and selection.
 - Every calendar gesture is RNGH + Reanimated: swipes, the day sheet's drag, and the week's pinch zoom (time axis, persisted as `prefs.weekHourHeight`), with the lanes' ScrollView joined via `Gesture.Native()`; a PanResponder loses that race to the native scroll.
@@ -34,7 +35,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 | `cal.calendar` | `/api/sync/calendars` (snapshot; seeds a missing standard set) | — | `calendar_index`, view `bridge_calendars` |
 | `contact.addressBook` | `/contact-api/sync/address-books` (snapshot; seeds) | — | — |
 | `contact.group` | `/contact-api/sync/groups` (snapshot) | — | — |
-| `cal.item` | `/api/sync/items` | `item.*` ops | `item_index`, `item_calendars`, `item_occurrences`, view `bridge_items` |
+| `cal.item` | `/api/sync/items` | `item.*` ops | `item_index`, `item_calendars`, `item_occurrences`, `item_attendees`, view `bridge_items` |
 | `contact` | `/contact-api/sync/contacts` | `contact.*` ops | `contact_index`, `birthday_occurrences`, view `bridge_contacts` |
 | `contact.relationship` | `/contact-api/sync/relationships` | — | `relationship_index` |
 | `contact.residency` | `/contact-api/sync/residencies` | — | `residency_index` |
@@ -59,6 +60,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 - The place sheet is one list ranked by `@danbro96/lupira-domain-places/placeRank` (saved, hotspots decayed by last visit, typeahead `Place`s only, contacts' addresses by name; invited people's homes lead), each row saying who lives there (`residents` — current addresses only).
 - Title, when, place, description up front; the rare fields are More rows opening `ui/event/*Sheet` (`ui/components/Sheet`).
 - One Save = one `saveItem` enqueue: core revise + `item.file`/`item.unfile` + `item.invite`/`item.uninvite`. Participation has no section guard; each invite request carries a key derived from the op's command id + contact, and uninvite removes by contact — neither needs the participation id an offline invite doesn't have yet.
+- Holding an attendee chip on `ItemDetailScreen` sets their RSVP (Going / Maybe / Not going / No reply) as an `item.respond` op; its replay reads the item to find the contact's participation id, so it works behind an offline invite, and does nothing once the contact or the item is gone.
 - Place = a geo `placeId` + label — cal-api 400s free-text `location` without one.
 - Timed events carry `startTimezone` (the device's by default; the calendar bridge keeps an existing zone): the server repeats a zoned series on that zone's wall clock, so `@lupira/cal-domain/recurrence` does too. Parity fixtures come from LupiraCalApi `tools/FixtureEmitter` (a UTC UNTIL bounds the instant; a floating or date one, the wall clock).
 

@@ -30,6 +30,9 @@ export type ContactCore = Pick<ContactDoc,
   'givenName' | 'middleName' | 'familyName' | 'nickname' | 'displayNameFormat' | 'kind'
   | 'channels' | 'birthday' | 'tags' | 'notes' | 'pronouns'>;
 
+/** The RSVPs a person can be set to; cal-api's ParticipationStatus names. */
+export type RsvpStatus = 'Accepted' | 'Tentative' | 'Declined' | 'NeedsAction';
+
 export type ClientOp = Base & (
   | { kind: 'item.create'; itemId: string; sourceKey: string; calendarId: string; core: ItemCore }
   | { kind: 'item.revise'; itemId: string; core: ItemCore }
@@ -40,6 +43,7 @@ export type ClientOp = Base & (
   /** `accept` = invitees who RSVP yes in the same op — you, adding yourself. */
   | { kind: 'item.invite'; itemId: string; contactIds: string[]; accept?: string[] }
   | { kind: 'item.uninvite'; itemId: string; contactId: string }
+  | { kind: 'item.respond'; itemId: string; contactId: string; status: RsvpStatus }
   | { kind: 'contact.create'; contactId: string; sourceKey: string; addressBookId: string; core: ContactCore }
   | { kind: 'contact.revise'; contactId: string; core: ContactCore }
   | { kind: 'contact.channels'; contactId: string; channels: ReachChannel[] }
@@ -64,6 +68,7 @@ export const OP_LABELS: Record<OpKind, string> = {
   'item.unfile': 'Remove from calendar',
   'item.invite': 'Invite to event',
   'item.uninvite': 'Remove from event',
+  'item.respond': 'Set RSVP',
   'contact.create': 'Create contact',
   'contact.revise': 'Edit contact',
   'contact.channels': 'Edit contact channels',
