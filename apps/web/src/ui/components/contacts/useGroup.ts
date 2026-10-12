@@ -1,8 +1,7 @@
-import { useListContactGroups } from '@lupira/cal-api/query/contact';
+import { useAllContactGroups } from '../../../state/useContactGroups';
 
-/** Resolve a group by id within its address book. No get-by-id endpoint exists, so group
- *  navigation carries ?book= and we pick from the book's group list (cached, shared with the tree). */
-export function useGroup(bookId: string | undefined, groupId: string | undefined) {
-  const { data: groups } = useListContactGroups(bookId ?? '', { query: { enabled: !!bookId } });
-  return (groups ?? []).find((g) => g.id === groupId);
+/** Resolve a group by id. No get-by-id endpoint exists, so it is picked from every book's group list. */
+export function useGroup(groupId: string | undefined) {
+  const { groups, isLoading } = useAllContactGroups();
+  return { group: groups.find((g) => g.id === groupId), isLoading };
 }

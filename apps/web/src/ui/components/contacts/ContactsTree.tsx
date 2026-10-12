@@ -35,7 +35,7 @@ const COUNT_SX = { flex: 'none', fontSize: 12, color: 'text.subtle', fontVariant
 const ADD_SX = { display: 'flex', flexDirection: 'column', gap: '4px', p: '4px 36px 8px' } as const;
 
 /** Left rail: address books → their groups/orgs, with contact and member counts.
- *  Book click filters the list (?book); group click opens the group pane + filters to members. */
+ *  Book click filters the list (?book); group click opens the group pane + lists its members from every book. */
 export function ContactsTree() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -157,7 +157,7 @@ function BookNode({
             <ListItemButton
               key={g.id}
               selected={activeGroupId === g.id}
-              onClick={() => navigate(`/contacts/groups/${g.id}?book=${book.id}`)}
+              onClick={() => navigate(`/contacts/groups/${g.id}`)}
               sx={{ pl: '36px' }}
             >
               <ListItemText

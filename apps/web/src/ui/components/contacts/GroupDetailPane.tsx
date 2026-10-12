@@ -2,17 +2,17 @@ import { useState } from 'react';
 import Avatar from '@mui/material/Avatar';
 import { initialsOf } from '@danbro96/lupira-domain-contacts/contactNames';
 import { avatarColor } from '@danbro96/lupira-tokens-calendar/kinds';
+import Autocomplete from '@mui/material/Autocomplete';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
-import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import MuiLink from '@mui/material/Link';
 import Box from '@mui/material/Box';
 import CloseIcon from '@mui/icons-material/Close';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   useAddContactGroupMember,
   useDeleteContactGroup,
@@ -20,9 +20,10 @@ import {
   useRenameContactGroup,
   useSearchContacts,
 } from '@lupira/cal-api/query/contact';
+import type { ContactDto } from '@lupira/cal-api/models';
+import { matchesTerms, searchTerms } from '@danbro96/lupira-domain-core/textSearch';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { useGroup } from './useGroup';
-import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';
 import { PageHead } from '../Page';
 import { DetailPane } from './panes';
@@ -31,11 +32,9 @@ import { BusinessIcon, GroupIcon } from '@danbro96/lupira-web-mui/icons';
 /** Right pane for a group/org: members with add/remove, inline rename, delete. */
 export function GroupDetailPane() {
   const { groupId } = useParams();
-  const [params] = useSearchParams();
-  const bookId = params.get('book') ?? '';
   const navigate = useNavigate();
   const invalidate = useInvalidateContacts();
-  const group = useGroup(bookId || undefined, groupId);
+  const { group, isLoading } = useGroup(groupId);
   // Members can live in any book you can read — the group only belongs to one.
   const { data: readable } = useSearchContacts({});
 
@@ -43,13 +42,13 @@ export function GroupDetailPane() {
   const del = useDeleteContactGroup({ mutation: { onSuccess: () => { invalidate(); navigate('/contacts'); } } });
   const addMember = useAddContactGroupMember({ mutation: { onSuccess: invalidate } });
   const removeMember = useRemoveContactGroupMember({ mutation: { onSuccess: invalidate } });
-  const [addId, setAddId] = useState('');
+  const [addKey, setAddKey] = useState(0);
 
   if (!group) {
     return (
       <DetailPane>
         <Typography component="p" sx={{ textAlign: 'center', color: 'text.subtle', mt: 6 }}>
-          {bookId ? 'Group not found.' : 'Open this group from its address book.'}
+          {isLoading ? 'Loading…' : 'Group not found.'}
         </Typography>
       </DetailPane>
     );
@@ -98,26 +97,19 @@ export function GroupDetailPane() {
           </Box>
         ))}
         {members.length === 0 && <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">No members yet.</Typography>}
-        <WrapRow>
-          <TextField select value={addId} onChange={(e) => setAddId(e.target.value)} slotProps={{ select: { displayEmpty: true } }}>
-            <MenuItem value="">Add member…</MenuItem>
-            {nonMembers.map((c) => (
-              <MenuItem key={c.id} value={c.id}>
-                {c.displayName}
-              </MenuItem>
-            ))}
-          </TextField>
-          <Button
-            variant="outlined"
-            disabled={!addId}
-            onClick={() => {
-              addMember.mutate({ groupId: group.id, params: { contactId: addId } });
-              setAddId('');
-            }}
-          >
-            Add
-          </Button>
-        </WrapRow>
+        <Autocomplete
+          key={addKey}
+          sx={{ mt: 1, maxWidth: 360 }}
+          options={nonMembers}
+          getOptionLabel={(c) => c.displayName}
+          filterOptions={(options, { inputValue }) => filterContacts(options, inputValue)}
+          onChange={(_, c) => {
+            if (!c) return;
+            addMember.mutate({ groupId: group.id, params: { contactId: c.id } });
+            setAddKey((n) => n + 1);
+          }}
+          renderInput={(params) => <TextField {...params} placeholder="Add member…" />}
+        />
       </DrawerSection>
 
       <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -127,4 +119,9 @@ export function GroupDetailPane() {
       </Box>
     </DetailPane>
   );
+}
+
+function filterContacts(options: ContactDto[], input: string): ContactDto[] {
+  const terms = searchTerms(input);
+  return options.filter((c) => matchesTerms(terms, c.displayName, c.nickname));
 }

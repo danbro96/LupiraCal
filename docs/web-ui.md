@@ -43,6 +43,7 @@ Third grid source from LupiraTasksApi (`/tasks-api` BFF prefix, hook `useTaskDea
 
 ## Contacts
 
+- The list's search box matches contact names and, across every address book, group names (`state/useContactGroups`: one group list per book; contact-api has no cross-book list). An open group (`/contacts/groups/:id`, no `?book`) lists its members from every book; "Add member…" is an autocomplete over names and nicknames.
 - Your own contact (contact-api `/me`) carries a "You" chip. "This is me" links a contact in one click only while none is linked; on another contact it asks before moving the link.
 
 ## Comms topics

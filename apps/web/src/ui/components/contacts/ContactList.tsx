@@ -11,7 +11,7 @@ import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import { NavLink, useLocation, useMatch, useSearchParams } from 'react-router-dom';
 import { useCreateContact, useSetContactTags } from '@lupira/cal-api/query/contact';
-import type { ContactDto, ContactReachChannel } from '@lupira/cal-api/models';
+import type { ContactDto, ContactGroupDto, ContactReachChannel } from '@lupira/cal-api/models';
 import { ReachMedium } from '@lupira/cal-api/models';
 import { initialsOf } from '@danbro96/lupira-domain-contacts/contactNames';
 import { PINNED_TAG, isPinned } from '@lupira/cal-domain/contactTiers';
@@ -19,6 +19,8 @@ import { avatarColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { addressBookLabel, useAddressBooks } from '../../../state/useAddressBooks';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { useTieredContacts } from '../../../state/useTieredContacts';
+import { useAllContactGroups } from '../../../state/useContactGroups';
+import { matchesTerms, searchTerms } from '@danbro96/lupira-domain-core/textSearch';
 import { errText } from '../../errText';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { BirthdayMonthDay } from './BirthdayMonthDay';
@@ -28,27 +30,31 @@ import { parseList } from '@lupira/cal-domain/itemForm';
 import { useGroup } from './useGroup';
 import { WrapRow } from '../WrapRow';
 import { SidePane } from './panes';
-import { CakeIcon, StarIcon } from '@danbro96/lupira-web-mui/icons';
+import { BusinessIcon, CakeIcon, GroupIcon, StarIcon } from '@danbro96/lupira-web-mui/icons';
 
 /** Split a comma-separated input into reach channels of one medium (create-form convenience). */
 function toChannels(raw: string, medium: ReachMedium): ContactReachChannel[] {
   return parseList(raw).map((value) => ({ medium, value, type: null, preferred: false }));
 }
 
-/** Middle pane: search + the contact rows, filtered by the selected book (?book) and, when a
- *  group is open, narrowed to that group's members (client-side — the API has no group filter). */
+/** Middle pane: search + the contact rows, filtered by the selected book (?book) or, when a group is open,
+ *  narrowed to its members from every book (client-side — the API has no group filter). A query also
+ *  lists the matching groups of every book. */
 export function ContactList() {
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const bookId = params.get('book') ?? '';
   const query = params.get('q') ?? '';
   const groupId = useMatch('/contacts/groups/:groupId')?.params.groupId;
-  const group = useGroup(bookId || undefined, groupId);
+  const { group } = useGroup(groupId);
+  const { groups } = useAllContactGroups();
+  const terms = searchTerms(query);
+  const matchingGroups = terms.length ? groups.filter((g) => matchesTerms(terms, g.name)) : [];
 
   const { addressBooks } = useAddressBooks();
   const { active, dormant, contacts, isLoading } = useTieredContacts({
     query: query || undefined,
-    addressBookId: bookId || undefined,
+    addressBookId: (!groupId && bookId) || undefined,
   });
   const [creating, setCreating] = useState(false);
   const [showDormant, setShowDormant] = useState(false);
@@ -82,12 +88,15 @@ export function ContactList() {
           zIndex: 1,
         }}
       >
-        <TextField placeholder="Search names…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <TextField placeholder="Search contacts and groups…" value={query} onChange={(e) => setQuery(e.target.value)} />
         <Button variant="contained" onClick={() => setCreating((c) => !c)}>
           + New
         </Button>
       </Box>
       {creating && <NewContactForm defaultBookId={bookId || addressBooks[0]?.id} onDone={() => setCreating(false)} />}
+      {matchingGroups.map((g) => (
+        <GroupRow key={g.id} group={g} search={location.search} />
+      ))}
       <Box sx={{ mb: 1.5 }}>
         {bypassTiers ? (
           <>
@@ -128,6 +137,31 @@ export function ContactList() {
         )}
       </Box>
     </SidePane>
+  );
+}
+
+function GroupRow({ group, search }: { group: ContactGroupDto; search: string }) {
+  const Icon = group.kind === 'Organization' ? BusinessIcon : GroupIcon;
+  return (
+    <Box
+      component={NavLink}
+      to={{ pathname: `/contacts/groups/${group.id}`, search }}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        py: '10px',
+        borderBottom: 1,
+        borderColor: 'divider',
+        textDecoration: 'none',
+        color: 'text.primary',
+        '&:hover, &.active': { bgcolor: 'background.paper' },
+      }}
+    >
+      <Icon fontSize="small" sx={{ color: 'text.secondary' }} />
+      <Box component="span" sx={{ flex: 1, minWidth: 0, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.name}</Box>
+      <Typography variant="caption" sx={{ color: 'text.subtle' }}>{group.members.length}</Typography>
+    </Box>
   );
 }
 
