@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { FuzzyDate } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import {
-  EVENT_PLACE_POLICY, categoryAffinity, predictPlaces, predictionReasonText,
+  EVENT_PLACE_POLICY, PREDICTION_MAX, categoryAffinity, predictPlaces, predictionReasonText, recentResidencies,
   type PlaceMeta, type PredictionSources,
 } from './placePrediction';
 import { ITEM_CATEGORIES } from './itemCategory';
@@ -114,13 +115,52 @@ describe('predictPlaces for a residency', () => {
           { placeId: 'gran', contacts: [{ contactId: 'gran', displayName: 'Gran', relation: 'Parent' }] },
           { placeId: 'dads', contacts: [{ contactId: 'dad', displayName: 'Dad', relation: 'Parent' }] },
         ],
-        recentResidencies: [{ placeId: 'new', lastDay: '2026-10-01' }, { placeId: 'dads', lastDay: '2026-09-01' }],
+        recentResidencies: [
+          { placeId: 'new', contactId: 'olle', movedIn: { year: 2026, month: 10 } },
+          { placeId: 'dads', contactId: 'dad', movedIn: { year: 2026, month: 9 } },
+        ],
         placeMeta: meta({ gran: { label: 'Grans' }, dads: { label: 'Dads' }, new: { label: 'Nybygget' } }),
       }),
       now,
     );
     expect(result.map((p) => p.placeId)).toEqual(['dads', 'gran', 'new']);
     expect(result[0].reasons).toEqual([{ kind: 'householdHome', contactId: 'dad', relation: 'Parent' }]);
+    expect(result[2].reasons).toEqual([{ kind: 'movedIn', contactId: 'olle', movedIn: { year: 2026, month: 10 } }]);
+  });
+});
+
+describe('recentResidencies', () => {
+  const today = new Date(2026, 9, 12);
+  const r = (contactId: string, placeId: string, movedIn: FuzzyDate | null, movedOut: FuzzyDate | null = null) =>
+    ({ contactId, placeId, movedIn, movedOut });
+
+  it('ranks places by move-in, newest first, each place once', () => {
+    const result = recentResidencies([
+      r('anna', 'a', { year: 2024 }),
+      r('erik', 'b', { year: 2025, month: 3, day: 2 }),
+      r('olle', 'a', { year: 2026, month: 1 }),
+      r('stina', 'c', { year: 2025, month: 3 }),
+    ], 'kid', [], today);
+    expect(result).toEqual([
+      { placeId: 'a', contactId: 'olle', movedIn: { year: 2026, month: 1 } },
+      { placeId: 'b', contactId: 'erik', movedIn: { year: 2025, month: 3, day: 2 } },
+      { placeId: 'c', contactId: 'stina', movedIn: { year: 2025, month: 3 } },
+    ]);
+  });
+
+  it("leaves out the contact's current places, homes already offered and undated residencies", () => {
+    const result = recentResidencies([
+      r('kid', 'own', { year: 2026 }),
+      r('kid', 'old', { year: 2020 }, { year: 2022 }),
+      r('dad', 'dads', { year: 2025 }),
+      r('anna', 'undated', null),
+    ], 'kid', ['dads'], today);
+    expect(result.map((x) => x.placeId)).toEqual(['old']);
+  });
+
+  it(`caps at ${PREDICTION_MAX}`, () => {
+    const rows = Array.from({ length: 8 }, (_, i) => r(`c${i}`, `p${i}`, { year: 2010 + i }));
+    expect(recentResidencies(rows, 'kid', [], today).map((x) => x.placeId)).toEqual(['p7', 'p6', 'p5', 'p4', 'p3']);
   });
 });
 
@@ -137,6 +177,7 @@ describe('predictionReasonText', () => {
     expect(predictionReasonText({ kind: 'frequent', activeDays: 12 }, nameOf)).toBe('Visited 12 days');
     expect(predictionReasonText({ kind: 'saved' }, nameOf)).toBe('Saved');
     expect(predictionReasonText({ kind: 'recent', lastDay: '2026-10-01' }, nameOf)).toMatch(/^Last here /);
+    expect(predictionReasonText({ kind: 'movedIn', contactId: 'a', movedIn: { year: 2025, month: 6 } }, nameOf)).toBe('Anna moved in Jun 2025');
     expect(predictionReasonText({ kind: 'nearby' }, nameOf)).toBe('Nearby');
   });
 });

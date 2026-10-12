@@ -1,5 +1,6 @@
 import { haversineM } from '@danbro96/lupira-domain-places/geo';
 import { placeScore, rankPlaces, type PlaceCandidate, type PlaceRankContext } from '@danbro96/lupira-domain-places/placeRank';
+import { fmtFuzzyDate, residencyStatus, type FuzzyDate } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import type { HouseholdHome } from '@danbro96/lupira-domain-contacts/residents';
 import { fmtDate, parseYmd } from '@danbro96/lupira-domain-core/time';
 import { plural } from '@danbro96/lupira-domain-core/wording';
@@ -15,6 +16,7 @@ export type PredictionReason =
   | { kind: 'frequent'; activeDays: number }
   | { kind: 'saved' }
   | { kind: 'recent'; lastDay: string }
+  | { kind: 'movedIn'; contactId: string; movedIn: FuzzyDate }
   | { kind: 'nearby' };
 
 export interface PlacePrediction {
@@ -74,8 +76,8 @@ export interface PredictionSources {
   saved: readonly { placeId: string; label: string }[];
   hotspots: readonly { placeId: string; label?: string | null; activeDays: number; lastDay: string }[];
   placeMeta: ReadonlyMap<string, PlaceMeta>;
-  /** Places recently given as someone's address, newest first. */
-  recentResidencies?: readonly { placeId: string; lastDay: string }[];
+  /** Places recently given as someone's address, newest first (`recentResidencies`). */
+  recentResidencies?: readonly RecentResidency[];
 }
 
 export const PREDICTION_MAX = 5;
@@ -191,13 +193,41 @@ function predictResidency(ctx: Extract<PlaceContext, { kind: 'residency' }>, sou
   const recent = (sources.recentResidencies ?? []).map((r, i) => ({
     placeId: r.placeId,
     label: label(r.placeId),
-    reasons: [{ kind: 'recent', lastDay: r.lastDay } as const],
+    reasons: [{ kind: 'movedIn', contactId: r.contactId, movedIn: r.movedIn } as const],
     score: 1 / (i + 2),
   }));
   const byPlace = new Map<string, PlacePrediction>();
   for (const p of [...homes, ...recent]) if (p.label && !byPlace.has(p.placeId)) byPlace.set(p.placeId, p);
   return [...byPlace.values()].slice(0, PREDICTION_MAX);
 }
+
+export interface RecentResidency {
+  placeId: string;
+  contactId: string;
+  movedIn: FuzzyDate;
+}
+
+/** The places most recently moved into across the residencies you can read, newest first, each place once. Leaves out
+ *  the contact's own current places and `excludePlaceIds` (homes offered already); an undated residency can't rank. */
+export function recentResidencies(
+  residencies: readonly { contactId: string; placeId: string; movedIn?: FuzzyDate | null; movedOut?: FuzzyDate | null }[],
+  contactId: string,
+  excludePlaceIds: Iterable<string> = [],
+  today: Date = new Date(),
+): RecentResidency[] {
+  const skip = new Set(excludePlaceIds);
+  for (const r of residencies) {
+    if (r.contactId === contactId && residencyStatus(r.movedIn, r.movedOut, today) === 'active') skip.add(r.placeId);
+  }
+  const dated = residencies
+    .flatMap((r) => (r.movedIn && !skip.has(r.placeId) ? [{ placeId: r.placeId, contactId: r.contactId, movedIn: r.movedIn }] : []))
+    .sort((a, b) => fuzzyOrder(b.movedIn, a.movedIn));
+  const byPlace = new Map<string, RecentResidency>();
+  for (const r of dated) if (!byPlace.has(r.placeId)) byPlace.set(r.placeId, r);
+  return [...byPlace.values()].slice(0, PREDICTION_MAX);
+}
+
+const fuzzyOrder = (a: FuzzyDate, b: FuzzyDate) => a.year - b.year || (a.month ?? 0) - (b.month ?? 0) || (a.day ?? 0) - (b.day ?? 0);
 
 const CATEGORY_NOUNS: Record<ItemCategory, [string, string]> = {
   General: ['event', 'events'],
@@ -234,6 +264,8 @@ export function predictionReasonText(reason: PredictionReason, nameOf: (contactI
       return 'Saved';
     case 'recent':
       return `Last here ${fmtDate(parseYmd(reason.lastDay))}`;
+    case 'movedIn':
+      return `${nameOf(reason.contactId)} moved in ${fmtFuzzyDate(reason.movedIn)}`;
     case 'nearby':
       return 'Nearby';
   }

@@ -8,7 +8,7 @@ import { ymd } from '@danbro96/lupira-domain-core/time';
 import { eventOrigin } from '@danbro96/lupira-domain-places/placeCandidates';
 import { isItemCategory } from '@lupira/cal-domain/itemCategory';
 import type { PlaceContext } from '@lupira/cal-domain/placeContext';
-import { predictPlaces, type PlaceMeta, type PlacePrediction } from '@lupira/cal-domain/placePrediction';
+import { predictPlaces, recentResidencies, type PlaceMeta, type PlacePrediction } from '@lupira/cal-domain/placePrediction';
 import { placedEventsBetween } from '../data/queries/places';
 import { placeUsageUpTo } from '../data/queries/placeUsage';
 import { Aggregate } from '../domain/aggregates';
@@ -67,15 +67,17 @@ export function usePlacePredictions(ctx: PlaceContext): PlacePrediction[] {
   const ownHomePlaceId = ctx.kind === 'residency' ? null : current.find((r) => r.contactId === me)?.placeId ?? null;
   const savedPlaces = saved.flatMap((s) => (s.placeId ? [{ placeId: s.placeId, label: s.label }] : []));
   const spots = hotspots.flatMap((h) => (h.placeId ? [{ placeId: h.placeId, label: h.label, activeDays: h.activeDays, lastDay: h.lastDay }] : []));
+  const recent = ctx.kind === 'residency' ? recentResidencies(rows, ctx.contactId, homes.map((h) => h.placeId)) : [];
 
   const coords = usePlaceCoords([
     ...(usage.data ?? []).map((u) => u.placeId), ...attendeeHomes.map((h) => h.placeId), ...homes.map((h) => h.placeId),
-    ownHomePlaceId, ...savedPlaces.map((s) => s.placeId), ...spots.map((s) => s.placeId),
+    ownHomePlaceId, ...savedPlaces.map((s) => s.placeId), ...spots.map((s) => s.placeId), ...recent.map((r) => r.placeId),
   ]);
   const placeMeta = new Map<string, PlaceMeta>([...coords].map(([id, p]) => [id, { label: p.name, placeCategory: p.category, lat: p.latitude, lon: p.longitude }]));
 
   return predictPlaces(ctx, {
     usage: usage.data ?? [], attendeeHomes, householdHomes: homes, ownHomePlaceId, saved: savedPlaces, hotspots: spots, placeMeta,
+    recentResidencies: recent,
   });
 }
 

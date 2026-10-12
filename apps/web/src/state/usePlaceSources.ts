@@ -6,6 +6,7 @@ import { dayEndIso, dayStartIso } from '@danbro96/lupira-domain-core/time';
 import type { GeoPoint } from '@danbro96/lupira-domain-places/geo';
 import { eventOrigin } from '@danbro96/lupira-domain-places/placeCandidates';
 import type { PlaceContext } from '@lupira/cal-domain/placeContext';
+import { recentResidencies } from '@lupira/cal-domain/placePrediction';
 import { metaPoint, predictionSources, sourcePlaceIds } from './placeSources';
 import { useHotspots } from './useHotspots';
 import { useMyContactId } from './useMe';
@@ -38,7 +39,10 @@ export function usePlaceSources(ctx: PlaceContext, enabled = true) {
   const dayPlaceIds = (dayEvents ?? []).flatMap((o) => (o.placeId ? [o.placeId] : []));
   const { places, isLoading } = usePlaceCoords([...sourcePlaceIds(base), ...dayPlaceIds]);
   const attendeeIds = ctx.kind === 'event' ? ctx.attendeeIds : [];
-  const sources = predictionSources({ ...base, attendeeIds, myContactId: me, places });
+  const sources = {
+    ...predictionSources({ ...base, attendeeIds, myContactId: me, places }),
+    ...(ctx.kind === 'residency' ? { recentResidencies: recentResidencies(rows, ctx.contactId, household.map((h) => h.placeId)) } : {}),
+  };
 
   const ownHome = metaPoint(sources.placeMeta.get(sources.ownHomePlaceId ?? ''));
   const dayPlaces = dayPlaceIds.flatMap((id) => places.get(id) ?? []);
