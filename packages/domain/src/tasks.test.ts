@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ymd } from '@danbro96/lupira-domain-core/time';
-import { dueDay, dueLine, isOpenDeadline, isOverdue, isTaskOverdue, monthUtcRange, taskDeepLink, taskWebUrl, type TaskLike } from './tasks';
+import {
+  dueAtEndOfDay, dueDay, dueLine, initialTaskListId, isOpenDeadline, isOverdue, isTaskOverdue, monthUtcRange, newTaskBody,
+  newTaskSortOrder, taskDeepLink, taskWebUrl, writableTaskLists, type TaskLike, type TaskListLike,
+} from './tasks';
 
 const task = (over: Partial<TaskLike>): TaskLike => ({
   id: 'i1',
@@ -65,3 +68,50 @@ describe('dueLine', () => {
   });
 });
 
+
+const list = (over: Partial<TaskListLike>): TaskListLike => ({ id: 'l', name: 'L', access: 'Owner', isArchived: false, ...over });
+
+describe('writableTaskLists', () => {
+  it('drops archived and view-only lists', () => {
+    const lists = [list({ id: 'a' }), list({ id: 'b', isArchived: true }), list({ id: 'c', access: 'Viewer' }), list({ id: 'd', access: 'Editor' })];
+    expect(writableTaskLists(lists).map((l) => l.id)).toEqual(['a', 'd']);
+  });
+
+  it('orders keyed lists first, the rest by name', () => {
+    const lists = [list({ id: 'z', name: 'Zeta' }), list({ id: 'k2', sortOrder: 'a1' }), list({ id: 'a', name: 'Alpha' }), list({ id: 'k1', sortOrder: 'a0' })];
+    expect(writableTaskLists(lists).map((l) => l.id)).toEqual(['k1', 'k2', 'a', 'z']);
+  });
+});
+
+describe('initialTaskListId', () => {
+  it('keeps the remembered list while offered, else the first', () => {
+    const lists = [list({ id: 'a' }), list({ id: 'b' })];
+    expect(initialTaskListId(lists, 'b')).toBe('b');
+    expect(initialTaskListId(lists, 'gone')).toBe('a');
+    expect(initialTaskListId([], 'b')).toBe('');
+  });
+});
+
+describe('dueAtEndOfDay', () => {
+  it('is the last instant of the LOCAL day', () => {
+    expect(new Date(dueAtEndOfDay('2026-10-12')).getTime()).toBe(new Date(2026, 9, 12, 23, 59, 59, 999).getTime());
+    expect(dueDay(dueAtEndOfDay('2026-10-12'))).toBe('2026-10-12');
+  });
+});
+
+describe('newTaskSortOrder', () => {
+  it('sorts before every top-level task, ignoring subtasks', () => {
+    const key = newTaskSortOrder([{ sortOrder: 'a1' }, { sortOrder: 'a0', parentItemId: null }, { sortOrder: 'Zz', parentItemId: 'p' }]);
+    expect(key < 'a0').toBe(true);
+  });
+
+  it('starts an empty list', () => {
+    expect(newTaskSortOrder([])).toBe('a0');
+  });
+});
+
+describe('newTaskBody', () => {
+  it('trims the title and leaves an undated task without dueAt', () => {
+    expect(newTaskBody('id', '  Pack  ', null, [])).toEqual({ id: 'id', title: 'Pack', dueAt: null, sortOrder: 'a0' });
+  });
+});

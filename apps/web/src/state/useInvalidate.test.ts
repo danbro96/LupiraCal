@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getListItemsQueryKey } from '@lupira/cal-api/query/tasks';
+import { getListItemsQueryKey, getListListsQueryKey } from '@lupira/cal-api/query/tasks';
 import { getSearchItemsQueryKey, getListContainersQueryKey } from '@lupira/cal-api/query/cal';
 import { getSearchContactsQueryKey, getListAddressBooksQueryKey } from '@lupira/cal-api/query/contact';
 import { getGetContactContextQueryKey } from '@lupira/cal-api/query/bff-contacts';
@@ -15,6 +15,7 @@ const contacts = (key: string) =>
   key.startsWith('/contact-api/contacts') || key.startsWith('/api/contacts') || key.includes('/groups');
 const containers = (key: string) => key.startsWith('/api/calendars');
 const addressBooks = (key: string) => key.startsWith('/contact-api/address-books');
+const tasks = (key: string) => key.startsWith('/tasks-api/');
 
 describe('invalidation predicates match the generated keys', () => {
   it('items matches cal item queries', () => {
@@ -38,6 +39,12 @@ describe('invalidation predicates match the generated keys', () => {
     expect(contacts(first(getSearchContactsQueryKey()))).toBe(true);
     expect(containers(first(getListContainersQueryKey()))).toBe(true);
     expect(addressBooks(first(getListAddressBooksQueryKey()))).toBe(true);
+  });
+
+  it('tasks matches deadlines and lists, not cal items', () => {
+    expect(tasks(first(getListItemsQueryKey()))).toBe(true);
+    expect(tasks(first(getListListsQueryKey()))).toBe(true);
+    expect(tasks(first(getSearchItemsQueryKey()))).toBe(false);
   });
 
   it('no predicate reaches into another API', () => {

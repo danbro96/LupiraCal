@@ -33,6 +33,7 @@ import { PlaceTile } from '../places/PlaceTile';
 import { ItemPhotosPanel } from './ItemPhotosPanel';
 import { RelationsPanel } from './RelationsPanel';
 import { errText } from '../../errText';
+import { NewTaskDialog } from '../NewTaskDialog';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../WrapRow';
 import { DrawerSection } from '../DrawerSection';
@@ -98,6 +99,7 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
   const [rrule, setRrule] = useState(item.recurrenceRule ?? '');
   const [newTag, setNewTag] = useState('');
   const [editingPlace, setEditingPlace] = useState(false);
+  const [addingTask, setAddingTask] = useState(false);
 
   return (
     <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
@@ -268,6 +270,12 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
       <HierarchyPanel item={item} />
       <ItemPhotosPanel itemId={item.id} item={item} />
       <RelationsPanel itemId={item.id} />
+      <Button variant="outlined" onClick={() => setAddingTask(true)}>
+        Task for this event
+      </Button>
+      {addingTask && (
+        <NewTaskDialog event={{ id: item.id, title: item.title ?? UNTITLED, day: itemDay(item) }} onClose={() => setAddingTask(false)} />
+      )}
       <DrawerSection title="Tags">
         <WrapRow>
           {(item.tags ?? []).map((t) => (

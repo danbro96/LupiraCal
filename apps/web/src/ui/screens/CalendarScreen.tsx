@@ -13,6 +13,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import SearchIcon from '@mui/icons-material/Search';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import AddTaskIcon from '@mui/icons-material/AddTask';
 import { familyKey } from '@lupira/cal-domain/family';
 import { useContainers } from '../../state/useContainers';
 import { useRangeOccurrences } from '../../state/useRangeOccurrences';
@@ -26,6 +27,7 @@ import { MiniMonthPicker } from '../components/MiniMonthPicker';
 import { MonthGrid } from '../components/MonthGrid';
 import { WeekGrid } from '../components/WeekGrid';
 import { CalendarToggles } from '../components/CalendarToggles';
+import { NewTaskDialog } from '../components/NewTaskDialog';
 import { useCalendarRange } from '../hooks/useCalendarRange';
 import { useIsPhone } from '../hooks/useIsPhone';
 
@@ -43,6 +45,7 @@ export function CalendarScreen() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [dateAnchor, setDateAnchor] = useState<HTMLElement | null>(null);
+  const [newTask, setNewTask] = useState(false);
 
   const setParam = (key: string, value: string | null) => {
     setSearchParams((prev) => {
@@ -190,6 +193,9 @@ export function CalendarScreen() {
                   </ToggleButton>
                 ))}
               </ToggleButtonGroup>
+              <IconButton onClick={() => setNewTask(true)} aria-label="New task" title="New task">
+                <AddTaskIcon fontSize="small" />
+              </IconButton>
               <IconButton
                 sx={{ display: { md: 'none' } }}
                 onClick={() => setSearchOpen((o) => !o)}
@@ -262,6 +268,7 @@ export function CalendarScreen() {
         >
           <CalendarToggles />
         </SwipeableDrawer>
+        {newTask && <NewTaskDialog onClose={() => setNewTask(false)} />}
       </Box>
     </Box>
   );
