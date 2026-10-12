@@ -30,7 +30,7 @@ Shared MUI conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`. T
 
 ## Grids
 
-Hand-rolled (no calendar lib). `GET /items?from&to` returns recurrence-expanded occurrences; `useRangeOccurrences` makes one query and groups by the occurrence DTO's `calendarIds`. Proposed items ghost from `GET /calendars/{id}/proposed` and are accepted or removed in the item drawer's `CalendarsPanel` (no separate curation screen; `/inbox` redirects to `/`); the availability band joins occurrence → item detail for status.
+Hand-rolled (no calendar lib). `GET /items?from&to` returns recurrence-expanded occurrences; `useRangeOccurrences` makes one query and groups by the occurrence DTO's `calendarIds`. Proposed items ghost from `GET /calendars/{id}/proposed` and are accepted or removed in the item drawer's `CalendarsPanel` (no separate curation screen; `/inbox` redirects to `/`); the availability band joins occurrence → item detail for status. Tentative items draw outlined (dashed border in the calendar colour over a tint, `TENTATIVE` in `@lupira/cal-tokens/color` via `ui/theme/tentative`); Cancelled ones dim and strike through.
 
 ## /items page
 

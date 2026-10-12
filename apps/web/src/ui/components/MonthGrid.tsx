@@ -9,8 +9,9 @@ import { familyKey } from '@lupira/cal-domain/family';
 import { compareDayEntries } from '@lupira/cal-domain/occurrences';
 import { fmtTime, isToday, weekdayNames } from '@danbro96/lupira-domain-core/time';
 import { availabilityColor } from '@danbro96/lupira-tokens-calendar/kinds';
-import { EMPHASIS } from '@lupira/cal-tokens/color';
+import { EMPHASIS, TENTATIVE } from '@lupira/cal-tokens/color';
 import { familyAccent } from '../theme/kinds';
+import { isTentative, tentativeFill, tentativeSx } from '../theme/tentative';
 import { coversDay, segmentSpan, type GridEntry } from '../entries';
 
 const MAX_PER_CELL = 4;
@@ -38,6 +39,7 @@ function chipSx(e: GridEntry, accent: string | undefined, fam: 'hi' | 'dim' | nu
     minWidth: 0,
     justifyContent: 'flex-start',
     ...(e.task && { borderWidth: 1, borderStyle: 'solid', borderLeftWidth: 3 }),
+    ...(isTentative(e) && { borderWidth: TENTATIVE.borderWidth, borderStyle: TENTATIVE.borderStyle, borderLeftWidth: 3 }),
     ...(e.status === 'Cancelled' && { opacity: EMPHASIS.cancelled }),
     ...(e.ghost && { opacity: EMPHASIS.ghost, borderStyle: 'dashed' }),
     ...(fam === 'hi' && accent && { boxShadow: `0 0 0 2px ${accent}` }),
@@ -139,9 +141,10 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
                       height: 7,
                       // Square dot = deadline in the compact cells.
                       ...(e.task && { borderRadius: '2px' }),
+                      ...(isTentative(e) && tentativeSx(e.color)),
                       ...(e.ghost && { opacity: EMPHASIS.ghost }),
                     }}
-                    style={{ background: e.color }}
+                    style={{ background: isTentative(e) ? tentativeFill(e.color) : e.color }}
                   />
                 ))}
                 {dayEntries.length > shown.length && (

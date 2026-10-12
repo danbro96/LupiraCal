@@ -9,8 +9,9 @@ import { type DayRail, familyKey, railsForDay } from '@lupira/cal-domain/family'
 import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, ymd } from '@danbro96/lupira-domain-core/time';
 import { textOn } from '@danbro96/lupira-tokens-core/contrast';
 import { availabilityColor } from '@danbro96/lupira-tokens-calendar/kinds';
-import { EMPHASIS } from '@lupira/cal-tokens/color';
+import { EMPHASIS, TENTATIVE } from '@lupira/cal-tokens/color';
 import { familyAccent } from '../theme/kinds';
+import { isTentative, tentativeFill, tentativeSx } from '../theme/tentative';
 import { coversDay, segmentSpan, type GridEntry } from '../entries';
 import { ExpandIcon, ExpandLessIcon } from '@danbro96/lupira-web-mui/icons';
 
@@ -240,6 +241,7 @@ function AllDayStrip({
                 border: 1,
                 borderColor: e.task.overdue ? 'error.main' : 'text.secondary',
               }),
+              ...(isTentative(e) && { ...tentativeSx(e.color), lineHeight: `${LANE_PX - 2 * TENTATIVE.borderWidth}px` }),
               ...(e.status === 'Cancelled' && { opacity: EMPHASIS.cancelled, textDecoration: 'line-through' }),
               ...(e.ghost && { opacity: EMPHASIS.ghost, borderStyle: 'dashed' }),
               ...(role === 'parent' && { pl: '9px' }),
@@ -247,7 +249,7 @@ function AllDayStrip({
               ...(fam === 'dim' && { opacity: 0.35 }),
               ...MOTION,
             }}
-            style={{ background: e.task ? undefined : e.color }}
+            style={{ background: e.task ? undefined : isTentative(e) ? tentativeFill(e.color) : e.color }}
           >
             {e.icon && <NamedIcon name={e.icon} sx={{ verticalAlign: -2, mr: 0.25 }} />}
             {e.title}
@@ -473,6 +475,7 @@ function DayColumn({
               flexDirection: 'column',
               alignItems: 'flex-start',
               zIndex: 1,
+              ...(isTentative(p.item) && tentativeSx(p.item.color)),
               ...(p.item.status === 'Cancelled' && { opacity: EMPHASIS.cancelled }),
               ...(p.item.ghost && { opacity: EMPHASIS.ghost }),
               ...(role === 'child' && { pt: '5px' }),
@@ -485,7 +488,7 @@ function DayColumn({
               height: Math.max(((p.endMin - p.startMin) / 60) * HOUR_PX - 2, MIN_BLOCK_PX),
               left: `calc(${(p.col / p.cols) * 100}% + ${2 + inset}px)`,
               width: `calc(${(1 / p.cols) * 100}% - ${4 + inset}px)`,
-              background: p.item.color,
+              background: isTentative(p.item) ? tentativeFill(p.item.color) : p.item.color,
             }}
             onClick={() => onOpenItem(p.item.itemId)}
             onMouseEnter={fk ? () => onHoverFamily(fk) : undefined}

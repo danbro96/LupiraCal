@@ -30,6 +30,7 @@ import { PlaceTile } from '../components/PlaceTile';
 import { TagRow } from '../components/TagRow';
 import { useToastClearance } from '@danbro96/lupira-expo-paper/components/ToastHost';
 import { AttendeeChips } from '../event/AttendeeChips';
+import { HierarchySection } from '../event/HierarchySection';
 import { useCalendarColors } from '../hooks/palette';
 import { EventPhotosRow } from '../photos/EventPhotosRow';
 import type { RootStackParamList } from '../navigation/types';
@@ -138,6 +139,11 @@ export function ItemDetailScreen() {
             onPress={() => navigation.navigate('TaskCreate', { event: { id: itemId, title: displayTitle(doc.title), day: eventDay(doc) } })}
           />
         </View>
+        <HierarchySection
+          itemId={itemId}
+          parentId={doc.parentItemId ?? null}
+          onOpen={(id) => navigation.push('ItemDetail', { itemId: id })}
+        />
         <EventPhotosRow itemId={itemId} item={doc} />
         <TagRow tags={doc.tags} />
         <MetadataPanel itemId={itemId} metadata={doc.metadata ?? null} editable={debugEnabled} />

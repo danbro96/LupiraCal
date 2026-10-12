@@ -21,6 +21,9 @@ export const darkColors: Palette = {
  *  availability band is a tint behind the grid. */
 export const EMPHASIS = { cancelled: 0.5, ghost: 0.55, faded: 0.6, availabilityBand: 0.14 } as const;
 
+/** A tentative item is outlined, not filled: a dashed border in its calendar colour over a `fill`-alpha tint of it. */
+export const TENTATIVE = { borderStyle: 'dashed', borderWidth: 1.5, fill: 0.18 } as const;
+
 /** The palette slot an RSVP is drawn in; each app maps the slot to its own theme. */
 export type Tone = 'success' | 'danger' | 'warning' | 'muted';
 export function rsvpTone(status: string | null | undefined): Tone {
