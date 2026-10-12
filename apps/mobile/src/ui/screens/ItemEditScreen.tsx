@@ -225,6 +225,7 @@ export function ItemEditScreen() {
               placeholder={noEnd}
               nullLabel={noEnd}
               value={form.endDay}
+              initial={form.startDay}
               onChange={(v) => (v ? setSchedule('endDay', v) : clearEnd())}
             />
           </View>

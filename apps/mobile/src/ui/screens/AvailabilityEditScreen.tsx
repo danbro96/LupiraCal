@@ -54,7 +54,7 @@ export function AvailabilityEditScreen() {
         <DateField value={startDay} onChange={setStartDay} />
       </Field>
       <Field label="Until (optional)">
-        <DateField value={endDay} onChange={setEndDay} />
+        <DateField value={endDay} onChange={setEndDay} initial={startDay} />
       </Field>
       <Text style={[styles.muted, { color: c.textMuted }]}>
         Shows as a colored band in the calendar. To change a day, delete the entry from its day list and add a new one.
