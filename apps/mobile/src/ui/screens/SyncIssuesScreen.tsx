@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Card, List, Text } from 'react-native-paper';
 import type { ParkedOp } from '@danbro96/lupira-sync-engine/types';
+import { useOnline } from '@danbro96/lupira-expo-query/online';
 import { AGGREGATE_LABELS } from '../../domain/aggregates';
 import { OP_LABELS, type OpKind } from '../../domain/ops';
 import { engine } from '../../sync/engine';
@@ -19,16 +20,17 @@ export function SyncIssuesScreen() {
   const c = useColors();
   const { data: parked = [] } = useParkedOps();
   const { phase, serverReachable, lastSyncAt, lastError, progress, pending } = useSyncStatus();
-  const syncing = phase !== 'idle';
+  const online = useOnline();
+  const syncing = online && phase !== 'idle';
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.statusRow}>
         <Text style={[styles.statusText, { color: c.textMuted }]}>
-          {syncing ? 'Syncing…' : serverReachable ? 'Server reachable' : 'Offline'}
+          {syncing ? 'Syncing…' : online && serverReachable ? 'Server reachable' : 'Offline'}
           {lastSyncAt ? ` · last sync ${new Date(lastSyncAt).toLocaleTimeString()}` : ''}
         </Text>
-        <Button title="Sync now" variant="secondary" onPress={() => void engine.sync()} disabled={syncing} />
+        <Button title="Sync now" variant="secondary" onPress={() => void engine.sync()} disabled={syncing || !online} />
       </View>
       {lastError && <Text style={[styles.lastError, { color: c.warning }]}>{lastError}</Text>}
 

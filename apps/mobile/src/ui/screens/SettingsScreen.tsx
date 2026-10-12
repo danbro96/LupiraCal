@@ -3,6 +3,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScrollView } from 'react-native';
 import { List, Switch } from 'react-native-paper';
 import { isCalendarShown } from '@lupira/cal-domain/calendars';
+import { useOnline } from '@danbro96/lupira-expo-query/online';
 import { fmtDateTime } from '@danbro96/lupira-domain-core/time';
 import { useAuth } from '../../state/auth-store';
 import { useBridge } from '../../state/bridge-store';
@@ -31,6 +32,7 @@ export function SettingsScreen() {
   const { data: calendars } = useCalendars();
   const bridge = useBridge();
   const { phase, pending, parked, lastSyncAt } = useSyncStatus();
+  const online = useOnline();
 
   const chevron = () => <List.Icon icon={ICONS.chevronRight} />;
   const icon = (name: string) => (p: { color: string; style?: object }) => <List.Icon {...p} icon={name} />;
@@ -49,7 +51,7 @@ export function SettingsScreen() {
   );
   const issues = pending + parked;
   const sync = join(
-    phase !== 'idle' ? 'Syncing…' : lastSyncAt ? `Synced ${fmtDateTime(new Date(lastSyncAt))}` : 'Not synced yet',
+    online && phase !== 'idle' ? 'Syncing…' : lastSyncAt ? `Synced ${fmtDateTime(new Date(lastSyncAt))}` : 'Not synced yet',
     issues > 0 && `${issues} waiting`,
   );
 

@@ -7,10 +7,11 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { memo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { Avatar, FAB, Searchbar, Text } from 'react-native-paper';
 import type { ContactListRow } from '../../data/queries/contacts';
 import { useContactList } from '../../state/useContactList';
+import { usePullToSync } from '../../state/usePullToSync';
 import { avatarColor } from '../hooks/palette';
 import { ScreenToolbar } from '@danbro96/lupira-expo-paper/components/ScreenToolbar';
 import { SyncBanner } from '../components/SyncBanner';
@@ -35,6 +36,7 @@ export function ContactsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { data } = useContactList();
   const [query, setQuery] = useState('');
+  const pull = usePullToSync();
 
   const q = query.trim().toLowerCase();
   const terms = searchTerms(q);
@@ -98,6 +100,7 @@ export function ContactsScreen() {
             stickyHeaderIndices={stickyHeaderIndices}
             ListEmptyComponent={empty}
             renderItem={renderItem}
+            refreshControl={<RefreshControl enabled={pull.enabled} refreshing={pull.refreshing} onRefresh={pull.onRefresh} />}
             // The rail is the scroll affordance; the native indicator is proportional and would disagree with it.
             showsVerticalScrollIndicator={false}
           />

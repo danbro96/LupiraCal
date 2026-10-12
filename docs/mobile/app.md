@@ -17,7 +17,7 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 ## Tabs, settings, calendar
 
 - Tabs are Calendar/Contacts, each showing the native header. Settings is a pushed stack screen reached from the `AccountButton` avatar (it opens Settings; sign-out is in Settings' Account section) in the tab navigator's `headerRight`: sections whose rows show each area's state (warning colour when it needs you) and open `CalendarSettings` / `AndroidSettings`. The map, photo library, GPS upload and camera-roll backup live in the sibling apps Lupira Maps and Lupira Photos; Cal opens them through `ui/openSibling` (`lupiramaps://`, `lupiraphotos://`, https fallback).
-- Contacts' search sits in `ScreenToolbar` under the header.
+- Contacts' search sits in `ScreenToolbar` under the header; it matches names, nicknames and tags. Pulling the list down runs a sync (`state/usePullToSync`, disabled offline). The week lanes have none: their ScrollView is in RNGH's gesture arbitration (pinch, page swipe).
 - Calendar has no toolbar: the header title is the period (tap = date picker) and three icons — Search, Today, Month↔Week — sit beside the avatar (`useCalendarHeader`, via `setOptions`) — the grid needs the rows, and Today and the mode switch are used too often for an overflow menu.
 - `CalendarScreen` owns only anchor and jumps (the Month/Week mode is `prefs.calendarMode`); `MonthPane` (grid + `DaySheet`) and `WeekView` own their paging and selection.
 - Every calendar gesture is RNGH + Reanimated: swipes, the day sheet's drag, and the week's pinch zoom (time axis, persisted as `prefs.weekHourHeight`), with the lanes' ScrollView joined via `Gesture.Native()`; a PanResponder loses that race to the native scroll.
@@ -48,7 +48,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 - Occurrences are materialized over a rolling horizon (`domain/materialize`); `sync/horizon.ts` keeps it in kernel meta and reindexes `cal.item` and `contact` when it drifts a month.
 - Prefs and bridge flags are kernel meta keys (`sync/meta.ts`). Signing in as a different account wipes the engine and the query cache (`state/auth-store.ts`, `onAccountChange`).
 - Triggers: `startSyncTriggers` (foreground, reconnect, sign-in) from `App.tsx`; the 15-minute background task is defined in `index.ts` and loads the auth session first. The Android bridge drains its inbox before each push and republishes after each pull (`hooks`).
-- The banner, Settings and `SyncIssuesScreen` read the kernel's status store (`state/useSyncStatus`), `bannerState` and `parked()`/`retry`/`discard`. Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
+- The banner, Settings and `SyncIssuesScreen` read the kernel's status store (`state/useSyncStatus`), `bannerState` and `parked()`/`retry`/`discard`. None of them shows a sync in progress while the device is offline. Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
 - `MirrorReader.kt` reads only the `bridge_*` views (`id`, `display_name` for contacts, `state` = the stored `{doc, guards}` JSON); `sync/modules/bridgeViews.test.ts` pins that contract.
 
 ## Event editor
