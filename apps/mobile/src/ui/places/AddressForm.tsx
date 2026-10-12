@@ -21,6 +21,7 @@ import { EMPHASIS } from '@lupira/cal-tokens/color';
 import type { AddressRow } from '../../domain/addressRows';
 import { placeFromAddressHit } from '../../state/placeCommands';
 import { useAddressLookup } from '../../state/useAddressLookup';
+import { useHomeCountry } from '../../state/useHomeCountry';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { ICONS } from '../icons';
 import { MiniMap } from '../map/MiniMap';
@@ -45,7 +46,9 @@ export function AddressForm({ row, household, onChange, onRemove, onUseExisting,
   const confirm = useConfirm();
   const [resolving, setResolving] = useState(false);
   const place = usePlaceCoords([row.placeId]).get(row.placeId ?? '');
-  const lookup = useAddressLookup(row.placeId ? EMPTY_ADDRESS_DRAFT : row.draft);
+  const homeCountry = useHomeCountry();
+  const draft = row.draft.countryCode ? row.draft : { ...row.draft, countryCode: homeCountry };
+  const lookup = useAddressLookup(row.placeId ? EMPTY_ADDRESS_DRAFT : draft);
   const point = place?.latitude != null && place.longitude != null ? { lat: place.latitude, lon: place.longitude } : null;
   const status = residencyStatus(row.stored?.movedIn ?? null, row.movedOut);
   const drafting = residencyRowState(row) === 'drafting';
@@ -103,6 +106,7 @@ export function AddressForm({ row, household, onChange, onRemove, onUseExisting,
               autoCapitalize="characters"
               maxLength={2}
               value={row.draft.countryCode}
+              placeholder={homeCountry}
               onChangeText={(v) => setDraft('countryCode', v.toUpperCase())}
             />
           </View>
