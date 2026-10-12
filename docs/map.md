@@ -3,7 +3,7 @@
 The map screen, movement history and GPS upload live in Lupira Maps (maps.lupira.com, repo LupiraMaps). Cal keeps two map pieces, both on MapLibre:
 
 - **Place tile thumbnail** (web `places/PlaceTile` → `@danbro96/lupira-web-maplibre` `MiniMap`; mobile `ui/map/MiniMap`): a small gesture-less map framed by place type (`@danbro96/lupira-domain-maps/mapZoom`). Tapping the tile opens Maps at that point (`mapsAtUrl`).
-- **Pin dialog** (web `places/PinPlaceDialog` over `@danbro96/lupira-web-maplibre` `MapPinDialog`): drop a pin when address search can't find the place, then name it.
+- **Pin dialog** (web `places/PinPlaceDialog` over `@danbro96/lupira-web-maplibre` `MapPinDialog`): drop a pin when address search can't find the place and name it in the same dialog.
 
 ## Basemap
 

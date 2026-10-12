@@ -162,6 +162,7 @@ export function AddressForm({ value, onResolved, context, onStateChange }: {
       {(dialog === 'pin' || dialog === 'adjust') && (
         <PinPlaceDialog
           start={dialog === 'adjust' && currentPoint ? { ...currentPoint, zoom: TARGET_ZOOM } : pinStart({ origin, hits: lookup.hits })}
+          initialPin={dialog === 'adjust' ? currentPoint : null}
           nameRequired={pinNameRequired(context)}
           busy={pin.isPending}
           error={pin.error ? errText(pin.error) : null}
