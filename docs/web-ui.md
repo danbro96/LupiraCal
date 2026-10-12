@@ -79,7 +79,7 @@ All three live on contact-api as their own records, never on the contact. Its do
 - **Residencies are where a contact lives, holidays and works.**
   - Types: Home, Vacation, Work, Other, plus an optional `label`.
   - Web reads `GET /contact-api/residencies` through `state/useResidencies` (`useResidencyRows`). One fetch feeds the place picker and contact cards.
-  - The edit form changes residencies one at a time; `MoveDialog` tells a household move once (`POST /moves`).
+  - The edit form changes residencies one at a time (an end date entered on an open residency, nothing else changed, is a move-out, `POST /residencies/{id}/move-out`); `MoveDialog` tells a household move once (`POST /moves`).
   - A vacation home never makes a household.
   - "Parents' home" is derived, never stored: `@lupira/cal-domain/residents` `parentsHomes`, from Parent relationships
     and their current Home residencies.

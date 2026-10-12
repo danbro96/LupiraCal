@@ -14,6 +14,7 @@ import {
   useMarkContactDeceased,
   useReviseContact,
   useAddResidency,
+  useMoveOutOfResidency,
   useRemoveResidency,
   useReviseResidency,
   useSearchContacts,
@@ -153,6 +154,7 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
   const setTags = useSetContactTags();
   const addResidency = useAddResidency();
   const reviseResidency = useReviseResidency();
+  const moveOutOfResidency = useMoveOutOfResidency();
   const removeResidency = useRemoveResidency();
   const setProfiles = useSetContactProfiles();
   const setEmergency = useSetEmergencyContacts();
@@ -257,7 +259,8 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
 
     try {
       await persistContact(v, contact, residencies, cleanAddresses, {
-        revise, setChannels, setTags, addResidency, reviseResidency, removeResidency, setProfiles, setEmergency, markDeceased, clearDeceased,
+        revise, setChannels, setTags, addResidency, reviseResidency, moveOutOfResidency, removeResidency, setProfiles, setEmergency, markDeceased,
+        clearDeceased,
       });
       invalidate();
       onDone();
@@ -616,6 +619,7 @@ type ContactWrites = {
   setTags: ReturnType<typeof useSetContactTags>;
   addResidency: ReturnType<typeof useAddResidency>;
   reviseResidency: ReturnType<typeof useReviseResidency>;
+  moveOutOfResidency: ReturnType<typeof useMoveOutOfResidency>;
   removeResidency: ReturnType<typeof useRemoveResidency>;
   setProfiles: ReturnType<typeof useSetContactProfiles>;
   setEmergency: ReturnType<typeof useSetEmergencyContacts>;
@@ -651,9 +655,16 @@ async function persistContact(
   const kept = new Set(cleanAddresses.flatMap((a) => (a.id ? [a.id] : [])));
   for (const r of residencies.filter((x) => !kept.has(x.id))) await writes.removeResidency.mutateAsync({ id: r.id });
   for (const { id: residencyId, ...data } of cleanAddresses) {
-    if (!residencyId) await writes.addResidency.mutateAsync({ id, data });
-    else if (residencyKey(data) !== residencyKey(residencies.find((r) => r.id === residencyId)!))
-      await writes.reviseResidency.mutateAsync({ id: residencyId, data });
+    if (!residencyId) {
+      await writes.addResidency.mutateAsync({ id, data });
+      continue;
+    }
+    const stored = residencies.find((r) => r.id === residencyId)!;
+    if (residencyKey(data) === residencyKey(stored)) continue;
+    // An end date entered on an open residency, nothing else changed, is a move rather than a correction.
+    if (data.movedOut && !stored.movedOut && residencyKey({ ...data, movedOut: null }) === residencyKey(stored))
+      await writes.moveOutOfResidency.mutateAsync({ id: residencyId, data: { movedOut: data.movedOut } });
+    else await writes.reviseResidency.mutateAsync({ id: residencyId, data });
   }
 
   const cleanProfiles = v.profiles.filter((p) => norm(p.service) && norm(p.handle));
