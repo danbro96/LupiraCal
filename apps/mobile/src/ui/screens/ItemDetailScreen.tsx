@@ -1,5 +1,5 @@
 import { describeRrule } from '@lupira/cal-domain/rrule';
-import { fmtWhen } from '@danbro96/lupira-domain-core/time';
+import { fmtWhen, ymd } from '@danbro96/lupira-domain-core/time';
 import { deviceTimeZone, instantToWall, isValidTimeZone, zoneCity } from '@lupira/cal-domain/zonedTime';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -125,6 +125,12 @@ export function ItemDetailScreen() {
         )}
 
           <CalendarsPanel itemId={itemId} memberships={doc.calendars} />
+          <Button
+            title="Add task"
+            variant="text"
+            style={styles.addTask}
+            onPress={() => navigation.navigate('TaskCreate', { event: { id: itemId, title: displayTitle(doc.title), day: eventDay(doc) } })}
+          />
         </View>
         <EventPhotosRow itemId={itemId} item={doc} />
         <TagRow tags={doc.tags} />
@@ -144,6 +150,11 @@ export function ItemDetailScreen() {
       </View>
     </View>
   );
+}
+
+function eventDay(doc: ItemDoc): string | null {
+  if (doc.isAllDay) return doc.startDate ?? null;
+  return doc.startsAt ? ymd(new Date(doc.startsAt)) : null;
 }
 
 /** Only when the event keeps another zone's clock: what the time reads there. */
@@ -269,4 +280,5 @@ const styles = StyleSheet.create({
   metaValueInput: { flex: 3 },
   actionBar: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth },
   primary: { flex: 1 },
+  addTask: { alignSelf: 'flex-start' },
 });

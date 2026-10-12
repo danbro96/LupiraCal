@@ -196,34 +196,35 @@ stock apps (overwritten by next publish), payload/participants.
 - [ ] Upgrade-in-place with pending offline edits loses nothing
 - [ ] Month swipe jank-free on the target device; docs current; tracker closed out
 
-## M9 — Task deadlines on the calendar   [status: in-progress]
+## M9 — Tasks on the calendar   [status: in-progress]
 
-Read-only, **online-only** third grid source (after items and birthdays), mirroring the web
-feature shipped 2026-08-02. The SQLite mirror and sync engine are untouched by design —
-tasks-api has no global changes cursor (only per-list `/sync`), so offline the grids simply
-lack deadlines while everything else stays.
+Task deadlines are a third grid source (after items and birthdays), read from the `tasks.list` /
+`tasks.item` mirror, so they render offline. New tasks are created online from the calendar; editing
+and completing stay in Lupira Tasks.
 
 ### Scope
-- [x] orval `lupiraTasksApi` block (Items tag only, baseUrl `/tasks-api`) → `generated/tasks/`; BFF route + `dueFrom/dueTo` search shipped server-side 2026-08-02
-- [x] `lupira-tasks-aud` added to `OIDC_SCOPES` (refresh grants never widen scopes — see Manual steps)
+- [x] Tasks operations in `@lupira/cal-api` (`fetch/tasks`) from the merged BFF contract; `dueFrom/dueTo` search server-side
+- [x] `lupira-tasks-aud` in `OIDC_SCOPES` (refresh grants never widen scopes — see Manual steps)
 - [x] `domain/taskRows.ts` + tests: GridRow-shaped `source:'task'` rows (all-day pin on the local due day — dueAt is "done by"), `isTaskRow` guard, half-open `monthUtcRange`, `taskDeepLink`
-- [x] `useTaskDeadlines(dayKeys)` in state/queries: key `['tasks', monthKey]` (outside every sync-invalidation prefix), `staleTime 60s` + `retry 1` (mirror defaults Infinity/false would freeze it), gated on the pref + `serverReachable` (onlineManager isn't NetInfo-wired; the reachable flip is the reconnect trigger); Cancelled dropped client-side
+- [x] `useTaskDeadlines(dayKeys)`: `mirrorQuery` over the `task_deadlines` index, keyed `['tasks.item', 'deadlines', monthKey]`, gated on the pref; Cancelled and completed tasks never enter the index
 - [x] Render merges: MonthView bars, WeekView all-day strip, day-sheet agenda — muted outline chips, ⏰ prefix, danger when overdue; `CalRow = GridRow | TaskDeadlineRow` union at the seams
-- [x] Tap → in-app read-only `TaskDetailScreen` (`{listId, itemId}`): due/status/priority/notes/assignee + "Open in Lupira Tasks ↗" deep link (`lupiratasks://task/<listId>/<itemId>`, fire-and-catch — no canOpenURL, keeps the `<queries>` manifest out)
-- [x] `showTaskDeadlines` pref (mirror_meta, default on) + Settings switch under Calendars
+- [x] Tap → read-only `TaskDetailScreen` (`{listId, itemId}`, from the mirror): due/status/priority/notes/assignee + "Open in Lupira Tasks ↗" deep link (`lupiratasks://task/<listId>/<itemId>`, fire-and-catch — no canOpenURL, keeps the `<queries>` manifest out)
+- [x] `showTaskDeadlines` pref (kernel meta, default on) + Settings switch under Calendars
+- [x] `TaskCreateScreen` from the calendar overflow ("New task") and ItemDetail ("Add task"): list (writable, unarchived `tasks.list` docs; last one in `prefs.lastTaskListId`), title, optional due day. Online-only: `POST /tasks-api/lists/{listId}/items` with a top-of-list sort key from `GET /tasks-api/lists/{listId}/items`; from an event, `POST /api/items/{id}/relations` (`TASK_RELATION`); then `engine.sync()` pulls the task in
 
 ### Exit criteria
 - [x] Root `npm run typecheck` / `lint` / `test` green (taskRows tests ride the mobile vitest gate)
 - [ ] Device: task due this month shows in month bar + week all-day chip + day agenda on its local due day; past-due renders danger + `overdue` tag
-- [ ] Device: Settings toggle removes/restores chips without restart; airplane mode → calendar renders normally, deadlines absent, no error surface
+- [ ] Device: Settings toggle removes/restores chips without restart; airplane mode → deadlines still render from the mirror
 - [ ] Device: tap → TaskDetail shows the task; "Open in Lupira Tasks" lands on the task in LupiraTasksMobile
+- [ ] Device: New task from the overflow and from an event lands in Lupira Tasks; a dated one shows as a deadline after the sync; offline the screen says it needs a connection
 
 ### Manual steps
-- [ ] Authentik: map the `lupira-tasks-aud` scope onto the `lupira-cal-mobile` provider and select it in Scopes (the web `lupira-cal` provider got it 2026-08-02)
-- [ ] Device: sign out/in after the Authentik step — refresh grants re-mint the old audience set, so until then every `/tasks-api` call 401s and chips stay silently absent
+- [x] Authentik: `lupira-tasks-aud` on the `lupira-cal-mobile` provider (DevOps blueprint `Identity/authentik/blueprints/40-apps-lupira-cal-mobile.yaml`)
+- [ ] Device: sign out/in once the blueprint is applied — refresh grants re-mint the old audience set, so until then every `/tasks-api` call 401s
 
 ### Non-goals
-- No task create/edit/complete from the calendar; no offline cache or sync-engine integration (no migration, no `gridRowsBetween` change, no per-list polling); no `<queries>` manifest / `canOpenURL`
+- No task edit/complete from the calendar (Lupira Tasks owns them); no offline task create (no tasks op in the outbox); no `<queries>` manifest / `canOpenURL`
 
 ## M10 — Material re-skin (Paper + shared tokens)   [status: in-progress]
 

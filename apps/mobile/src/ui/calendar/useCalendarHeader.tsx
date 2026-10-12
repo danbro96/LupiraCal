@@ -15,7 +15,7 @@ import { useColors } from '../theme';
 type Nav = CompositeNavigationProp<BottomTabNavigationProp<TabParamList, 'Calendar'>, NativeStackNavigationProp<RootStackParamList>>;
 
 /** The Calendar tab's header is its period control: the title names the period and opens a date picker;
- *  Search sits beside the account avatar; Today and the Month↔Week toggle are in the overflow menu. Set via `setOptions` because every
+ *  Search sits beside the account avatar; Today, the Month↔Week toggle and New task are in the overflow menu. Set via `setOptions` because every
  *  part of it follows screen state. */
 export function useCalendarHeader({ title, mode, anchor, onToday, onPickDate, onToggleMode }: {
   title: string;
@@ -50,6 +50,7 @@ export function useCalendarHeader({ title, mode, anchor, onToday, onPickDate, on
             overflow={[
               { label: 'Today', onPress: onToday },
               { label: mode === 'month' ? 'Week view' : 'Month view', onPress: onToggleMode },
+              { label: 'New task', onPress: () => navigation.navigate('TaskCreate') },
             ]}
           />
           <AccountMenu />

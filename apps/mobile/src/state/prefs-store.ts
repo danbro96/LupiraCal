@@ -10,6 +10,7 @@ const HOUR_HEIGHT_KEY = 'prefs.weekHourHeight';
 const ALL_DAY_ROWS_KEY = 'prefs.allDayRows';
 const CALENDAR_MODE_KEY = 'prefs.calendarMode';
 const LAST_CALENDARS_KEY = 'prefs.lastCalendarIds';
+const LAST_TASK_LIST_KEY = 'prefs.lastTaskListId';
 
 export const DEFAULT_HOUR_HEIGHT = 44;
 // Four is the most a SegmentedPicker fits on a 360dp phone (Paper's 76dp minimum per segment).
@@ -49,6 +50,8 @@ type Prefs = {
   calendarMode: CalendarMode;
   /** Calendars the last new event was filed to — the next one starts there. */
   lastCalendarIds: string[];
+  /** The list the last new task went to. */
+  lastTaskListId: string | null;
 };
 
 type PrefsActions = {
@@ -60,6 +63,7 @@ type PrefsActions = {
   setAllDayRows(value: AllDayRows): Promise<void>;
   setCalendarMode(value: CalendarMode): Promise<void>;
   setLastCalendarIds(value: string[]): Promise<void>;
+  setLastTaskListId(value: string): Promise<void>;
 };
 
 export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
@@ -71,6 +75,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
   allDayRows: '3',
   calendarMode: 'month',
   lastCalendarIds: [],
+  lastTaskListId: null,
 
   init: async () => {
     set({
@@ -81,6 +86,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
       allDayRows: readAllDayRows(await readMeta(ALL_DAY_ROWS_KEY)),
       calendarMode: (await readMeta(CALENDAR_MODE_KEY)) === 'week' ? 'week' : 'month',
       lastCalendarIds: parseJson(await readMeta(LAST_CALENDARS_KEY), isStringArray, []),
+      lastTaskListId: await readMeta(LAST_TASK_LIST_KEY),
       loaded: true,
     });
   },
@@ -119,5 +125,10 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
   setLastCalendarIds: async (value) => {
     set({ lastCalendarIds: value });
     await writeMeta(LAST_CALENDARS_KEY, JSON.stringify(value));
+  },
+
+  setLastTaskListId: async (value) => {
+    set({ lastTaskListId: value });
+    await writeMeta(LAST_TASK_LIST_KEY, value);
   },
 }));

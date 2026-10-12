@@ -18,7 +18,7 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 
 - Tabs are Calendar/Contacts, each showing the native header. Settings is a pushed stack screen reached from the `AccountButton` avatar (it opens Settings; sign-out is in Settings' Account section) in the tab navigator's `headerRight`: sections whose rows show each area's state (warning colour when it needs you) and open `CalendarSettings` / `AndroidSettings`. The map, photo library, GPS upload and camera-roll backup live in the sibling apps Lupira Maps and Lupira Photos; Cal opens them through `ui/openSibling` (`lupiramaps://`, `lupiraphotos://`, https fallback).
 - Contacts' search sits in `ScreenToolbar` under the header.
-- Calendar has no toolbar: the header title is the period (tap = date picker) and Search plus an overflow menu (Today, Month↔Week) sit beside the avatar (`useCalendarHeader`, via `setOptions`) — the grid needs the rows.
+- Calendar has no toolbar: the header title is the period (tap = date picker) and Search plus an overflow menu (Today, Month↔Week, New task) sit beside the avatar (`useCalendarHeader`, via `setOptions`) — the grid needs the rows.
 - `CalendarScreen` owns only anchor and jumps (the Month/Week mode is `prefs.calendarMode`); `MonthPane` (grid + `DaySheet`) and `WeekView` own their paging and selection.
 - Every calendar gesture is RNGH + Reanimated: swipes, the day sheet's drag, and the week's pinch zoom (time axis, persisted as `prefs.weekHourHeight`), with the lanes' ScrollView joined via `Gesture.Native()`; a PanResponder loses that race to the native scroll.
 - Both modes page with `usePager`: prev/current/next stay rendered (21 date-keyed columns / 3 month-keyed grids) on an axis fixed at mount, and a swipe only moves the axis, so the neighbour is live under the finger and a step re-renders nothing visible. Never reset the offset on a swipe; a `CalendarJump` (Today, picked date) is the one snap.
@@ -43,6 +43,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 | `tasks.item` | `/tasks-api/sync/items` | — (edits live in Lupira Tasks) | `task_deadlines` (open deadlines) |
 | `contact.me` | `/contact-api/me` (one-doc snapshot) | — | — |
 
+- New tasks (`TaskCreateScreen`, from the calendar overflow and ItemDetail's "Add task") post straight to tasks-api — online-only, no op — and `engine.sync()` pulls them in. The list picker reads the `tasks.list` mirror; from an event, a `task` relation links the event (`@lupira/cal-domain/tasks` `TASK_RELATION`).
 - Every change to an input (pulled doc, queued op, discard, ack) recomputes `local = reduce(server, ...ops)` with `domain/mirrorReducers` and rewrites the module's index rows; a deleted doc is `null`. Table DDL and row writers live in `data/indexes/`, the reads over them in `data/queries/`.
 - Ops (`domain/ops.ts`) carry `aggregate`/`aggregateId` from `stamp()`; `state/actions.ts` is the write surface, `sync/replayOp.ts` the REST replay (`Idempotency-Key: commandId`). Ops of one aggregate replay in order; a parked or backed-off op holds the ones behind it.
 - Occurrences are materialized over a rolling horizon (`domain/materialize`); `sync/horizon.ts` keeps it in kernel meta and reindexes `cal.item` and `contact` when it drifts a month.

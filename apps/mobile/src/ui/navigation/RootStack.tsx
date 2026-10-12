@@ -16,6 +16,7 @@ import { DeveloperScreen } from '../screens/DeveloperScreen';
 import { ItemDetailScreen } from '../screens/ItemDetailScreen';
 import { ItemSearchScreen } from '../screens/ItemSearchScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
+import { TaskCreateScreen } from '../screens/TaskCreateScreen';
 import { ItemEditScreen } from '../screens/ItemEditScreen';
 import { ImportScreen } from '../screens/ImportScreen';
 import { LoginScreen } from '../screens/LoginScreen';
@@ -61,6 +62,7 @@ export function RootStack() {
       <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: 'Event' }} />
       <Stack.Screen name="ItemSearch" component={ItemSearchScreen} options={{ title: 'Search events' }} />
       <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={{ title: 'Task' }} />
+      <Stack.Screen name="TaskCreate" component={TaskCreateScreen} options={{ title: 'New task' }} />
       <Stack.Screen
         name="ItemEdit"
         component={ItemEditScreen}
