@@ -33,6 +33,7 @@ export function useInvalidateContacts() {
           || key.startsWith('/contact-api/residencies')
           || key.startsWith('/contact-api/places')
           || key.startsWith('/api/contacts')
+          || key === '/contact-api/me'
           || key.includes('/groups');
       },
     });

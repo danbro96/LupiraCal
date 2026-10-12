@@ -41,6 +41,10 @@ Hierarchy: one visual level — children nest under their parent's first loaded 
 
 Third grid source from LupiraTasksApi (`/tasks-api` BFF prefix, hook `useTaskDeadlines` over the generated `useListItems`). Open non-Cancelled tasks with `dueAt` in range render as all-day chips. Which tasks qualify, due-day pinning, overdue and the deep link are `@lupira/cal-domain/tasks`; `fromTask` (web) and `taskDeadlineRows` (mobile) only shape the row (the deadline/overdue treatment is an `sx` branch in WeekGrid/MonthGrid, not a class). Click → `?task=<listId>:<itemId>` TaskCard with `lupiratasks://task/<listId>/<itemId>` deep link + tasks.lupira.com list fallback. The `CalendarToggles` "Deadlines" toggle gates the fetch. Tasks-api dev listens on 8080 (Kestrel section beats ASPNETCORE_URLS).
 
+## Contacts
+
+- Your own contact (contact-api `/me`) carries a "You" chip. "This is me" links a contact in one click only while none is linked; on another contact it asks before moving the link.
+
 ## Comms topics
 
 A contact's finished topics from LupiraCommsApi (`/comms-api` BFF prefix, `@lupira/cal-api/query/comms`, hook `useContactTopics`). Reached only from the contact detail's "Comms" link → `/contacts/:contactId/topics/:topicId?`, one `React.lazy` pane (`ContactTopicsPane`, default export) that lists topics or renders one topic's messages — nothing is fetched, and no comms code is loaded, until that link is clicked.

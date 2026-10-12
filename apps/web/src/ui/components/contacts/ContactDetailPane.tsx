@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import MuiLink from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
@@ -27,7 +31,7 @@ import { addressMeta, splitAddresses } from '@danbro96/lupira-domain-contacts/re
 import { fmtDate } from '@danbro96/lupira-domain-core/time';
 import { addressBookLabel, useAddressBooks } from '../../../state/useAddressBooks';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
-import { useMyContactId } from '../../../state/useMe';
+import { useMyContactLink } from '../../../state/useMe';
 import { CompletenessBadge } from '../drawer/CompletenessBadge';
 import { errText } from '../../errText';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
@@ -65,10 +69,13 @@ export function ContactDetailPane() {
   const addMember = useAddContactGroupMember({ mutation: { onSuccess: invalidate, onError } });
   const removeMember = useRemoveContactGroupMember({ mutation: { onSuccess: invalidate, onError } });
   const del = useDeleteContact({ mutation: { onSuccess: () => { invalidate(); navigate('/contacts'); }, onError } });
-  const setMe = useSetMyContact({ mutation: { onSuccess: invalidate, onError } });
+  const [relinking, setRelinking] = useState(false);
+  const setMe = useSetMyContact({ mutation: { onSuccess: () => { invalidate(); setRelinking(false); }, onError } });
   const { addressBooks } = useAddressBooks();
+  const myContactId = useMyContactLink();
   // The server refuses to delete anyone's own contact; yours is the one this page can know.
-  const isMe = useMyContactId() === contactId;
+  const isMe = myContactId === contactId;
+  const { data: linked } = useGetContact(myContactId ?? '', { query: { enabled: relinking && !!myContactId } });
   const move = useMoveContact({
     mutation: {
       onSuccess: (moved) => {
@@ -105,6 +112,7 @@ export function ContactDetailPane() {
         <h2>
           {contact.displayName}
           {contact.nickname && contact.nickname !== contact.displayName && <Typography variant="caption" sx={{ color: 'text.secondary' }}> “{contact.nickname}”</Typography>}
+          {isMe && <Chip size="small" color="primary" variant="outlined" label="You" sx={{ ml: 1 }} />}
           {contact.deceased && (
             <Tooltip title={deceasedLine(contact.deathDate)}>
               <Chip variant="outlined" label="†" />
@@ -289,9 +297,16 @@ export function ContactDetailPane() {
         </Typography>
       )}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-        <Button variant="text" disabled={setMe.isPending} onClick={() => setMe.mutate({ data: { contactId: contact.id } })}>
-          This is me
-        </Button>
+        {myContactId === null && (
+          <Button variant="text" disabled={setMe.isPending} onClick={() => setMe.mutate({ data: { contactId: contact.id } })}>
+            This is me
+          </Button>
+        )}
+        {myContactId && !isMe && (
+          <Button variant="text" onClick={() => setRelinking(true)}>
+            This is me
+          </Button>
+        )}
         <TextField
           select
           label="Address book"
@@ -313,6 +328,18 @@ export function ContactDetailPane() {
           </Button>
         )}
       </Box>
+      <Dialog open={relinking} onClose={() => setRelinking(false)}>
+        <DialogTitle>Link yourself to {contact.displayName}?</DialogTitle>
+        <DialogContent>
+          <Typography>You are linked to {linked?.displayName ?? 'another contact'}. That link moves to {contact.displayName}.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRelinking(false)}>Cancel</Button>
+          <Button variant="contained" disabled={setMe.isPending} onClick={() => setMe.mutate({ data: { contactId: contact.id } })}>
+            Link
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DetailPane>
   );
 }
