@@ -18,7 +18,7 @@ export type AddressRow = {
 export type ResidencyChange =
   | { kind: 'start'; residency: ResidencyFields }
   | { kind: 'revise'; residencyId: string; residency: ResidencyFields }
-  | { kind: 'moveOut'; residencyId: string; movedOut: FuzzyDateDto; residency: ResidencyFields }
+  | { kind: 'moveOut'; residencyId: string; movedOut: FuzzyDateDto }
   | { kind: 'remove'; residencyId: string };
 
 export function addressRowsFrom(residencies: readonly ResidencyDoc[]): AddressRow[] {
@@ -60,7 +60,7 @@ export function residencyChanges(rows: readonly AddressRow[]): ResidencyChange[]
     const after: ResidencyFields = { ...before, placeId: row.placeId ?? stored.placeId, type: row.type, movedOut: row.movedOut };
     const moved = !sameDate(before.movedOut, after.movedOut);
     const revised = before.placeId !== after.placeId || before.type !== after.type;
-    if (moved && !revised && after.movedOut) changes.push({ kind: 'moveOut', residencyId: stored.id, movedOut: after.movedOut, residency: before });
+    if (moved && !revised && after.movedOut) changes.push({ kind: 'moveOut', residencyId: stored.id, movedOut: after.movedOut });
     else if (moved || revised) changes.push({ kind: 'revise', residencyId: stored.id, residency: after });
   }
   return changes;

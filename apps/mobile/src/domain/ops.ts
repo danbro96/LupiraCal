@@ -56,7 +56,7 @@ export type ClientOp = Base & (
   /** `residencyId` is derived from `sourceKey` scoped to the contact, so follow-up ops reference it offline. */
   | { kind: 'contact.residency.start'; residencyId: string; contactId: string; sourceKey: string; residency: ResidencyFields }
   | { kind: 'contact.residency.revise'; residencyId: string; contactId: string; residency: ResidencyFields }
-  | { kind: 'contact.residency.moveOut'; residencyId: string; contactId: string; movedOut: FuzzyDateDto; residency: ResidencyFields }
+  | { kind: 'contact.residency.moveOut'; residencyId: string; contactId: string; movedOut: FuzzyDateDto }
   | { kind: 'contact.residency.remove'; residencyId: string; contactId: string }
 );
 

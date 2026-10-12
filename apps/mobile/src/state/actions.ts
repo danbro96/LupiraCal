@@ -159,10 +159,7 @@ export async function saveResidencies(contactId: string, changes: ResidencyChang
         ops.push({ kind: 'contact.residency.revise', residencyId: change.residencyId, contactId, residency: change.residency, ...residency(change.residencyId) });
         break;
       case 'moveOut':
-        ops.push({
-          kind: 'contact.residency.moveOut', residencyId: change.residencyId, contactId, movedOut: change.movedOut, residency: change.residency,
-          ...residency(change.residencyId),
-        });
+        ops.push({ kind: 'contact.residency.moveOut', residencyId: change.residencyId, contactId, movedOut: change.movedOut, ...residency(change.residencyId) });
         break;
       case 'remove':
         ops.push({ kind: 'contact.residency.remove', residencyId: change.residencyId, contactId, ...residency(change.residencyId) });

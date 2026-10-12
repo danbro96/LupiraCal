@@ -8,6 +8,7 @@ const cal = vi.hoisted(() => ({
 vi.mock('@lupira/cal-api/fetch/cal', () => cal);
 const contact = vi.hoisted(() => ({
   addResidency: vi.fn(),
+  moveOutOfResidency: vi.fn(),
   reviseResidency: vi.fn(),
   removeResidency: vi.fn(),
 }));
@@ -83,6 +84,7 @@ describe('residency replay', () => {
 
   beforeEach(() => {
     contact.addResidency.mockReset().mockResolvedValue({});
+    contact.moveOutOfResidency.mockReset().mockResolvedValue({});
     contact.reviseResidency.mockReset().mockResolvedValue({});
     contact.removeResidency.mockReset().mockResolvedValue(undefined);
   });
@@ -93,9 +95,11 @@ describe('residency replay', () => {
     expect([contactId, body.sourceKey, body.placeId, options.headers['Idempotency-Key']]).toEqual(['c-1', 'k-1', 'p-1', at.commandId]);
   });
 
-  it('moves out as a correction carrying the end date', async () => {
-    await replayOp({ ...at, kind: 'contact.residency.moveOut', movedOut: { year: 2026, month: 10 }, residency: home });
-    expect(contact.reviseResidency.mock.calls[0].slice(0, 2)).toEqual(['r-1', { ...home, movedOut: { year: 2026, month: 10 } }]);
+  it('moves out under the op command id, not as a correction', async () => {
+    await replayOp({ ...at, kind: 'contact.residency.moveOut', movedOut: { year: 2026, month: 10 } });
+    const [residencyId, body, options] = contact.moveOutOfResidency.mock.calls[0];
+    expect([residencyId, body, options.headers['Idempotency-Key']]).toEqual(['r-1', { movedOut: { year: 2026, month: 10 } }, at.commandId]);
+    expect(contact.reviseResidency).not.toHaveBeenCalled();
   });
 
   it('treats a residency already gone as removed', async () => {

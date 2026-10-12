@@ -17,12 +17,9 @@ describe('residencyChanges', () => {
     ]);
   });
 
-  it('moves out when only the end date changed, keeping the rest as stated', () => {
+  it('moves out when only the end date changed', () => {
     const movedOut = { year: 2026, month: 10, day: 12 };
-    expect(residencyChanges([{ ...row, movedOut }])).toEqual([{
-      kind: 'moveOut', residencyId: 'r-1', movedOut,
-      residency: { placeId: 'p-1', type: 'Home', label: 'Gotland', movedIn: { year: 2020 }, movedOut: null },
-    }]);
+    expect(residencyChanges([{ ...row, movedOut }])).toEqual([{ kind: 'moveOut', residencyId: 'r-1', movedOut }]);
   });
 
   it('corrects a re-placed or retyped row wholesale and erases a removed one', () => {

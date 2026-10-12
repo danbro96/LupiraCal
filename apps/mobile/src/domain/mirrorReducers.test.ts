@@ -221,7 +221,7 @@ describe('applyResidencyOp', () => {
     expect(revised.doc).toMatchObject({ placeId: 'p-2', type: 'Work', label: null, movedIn: null });
 
     const moved = applyResidencyOp(revised, {
-      ...at, kind: 'contact.residency.moveOut', movedOut: { year: 2026, month: 10, day: 12 }, residency: home, commandId: cmd(3),
+      ...at, kind: 'contact.residency.moveOut', movedOut: { year: 2026, month: 10, day: 12 }, commandId: cmd(3),
     })!;
     expect(moved.doc).toMatchObject({ placeId: 'p-2', movedOut: { year: 2026, month: 10, day: 12 } });
 

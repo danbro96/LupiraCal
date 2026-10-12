@@ -2,7 +2,7 @@ import { createItem, deleteItem, getItem, inviteParticipant, mergeItemMetadata, 
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import {
-  addResidency, createContact, deleteContact, removeResidency, reviseContact, reviseResidency, setContactChannels, setContactProfiles, setContactTags,
+  addResidency, createContact, deleteContact, moveOutOfResidency, removeResidency, reviseContact, reviseResidency, setContactChannels, setContactProfiles, setContactTags,
 } from '@lupira/cal-api/fetch/contact';
 import type { ContactAddressType, ContactReachChannel, ResidencyRequest } from '@lupira/cal-api/models';
 import { participationIdOf } from '@lupira/cal-domain/participation';
@@ -124,9 +124,8 @@ export async function replayOp(op: ClientOp): Promise<void> {
     case 'contact.residency.revise':
       await reviseResidency(op.residencyId, residencyRequest(op.residency), idem);
       return;
-    // The BFF doesn't expose contact-api's move-out route; the wholesale correction carries the same end date.
     case 'contact.residency.moveOut':
-      await reviseResidency(op.residencyId, residencyRequest({ ...op.residency, movedOut: op.movedOut }), idem);
+      await moveOutOfResidency(op.residencyId, { movedOut: op.movedOut }, idem);
       return;
     case 'contact.residency.remove':
       await removeResidencyIfPresent(op.residencyId, idem);
