@@ -1,7 +1,7 @@
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { birthdayAgeLine, nextBirthday, turningAge } from '@lupira/cal-domain/birthday';
 import { initialsOf, deceasedLine } from '@danbro96/lupira-domain-contacts/contactNames';
-import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
+import { channelLabel, reachAppLink, reachLink } from '@lupira/cal-domain/reach';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
 import { addressMeta, splitAddresses } from '@danbro96/lupira-domain-contacts/residents';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -225,7 +225,10 @@ export function ContactDetailScreen() {
 
 function openReach(kind: string, value: string): void {
   const url = reachLink(kind, value);
-  if (url) void Linking.openURL(url).catch(() => undefined);
+  if (!url) return;
+  const app = reachAppLink(kind, value);
+  // Android rejects a scheme no installed app handles, which is the cue for the web link.
+  void (app ? Linking.openURL(app).catch(() => Linking.openURL(url)) : Linking.openURL(url)).catch(() => undefined);
 }
 
 function BirthdayRow({ birthday, deceased }: { birthday: PartialDateDto; deceased: boolean }) {

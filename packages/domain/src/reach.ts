@@ -16,6 +16,13 @@ export function reachLink(kind: string, value: string): string | null {
   }
 }
 
+/** The native app's scheme for a reach entry, tried before `reachLink`'s web fallback; null when the kind has none. */
+export function reachAppLink(kind: string, value: string): string | null {
+  const v = value.trim().replace(/^@/, '');
+  if (!v) return null;
+  return kind.toLowerCase() === 'telegram' ? `tg://resolve?domain=${encodeURIComponent(v)}` : null;
+}
+
 /** The reach kinds both editors offer. Channels are the API's ReachMedium; profiles are an open-string service
  *  on the API, so the known ones are listed and anything else reads as Other. A row's kind is fixed once it
  *  exists — changing Telegram→Signal in place would silently rewrite what the value means. */

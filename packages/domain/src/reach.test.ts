@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { channelLabel, reachLink } from './reach';
+import { channelLabel, reachAppLink, reachLink } from './reach';
 
 describe('reachLink', () => {
   it('builds each kind’s deep link', () => {
@@ -12,6 +12,17 @@ describe('reachLink', () => {
   it('gives nothing to open for an unknown kind that isn’t a URL', () => {
     expect(reachLink('Mastodon', '@me@example.social')).toBeNull();
     expect(reachLink('Email', '  ')).toBeNull();
+  });
+});
+
+describe('reachAppLink', () => {
+  it('opens Telegram in its app', () => {
+    expect(reachAppLink('Telegram', '@danbro')).toBe('tg://resolve?domain=danbro');
+  });
+
+  it('has no app scheme for other kinds', () => {
+    expect(reachAppLink('Phone', '+46 70 123')).toBeNull();
+    expect(reachAppLink('Telegram', ' ')).toBeNull();
   });
 });
 
