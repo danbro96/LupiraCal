@@ -49,6 +49,23 @@ describe('placeUsageUpTo', () => {
     }]);
   });
 
+  it('counts travel endpoints, each place once per occurrence', async () => {
+    await put('trip', 'place-1', '2026-07-10', {
+      category: 'Trip', locationLabel: 'Stugan',
+      details: { travel: { mode: 'Car', fromPlaceId: 'place-2', fromLabel: 'Hemma', toPlaceId: 'place-1', toLabel: 'Fjällstugan' } },
+    });
+    await put('flight', null, '2026-07-12', {
+      category: 'Trip', details: { travel: { mode: 'Flight', fromPlaceId: 'place-3', fromLabel: ' ', toPlaceId: 'place-2', toLabel: 'Home' } },
+    });
+
+    const usage = await placeUsageUpTo(db, '2026-07-31');
+    expect(usage.map((u) => [u.placeId, u.label, u.eventCount, u.lastDay])).toEqual([
+      ['place-2', 'Home', 2, '2026-07-12'],
+      ['place-3', null, 1, '2026-07-12'],
+      ['place-1', 'Stugan', 1, '2026-07-10'],
+    ]);
+  });
+
   it('leaves out cancelled, unaccepted, unplaced and future events', async () => {
     await put('cancelled', 'place-1', '2026-07-01', { status: 'Cancelled' });
     await put('proposed', 'place-2', '2026-07-02', { calendars: [{ calendarId: 'cal-a', status: 'Proposed' }] });

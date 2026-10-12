@@ -1,8 +1,9 @@
 import type { SqlValue, Tx } from '@danbro96/lupira-expo-sqlite/types';
+import type { ItemDoc } from '../../domain/docTypes';
 import { currentHorizon, occurrenceRowsForItem } from '../../domain/materialize';
 import type { MirrorItem } from '../../domain/mirrorReducers';
 
-export const ITEM_TABLES = ['item_index', 'item_calendars', 'item_occurrences', 'item_attendees'];
+export const ITEM_TABLES = ['item_index', 'item_calendars', 'item_occurrences', 'item_attendees', 'item_places'];
 
 export const ITEM_DDL = `
   CREATE TABLE item_index (
@@ -44,6 +45,12 @@ export const ITEM_DDL = `
     PRIMARY KEY (item_id, contact_id)
   );
   CREATE INDEX item_attendees_contact ON item_attendees (contact_id);
+  CREATE TABLE item_places (
+    item_id TEXT NOT NULL,
+    place_id TEXT NOT NULL,
+    label TEXT,
+    PRIMARY KEY (item_id, place_id)
+  );
 `;
 
 /** Occurrences are materialized over the current horizon, so every write re-expands the item's recurrence. */
@@ -52,6 +59,7 @@ export async function writeItemIndex(tx: Tx, id: string, state: MirrorItem | nul
   await tx.run('DELETE FROM item_calendars WHERE item_id = ?', [id]);
   await tx.run('DELETE FROM item_occurrences WHERE item_id = ?', [id]);
   await tx.run('DELETE FROM item_attendees WHERE item_id = ?', [id]);
+  await tx.run('DELETE FROM item_places WHERE item_id = ?', [id]);
   if (!state) return;
   const d = state.doc;
   await tx.run(
@@ -67,7 +75,23 @@ export async function writeItemIndex(tx: Tx, id: string, state: MirrorItem | nul
     occurrenceRowsForItem(d, currentHorizon()).map((r) => [id, r.startUtc, r.endUtc, r.startDay, r.allDay ? 1 : 0]));
   await insertChunked(tx, 'INSERT OR REPLACE INTO item_attendees (item_id, contact_id, status)', 3,
     (d.attendees ?? []).map((a) => [id, a.contactId, a.status]));
+  await insertChunked(tx, 'INSERT INTO item_places (item_id, place_id, label)', 3,
+    placeRefsOf(d).map((r) => [id, r.placeId, r.label]));
 }
+
+/** The item's place, then its travel endpoints, each place once: what cal-api's place usage counts per occurrence. */
+function placeRefsOf(d: ItemDoc): { placeId: string; label: string | null }[] {
+  const travel = (d.details as { travel?: TravelEnds | null } | null | undefined)?.travel;
+  const refs: { placeId: string; label: string | null }[] = [];
+  for (const [placeId, label] of [
+    [d.placeId, d.locationLabel], [travel?.fromPlaceId, travel?.fromLabel], [travel?.toPlaceId, travel?.toLabel],
+  ] as const) {
+    if (placeId && !refs.some((r) => r.placeId === placeId)) refs.push({ placeId, label: label?.trim() ? label : null });
+  }
+  return refs;
+}
+
+type TravelEnds = { fromPlaceId?: string | null; fromLabel?: string | null; toPlaceId?: string | null; toLabel?: string | null };
 
 const presenceStatusOf = (details: unknown): string | null =>
   (details as { presence?: { status?: string | null } } | null | undefined)?.presence?.status ?? null;
