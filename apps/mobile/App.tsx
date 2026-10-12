@@ -3,14 +3,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import * as Sentry from '@sentry/react-native';
+import { useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { PaperProvider } from 'react-native-paper';
+import { PaperProvider, Text } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useAuth } from './src/state/auth-store';
 import { ConfirmDialogHost } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { ToastHost } from '@danbro96/lupira-expo-paper/components/ToastHost';
 import { navDark, navLight, paperDark, paperLight } from './src/ui/theme/paperTheme';
+import { useColors } from './src/ui/theme';
 import { useBridge } from './src/state/bridge-store';
 import { usePrefs } from './src/state/prefs-store';
 import { connectFocusManager } from '@danbro96/lupira-expo-query/focus';
@@ -29,6 +31,19 @@ import { initSentry } from '@danbro96/lupira-expo-diagnostics/initSentry';
 initSentry(SENTRY_DSN);
 connectOnlineManager();
 connectFocusManager();
+
+/** Shown when the boundary catches (and reports) a render crash. */
+function ErrorFallback() {
+  const c = useColors();
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: c.bg }}>
+      <Text variant="titleMedium" style={{ color: c.text, marginBottom: 8 }}>Something went wrong</Text>
+      <Text style={{ color: c.textMuted, textAlign: 'center' }}>
+        The app hit an unexpected error. Please reopen it — your data is saved on this device.
+      </Text>
+    </View>
+  );
+}
 
 export default function App() {
   useAutoUpdate();
@@ -55,12 +70,14 @@ export default function App() {
       <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
         <SafeAreaProvider>
           <PaperProvider theme={scheme === 'dark' ? paperDark : paperLight} settings={paperSettings}>
-            <ConfirmDialogHost>
-              <NavigationContainer linking={linking} theme={scheme === 'dark' ? navDark : navLight}>
-                <StatusBar style="auto" />
-                <RootStack />
-              </NavigationContainer>
-            </ConfirmDialogHost>
+            <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+              <ConfirmDialogHost>
+                <NavigationContainer linking={linking} theme={scheme === 'dark' ? navDark : navLight}>
+                  <StatusBar style="auto" />
+                  <RootStack />
+                </NavigationContainer>
+              </ConfirmDialogHost>
+            </Sentry.ErrorBoundary>
             <ToastHost />
           </PaperProvider>
         </SafeAreaProvider>

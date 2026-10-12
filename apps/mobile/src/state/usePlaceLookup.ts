@@ -12,8 +12,10 @@ const NO_PLACES = new Map<string, PlaceDto>();
 export function usePlaceCoords(placeIds: (string | null | undefined)[]): Map<string, PlaceDto> {
   const distinct = distinctPlaceIds(placeIds);
   const q = useQuery({
-    ...onlineQuery(['map', 'places', distinct], async () =>
-      toLocatedPlaces<PlaceDto>((await Promise.all(chunk(distinct, PLACE_LOOKUP_MAX).map((ids) => lookupPlaces({ ids })))).flat())),
+    // The cache persists as JSON, so it holds the raw results and `select` builds the Map.
+    ...onlineQuery(['map', 'place-lookup', distinct], async () =>
+      (await Promise.all(chunk(distinct, PLACE_LOOKUP_MAX).map((ids) => lookupPlaces({ ids })))).flat()),
+    select: toLocatedPlaces<PlaceDto>,
     enabled: distinct.length > 0,
   });
   return q.data ?? NO_PLACES;
