@@ -20,7 +20,8 @@ export interface CreateCalendarItemRequest {
   /**
      * Client-supplied provenance/idempotency key (e.g. an import `sourceKey`). When set, the item's stream id
      *             is derived from it (DeterministicGuid), so re-creating with the same key is a no-op
-     *             that returns the existing item — safe batch/import replay. Also becomes the item's external UID. Omit for a random uid.
+     *             that returns the existing item — safe batch/import replay. A key pinning another principal's item the caller can't read (or a deleted one
+     *             in no calendar the caller can write) is a 403. Also becomes the item's external UID. Omit for a random uid.
      * @nullable
      */
   sourceKey?: string | null;

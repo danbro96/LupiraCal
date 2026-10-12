@@ -5,6 +5,10 @@
  * OpenAPI spec version: v1
  */
 
+/**
+ * What a calendar event is (its semantic identity). Reservation/travel/presence specifics are carried by
+ *             composable optionals on the item (see ItemDetails), not by this discriminator.
+ */
 export type ItemCategory = typeof ItemCategory[keyof typeof ItemCategory];
 
 

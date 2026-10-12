@@ -4,8 +4,16 @@
  * LupiraCal BFF
  * OpenAPI spec version: v1
  */
+import type { GeocodeIntent } from './geocodeIntent';
 
 export type ForwardGeocodeParams = {
-q: string;
+q?: string;
+street?: string;
+postcode?: string;
+locality?: string;
+countryCode?: string;
+intent?: GeocodeIntent;
+nearLat?: number;
+nearLon?: number;
 limit?: number;
 };

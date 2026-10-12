@@ -173,6 +173,115 @@
         ]
       }
     },
+    "/place-usage": {
+      "get": {
+        "tags": [
+          "Places"
+        ],
+        "summary": "Places your events used — as their location or a travel endpoint — derived at read time from non-cancelled occurrences in calendars you can read (or calendarId), recurrences expanded up to `to`. Merged-away place ids fold into their survivor. Per place: event count, last day, per-category counts and the top 5 attendees. Ordered by last day, then event count. Defaults: from = 3 years before now, to = now, limit 200 (max 500).",
+        "operationId": "GetPlaceUsage",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": [
+                "null",
+                "string"
+              ],
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "calendarId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlaceUsageDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/participation/summary": {
       "get": {
         "tags": [
@@ -877,7 +986,7 @@
         "tags": [
           "CalendarItems"
         ],
-        "summary": "Create many items in one call (idempotent per item on SourceKey; children reference parents by ParentSourceKey in any order). Returns a per-item result (created|existed|invalid) in input order.",
+        "summary": "Create many items in one call (idempotent per item on SourceKey; children reference parents by ParentSourceKey in any order). Returns a per-item result (created|existed|forbidden|invalid) in input order.",
         "operationId": "CreateItemsBatch",
         "requestBody": {
           "content": {
@@ -3095,7 +3204,7 @@
         "tags": [
           "Participation"
         ],
-        "summary": "Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.",
+        "summary": "Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Inviting to an item that had already ended (at occurredAt, else now) also confirms attendance, stamped at the item's end. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.",
         "operationId": "InviteParticipant",
         "parameters": [
           {
@@ -3205,7 +3314,7 @@
         "tags": [
           "Participation"
         ],
-        "summary": "Add a set of contacts as attendees in one call (add-only). Attended=true also marks them attended (historical backfill). Slim result (additions + already-present count), not the full item.",
+        "summary": "Add a set of contacts as attendees in one call (add-only). Attended omitted = marked attended only when the item has already ended (stamped at its end); true = always; false = never. Slim result (additions + already-present count), not the full item.",
         "operationId": "SetParticipants",
         "parameters": [
           {
@@ -4696,7 +4805,7 @@
               "null",
               "string"
             ],
-            "description": "Client-supplied provenance/idempotency key (e.g. an import `sourceKey`). When set, the item's stream id\n            is derived from it (DeterministicGuid), so re-creating with the same key is a no-op\n            that returns the existing item — safe batch/import replay. Also becomes the item's external UID. Omit for a random uid."
+            "description": "Client-supplied provenance/idempotency key (e.g. an import `sourceKey`). When set, the item's stream id\n            is derived from it (DeterministicGuid), so re-creating with the same key is a no-op\n            that returns the existing item — safe batch/import replay. A key pinning another principal's item the caller can't read (or a deleted one\n            in no calendar the caller can write) is a 403. Also becomes the item's external UID. Omit for a random uid."
           },
           "parentItemId": {
             "type": [
@@ -5245,7 +5354,7 @@
             ]
           }
         },
-        "description": "Per-item outcome of a batch create, aligned index-for-index with the request. `Status` is\n            `created` | `existed` (idempotent hit on SourceKey) | `invalid` (see `Error`)."
+        "description": "Per-item outcome of a batch create, aligned index-for-index with the request. `Status` is\n            `created` | `existed` (idempotent hit on SourceKey) | `forbidden` (no access to the calendar, or the SourceKey\n            belongs to an item the caller can't access; no `ItemId`) | `invalid` (see `Error`)."
       },
       "ItemCategory": {
         "enum": [
@@ -5260,7 +5369,8 @@
           "Activity",
           "Focus",
           "Chore"
-        ]
+        ],
+        "description": "What a calendar event is (its semantic identity). Reservation/travel/presence specifics are carried by\n            composable optionals on the item (see ItemDetails), not by this discriminator."
       },
       "ItemDetails": {
         "type": "object",
@@ -5768,6 +5878,89 @@
         },
         "description": "The claims a caller's token resolved to, echoed for cross-service auth-seam probes.\n            Returning the audiences (not a bare 200) lets a failing consumer see which half of the seam\n            is misconfigured."
       },
+      "PlaceCategoryUsageDto": {
+        "required": [
+          "category",
+          "eventCount",
+          "lastDay"
+        ],
+        "type": "object",
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/ItemCategory"
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastDay": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "PlaceCompanionDto": {
+        "required": [
+          "contactId",
+          "eventCount"
+        ],
+        "type": "object",
+        "properties": {
+          "contactId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PlaceUsageDto": {
+        "required": [
+          "placeId",
+          "eventCount",
+          "lastDay",
+          "byCategory",
+          "companions"
+        ],
+        "type": "object",
+        "properties": {
+          "placeId": {
+            "type": "string",
+            "description": "The LupiraGeoApi place; a merged-away id reports its survivor.",
+            "format": "uuid"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "eventCount": {
+            "type": "integer",
+            "description": "Event occurrences here, recurrences expanded.",
+            "format": "int32"
+          },
+          "lastDay": {
+            "type": "string",
+            "format": "date"
+          },
+          "byCategory": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceCategoryUsageDto"
+            }
+          },
+          "companions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceCompanionDto"
+            }
+          }
+        },
+        "description": "How the caller's events have used one place: as their location or a travel endpoint."
+      },
       "PresenceDetail": {
         "required": [
           "status"
@@ -6118,10 +6311,13 @@
             }
           },
           "attended": {
-            "type": "boolean"
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         },
-        "description": "Add a set of contacts as attendees of an item in one call (add-only — does not remove existing attendees).\n            `Attended` also marks them attended (for historical/backfilled events); pass false for a live invite flow."
+        "description": "Add a set of contacts as attendees of an item in one call (add-only — does not remove existing attendees).\n            `Attended`: omitted marks them attended only when the item has already ended (stamped at its end); true always\n            marks them attended; false never does."
       },
       "SetParticipantsResult": {
         "required": [
@@ -6643,6 +6839,9 @@
     },
     {
       "name": "Me"
+    },
+    {
+      "name": "Places"
     },
     {
       "name": "Participation"

@@ -21,4 +21,10 @@ export interface ResidencyRequest {
   label?: string | null;
   movedIn?: null | FuzzyDate;
   movedOut?: null | FuzzyDate;
+  /**
+     * Client-chosen key that makes a repeated create return the same residency (offline clients mint a
+     *             UUIDv7). Scoped to the contact; ignored when correcting a residency.
+     * @nullable
+     */
+  sourceKey?: string | null;
 }

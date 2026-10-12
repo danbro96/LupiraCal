@@ -39,6 +39,7 @@ import type {
   GetChangesParams,
   GetHotspotsParams,
   GetParticipationSummaryParams,
+  GetPlaceUsageParams,
   GetSyncItemsParams,
   GrantOwnerRequest,
   HotspotDto,
@@ -50,6 +51,7 @@ import type {
   MergeItemMetadataParams,
   OwnerGrantDto,
   ParticipationSummaryEntry,
+  PlaceUsageDto,
   ProblemDetails,
   ReadItemDraftsParams,
   RelationDto,
@@ -178,7 +180,114 @@ export const useBootstrapMe = <TError = ProblemDetails,
       > => {
       return useMutation(getBootstrapMeMutationOptions(options), queryClient);
     }
-    export const getGetParticipationSummaryUrl = (params?: GetParticipationSummaryParams,) => {
+    export const getGetPlaceUsageUrl = (params?: GetPlaceUsageParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/place-usage?${stringifiedParams}` : `/api/place-usage`
+}
+
+/**
+ * @summary Places your events used — as their location or a travel endpoint — derived at read time from non-cancelled occurrences in calendars you can read (or calendarId), recurrences expanded up to `to`. Merged-away place ids fold into their survivor. Per place: event count, last day, per-category counts and the top 5 attendees. Ordered by last day, then event count. Defaults: from = 3 years before now, to = now, limit 200 (max 500).
+ */
+export const getPlaceUsage = async (params?: GetPlaceUsageParams, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceUsageDto[]> => {
+
+  return apiRequest<PlaceUsageDto[]>(getGetPlaceUsageUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPlaceUsageQueryKey = (params?: GetPlaceUsageParams,) => {
+    return [
+    `/api/place-usage`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPlaceUsageQueryOptions = <TData = Awaited<ReturnType<typeof getPlaceUsage>>, TError = ProblemDetails>(params?: GetPlaceUsageParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPlaceUsageQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPlaceUsage>>> = ({ signal }) => getPlaceUsage(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPlaceUsageQueryResult = NonNullable<Awaited<ReturnType<typeof getPlaceUsage>>>
+export type GetPlaceUsageQueryError = ProblemDetails
+
+
+export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage>>, TError = ProblemDetails>(
+ params: undefined |  GetPlaceUsageParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPlaceUsage>>,
+          TError,
+          Awaited<ReturnType<typeof getPlaceUsage>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage>>, TError = ProblemDetails>(
+ params?: GetPlaceUsageParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPlaceUsage>>,
+          TError,
+          Awaited<ReturnType<typeof getPlaceUsage>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage>>, TError = ProblemDetails>(
+ params?: GetPlaceUsageParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Places your events used — as their location or a travel endpoint — derived at read time from non-cancelled occurrences in calendars you can read (or calendarId), recurrences expanded up to `to`. Merged-away place ids fold into their survivor. Per place: event count, last day, per-category counts and the top 5 attendees. Ordered by last day, then event count. Defaults: from = 3 years before now, to = now, limit 200 (max 500).
+ */
+
+export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage>>, TError = ProblemDetails>(
+ params?: GetPlaceUsageParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPlaceUsageQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetParticipationSummaryUrl = (params?: GetParticipationSummaryParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -2401,7 +2510,7 @@ export const useRemoveItemFromCalendar = <TError = ProblemDetails,
 }
 
 /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
+ * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Inviting to an item that had already ended (at occurredAt, else now) also confirms attendance, stamped at the item's end. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const inviteParticipant = async (id: string,
     params: InviteParticipantParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
@@ -2454,7 +2563,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type InviteParticipantMutationVariables = {id: string;params: InviteParticipantParams}
 
     /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
+ * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Inviting to an item that had already ended (at occurredAt, else now) also confirms attendance, stamped at the item's end. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const useInviteParticipant = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,InviteParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}

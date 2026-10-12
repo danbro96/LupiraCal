@@ -26,6 +26,7 @@
       "GET /items/{id}",
       "GET /items/{id}/relations",
       "GET /participation/summary",
+      "GET /place-usage",
       "GET /relations/edges",
       "GET /sync/calendars",
       "GET /sync/changes",
@@ -104,11 +105,13 @@
     ],
     "geo-api": [
       "GET /geocode/forward",
+      "GET /geocode/reverse",
       "GET /me/places",
       "GET /places/suggest",
       "GET /places/{id}",
       "POST /places",
       "POST /places/from-geocode",
+      "POST /places/from-pin",
       "POST /places/lookup"
     ],
     "tasks-api": [

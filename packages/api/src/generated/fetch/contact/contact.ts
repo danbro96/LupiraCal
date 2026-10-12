@@ -1199,7 +1199,7 @@ export const getAddResidencyUrl = (id: string,) => {
 }
 
 /**
- * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place.
+ * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place. Repeating a create with the same sourceKey returns the same residency.
  */
 export const addResidency = async (id: string,
     residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto> => {

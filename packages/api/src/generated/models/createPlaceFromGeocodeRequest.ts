@@ -6,17 +6,36 @@
  */
 
 /**
- * Create/dedupe a place from one specific forward-geocode hit the user picked, identified by OSM identity.
- *             The hit must be among the (cached) geocode results for string CreatePlaceFromGeocodeRequest.Query — the preview call froze them, so this
- *             costs no extra geocoder round trip.
+ * Create/dedupe a place from one geocode hit the user picked, identified by OSM identity. Resolved from the
+ *             frozen results of string? CreatePlaceFromGeocodeRequest.Query when given, else by an OSM lookup; when the lookup misses, the hit's own
+ *             coordinates and address components (as shown to the user) create an approximate place.
  */
 export interface CreatePlaceFromGeocodeRequest {
-  query: string;
+  /** `node`/`way`/`relation`, or `N`/`W`/`R`. */
   osmType: string;
   osmId: number;
   /**
-     * Canonical name override; defaults to the normalized query text.
+     * Canonical name override; defaults to the hit's name or "Street HouseNumber, Locality".
      * @nullable
      */
   name?: string | null;
+  /**
+     * The search text the hit came from, when it was a cached search.
+     * @nullable
+     */
+  query?: string | null;
+  /** @nullable */
+  latitude?: number | null;
+  /** @nullable */
+  longitude?: number | null;
+  /** @nullable */
+  street?: string | null;
+  /** @nullable */
+  houseNumber?: string | null;
+  /** @nullable */
+  postcode?: string | null;
+  /** @nullable */
+  locality?: string | null;
+  /** @nullable */
+  countryCode?: string | null;
 }

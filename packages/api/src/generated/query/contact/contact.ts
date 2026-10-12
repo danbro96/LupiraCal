@@ -3319,7 +3319,7 @@ export const getAddResidencyUrl = (id: string,) => {
 }
 
 /**
- * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place.
+ * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place. Repeating a create with the same sourceKey returns the same residency.
  */
 export const addResidency = async (id: string,
     residencyRequest: ResidencyRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResidencyDto> => {
@@ -3386,7 +3386,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AddResidencyMutationVariables = {id: string;data: ResidencyRequest}
 
     /**
- * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place.
+ * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place. Repeating a create with the same sourceKey returns the same residency.
  */
 export const useAddResidency = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addResidency>>, TError,AddResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}

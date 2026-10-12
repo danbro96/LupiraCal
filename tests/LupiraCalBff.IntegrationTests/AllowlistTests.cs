@@ -76,6 +76,8 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
     [Theory]
     [InlineData("/photo-api/photos", "/photos")]
     [InlineData("/geo-api/places/suggest", "/places/suggest")]
+    [InlineData("/geo-api/geocode/reverse?lat=60.13&lon=12.99&precision=Building", "/geocode/reverse")]
+    [InlineData("/api/place-usage", "/place-usage")]
     [InlineData("/api/sync/items", "/sync/items")]
     [InlineData("/api/sync/calendars", "/sync/calendars")]
     [InlineData("/contact-api/sync/contacts", "/sync/contacts")]
@@ -120,6 +122,17 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
         var resp = await client.PostAsJsonAsync("/tasks-api/lists/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/items", new { title = "x" });
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         Assert.Equal("/lists/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/items", (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
+    }
+
+    [Fact]
+    public async Task Place_from_pin_is_forwarded()
+    {
+        var client = Client();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", BffTestFactory.MintToken());
+
+        var resp = await client.PostAsJsonAsync("/geo-api/places/from-pin", new { latitude = 60.13, longitude = 12.99 });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal("/places/from-pin", (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
     }
 
     [Fact]

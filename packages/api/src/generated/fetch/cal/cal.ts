@@ -20,6 +20,7 @@ import type {
   GetChangesParams,
   GetHotspotsParams,
   GetParticipationSummaryParams,
+  GetPlaceUsageParams,
   GetSyncItemsParams,
   GrantOwnerRequest,
   HotspotDto,
@@ -31,6 +32,7 @@ import type {
   MergeItemMetadataParams,
   OwnerGrantDto,
   ParticipationSummaryEntry,
+  PlaceUsageDto,
   ReadItemDraftsParams,
   RelationDto,
   RemoveItemFromCalendarParams,
@@ -80,6 +82,36 @@ return apiRequest<ContainerDto[]>(getBootstrapMeUrl(),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
     body: JSON.stringify(nullBootstrapRequest)
+  }
+);}
+
+
+export const getGetPlaceUsageUrl = (params?: GetPlaceUsageParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/place-usage?${stringifiedParams}` : `/api/place-usage`
+}
+
+/**
+ * @summary Places your events used — as their location or a travel endpoint — derived at read time from non-cancelled occurrences in calendars you can read (or calendarId), recurrences expanded up to `to`. Merged-away place ids fold into their survivor. Per place: event count, last day, per-category counts and the top 5 attendees. Ordered by last day, then event count. Defaults: from = 3 years before now, to = now, limit 200 (max 500).
+ */
+export const getPlaceUsage = async (params?: GetPlaceUsageParams, options?: Parameters<typeof apiRequest>[1]): Promise<PlaceUsageDto[]> => {
+
+  return apiRequest<PlaceUsageDto[]>(getGetPlaceUsageUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
   }
 );}
 
@@ -891,7 +923,7 @@ export const getInviteParticipantUrl = (id: string,
 }
 
 /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
+ * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Inviting to an item that had already ended (at occurredAt, else now) also confirms attendance, stamped at the item's end. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
  */
 export const inviteParticipant = async (id: string,
     params: InviteParticipantParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {

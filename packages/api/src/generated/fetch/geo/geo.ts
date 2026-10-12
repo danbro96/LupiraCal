@@ -6,6 +6,7 @@
  */
 import type {
   CreatePlaceFromGeocodeRequest,
+  CreatePlaceFromPinRequest,
   CreatePlaceRequest,
   ForwardGeocodeParams,
   GeocodeResultDto,
@@ -14,6 +15,7 @@ import type {
   PlaceLookupItemDto,
   PlaceSuggestionDto,
   ResolvePlaceResponse,
+  ReverseGeocodeParams,
   SavedPlaceDto,
   SuggestPlacesParams
 } from '../../models';
@@ -156,7 +158,7 @@ export const getCreatePlaceFromGeocodeUrl = () => {
 }
 
 /**
- * @summary Create/dedupe a place from one specific forward-geocode hit the user picked (query + OSM identity). Reuses the frozen geocode cache — no extra geocoder call. 400 if the hit is not among the query's geocode results.
+ * @summary Create/dedupe a place from one geocode hit the user picked (OSM identity). Resolved from the query's frozen results when query is given, else by OSM lookup; when the lookup misses, the hit's coordinates and address fields create an approximate place (no OSM id). Name defaults to the hit's name or "Street HouseNumber, Locality". 400 when the hit cannot be resolved and no coordinates were passed.
  */
 export const createPlaceFromGeocode = async (createPlaceFromGeocodeRequest: CreatePlaceFromGeocodeRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResolvePlaceResponse> => {
 
@@ -184,7 +186,74 @@ return apiRequest<ResolvePlaceResponse>(getCreatePlaceFromGeocodeUrl(),
 );}
 
 
-export const getForwardGeocodeUrl = (params: ForwardGeocodeParams,) => {
+export const getCreatePlaceFromPinUrl = () => {
+
+
+
+
+  return `/geo-api/places/from-pin`
+}
+
+/**
+ * @summary Create a place at a dropped pin (exact coordinates), or match one within 25 m with a similar name (resolution Matched/Created). Address and containment come from a building-precision reverse geocode; name defaults to "Street HouseNumber, Locality" at the pin, else its coordinates. Created even when the geocoder is down.
+ */
+export const createPlaceFromPin = async (createPlaceFromPinRequest: CreatePlaceFromPinRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ResolvePlaceResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ResolvePlaceResponse>(getCreatePlaceFromPinUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createPlaceFromPinRequest)
+  }
+);}
+
+
+export const getReverseGeocodeUrl = (params: ReverseGeocodeParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/geo-api/geocode/reverse?${stringifiedParams}` : `/geo-api/geocode/reverse`
+}
+
+/**
+ * @summary Coordinate → label + structured address (cached). precision=Area (default) shares one answer per ~100 m cell; precision=Building per ~11 m cell at building zoom.
+ */
+export const reverseGeocode = async (params: ReverseGeocodeParams, options?: Parameters<typeof apiRequest>[1]): Promise<GeocodeResultDto> => {
+
+  return apiRequest<GeocodeResultDto>(getReverseGeocodeUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getForwardGeocodeUrl = (params?: ForwardGeocodeParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -200,9 +269,9 @@ export const getForwardGeocodeUrl = (params: ForwardGeocodeParams,) => {
 }
 
 /**
- * @summary Text → candidate coordinates + structured address (cached).
+ * @summary Address/place → candidate coordinates + structured address. Pass q (free text) or structured fields (street with optional house number, postcode, locality, countryCode; street, or postcode+locality, required). intent=Search (default) resolves via the canonical geocoder (cached) with address autocomplete as a second source; intent=Typeahead asks the address autocomplete only, uncached, biased toward nearLat/nearLon. limit 1–20 (default 5).
  */
-export const forwardGeocode = async (params: ForwardGeocodeParams, options?: Parameters<typeof apiRequest>[1]): Promise<GeocodeResultDto[]> => {
+export const forwardGeocode = async (params?: ForwardGeocodeParams, options?: Parameters<typeof apiRequest>[1]): Promise<GeocodeResultDto[]> => {
 
   return apiRequest<GeocodeResultDto[]>(getForwardGeocodeUrl(params),
   {

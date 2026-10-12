@@ -7,8 +7,7 @@
 import type { PlaceCategory } from './placeCategory';
 
 /**
- * A geocoding hit — a coordinate + display label + best-effort structured address and category. Coarse by
- *             design (coordinates are quantized to the cache grid).
+ * A geocoding hit — a coordinate + display label + best-effort structured address and category.
  */
 export interface GeocodeResultDto {
   displayName: string;
@@ -23,6 +22,14 @@ export interface GeocodeResultDto {
   region?: string | null;
   /** @nullable */
   locality?: string | null;
+  /** @nullable */
+  street?: string | null;
+  /** @nullable */
+  houseNumber?: string | null;
+  /** @nullable */
+  postcode?: string | null;
+  /** A settlement or administrative area rather than a venue or address. */
+  isArea: boolean;
   /**
      * OSM identity of the hit (e.g. "way" + 175761024) — the key for `POST /places/from-geocode`.
      * @nullable
