@@ -1,4 +1,4 @@
-import { createItem, deleteItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact, respondToInvitation, updateItem } from '@lupira/cal-api/fetch/cal';
+import { createItem, deleteItem, getItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact, respondToInvitation, updateItem } from '@lupira/cal-api/fetch/cal';
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import { createContact, deleteContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '@lupira/cal-api/fetch/contact';
@@ -68,6 +68,9 @@ export async function replayOp(op: ClientOp): Promise<void> {
     case 'item.uninvite':
       await uninvite(op.itemId, op.contactId, idem);
       return;
+    case 'item.respond':
+      await respond(op.itemId, op.contactId, op.status, op.occurredAt, idem);
+      return;
     case 'contact.create':
       await createContact({
         sourceKey: op.sourceKey,
@@ -121,6 +124,19 @@ export async function replayOp(op: ClientOp): Promise<void> {
 async function uninvite(itemId: string, contactId: string, idem: { headers: Record<string, string> }): Promise<void> {
   try {
     await removeParticipantByContact(itemId, { contactId }, idem);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return;
+    throw e;
+  }
+}
+
+/** Resolved at replay: an invite still ahead in the outbox mints the participation id only once it lands. Someone
+ *  no longer on the item, or an item that is gone, has nothing to answer. */
+async function respond(itemId: string, contactId: string, status: string, occurredAt: string, idem: { headers: Record<string, string> }): Promise<void> {
+  try {
+    const participationId = participationIdOf(await getItem(itemId), contactId);
+    if (!participationId) return;
+    await respondToInvitation(itemId, participationId, { status, occurredAt }, idem);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return;
     throw e;

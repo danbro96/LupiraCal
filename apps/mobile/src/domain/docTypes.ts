@@ -101,6 +101,9 @@ export type TaskDoc = {
   dueAt?: string | null;
 };
 
+/** A contact group or organization with its current members, read-only. */
+export type ContactGroupDoc = { id: string; addressBookId: string; kind: string; name: string; members: { contactId: string }[] };
+
 /** The signed-in user as contact-api knows them; `contactId` is the card linked as "me". */
 export type MeDoc = { contactId?: string | null };
 

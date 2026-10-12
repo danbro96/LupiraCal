@@ -18,6 +18,8 @@ import { useMyContactId } from '../../state/useMe';
 import { useContactRelations, useContactState } from '../../state/useContactList';
 import { useParentsHomes, useResidencyRows } from '../../state/useResidencies';
 import { Centered } from '../components/Centered';
+import { ContactEventsSection } from '../contact/ContactEventsSection';
+import { ContactGroupChips } from '../contact/ContactGroupChips';
 import { EntryCodes } from '../components/EntryCodes';
 import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { PlaceTile } from '../components/PlaceTile';
@@ -107,6 +109,8 @@ export function ContactDetailScreen() {
           </Text>
         </View>
       </View>
+
+      <ContactGroupChips contactId={contactId} />
 
       {doc.birthday != null && <BirthdayRow birthday={doc.birthday} deceased={deceased} />}
       {deceased && (
@@ -200,6 +204,8 @@ export function ContactDetailScreen() {
           ))}
         </List.Accordion>
       )}
+
+      <ContactEventsSection contactId={contactId} onOpen={(itemId) => navigation.navigate('ItemDetail', { itemId })} />
 
       <TagRow tags={visibleTags(doc.tags)} />
 

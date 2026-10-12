@@ -90,6 +90,12 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
       const attendees = (state.doc.attendees ?? []).filter((a) => a.contactId !== op.contactId);
       return { ...state, doc: { ...state.doc, attendees } };
     }
+    case 'item.respond': {
+      if (!state) return state;
+      const attendees = state.doc.attendees ?? [];
+      if (!attendees.some((a) => a.contactId === op.contactId)) return state;
+      return { ...state, doc: { ...state.doc, attendees: attendees.map((a) => (a.contactId === op.contactId ? { ...a, status: op.status } : a)) } };
+    }
     default:
       return state;
   }

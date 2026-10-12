@@ -194,4 +194,14 @@ describe('attendees', () => {
     const removed = applyItemOp(invited, uninvite('c1', 1))!;
     expect(removed.doc.attendees).toEqual([]);
   });
+
+  it('sets an attendee\'s RSVP and ignores someone not on the item', () => {
+    const respond = (contactId: string, n: number): ClientOp => ({ aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.respond', itemId: 'item-1', contactId, status: 'Declined', occurredAt: T(n), commandId: cmd(n) });
+    const invited = applyItemOp(baseItem(), invite(['c1', 'c2'], 1))!;
+    expect(applyItemOp(invited, respond('c2', 2))!.doc.attendees?.map((a) => [a.contactId, a.status])).toEqual([
+      ['c1', 'NeedsAction'],
+      ['c2', 'Declined'],
+    ]);
+    expect(applyItemOp(invited, respond('c3', 2))).toBe(invited);
+  });
 });

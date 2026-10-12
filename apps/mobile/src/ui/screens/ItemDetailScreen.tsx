@@ -15,7 +15,7 @@ import type { CalendarMembership, ItemDoc } from '../../domain/docTypes';
 import { coreOfDoc, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
 import { copyText } from '@danbro96/lupira-expo-feedback/copy';
 import { toast } from '@danbro96/lupira-expo-feedback/toast';
-import { deleteItem, fileItem, joinItem, mergeItemMetadata, reviseItem, unfileItem } from '../../state/actions';
+import { deleteItem, fileItem, joinItem, mergeItemMetadata, reviseItem, setRsvp, unfileItem } from '../../state/actions';
 import { usePrefs } from '../../state/prefs-store';
 import { useContactList } from '../../state/useContactList';
 import { useCalendars } from '../../state/useContainers';
@@ -121,7 +121,13 @@ export function ItemDetailScreen() {
           {doc.action != null && <Text style={[styles.note, { color: c.textMuted }]}>Has an action payload (view on web)</Text>}
 
           {(attendees.length > 0 || join) && (
-          <AttendeeChips attendees={attendees} nameOf={contactName} onJoin={join} onOpen={openContact} />
+          <AttendeeChips
+            attendees={attendees}
+            nameOf={contactName}
+            onJoin={join}
+            onOpen={openContact}
+            onRespond={(contactId, status) => void setRsvp(itemId, contactId, status)}
+          />
         )}
 
           <CalendarsPanel itemId={itemId} memberships={doc.calendars} />

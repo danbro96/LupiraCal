@@ -2,7 +2,7 @@ import { v7 as uuidv7 } from 'uuid';
 import { deterministicIdFor } from '../data/ids';
 import { Aggregate } from '../domain/aggregates';
 import type { ReachChannel, SocialProfile } from '../domain/docTypes';
-import type { ClientOp, ContactCore, ItemCore } from '../domain/ops';
+import type { ClientOp, ContactCore, ItemCore, RsvpStatus } from '../domain/ops';
 import { stamp } from '../domain/ops';
 import { engine } from '../sync/engine';
 
@@ -94,6 +94,14 @@ export async function saveItem(itemId: string | undefined, save: ItemSave): Prom
 /** Adds you to an event you're not on, already accepted — the detail screen's Join. */
 export async function joinItem(itemId: string, myContactId: string): Promise<void> {
   await submit({ kind: 'item.invite', itemId, contactIds: [myContactId], accept: [myContactId], ...item(itemId) });
+}
+
+export async function inviteToItem(itemId: string, contactId: string): Promise<void> {
+  await submit({ kind: 'item.invite', itemId, contactIds: [contactId], ...item(itemId) });
+}
+
+export async function setRsvp(itemId: string, contactId: string, status: RsvpStatus): Promise<void> {
+  await submit({ kind: 'item.respond', itemId, contactId, status, ...item(itemId) });
 }
 
 export async function createContact(addressBookId: string, core: ContactCore): Promise<string> {

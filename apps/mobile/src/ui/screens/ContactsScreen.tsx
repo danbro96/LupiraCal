@@ -7,9 +7,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { memo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, View } from 'react-native';
-import { Avatar, FAB, Searchbar, Text } from 'react-native-paper';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Avatar, Chip, FAB, Searchbar, Text } from 'react-native-paper';
 import type { ContactListRow } from '../../data/queries/contacts';
+import { useContactGroups } from '../../state/useContactGroups';
 import { useContactList } from '../../state/useContactList';
 import { usePullToSync } from '../../state/usePullToSync';
 import { avatarColor } from '../hooks/palette';
@@ -37,11 +38,15 @@ export function ContactsScreen() {
   const { data } = useContactList();
   const [query, setQuery] = useState('');
   const pull = usePullToSync();
+  const { data: groups = [] } = useContactGroups();
+  const [groupId, setGroupId] = useState<string | null>(null);
+  const group = groups.find((g) => g.id === groupId);
+  const inGroup = (list: ContactListRow[]) => group ? list.filter((r) => group.members.some((m) => m.contactId === r.id)) : list;
 
   const q = query.trim().toLowerCase();
   const terms = searchTerms(q);
   const rows = (data ?? []).filter((r) => matchesTerms(terms, r.displayName, r.doc.nickname, ...visibleTags(r.doc.tags)));
-  const { entries, headerAt } = indexByLetter(rows, nameOf);
+  const { entries, headerAt } = indexByLetter(inGroup(rows), nameOf);
   const stickyHeaderIndices = [...headerAt.values()];
   const presentLetters = new Set(headerAt.keys());
 
@@ -87,6 +92,23 @@ export function ContactsScreen() {
         />
         <FAB size="small" icon={ICONS.add} onPress={() => navigation.navigate('ContactEdit', {})} />
       </ScreenToolbar>
+      {groups.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.groupBar} contentContainerStyle={styles.groups}>
+          {groups.map((g) => (
+            <Chip
+              key={g.id}
+              compact
+              mode="outlined"
+              selected={g.id === groupId}
+              showSelectedOverlay
+              icon={g.kind === 'Organization' ? ICONS.work : ICONS.group}
+              onPress={() => setGroupId((id) => (id === g.id ? null : g.id))}
+            >
+              {g.name}
+            </Chip>
+          ))}
+        </ScrollView>
+      )}
       <View style={styles.body}>
         <View style={styles.listArea}>
           {/* Clipped to the content, so a short list never shows placeholders below its last row. */}
@@ -176,6 +198,8 @@ const styles = StyleSheet.create({
   skeletonBar: { height: 10, borderRadius: 5, marginVertical: 4 },
   headerText: { fontSize: 13, fontWeight: '700' },
   search: { flex: 1 },
+  groupBar: { flexGrow: 0 },
+  groups: { gap: 6, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   empty: { textAlign: 'center', marginTop: 32 },
   bday: { fontSize: 12 },
 });
