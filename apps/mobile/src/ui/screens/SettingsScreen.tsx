@@ -57,12 +57,11 @@ export function SettingsScreen() {
 
   return (
     <ScrollView>
+      <List.Subheader>Account</List.Subheader>
       <IdentityHeader
         name={authMode === 'dev' ? 'Dev auto-auth' : user?.name ?? user?.sub ?? 'Signed out'}
         sub={authMode === 'dev' ? 'No sign-in' : user?.name ? user.sub : undefined}
       />
-
-      <List.Subheader>Account</List.Subheader>
       {authMode !== 'dev' && <SignOutButton onSignOut={() => void useAuth.getState().clearSession()} />}
 
       <List.Subheader>Calendar</List.Subheader>

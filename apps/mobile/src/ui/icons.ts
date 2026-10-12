@@ -24,7 +24,6 @@ export const ICONS = {
   clear: 'clear',
   collapse: 'expand-less',
   close: 'close',
-  cloudOff: 'cloud-off',
   contacts: 'contacts',
   delete: 'delete',
   deleteForever: 'delete-forever',

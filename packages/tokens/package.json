@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@danbro96/lupira-tokens-calendar": "0.1.0",
-    "@danbro96/lupira-tokens-core": "0.2.0"
+    "@danbro96/lupira-tokens-core": "0.3.0"
   },
   "devDependencies": {
     "@danbro96/lupira-config-eslint": "0.2.0"

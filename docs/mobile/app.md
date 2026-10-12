@@ -5,7 +5,6 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 ## UI stack specifics
 
 - Paper is themed from tokens via `createPaperThemes` (`@danbro96/lupira-expo-paper`, called in `ui/theme/paperTheme.ts`; + adapted React Navigation themes); dark mode via `useColorScheme`.
-- Two files may call Paper's `useTheme()` directly, each because it needs an MD3 slot the estate palette has no equivalent for: `SyncBanner` (errorContainer) and the settings index (elevation ramp).
 - Feedback: `toast()` / `toastError()` from `@danbro96/lupira-expo-feedback` (host: the expo-paper `ToastHost`, Paper `Snackbar`); hold-to-copy (place tiles, reach rows) is its `copyText()`. `useUnsavedGuard` keeps `Alert.alert` (it fires inside `beforeRemove`).
 - Text inputs use the expo-paper `TextField` (label prop, `fieldGap` between stacked fields); `ui/components/Field` wraps only non-text controls.
 - No hex literals except white text over calendar-coloured backgrounds.
@@ -50,7 +49,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 - Occurrences are materialized over a rolling horizon (`domain/materialize`); `sync/horizon.ts` keeps it in kernel meta and reindexes `cal.item` and `contact` when it drifts a month.
 - Prefs and bridge flags are kernel meta keys (`sync/meta.ts`). Signing in as a different account wipes the engine and the query cache (`state/auth-store.ts`, `onAccountChange`).
 - Triggers: `startSyncTriggers` (foreground, reconnect, sign-in) from `App.tsx`; the 15-minute background task is defined in `index.ts` and loads the auth session first. The Android bridge drains its inbox before each push and republishes after each pull (`hooks`).
-- The banner, Settings and `SyncIssuesScreen` read the kernel's status store (`state/useSyncStatus`), `bannerState` and `parked()`/`retry`/`discard`. None of them shows a sync in progress while the device is offline. Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
+- `SyncBanner` is expo-paper's `StatusBanner` over `bannerState` (tap → Sync issues); `SyncIssuesScreen` is its `SyncStatusView` over the engine's `parked()`/`sync`/`retry`/`discard` (offline it shows no progress and Sync now only says so). Both, and Settings, read the kernel's status store (`state/useSyncStatus`); none shows a sync in progress while the device is offline. Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
 - `MirrorReader.kt` reads only the `bridge_*` views (`id`, `display_name` for contacts, `state` = the stored `{doc, guards}` JSON); `sync/modules/bridgeViews.test.ts` pins that contract.
 
 ## Event editor
