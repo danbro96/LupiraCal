@@ -113,9 +113,12 @@
     ],
     "tasks-api": [
       "GET /items",
+      "GET /lists",
+      "GET /lists/{listId}/items",
       "GET /lists/{listId}/items/{itemId}",
       "GET /sync/items",
-      "GET /sync/lists"
+      "GET /sync/lists",
+      "POST /lists/{listId}/items"
     ],
     "photo-api": [
       "GET /photos",

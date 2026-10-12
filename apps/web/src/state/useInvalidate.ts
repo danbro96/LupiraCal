@@ -48,3 +48,8 @@ export function useInvalidateAddressBooks() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0] ?? '').startsWith('/contact-api/address-books') });
 }
+
+export function useInvalidateTasks() {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0] ?? '').startsWith('/tasks-api/') });
+}

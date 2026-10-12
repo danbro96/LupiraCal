@@ -6,6 +6,7 @@ import { useLayoutEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
+import { HeaderActions } from '@danbro96/lupira-expo-paper/components/HeaderActions';
 import { IconButton } from '@danbro96/lupira-expo-paper/components/IconButton';
 import { AccountMenu } from '../components/AccountMenu';
 import { ICONS } from '../icons';
@@ -15,7 +16,7 @@ import { useColors } from '../theme';
 type Nav = CompositeNavigationProp<BottomTabNavigationProp<TabParamList, 'Calendar'>, NativeStackNavigationProp<RootStackParamList>>;
 
 /** The Calendar tab's header is its period control: the title names the period and opens a date picker;
- *  Search, Today and the Month↔Week toggle sit beside the account avatar. Set via `setOptions` because every
+ *  Search, Today and the Month↔Week toggle sit beside the account avatar, New task in the overflow. Set via `setOptions` because every
  *  part of it follows screen state. */
 export function useCalendarHeader({ title, mode, anchor, onToday, onPickDate, onToggleMode }: {
   title: string;
@@ -52,6 +53,7 @@ export function useCalendarHeader({ title, mode, anchor, onToday, onPickDate, on
             accessibilityLabel={mode === 'month' ? 'Week view' : 'Month view'}
             onPress={onToggleMode}
           />
+          <HeaderActions actions={[]} overflow={[{ label: 'New task', onPress: () => navigation.navigate('TaskCreate') }]} />
           <AccountMenu />
         </View>
       ),
