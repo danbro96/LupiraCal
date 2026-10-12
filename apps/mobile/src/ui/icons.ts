@@ -64,6 +64,7 @@ export const ICONS = {
   personAdd: 'person-add',
   photos: 'photo-library',
   place: 'place',
+  pinDrop: 'pin-drop',
   public: 'public',
   repeat: 'repeat',
   restore: 'restore-from-trash',

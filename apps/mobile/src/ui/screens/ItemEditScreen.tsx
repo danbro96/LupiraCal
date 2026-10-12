@@ -24,6 +24,7 @@ import { useContactList } from '../../state/useContactList';
 import { selectableCalendars, useCalendars } from '../../state/useContainers';
 import { useItemState } from '../../state/useItemState';
 import { useMyContactId } from '../../state/useMe';
+import { useEventPlaceContext } from '../../state/usePlacePredictions';
 import { DateField } from '../components/DateField';
 import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
 import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
@@ -31,11 +32,12 @@ import { TimeField } from '../components/TimeField';
 import { CalendarsSheet } from '../event/CalendarsSheet';
 import { CategorySheet, categoryIcon } from '../event/CategorySheet';
 import { PeopleSheet } from '../event/PeopleSheet';
-import { PlaceSheet } from '../event/PlaceSheet';
 import { RepeatSheet } from '../event/RepeatSheet';
 import { TimeZoneSheet, zoneSummary } from '../event/TimeZoneSheet';
 import { ICONS } from '../icons';
-import type { RootStackParamList } from '../navigation/types';
+import type { PickedPlace, RootStackParamList } from '../navigation/types';
+import { PlaceChipsRow } from '../places/PlaceChipsRow';
+import { PlaceSearchSheet } from '../places/PlaceSearchSheet';
 import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
 import { spacing, useColors } from '../theme';
@@ -95,6 +97,14 @@ export function ItemEditScreen() {
   if (initialCalendarIds.length > 0) {
     setCalendarIds(initialCalendarIds);
     setBaseline((b) => ({ ...b, calendars: JSON.stringify(initialCalendarIds) }));
+  }
+
+  const placeContext = useEventPlaceContext({ category: form.category, attendeeIds, day: form.startDay || null });
+  const [appliedPick, setAppliedPick] = useState<PickedPlace | undefined>();
+  const picked = route.params?.pickedPlace;
+  if (picked && picked !== appliedPick) {
+    setAppliedPick(picked);
+    setForm((f) => ({ ...f, place: picked.selection }));
   }
 
   const dirty = JSON.stringify(form) !== baseline.form
@@ -243,14 +253,8 @@ export function ItemEditScreen() {
         </View>
         {otherZone && <Text style={[styles.muted, styles.zoneNote, { color: c.textMuted }]}>Times in {zoneSummary(form.timeZone, zoneAt)}</Text>}
 
-        <List.Item
-          title={form.place?.label || 'Add place'}
-          titleStyle={!form.place ? { color: c.textMuted } : undefined}
-          description={legacyLocation ? `“${legacyLocation}” from calendar text` : undefined}
-          style={styles.row}
-          left={(p) => <List.Icon {...p} icon={ICONS.place} />}
-          onPress={() => setSheet('place')}
-        />
+        <PlaceChipsRow ctx={placeContext} value={form.place} onChange={(p) => set('place', p)} onMore={() => setSheet('place')} />
+        {!!legacyLocation && <Text style={[styles.muted, styles.legacy, { color: c.textMuted }]}>“{legacyLocation}” from calendar text</Text>}
         <TextField
           label="Description"
           multiline
@@ -310,11 +314,12 @@ export function ItemEditScreen() {
       )}
       {sheet === 'zone' && <TimeZoneSheet value={form.timeZone} at={zoneAt} onPick={(v) => set('timeZone', v)} onDismiss={() => setSheet(null)} />}
       {sheet === 'place' && (
-        <PlaceSheet
+        <PlaceSearchSheet
+          ctx={placeContext}
+          seed={legacyLocation ?? undefined}
           hasPlace={!!form.place}
-          attendeeIds={attendeeIds}
-          day={form.startDay || null}
-          onPick={(p) => set('place', p ? { placeId: p.placeId, label: p.label } : null)}
+          onPick={(p) => set('place', p)}
+          onPickOnMap={(start) => navigation.navigate('PinPlace', { origin: 'ItemEdit', start, nameRequired: true })}
           onDismiss={() => setSheet(null)}
         />
       )}
@@ -379,6 +384,7 @@ const styles = StyleSheet.create({
   day: { flex: 3 },
   time: { flex: 2 },
   zoneNote: { marginTop: 4, marginLeft: 56 },
+  legacy: { marginTop: 4, marginLeft: 36 },
   description: { minHeight: 72 },
   subheader: { paddingHorizontal: 0, marginTop: 8 },
 });

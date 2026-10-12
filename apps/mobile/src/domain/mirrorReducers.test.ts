@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ContactDoc, ItemDoc } from './docTypes';
 import { emptyContactGuards, emptyItemGuards } from './docTypes';
 import type { MirrorContact, MirrorItem } from './mirrorReducers';
-import { applyContactOp, applyItemOp } from './mirrorReducers';
+import { applyContactOp, applyItemOp, applyResidencyOp } from './mirrorReducers';
 import type { ClientOp } from './ops';
 
 const T = (m: number) => `2026-07-01T12:${String(m).padStart(2, '0')}:00.000Z`;
@@ -203,5 +203,28 @@ describe('attendees', () => {
       ['c2', 'Declined'],
     ]);
     expect(applyItemOp(invited, respond('c3', 2))).toBe(invited);
+  });
+});
+
+describe('applyResidencyOp', () => {
+  const at = { aggregate: 'contact.residency', aggregateId: 'r-1', residencyId: 'r-1', contactId: 'c-1', occurredAt: T(1) } as const;
+  const home = { placeId: 'p-1', type: 'Home', label: ' Summer ', movedIn: { year: 2020 }, movedOut: null };
+  const started = applyResidencyOp(null, { ...at, kind: 'contact.residency.start', sourceKey: 'k', residency: home, commandId: cmd(1) })!;
+
+  it('starts a residency under the derived id with a trimmed label', () => {
+    expect(started.doc).toEqual({ id: 'r-1', contactId: 'c-1', placeId: 'p-1', type: 'Home', label: 'Summer', movedIn: { year: 2020 }, movedOut: null });
+    expect(applyResidencyOp(started, { ...at, kind: 'contact.residency.start', sourceKey: 'k', residency: { ...home, placeId: 'p-9' }, commandId: cmd(2) })).toBe(started);
+  });
+
+  it('revises wholesale, moves out by date only, and removes', () => {
+    const revised = applyResidencyOp(started, { ...at, kind: 'contact.residency.revise', residency: { placeId: 'p-2', type: 'Work' }, commandId: cmd(2) })!;
+    expect(revised.doc).toMatchObject({ placeId: 'p-2', type: 'Work', label: null, movedIn: null });
+
+    const moved = applyResidencyOp(revised, {
+      ...at, kind: 'contact.residency.moveOut', movedOut: { year: 2026, month: 10, day: 12 }, residency: home, commandId: cmd(3),
+    })!;
+    expect(moved.doc).toMatchObject({ placeId: 'p-2', movedOut: { year: 2026, month: 10, day: 12 } });
+
+    expect(applyResidencyOp(moved, { ...at, kind: 'contact.residency.remove', commandId: cmd(4) })).toBeNull();
   });
 });

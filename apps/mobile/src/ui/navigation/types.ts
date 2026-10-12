@@ -1,4 +1,6 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { PinStart } from '@danbro96/lupira-domain-places/pin';
+import type { PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import type { ImportKind } from '../../data/imports';
 import type { ContactDraft, ContactDraftLink, ItemDraft, ItemDraftLink } from '../../domain/drafts';
 
@@ -20,15 +22,20 @@ export type RootStackParamList = {
   TaskCreate: { event?: { id: string; title: string; day: string | null } } | undefined;
   /** No itemId = create; `day`/`time` pre-fill the start from the grid selection (slot taps send both); a
    *  `draft` or the draft link's query pre-fills the whole event. */
-  ItemEdit: ({ itemId?: string; day?: string; time?: string; draft?: ItemDraft } & ItemDraftLink) | undefined;
+  ItemEdit: ({ itemId?: string; day?: string; time?: string; draft?: ItemDraft; pickedPlace?: PickedPlace } & ItemDraftLink) | undefined;
   ContactDetail: { contactId: string };
-  ContactEdit: ({ contactId?: string; draft?: ContactDraft } & ContactDraftLink) | undefined;
+  ContactEdit: ({ contactId?: string; draft?: ContactDraft; pickedPlace?: PickedPlace } & ContactDraftLink) | undefined;
+  /** Pans a map under a pin and returns the place made there to `origin` as `pickedPlace`; `target` names the
+   *  origin's field (an address row). */
+  PinPlace: { origin: 'ItemEdit' | 'ContactEdit'; target?: string; start: PinStart; nameRequired: boolean };
   /** A file another app shared, waiting in the bridge under `file`. */
   Import: { kind: ImportKind; file: string };
   BridgeDiagnostics: undefined;
   /** Availability quick-add: status + date range, prefilled from the tapped day. */
   AvailabilityEdit: { day?: string } | undefined;
 };
+
+export type PickedPlace = { selection: PlaceSelection; target?: string };
 
 export type TabParamList = {
   Calendar: undefined;

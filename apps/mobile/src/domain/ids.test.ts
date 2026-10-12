@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { guidFromMd5Hex } from './ids';
+import { guidFromMd5Hex, residencyStreamKey } from './ids';
 
 const md5 = (s: string) => createHash('md5').update(s, 'utf8').digest('hex');
 
@@ -15,5 +15,13 @@ describe('guidFromMd5Hex', () => {
 
   it('rejects non-md5 input', () => {
     expect(() => guidFromMd5Hex('nope')).toThrow();
+  });
+});
+
+describe('residencyStreamKey', () => {
+  // Pinned against ContactApi ResidencyTests: Residency.StreamIdOf(contact, key).
+  it('derives the residency id the server assigns for a source key', () => {
+    const key = residencyStreamKey('0199D6A0-0000-7000-8000-000000000001', ' 0199d6a0-1111-7000-8000-000000000002 ');
+    expect(guidFromMd5Hex(md5(key))).toBe('f36186cb-8873-f92c-16e9-2c6cd44de782');
   });
 });

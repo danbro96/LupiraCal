@@ -1,12 +1,14 @@
 import { createItem, deleteItem, getItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact, respondToInvitation, updateItem } from '@lupira/cal-api/fetch/cal';
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
-import { createContact, deleteContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '@lupira/cal-api/fetch/contact';
-import type { ContactReachChannel } from '@lupira/cal-api/models';
+import {
+  addResidency, createContact, deleteContact, removeResidency, reviseContact, reviseResidency, setContactChannels, setContactProfiles, setContactTags,
+} from '@lupira/cal-api/fetch/contact';
+import type { ContactAddressType, ContactReachChannel, ResidencyRequest } from '@lupira/cal-api/models';
 import { participationIdOf } from '@lupira/cal-domain/participation';
 import { v5 as uuidv5 } from 'uuid';
 import { ApiError } from '@danbro96/lupira-http/apiError';
-import type { ClientOp, ItemCore } from '../domain/ops';
+import type { ClientOp, ItemCore, ResidencyFields } from '../domain/ops';
 
 /** Op → REST. Every call carries `Idempotency-Key: commandId` (the server ledger makes redelivery a no-op) and
  *  the op's occurredAt (the server's LWW input). */
@@ -116,6 +118,38 @@ export async function replayOp(op: ClientOp): Promise<void> {
     case 'contact.delete':
       await deleteContact(op.contactId, idem);
       return;
+    case 'contact.residency.start':
+      await addResidency(op.contactId, { ...residencyRequest(op.residency), sourceKey: op.sourceKey }, idem);
+      return;
+    case 'contact.residency.revise':
+      await reviseResidency(op.residencyId, residencyRequest(op.residency), idem);
+      return;
+    // The BFF doesn't expose contact-api's move-out route; the wholesale correction carries the same end date.
+    case 'contact.residency.moveOut':
+      await reviseResidency(op.residencyId, residencyRequest({ ...op.residency, movedOut: op.movedOut }), idem);
+      return;
+    case 'contact.residency.remove':
+      await removeResidencyIfPresent(op.residencyId, idem);
+      return;
+  }
+}
+
+function residencyRequest(r: ResidencyFields): ResidencyRequest {
+  return {
+    placeId: r.placeId,
+    type: (r.type ?? 'Home') as ContactAddressType,
+    label: r.label ?? null,
+    movedIn: r.movedIn ?? null,
+    movedOut: r.movedOut ?? null,
+  };
+}
+
+async function removeResidencyIfPresent(id: string, idem: { headers: Record<string, string> }): Promise<void> {
+  try {
+    await removeResidency(id, idem);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return;
+    throw e;
   }
 }
 

@@ -6,7 +6,12 @@ const cal = vi.hoisted(() => ({
   respondToInvitation: vi.fn(),
 }));
 vi.mock('@lupira/cal-api/fetch/cal', () => cal);
-vi.mock('@lupira/cal-api/fetch/contact', () => ({}));
+const contact = vi.hoisted(() => ({
+  addResidency: vi.fn(),
+  reviseResidency: vi.fn(),
+  removeResidency: vi.fn(),
+}));
+vi.mock('@lupira/cal-api/fetch/contact', () => contact);
 
 const { ApiError } = await import('@danbro96/lupira-http/apiError');
 const { replayOp } = await import('./replayOp');
@@ -66,5 +71,35 @@ describe('item.respond replay', () => {
     await replayOp(respond);
 
     expect(cal.respondToInvitation).not.toHaveBeenCalled();
+  });
+});
+
+describe('residency replay', () => {
+  const at = {
+    aggregate: 'contact.residency', aggregateId: 'r-1', residencyId: 'r-1', contactId: 'c-1',
+    occurredAt: '2026-10-12T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000010',
+  } as const;
+  const home = { placeId: 'p-1', type: 'Home', label: null, movedIn: { year: 2020 }, movedOut: null };
+
+  beforeEach(() => {
+    contact.addResidency.mockReset().mockResolvedValue({});
+    contact.reviseResidency.mockReset().mockResolvedValue({});
+    contact.removeResidency.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('starts under the op source key, so a redelivery names the same residency', async () => {
+    await replayOp({ ...at, kind: 'contact.residency.start', sourceKey: 'k-1', residency: home });
+    const [contactId, body, options] = contact.addResidency.mock.calls[0];
+    expect([contactId, body.sourceKey, body.placeId, options.headers['Idempotency-Key']]).toEqual(['c-1', 'k-1', 'p-1', at.commandId]);
+  });
+
+  it('moves out as a correction carrying the end date', async () => {
+    await replayOp({ ...at, kind: 'contact.residency.moveOut', movedOut: { year: 2026, month: 10 }, residency: home });
+    expect(contact.reviseResidency.mock.calls[0].slice(0, 2)).toEqual(['r-1', { ...home, movedOut: { year: 2026, month: 10 } }]);
+  });
+
+  it('treats a residency already gone as removed', async () => {
+    contact.removeResidency.mockRejectedValue(new ApiError(404, 'gone'));
+    await expect(replayOp({ ...at, kind: 'contact.residency.remove' })).resolves.toBeUndefined();
   });
 });

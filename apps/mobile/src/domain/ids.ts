@@ -10,3 +10,8 @@ export function guidFromMd5Hex(md5Hex: string): string {
   // .NET Guid(byte[]): first three groups are little-endian int32/int16/int16; the rest verbatim.
   return `${b(3)}${b(2)}${b(1)}${b(0)}-${b(5)}${b(4)}-${b(7)}${b(6)}-${b(8)}${b(9)}-${b(10)}${b(11)}${b(12)}${b(13)}${b(14)}${b(15)}`;
 }
+
+/** ContactApi `Residency.StreamIdOf`'s key: the contact id in .NET's "D" form and the trimmed source key. */
+export function residencyStreamKey(contactId: string, sourceKey: string): string {
+  return `residency:${contactId.toLowerCase()}:${sourceKey.trim()}`;
+}
