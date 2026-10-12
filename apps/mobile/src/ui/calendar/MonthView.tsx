@@ -11,6 +11,7 @@ import { useOverlappingOccurrences, type CalRow } from '../../state/useOccurrenc
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
 import { useCalendarColors } from '../hooks/palette';
 import { AvailStrip, addStatus } from './AvailStrip';
+import { isTentative, tentativeStyle } from './tentative';
 import { useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
@@ -115,9 +116,9 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                   ) : (
                     <View
                       key={`${r.source}-${r.source_id}-${r.start_utc}`}
-                      style={[styles.bar, { backgroundColor: fillOf(r) }]}
+                      style={[styles.bar, isTentative(r.status) ? [tentativeStyle(fillOf(r)), styles.tentativeBar] : { backgroundColor: fillOf(r) }]}
                     >
-                      <Text style={[styles.barText, { color: textOn(fillOf(r)) }]} numberOfLines={1}>
+                      <Text style={[styles.barText, { color: isTentative(r.status) ? c.text : textOn(fillOf(r)) }]} numberOfLines={1}>
                         {r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={BAR_GLYPH} /> {displayTitle(r.title)}</> : displayTitle(r.title)}
                       </Text>
                     </View>
@@ -153,5 +154,6 @@ const styles = StyleSheet.create({
   // Deadlines read as outlines, not filled calendar bars (web parity: muted, danger when overdue).
   taskBar: { borderRadius: 3, paddingHorizontal: 2, paddingVertical: 0.5, borderWidth: 0.5 },
   taskBarText: { fontSize: 8.5, lineHeight: 11, includeFontPadding: false },
+  tentativeBar: { paddingHorizontal: 0.5, paddingVertical: 0 },
   more: { fontSize: 9, paddingLeft: 2 },
 });

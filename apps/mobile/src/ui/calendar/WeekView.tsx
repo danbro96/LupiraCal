@@ -29,6 +29,7 @@ import { ICONS } from '../icons';
 import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 import { useJump, type CalendarJump } from './jump';
 import { usePager } from './usePager';
+import { isTentative, tentativeStyle } from './tentative';
 
 const MIN_HOUR_H = 16;
 const MAX_HOUR_H = 160;
@@ -280,7 +281,9 @@ function EventBlock({ placed, color, placeName, onPress }: {
   onPress: (row: CalRow) => void;
 }) {
   const { row: item, when } = placed.item;
-  const fg = textOn(color);
+  const c = useColors();
+  const tentative = isTentative(item.status);
+  const fg = tentative ? c.text : textOn(color);
   const cancelled = item.status === 'Cancelled';
   return (
     <Pressable
@@ -290,7 +293,7 @@ function EventBlock({ placed, color, placeName, onPress }: {
         left: `${(placed.col / placed.cols) * 100}%`,
         width: `${(1 / placed.cols) * 100}%`,
         backgroundColor: color,
-      }, cancelled && styles.cancelled]}
+      }, tentative && tentativeStyle(color), cancelled && styles.cancelled]}
       onPress={() => onPress(item)}
     >
       <Text style={[styles.eventTitle, { color: fg }, cancelled && styles.struck]} numberOfLines={2}>{displayTitle(item.title)}</Text>
@@ -377,6 +380,7 @@ function StripBar({ bar, left, rowColor, onPress }: {
   const r = bar.row;
   const task = isTaskRow(r) ? r.task : null;
   const fill = task ? null : rowColor(r);
+  const tentative = fill !== null && isTentative(r.status);
   const cancelled = r.status === 'Cancelled';
   return (
     <Pressable
@@ -391,13 +395,13 @@ function StripBar({ bar, left, rowColor, onPress }: {
               { backgroundColor: c.surface, borderColor: c.border },
               task.overdue && { borderColor: c.danger, backgroundColor: c.danger + '22' },
             ]
-          : { backgroundColor: fill ?? undefined },
+          : tentative ? tentativeStyle(fill) : { backgroundColor: fill ?? undefined },
         cancelled && styles.cancelled,
       ]}
       onPress={() => onPress(r)}
     >
       <Text
-        style={[styles.chipText, { color: task ? (task.overdue ? c.danger : c.textMuted) : textOn(fill ?? '') }, cancelled && styles.struck]}
+        style={[styles.chipText, { color: task ? (task.overdue ? c.danger : c.textMuted) : tentative ? c.text : textOn(fill ?? '') }, cancelled && styles.struck]}
         numberOfLines={1}
       >
         {task ? <><Glyph name={ICONS.schedule} size={CHIP_GLYPH} /> {displayTitle(r.title)}</> : r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={CHIP_GLYPH} /> {displayTitle(r.title)}</> : displayTitle(r.title)}

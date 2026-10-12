@@ -24,6 +24,7 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 - Both modes page with `usePager`: prev/current/next stay rendered (21 date-keyed columns / 3 month-keyed grids) on an axis fixed at mount, and a swipe only moves the axis, so the neighbour is live under the finger and a step re-renders nothing visible. Never reset the offset on a swipe; a `CalendarJump` (Today, picked date) is the one snap.
 - Lanes are laid out in percent of the day so a zoom frame animates one height.
 - Search (`ItemSearchScreen`) reads the mirror, not the API, so it works offline.
+- Tentative items draw outlined in both modes: a dashed border in the calendar colour over a tint of it (`TENTATIVE` in `@lupira/cal-tokens/color`, applied by `ui/calendar/tentative`; uniform width and colour, or Android draws the rounded border solid). The week view dims and strikes through Cancelled ones.
 - `ItemDetailScreen`'s Hierarchy section shows "Part of <parent>" and the direct children (title, first date) from `item_index.parent_item_id` (`useItemHierarchy`, keyed `['cal.item', 'hierarchy', …]`); a row opens that item. A parent outside the mirror shows no row.
 
 ## Sync
