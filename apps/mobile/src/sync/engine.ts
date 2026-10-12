@@ -50,12 +50,14 @@ export const engine = createSyncEngine({
   onChange: invalidateOnChange(queryClient, DERIVED_ROOTS),
 });
 
-// Offline is expected; any other sync failure is invisible off the phone without this.
-let reportedError: string | null = null;
+// Offline is expected; any other sync failure is invisible off the phone without this. Once per session per
+// message: a failure that recurs between successful syncs would otherwise drain the Sentry quota.
+const reportedErrors = new Set<string>();
 engine.status.subscribe(() => {
   const { lastError, serverReachable } = engine.status.getSnapshot();
-  if (lastError && serverReachable && lastError !== reportedError) Sentry.captureMessage(lastError, { tags: { area: 'sync' } });
-  reportedError = lastError;
+  if (!lastError || !serverReachable || reportedErrors.has(lastError)) return;
+  reportedErrors.add(lastError);
+  Sentry.captureMessage(lastError, { tags: { area: 'sync' } });
 });
 
 /** The database once the kernel has created its tables and the modules' index tables. */
