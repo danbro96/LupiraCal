@@ -33,8 +33,10 @@ import type {
 import { ContactAddressType, DisplayNameFormat, ReachMedium } from '@lupira/cal-api/models';
 import { DISPLAY_NAME_FORMAT_LABELS as NAME_FORMAT_LABELS } from '@danbro96/lupira-domain-contacts/contactNames';
 import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
+import { residencySaveError, type ResidencyRowState } from '@lupira/cal-domain/addressDraft';
+import { fromStored, type PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
-import { PlacePicker } from '../places/PlacePicker';
+import { AddressForm } from '../places/AddressForm';
 import { errText } from '../../errText';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { fuzzyToInput, parseFuzzyInput, residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
@@ -45,10 +47,10 @@ import { CHANNEL_TYPES, PROFILE_SERVICES } from '@lupira/cal-domain/reach';
 import { WrapRow } from '../WrapRow';
 import { BirthdayMonthDay } from './BirthdayMonthDay';
 
-// A residency as edited: id null until saved; placeId null until a place is picked (save skips rows left empty).
-type AddressDraft = {
+// A residency as edited: id null until saved; place null until one is resolved (save skips rows left empty).
+type ResidencyDraft = {
   id: string | null;
-  placeId: string | null;
+  place: PlaceSelection | null;
   type: ContactAddressType;
   label: string;
   movedInText: string;
@@ -69,7 +71,7 @@ type ContactFormValues = {
   birthdayDay: string;
   channels: ContactReachChannel[];
   tags: string[];
-  addresses: AddressDraft[];
+  addresses: ResidencyDraft[];
   profiles: ContactSocialProfileInput[];
   emergency: string[];
   deceased: boolean;
@@ -185,7 +187,7 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
       // parsed at save; a filled moved-out marks the address as former.
       addresses: residencies.map((r) => ({
         id: r.id,
-        placeId: r.placeId,
+        place: fromStored(r.placeId, null),
         type: r.type,
         label: r.label ?? '',
         movedInText: fuzzyToInput(r.movedIn),
@@ -215,11 +217,11 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
   const watchedAddresses = useWatch({ control, name: 'addresses' });
   const deceased = useWatch({ control, name: 'deceased' });
 
-  const [unresolvedPlaces, setUnresolvedPlaces] = useState<Record<string, string>>({});
-  const trackUnresolved = (fieldId: string, text: string | null) =>
-    setUnresolvedPlaces((prev) => {
+  const [rowStates, setRowStates] = useState<Record<string, ResidencyRowState>>({});
+  const trackRowState = (fieldId: string, state: ResidencyRowState | null) =>
+    setRowStates((prev) => {
       const next = { ...prev };
-      if (text) next[fieldId] = text;
+      if (state) next[fieldId] = state;
       else delete next[fieldId];
       return next;
     });
@@ -234,23 +236,23 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
       setError('root', { message: nameError });
       return;
     }
-    const unresolved = Object.values(unresolvedPlaces)[0];
-    if (unresolved) {
-      setError('root', { message: `Pick an address for “${unresolved}” from the list, or clear it.` });
+    const unfinished = residencySaveError(Object.values(rowStates));
+    if (unfinished) {
+      setError('root', { message: unfinished });
       return;
     }
 
     // Parse before the first write, so an unparseable residency date can't leave the form half-saved.
     const cleanAddresses: (AddressValues & { id: string | null })[] = [];
     for (const a of v.addresses) {
-      if (!a.placeId) continue;
+      if (!a.place) continue;
       const movedIn = a.movedInText.trim() ? parseFuzzyInput(a.movedInText) : null;
       const movedOut = a.movedOutText.trim() ? parseFuzzyInput(a.movedOutText) : null;
       if ((a.movedInText.trim() && !movedIn) || (a.movedOutText.trim() && !movedOut)) {
         setError('root', { message: 'Residency dates must be YYYY, YYYY-MM, or YYYY-MM-DD.' });
         return;
       }
-      cleanAddresses.push({ id: a.id, placeId: a.placeId, type: a.type, label: a.label.trim() || null, movedIn, movedOut });
+      cleanAddresses.push({ id: a.id, placeId: a.place.placeId, type: a.type, label: a.label.trim() || null, movedIn, movedOut });
     }
 
     try {
@@ -413,74 +415,76 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px', '& > label': { fontSize: 12, color: 'text.subtle' } }}>
         <label>Addresses</label>
         {addressFields.map((f, i) => (
-          <WrapRow key={f.id}>
+          <Box key={f.id} sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
             <Controller
-              name={`addresses.${i}.type`}
+              name={`addresses.${i}.place`}
               control={control}
               render={({ field }) => (
-                <TextField select value={field.value ?? ContactAddressType.Home} onChange={field.onChange}>
-                  {Object.values(ContactAddressType).map((t) => (
-                    <MenuItem key={t} value={t}>
-                      {addressTypeLabel(t)}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-            <Controller
-              name={`addresses.${i}.placeId`}
-              control={control}
-              render={({ field }) => (
-                <PlacePicker
-                  placeId={field.value ?? null}
-                  placeholder="Street, city…"
-                  onChange={field.onChange}
-                  onUnresolvedChange={(text) => trackUnresolved(f.id, text)}
+                <AddressForm
+                  value={field.value}
+                  onResolved={field.onChange}
+                  context={{ kind: 'residency', contactId: id, householdContactIds: [] }}
+                  onStateChange={(state) => trackRowState(f.id, state)}
                 />
               )}
             />
-            <Controller
-              name={`addresses.${i}.label`}
-              control={control}
-              render={({ field }) => <TextField placeholder="Label (Summer house…)" {...field} />}
-            />
-            <Controller
-              name={`addresses.${i}.movedInText`}
-              control={control}
-              render={({ field }) => (
-                <Tooltip title="Moved in — YYYY, YYYY-MM, or YYYY-MM-DD; as precise as actually known">
-                  <TextField placeholder="Moved in" {...field} />
-                </Tooltip>
-              )}
-            />
-            <Controller
-              name={`addresses.${i}.movedOutText`}
-              control={control}
-              render={({ field }) => (
-                <Tooltip title="Moved out — filling this marks the address as former">
-                  <TextField placeholder="Moved out" {...field} />
-                </Tooltip>
-              )}
-            />
-            <AddressStatusHint
-              movedInText={watchedAddresses[i]?.movedInText ?? ''}
-              movedOutText={watchedAddresses[i]?.movedOutText ?? ''}
-            />
-            <Tooltip title="Remove address (entered by mistake — a move is a moved-out date)">
-              <IconButton
-                onClick={() => {
-                  trackUnresolved(f.id, null);
-                  removeAddress(i);
-                }}
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </WrapRow>
+            <WrapRow>
+              <Controller
+                name={`addresses.${i}.type`}
+                control={control}
+                render={({ field }) => (
+                  <TextField select value={field.value ?? ContactAddressType.Home} onChange={field.onChange}>
+                    {Object.values(ContactAddressType).map((t) => (
+                      <MenuItem key={t} value={t}>
+                        {addressTypeLabel(t)}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+              <Controller
+                name={`addresses.${i}.label`}
+                control={control}
+                render={({ field }) => <TextField placeholder="Label (Summer house…)" {...field} />}
+              />
+              <Controller
+                name={`addresses.${i}.movedInText`}
+                control={control}
+                render={({ field }) => (
+                  <Tooltip title="Moved in — YYYY, YYYY-MM, or YYYY-MM-DD; as precise as actually known">
+                    <TextField placeholder="Moved in" {...field} />
+                  </Tooltip>
+                )}
+              />
+              <Controller
+                name={`addresses.${i}.movedOutText`}
+                control={control}
+                render={({ field }) => (
+                  <Tooltip title="Moved out — filling this marks the address as former">
+                    <TextField placeholder="Moved out" {...field} />
+                  </Tooltip>
+                )}
+              />
+              <AddressStatusHint
+                movedInText={watchedAddresses[i]?.movedInText ?? ''}
+                movedOutText={watchedAddresses[i]?.movedOutText ?? ''}
+              />
+              <Tooltip title="Remove address (entered by mistake — a move is a moved-out date)">
+                <IconButton
+                  onClick={() => {
+                    trackRowState(f.id, null);
+                    removeAddress(i);
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </WrapRow>
+          </Box>
         ))}
         <Button
           variant="text"
-          onClick={() => appendAddress({ id: null, type: ContactAddressType.Home, placeId: null, label: '', movedInText: '', movedOutText: '' })}
+          onClick={() => appendAddress({ id: null, type: ContactAddressType.Home, place: null, label: '', movedInText: '', movedOutText: '' })}
         >
           + Add address
         </Button>

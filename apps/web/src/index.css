@@ -1,6 +1,6 @@
 /* Tokens all come from the MUI theme (ui/theme/muiTheme.ts) fed by @lupira/cal-tokens. What is left
    here is what no component can own: Tailwind's entry points, the domain accents it re-exports, and
-   the one vendor-positioning rule below. */
+   element resets. */
 
 /* No preflight: CssBaseline is the reset. MUI injects unlayered, so it outranks these rules —
    nothing here may target an element that also carries an MUI component. */
@@ -27,13 +27,5 @@
   code {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.9em;
-  }
-
-  /* maplibre-gl.css (loaded with the lazy chunk) forces .maplibregl-map to position:relative,
-     so the canvas host must size as a flex child, not via absolute inset. */
-  .map-canvas {
-    position: relative;
-    flex: 1;
-    min-width: 0;
   }
 }

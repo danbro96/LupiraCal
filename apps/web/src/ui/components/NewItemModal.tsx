@@ -20,12 +20,13 @@ import { ymd } from '@danbro96/lupira-domain-core/time';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import { defaultCalendarIds, isSelectableCalendar } from '@lupira/cal-domain/calendars';
 import { emptyItemForm, parseList, scheduleFromForm, withSchedule, type ItemForm } from '@lupira/cal-domain/itemForm';
+import type { PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
 import { useJoinItem } from '../../state/useJoinItem';
 import { readPref, writePref } from '../../state/localPrefs';
 import { useMyContactId } from '../../state/useMe';
-import { PlacePicker } from './places/PlacePicker';
+import { PlaceField } from './places/PlaceField';
 import { errText } from '../errText';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { useIsPhone } from '../hooks/useIsPhone';
@@ -39,7 +40,7 @@ type FormValues = {
   end: string;
   startDate: string;
   endDate: string;
-  placeId: string;
+  place: PlaceSelection | null;
   rrule: string;
   attending: boolean;
   tags: string;
@@ -87,7 +88,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       end: `${initial.endDay}T${initial.endTime}`,
       startDate: initial.startDay,
       endDate: '',
-      placeId: '',
+      place: null,
       rrule: '',
       attending: true,
       tags: '',
@@ -96,6 +97,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
   });
   const isAllDay = useWatch({ control, name: 'isAllDay' });
   const startDate = useWatch({ control, name: 'startDate' });
+  const start = useWatch({ control, name: 'start' });
   const attending = useWatch({ control, name: 'attending' });
 
   // Moving the start carries the end along, as on the phone (`@lupira/cal-domain/itemForm`).
@@ -109,13 +111,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
     else if (moved.endDay) setValue('end', `${moved.endDay}T${moved.endTime}`);
   };
 
-  const [unresolvedPlace, setUnresolvedPlace] = useState<string | null>(null);
-
   const submit = handleSubmit((v) => {
-    if (unresolvedPlace) {
-      showSnack(`Pick an address for “${unresolvedPlace}” from the list, or clear it.`);
-      return;
-    }
     const schedule = scheduleFromForm(toItemForm(v));
     if (!schedule.ok) {
       showSnack(schedule.error);
@@ -126,7 +122,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       calendarId: v.calendarId || null,
       title: v.title || null,
       description: v.description || null,
-      placeId: v.placeId || null,
+      placeId: v.place?.placeId ?? null,
       ...schedule.value,
       recurrenceRule: v.rrule || null,
       tags: tags.length ? tags : null,
@@ -247,14 +243,14 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
           )}
         </WrapRow>
         <Controller
-          name="placeId"
+          name="place"
           control={control}
           render={({ field }) => (
-            <PlacePicker
-              placeId={field.value || null}
-              placeholder="Place"
-              onChange={(id) => field.onChange(id ?? '')}
-              onUnresolvedChange={setUnresolvedPlace}
+            <PlaceField
+              label="Place"
+              value={field.value}
+              onChange={field.onChange}
+              context={{ kind: 'event', category: 'General', attendeeIds: [], day: (isAllDay ? startDate : start.slice(0, 10)) || initial.startDay }}
             />
           )}
         />

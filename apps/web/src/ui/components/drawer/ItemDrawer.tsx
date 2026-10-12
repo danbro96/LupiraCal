@@ -17,6 +17,8 @@ import { fmtDate, parseYmd, ymd } from '@danbro96/lupira-domain-core/time';
 import { eventZone, zoneChoices, zoneLabel } from '@lupira/cal-domain/zonedTime';
 import { movedEnd } from '@lupira/cal-domain/itemForm';
 import { UNTITLED } from '@danbro96/lupira-domain-events/itemLabels';
+import { isItemCategory } from '@lupira/cal-domain/itemCategory';
+import { fromStored } from '@lupira/cal-domain/placeSelection';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { CategoryIcon } from '../KindIcon';
 import { AttendeesPanel } from './AttendeesPanel';
@@ -28,8 +30,7 @@ import { isoToLocalInput, localInputToIso } from './inputs';
 import { KindDetailsCard } from './KindDetailsCard';
 import { MetadataPanel } from './MetadataPanel';
 import { PayloadPanel } from './PayloadPanel';
-import { PlacePicker } from '../places/PlacePicker';
-import { PlaceTile } from '../places/PlaceTile';
+import { PlaceField } from '../places/PlaceField';
 import { ItemPhotosPanel } from './ItemPhotosPanel';
 import { RelationsPanel } from './RelationsPanel';
 import { errText } from '../../errText';
@@ -98,7 +99,6 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
   const [description, setDescription] = useState(item.description ?? '');
   const [rrule, setRrule] = useState(item.recurrenceRule ?? '');
   const [newTag, setNewTag] = useState('');
-  const [editingPlace, setEditingPlace] = useState(false);
   const [addingTask, setAddingTask] = useState(false);
 
   return (
@@ -216,40 +216,17 @@ function DrawerBody({ item, onClose }: { item: CalendarItemDto; onClose: () => v
       </DrawerSection>
 
       <DrawerSection title="Where">
-        {item.placeId && !editingPlace ? (
-          <PlaceTile placeId={item.placeId} onEdit={() => setEditingPlace(true)} />
-        ) : (
-          <PlacePicker
-            placeId={editingPlace ? null : item.placeId ?? null}
-            autoFocus={editingPlace}
-            attendeeIds={item.attendees.map((a) => a.contactId)}
-            day={itemDay(item)}
-            initialText={!item.placeId ? (item.locationLabel ?? '') : ''}
-            placeholder="Search or type an address…"
-            onChange={(placeId) => {
-              setEditingPlace(false);
-              patch({ placeId: placeId ?? null, placeIdProvided: true });
-            }}
-          />
-        )}
-        {editingPlace && (
-          <WrapRow>
-            <Button size="small" onClick={() => setEditingPlace(false)}>Cancel</Button>
-            <Button
-              size="small"
-              color="error"
-              onClick={() => {
-                setEditingPlace(false);
-                patch({ placeId: null, placeIdProvided: true });
-              }}
-            >
-              Remove place
-            </Button>
-          </WrapRow>
-        )}
-        {!item.placeId && item.locationLabel && (
-          <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">“{item.locationLabel}” from calendar text</Typography>
-        )}
+        <PlaceField
+          value={item.placeId ? fromStored(item.placeId, null) : null}
+          context={{
+            kind: 'event',
+            category: isItemCategory(item.category) ? item.category : 'General',
+            attendeeIds: item.attendees.map((a) => a.contactId),
+            day: itemDay(item) ?? ymd(new Date()),
+          }}
+          legacyText={item.locationLabel}
+          onChange={(place) => patch({ placeId: place?.placeId ?? null, placeIdProvided: true })}
+        />
       </DrawerSection>
 
       <DrawerSection title="Description">

@@ -9,7 +9,7 @@ import { GEO_API_BASE_URL } from '../../../config';
 import { siblingLinks } from '../../../config/siblings';
 import { useGeoPlace } from '../../../state/usePlaces';
 import { useCopy } from '../../hooks/useCopy';
-import { CopyIcon, EditIcon, PlaceIcon } from '@danbro96/lupira-web-mui/icons';
+import { ClearIcon, CopyIcon, EditIcon, PlaceIcon } from '@danbro96/lupira-web-mui/icons';
 
 const MiniMap = lazy(() => import('@danbro96/lupira-web-maplibre/MiniMap'));
 
@@ -19,7 +19,7 @@ const THUMB_H = 56;
 /** How the app shows a place, as on the phone: its name, the address and an optional meta line (address
  *  type, residency) — one line each, ellipsized — and a map thumbnail framed by the kind of place. The
  *  tile opens the place on the map; the copy button takes the address (the name when there is none). */
-export function PlaceTile({ placeId, label, meta, muted, onEdit }: {
+export function PlaceTile({ placeId, label, meta, muted, onEdit, onClear }: {
   placeId: string | null | undefined;
   /** Shown instead of the place's own name — an event's location label. */
   label?: string | null;
@@ -27,6 +27,7 @@ export function PlaceTile({ placeId, label, meta, muted, onEdit }: {
   /** A former or future address: present, but not where anyone is. */
   muted?: boolean;
   onEdit?: () => void;
+  onClear?: () => void;
 }) {
   const { data: place } = useGeoPlace(placeId ?? undefined);
   const copy = useCopy();
@@ -75,6 +76,13 @@ export function PlaceTile({ placeId, label, meta, muted, onEdit }: {
         <Tooltip title="Change place">
           <IconButton size="small" onClick={onEdit}>
             <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+      {onClear && (
+        <Tooltip title="Clear place">
+          <IconButton size="small" onClick={onClear}>
+            <ClearIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       )}

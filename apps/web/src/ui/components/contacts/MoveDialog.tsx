@@ -7,13 +7,15 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { useRecordMove, useSearchContacts } from '@lupira/cal-api/query/contact';
 import { ContactAddressType, type ContactDto } from '@lupira/cal-api/models';
 import { parseFuzzyInput } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import { addressTypeLabel, withResidency, type ContactAddressRow } from '@danbro96/lupira-domain-contacts/residents';
+import type { PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { errText } from '../../errText';
-import { PlacePicker } from '../places/PlacePicker';
+import { AddressForm } from '../places/AddressForm';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 
 /** Tells a move once for everyone who moves: each one's current residencies at the place they leave end on the date,
@@ -25,7 +27,7 @@ export function MoveDialog({ contact, rows, onClose }: { contact: ContactDto; ro
   const [fromPlaceId, setFromPlaceId] = useState<string>(homes[0]?.placeId ?? '');
   const livingThere = (placeId: string) => [...new Set(current.filter((r) => r.placeId === placeId).map((r) => r.contactId))];
   const [movers, setMovers] = useState<string[]>(fromPlaceId ? livingThere(fromPlaceId) : [contact.id]);
-  const [toPlaceId, setToPlaceId] = useState<string | null>(null);
+  const [toPlace, setToPlace] = useState<PlaceSelection | null>(null);
   const [type, setType] = useState<ContactAddressType>(ContactAddressType.Home);
   const [when, setWhen] = useState('');
   const invalidate = useInvalidateContacts();
@@ -59,7 +61,12 @@ export function MoveDialog({ contact, rows, onClose }: { contact: ContactDto; ro
           <MenuItem value="">Nowhere (a new place)</MenuItem>
           {homes.map((h) => <MenuItem key={h.placeId} value={h.placeId}>{h.label || addressTypeLabel(h.addressType)}</MenuItem>)}
         </TextField>
-        <PlacePicker placeId={toPlaceId} placeholder="Moving to — street, city…" onChange={setToPlaceId} />
+        <Typography variant="caption" sx={{ color: 'text.secondary' }}>Moving to</Typography>
+        <AddressForm
+          value={toPlace}
+          onResolved={setToPlace}
+          context={{ kind: 'residency', contactId: contact.id, householdContactIds: movers }}
+        />
         <TextField select label="As" value={type} onChange={(e) => setType(e.target.value as ContactAddressType)}>
           {Object.values(ContactAddressType).map((t) => <MenuItem key={t} value={t}>{addressTypeLabel(t)}</MenuItem>)}
         </TextField>
@@ -75,8 +82,8 @@ export function MoveDialog({ contact, rows, onClose }: { contact: ContactDto; ro
         <Button onClick={onClose}>Cancel</Button>
         <Button
           variant="contained"
-          disabled={movers.length === 0 || !toPlaceId || !movedIn || move.isPending}
-          onClick={() => move.mutate({ data: { contactIds: movers, toPlaceId: toPlaceId!, type, movedIn: movedIn!, fromPlaceId: fromPlaceId || null } })}
+          disabled={movers.length === 0 || !toPlace || !movedIn || move.isPending}
+          onClick={() => toPlace && movedIn && move.mutate({ data: { contactIds: movers, toPlaceId: toPlace.placeId, type, movedIn, fromPlaceId: fromPlaceId || null } })}
         >
           Move
         </Button>
