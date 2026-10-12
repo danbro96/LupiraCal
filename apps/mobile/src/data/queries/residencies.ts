@@ -26,3 +26,28 @@ export async function contactResidencies(tx: Tx): Promise<ResidencyRow[]> {
      ORDER BY c.display_name COLLATE NOCASE`,
   );
 }
+
+export type ContactResidencyRow = {
+  id: string;
+  place_id: string;
+  address_type: string | null;
+  label: string | null;
+  moved_in: string | null;
+  moved_out: string | null;
+};
+
+/** One contact's residencies, for its editor. */
+export async function residenciesOfContact(tx: Tx, contactId: string): Promise<ContactResidencyRow[]> {
+  return tx.all<ContactResidencyRow>(
+    `SELECT r.id, r.place_id,
+            json_extract(d.local, '$.doc.type')     AS address_type,
+            json_extract(d.local, '$.doc.label')    AS label,
+            json_extract(d.local, '$.doc.movedIn')  AS moved_in,
+            json_extract(d.local, '$.doc.movedOut') AS moved_out
+     FROM residency_index r
+     JOIN docs d ON d.aggregate = '${Aggregate.residency}' AND d.id = r.id AND d.local IS NOT NULL
+     WHERE r.contact_id = ?
+     ORDER BY r.id`,
+    [contactId],
+  );
+}

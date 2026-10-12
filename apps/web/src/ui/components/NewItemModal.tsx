@@ -109,7 +109,13 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
     else if (moved.endDay) setValue('end', `${moved.endDay}T${moved.endTime}`);
   };
 
+  const [unresolvedPlace, setUnresolvedPlace] = useState<string | null>(null);
+
   const submit = handleSubmit((v) => {
+    if (unresolvedPlace) {
+      showSnack(`Pick an address for “${unresolvedPlace}” from the list, or clear it.`);
+      return;
+    }
     const schedule = scheduleFromForm(toItemForm(v));
     if (!schedule.ok) {
       showSnack(schedule.error);
@@ -244,7 +250,12 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
           name="placeId"
           control={control}
           render={({ field }) => (
-            <PlacePicker placeId={field.value || null} placeholder="Place" onChange={(id) => field.onChange(id ?? '')} />
+            <PlacePicker
+              placeId={field.value || null}
+              placeholder="Place"
+              onChange={(id) => field.onChange(id ?? '')}
+              onUnresolvedChange={setUnresolvedPlace}
+            />
           )}
         />
         <Controller

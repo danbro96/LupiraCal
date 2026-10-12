@@ -13,6 +13,7 @@ Shared MUI conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`. T
 - Forms = react-hook-form (`Controller`-wrapped MUI fields). `ContactEditForm` gates its 8-endpoint fan-out by payload comparison, not `dirtyFields`.
 - Mutation errors → `useSnackbar()` (`@danbro96/lupira-web-mui` SnackbarHost); field validation stays inline.
 - Detail cards share `drawer/DetailDrawer.tsx`.
+- `places/PlacePicker`: typing always offers "Search addresses for …" (forward geocode → preview → pick or pin); leaving the field with unmatched text runs that search. Forms with a Save (`ContactEditForm`, `NewItemModal`) refuse to save while typed text isn't a place yet (`onUnresolvedChange`).
 - A place renders as `places/PlaceTile` (name, one-line address, meta, a lazy `map/MiniMap` thumbnail framed by `@lupira/cal-domain/mapZoom`, copy button via `useCopy`).
 - Per-browser conveniences (last calendar, calendar view per layout) live in `state/localPrefs`, behind the URL.
 - Build splits a `vendor-mui` chunk (rolldown `advancedChunks`).

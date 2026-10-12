@@ -4,6 +4,7 @@ import {
   initialPickerState,
   pinCenterFrom,
   transition,
+  unresolvedText,
   type PickerEvent,
   type PickerHit,
   type PickerState,
@@ -64,6 +65,38 @@ describe('commit short-circuit', () => {
     ]);
     expect(commands).toEqual([{ kind: 'geocode', q: 'somewhere new', token: 1 }]);
     expect(state.phase).toEqual({ kind: 'geocoding', token: 1 });
+  });
+});
+
+describe('address search', () => {
+  it('geocodes even when a place has that exact name', () => {
+    const { commands } = play([{ type: 'TYPE', text: 'Home Cafe' }, { type: 'SEARCH' }]);
+    expect(commands).toEqual([{ kind: 'geocode', q: 'Home Cafe', token: 1 }]);
+  });
+
+  it('is ignored while a preview is open', () => {
+    const previewing = play([
+      { type: 'TYPE', text: 'somewhere' },
+      { type: 'SEARCH' },
+      { type: 'GEOCODE_OK', token: 1, hits: [hit('Somewhere 1')] },
+    ]).state;
+    expect(transition(previewing, { type: 'SEARCH' }).commands).toEqual([]);
+  });
+});
+
+describe('unresolved text', () => {
+  it('is the typed text until a place resolves', () => {
+    const typed = play([{ type: 'TYPE', text: 'Storgatan 5 ' }]).state;
+    expect(unresolvedText(typed)).toBe('Storgatan 5');
+    const previewing = play([{ type: 'SEARCH' }, { type: 'GEOCODE_OK', token: 1, hits: [] }], typed).state;
+    expect(unresolvedText(previewing)).toBe('Storgatan 5');
+    const resolved = play([{ type: 'COMMIT', suggestions: [place('p1', 'Storgatan 5')] }], typed).state;
+    expect(unresolvedText(resolved)).toBeNull();
+  });
+
+  it('ignores untouched calendar text', () => {
+    expect(unresolvedText(initialPickerState('Kontoret'), 'Kontoret')).toBeNull();
+    expect(unresolvedText(initialPickerState(''))).toBeNull();
   });
 });
 

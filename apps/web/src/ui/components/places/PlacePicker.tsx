@@ -9,7 +9,7 @@ import Box from '@mui/material/Box';
 import CloseIcon from '@mui/icons-material/Close';
 import { forwardGeocode } from '@lupira/cal-api/query/geo';
 import { SuggestionType, type PlaceSuggestionDto } from '@lupira/cal-api/models';
-import { ADDRESS_SEARCH_LIMIT, PLACE_SEARCH_DEBOUNCE_MS } from '@danbro96/lupira-domain-places/placeCandidates';
+import { ADDRESS_SEARCH_LIMIT, MIN_PLACE_QUERY, PLACE_SEARCH_DEBOUNCE_MS } from '@danbro96/lupira-domain-places/placeCandidates';
 import { EMPHASIS } from '@lupira/cal-tokens/color';
 import { usePlaceCandidates } from '../../../state/usePlaceCandidates';
 import { useCreatePlaceAtPin, useCreatePlaceFromHit } from '../../../state/usePlaces';
@@ -18,24 +18,27 @@ import { GeocodePreview } from './GeocodePreview';
 import {
   initialPickerState,
   transition,
+  unresolvedText,
   type PickerCommand,
   type PickerEvent,
   type PickerState,
 } from './placePickerMachine';
 import { PlaceLabel } from './PlaceLabel';
-import { PlaceIcon } from '@danbro96/lupira-web-mui/icons';
+import { PlaceIcon, SearchIcon } from '@danbro96/lupira-web-mui/icons';
 
 const MapPinDialog = lazy(() => import('../map/MapPinDialog'));
 
-type PickerOption = PlaceSuggestionDto & { residentsLine?: string | null; otherLine?: string | null; faded?: boolean };
+type PickerOption = PlaceSuggestionDto & { residentsLine?: string | null; otherLine?: string | null; faded?: boolean; addressSearch?: boolean };
 
 /** Turn user input into a LupiraGeoApi placeId: one ranked list of existing places (saved, frequent,
  *  typeahead, and contacts' addresses — search a name to find where they live; an invited person's home
  *  leads), each saying who lives there; committing unmatched free text runs the picker machine — forward
  *  geocode → hit preview → pick, or drop a pin on the map. Nothing is ever created on cancel/dismiss. */
-export function PlacePicker({ placeId, onChange, placeholder, initialText, autoFocus, attendeeIds = [], day = null }: {
+export function PlacePicker({ placeId, onChange, onUnresolvedChange, placeholder, initialText, autoFocus, attendeeIds = [], day = null }: {
   placeId: string | null;
   onChange: (placeId: string | null) => void;
+  /** Typed text not yet a place (null once resolved or cleared) — the form blocks Save on it. */
+  onUnresolvedChange?: (text: string | null) => void;
   placeholder?: string;
   initialText?: string;
   autoFocus?: boolean;
@@ -70,10 +73,17 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
     })),
     ...localities,
   ];
+  const searchable = state.text.trim().length >= MIN_PLACE_QUERY && (state.phase.kind === 'idle' || state.phase.kind === 'suggesting');
+  const shown: PickerOption[] = searchable
+    ? [{ id: '', type: SuggestionType.Place, name: state.text, addressSearch: true }, ...options]
+    : options;
 
   const dispatch = (event: PickerEvent) => {
-    const { state: next, commands } = transition(stateRef.current, event);
+    const prev = stateRef.current;
+    const { state: next, commands } = transition(prev, event);
     stateRef.current = next;
+    const unresolved = unresolvedText(next, initialText);
+    if (unresolved !== unresolvedText(prev, initialText)) onUnresolvedChange?.(unresolved);
     setState(next);
     for (const cmd of commands) run(cmd);
   };
@@ -128,13 +138,14 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
     <Box component="span" sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 1, flex: 1, flexWrap: 'wrap', width: '100%' }}>
       <Autocomplete<PickerOption, false, false, true>
         freeSolo
-        options={options}
+        options={shown}
         filterOptions={(x) => x}
         loading={loading || phase.kind === 'geocoding'}
         openOnFocus
         onOpen={() => setOpened(true)}
         groupBy={typing ? undefined : () => 'Suggested'}
         getOptionDisabled={(o) => o.type === SuggestionType.Locality}
+        getOptionKey={(o) => (typeof o === 'string' ? o : o.addressSearch ? '' : o.id)}
         value={null}
         inputValue={state.text}
         // A freeSolo Enter commit isn't defaultPrevented by MUI and would submit a wrapping form
@@ -146,6 +157,8 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
         onChange={(_, value) => {
           if (typeof value === 'string') {
             dispatch({ type: 'COMMIT', suggestions: options });
+          } else if (value?.addressSearch) {
+            dispatch({ type: 'SEARCH' });
           } else if (value && value.type === SuggestionType.Place) {
             // Sync the machine text first so COMMIT's exact-name match short-circuits to resolved.
             dispatch({ type: 'TYPE', text: value.name });
@@ -153,7 +166,11 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
           }
         }}
         getOptionLabel={(o) => (typeof o === 'string' ? o : o.name)}
-        renderOption={({ key, ...props }, o) => (
+        renderOption={({ key, ...props }, o) => o.addressSearch ? (
+          <li key={key} {...props}>
+            <SearchIcon fontSize="small" sx={{ mr: 1 }} /> Search addresses for “{o.name.trim()}”
+          </li>
+        ) : (
           <li key={key} {...props} style={o.faded ? { opacity: EMPHASIS.faded } : undefined}>
             <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               <span>
@@ -173,6 +190,10 @@ export function PlacePicker({ placeId, onChange, placeholder, initialText, autoF
           <TextField
             {...params}
             autoFocus={autoFocus}
+            // An unpicked address must not sit there looking saved: leaving the field searches it.
+            onBlur={() => {
+              if (stateRef.current.phase.kind === 'suggesting') dispatch({ type: 'COMMIT', suggestions: options });
+            }}
             placeholder={placeholder ?? 'Search or type an address…'}
           />
         )}

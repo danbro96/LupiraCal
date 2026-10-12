@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
+import { addResidency, removeResidency, reviseResidency } from '@lupira/cal-api/fetch/contact';
+import type { ContactAddressType } from '@lupira/cal-api/models';
 import { residencyStatus, type FuzzyDate } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import { parentsHomes, type ContactAddressRow, type ParentsHome } from '@danbro96/lupira-domain-contacts/residents';
 import { mirrorQuery } from '@danbro96/lupira-expo-query/mirrorQuery';
-import { contactResidencies } from '../data/queries/residencies';
+import { contactResidencies, residenciesOfContact } from '../data/queries/residencies';
 import { Aggregate } from '../domain/aggregates';
-import type { PlaceEntryDoc } from '../domain/docTypes';
+import type { PlaceEntryDoc, ResidencyDoc } from '../domain/docTypes';
 import { engine, readyDb } from '../sync/engine';
 import { useContactRelations } from './useContactList';
 
@@ -44,4 +46,39 @@ export function usePlaceEntry(placeId: string | null | undefined, rows: readonly
   const entry = q.data?.doc;
   const lived = rows.some((r) => r.placeId === placeId && residencyStatus(r.movedIn, r.movedOut) === 'active');
   return lived && entry && entry.codes.length > 0 ? entry : null;
+}
+
+/** One contact's residencies from the mirror, as the docs its editor revises wholesale. */
+export function useContactResidencies(contactId: string | undefined): ResidencyDoc[] {
+  const q = useQuery({
+    ...mirrorQuery([Aggregate.residency, 'of', contactId], async () => residenciesOfContact(await readyDb(), contactId!)),
+    enabled: !!contactId,
+  });
+  return (q.data ?? []).map((r) => ({
+    id: r.id,
+    contactId: contactId!,
+    placeId: r.place_id,
+    type: r.address_type,
+    label: r.label,
+    movedIn: parseFuzzy(r.moved_in),
+    movedOut: parseFuzzy(r.moved_out),
+  }));
+}
+
+/** Online-only: residencies have no queued op, so the write goes straight to contact-api and the sync after it
+ *  pulls the change into the mirror. Revising keeps the label and period; only place and type change here. */
+export async function saveResidency(contactId: string, existing: ResidencyDoc | null, placeId: string, type: ContactAddressType) {
+  if (existing) {
+    await reviseResidency(existing.id, {
+      placeId, type, label: existing.label ?? null, movedIn: existing.movedIn ?? null, movedOut: existing.movedOut ?? null,
+    });
+  } else {
+    await addResidency(contactId, { placeId, type });
+  }
+  void engine.sync();
+}
+
+export async function deleteResidency(id: string) {
+  await removeResidency(id);
+  void engine.sync();
 }

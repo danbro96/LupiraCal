@@ -63,8 +63,6 @@ export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
       />
       {!online && <Text style={[styles.muted, { color: c.textMuted }]}>Finding places needs a connection.</Text>}
       <ScrollView keyboardShouldPersistTaps="handled">
-        {!typing && places.length > 0 && <List.Subheader>Suggested</List.Subheader>}
-        {places.map((p) => <PlaceRow key={p.placeId} place={p} onPress={() => pick({ placeId: p.placeId, label: p.label })} />)}
         {typing && online && !addressQuery && (
           <List.Item
             title={`Search addresses for “${text.trim()}”`}
@@ -89,6 +87,8 @@ export function PlaceSheet({ hasPlace, attendeeIds, day, onPick, onDismiss }: {
             />
           );
         })}
+        {!typing && places.length > 0 && <List.Subheader>Suggested</List.Subheader>}
+        {places.map((p) => <PlaceRow key={p.placeId} place={p} onPress={() => pick({ placeId: p.placeId, label: p.label })} />)}
         {hasPlace && (
           <List.Item title="Remove place" left={(p) => <List.Icon {...p} icon={ICONS.locationOff} />} onPress={() => pick(null)} />
         )}

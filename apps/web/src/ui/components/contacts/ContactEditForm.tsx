@@ -45,7 +45,7 @@ import { CHANNEL_TYPES, PROFILE_SERVICES } from '@lupira/cal-domain/reach';
 import { WrapRow } from '../WrapRow';
 import { BirthdayMonthDay } from './BirthdayMonthDay';
 
-// A residency as edited: id null until saved; placeId null until a place is picked (save skips those rows).
+// A residency as edited: id null until saved; placeId null until a place is picked (save skips rows left empty).
 type AddressDraft = {
   id: string | null;
   placeId: string | null;
@@ -215,6 +215,15 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
   const watchedAddresses = useWatch({ control, name: 'addresses' });
   const deceased = useWatch({ control, name: 'deceased' });
 
+  const [unresolvedPlaces, setUnresolvedPlaces] = useState<Record<string, string>>({});
+  const trackUnresolved = (fieldId: string, text: string | null) =>
+    setUnresolvedPlaces((prev) => {
+      const next = { ...prev };
+      if (text) next[fieldId] = text;
+      else delete next[fieldId];
+      return next;
+    });
+
   const id = contact.id;
   const nameOf = (cid: string) => readable?.find((c) => c.id === cid)?.displayName ?? cid.slice(0, 8);
 
@@ -223,6 +232,11 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
     const nameError = contactNameError(v);
     if (nameError) {
       setError('root', { message: nameError });
+      return;
+    }
+    const unresolved = Object.values(unresolvedPlaces)[0];
+    if (unresolved) {
+      setError('root', { message: `Pick an address for “${unresolved}” from the list, or clear it.` });
       return;
     }
 
@@ -416,7 +430,14 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
             <Controller
               name={`addresses.${i}.placeId`}
               control={control}
-              render={({ field }) => <PlacePicker placeId={field.value ?? null} placeholder="Street, city…" onChange={field.onChange} />}
+              render={({ field }) => (
+                <PlacePicker
+                  placeId={field.value ?? null}
+                  placeholder="Street, city…"
+                  onChange={field.onChange}
+                  onUnresolvedChange={(text) => trackUnresolved(f.id, text)}
+                />
+              )}
             />
             <Controller
               name={`addresses.${i}.label`}
@@ -446,7 +467,12 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
               movedOutText={watchedAddresses[i]?.movedOutText ?? ''}
             />
             <Tooltip title="Remove address (entered by mistake — a move is a moved-out date)">
-              <IconButton onClick={() => removeAddress(i)}>
+              <IconButton
+                onClick={() => {
+                  trackUnresolved(f.id, null);
+                  removeAddress(i);
+                }}
+              >
                 <CloseIcon fontSize="small" />
               </IconButton>
             </Tooltip>

@@ -46,6 +46,7 @@ export type PickerEvent =
   | { type: 'TYPE'; text: string }
   | { type: 'NAV'; dir: 1 | -1; optionCount: number }
   | { type: 'COMMIT'; suggestions: PickerSuggestion[] }
+  | { type: 'SEARCH' }
   | { type: 'GEOCODE_OK'; token: number; hits: PickerHit[] }
   | { type: 'GEOCODE_ERROR'; token: number; message?: string }
   | { type: 'PICK_HIT'; index: number }
@@ -73,6 +74,20 @@ const next = (state: PickerState): PickerTransition => ({ state, commands: [] })
 
 /** Post-resolve reset: seq survives so tokens stay monotone across resolves. */
 const reset = (state: PickerState): PickerState => ({ text: '', phase: { kind: 'idle' }, error: null, seq: state.seq });
+
+function geocode(state: PickerState, q: string): PickerTransition {
+  const token = state.seq + 1;
+  return {
+    state: { ...state, seq: token, error: null, phase: { kind: 'geocoding', token } },
+    commands: [{ kind: 'geocode', q, token }],
+  };
+}
+
+/** Typed text the user hasn't turned into a place yet; a form must not save past it. */
+export function unresolvedText(state: PickerState, initialText = ''): string | null {
+  const text = state.text.trim();
+  return text && state.text !== initialText ? text : null;
+}
 
 export function transition(state: PickerState, event: PickerEvent): PickerTransition {
   switch (event.type) {
@@ -102,11 +117,14 @@ export function transition(state: PickerState, event: PickerEvent): PickerTransi
       if (match && match.type === 'Place') {
         return { state: reset(state), commands: [{ kind: 'resolved', placeId: match.id }] };
       }
-      const token = state.seq + 1;
-      return {
-        state: { ...state, seq: token, error: null, phase: { kind: 'geocoding', token } },
-        commands: [{ kind: 'geocode', q, token }],
-      };
+      return geocode(state, q);
+    }
+
+    case 'SEARCH': {
+      if (state.phase.kind !== 'suggesting' && state.phase.kind !== 'idle') return stay(state);
+      const q = state.text.trim();
+      if (!q) return stay(state);
+      return geocode(state, q);
     }
 
     case 'GEOCODE_OK': {

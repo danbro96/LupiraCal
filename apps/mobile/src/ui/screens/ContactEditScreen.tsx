@@ -1,5 +1,7 @@
 import { errorText } from '@danbro96/lupira-http/apiError';
 import { DISPLAY_NAME_FORMAT_LABELS } from '@danbro96/lupira-domain-contacts/contactNames';
+import { residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
+import { addressTypeLabel } from '@danbro96/lupira-domain-contacts/residents';
 import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -7,7 +9,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useLayoutEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Chip, HelperText, IconButton, List, Switch, Text } from 'react-native-paper';
-import type { ContactDoc, ReachChannel, SocialProfile } from '../../domain/docTypes';
+import type { ContactDoc, ReachChannel, ResidencyDoc, SocialProfile } from '../../domain/docTypes';
 import { REACH_KINDS } from '../../domain/reach';
 import type { ContactForm } from '../../domain/editors';
 import type { ContactCore } from '../../domain/ops';
@@ -19,6 +21,8 @@ import { contactDraftFromLink } from '../../domain/drafts';
 import { createContact, reviseContact, setContactChannels, setContactProfiles, setContactTags } from '../../state/actions';
 import { useAddressBooks } from '../../state/useAddressBooks';
 import { useContactState } from '../../state/useContactList';
+import { usePlaceCoords } from '../../state/usePlaceLookup';
+import { useContactResidencies } from '../../state/useResidencies';
 import { ChoiceChips } from '@danbro96/lupira-expo-paper/components/ChoiceChips';
 import { DateField } from '../components/DateField';
 import { Field } from '../components/Field';
@@ -26,6 +30,7 @@ import { MenuField } from '../components/MenuField';
 import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
 import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { ReachIcon } from '../components/ReachIcon';
+import { ResidencySheet } from '../contact/ResidencySheet';
 import type { RootStackParamList } from '../navigation/types';
 import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
@@ -46,6 +51,9 @@ export function ContactEditScreen() {
   const contactId = route.params?.contactId;
   const { data: state } = useContactState(contactId ?? '');
   const { data: books } = useAddressBooks();
+  const residencies = useContactResidencies(contactId);
+  const residencyPlaces = usePlaceCoords(residencies.map((r) => r.placeId));
+  const [editingResidency, setEditingResidency] = useState<ResidencyDoc | 'new' | null>(null);
 
   const draft = contactId ? null : (route.params?.draft ?? contactDraftFromLink(route.params ?? {}));
   const [seed] = useState(() => (draft ? contactFormFromDraft(draft) : null));
@@ -144,141 +152,166 @@ export function ContactEditScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      {!contactId && (books?.length ?? 0) > 1 && (
-        <Field label="Address book">
-          <ChoiceChips
-            required
-            options={(books ?? []).map((b) => ({ value: b.id, label: b.displayName ?? b.id }))}
-            value={bookId}
-            onChange={setBookId}
-          />
-        </Field>
-      )}
-      <TextField style={fieldGap} label="Given name" value={form.givenName} onChangeText={(v) => set('givenName', v)} />
-      <TextField style={fieldGap} label="Middle name" value={form.middleName} onChangeText={(v) => set('middleName', v)} />
-      <TextField style={fieldGap} label="Family name" value={form.familyName} onChangeText={(v) => set('familyName', v)} />
-      <TextField style={fieldGap} label="Nickname" value={form.nickname} onChangeText={(v) => set('nickname', v)} />
-      <Field label="Shown as">
-        <ChoiceChips options={NAME_FORMAT_OPTIONS} value={form.displayNameFormat} onChange={(v) => set('displayNameFormat', v)} />
-      </Field>
-      <Field label="Kind">
-        <ChoiceChips options={KIND_OPTIONS} value={form.kind} onChange={(v) => set('kind', v)} />
-      </Field>
-      <TextField style={fieldGap} label="Pronouns" autoCapitalize="none" value={form.pronouns} onChangeText={(v) => set('pronouns', v)} />
-
-      <Field label="Birthday">
-        <List.Item
-          title="Enter year"
-          right={() => (
-            <Switch value={form.birthdayYearKnown} onValueChange={(v) => setBirthday(withYearKnown(birthday, v))} />
-          )}
-        />
-        {form.birthdayYearKnown ? (
-          <DateField
-            value={form.birthday}
-            onChange={(v) => set('birthday', v)}
-            initial={birthday.month && birthday.day ? partialDateToInput({ year: null, month: Number(birthday.month), day: Number(birthday.day) }) : undefined}
-          />
-        ) : (
-          <View style={styles.pair}>
-            <View style={styles.pairItem}>
-              <MenuField placeholder="Month" options={MONTH_OPTIONS} value={form.birthdayMonth} onChange={(m) => setBirthday({ ...birthday, month: m, day: clampBirthdayDay(m, birthday.day) })} />
-            </View>
-            <View style={styles.pairItem}>
-              <MenuField placeholder="Day" options={dayOptions(form.birthdayMonth)} value={form.birthdayDay} onChange={(d) => set('birthdayDay', d)} />
-            </View>
-          </View>
+    <>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        {!contactId && (books?.length ?? 0) > 1 && (
+          <Field label="Address book">
+            <ChoiceChips
+              required
+              options={(books ?? []).map((b) => ({ value: b.id, label: b.displayName ?? b.id }))}
+              value={bookId}
+              onChange={setBookId}
+            />
+          </Field>
         )}
-        {contactId && <Text style={[styles.muted, { color: c.textMuted }]}>Clearing a birthday isn't supported — leave empty to keep it.</Text>}
-      </Field>
+        <TextField style={fieldGap} label="Given name" value={form.givenName} onChangeText={(v) => set('givenName', v)} />
+        <TextField style={fieldGap} label="Middle name" value={form.middleName} onChangeText={(v) => set('middleName', v)} />
+        <TextField style={fieldGap} label="Family name" value={form.familyName} onChangeText={(v) => set('familyName', v)} />
+        <TextField style={fieldGap} label="Nickname" value={form.nickname} onChangeText={(v) => set('nickname', v)} />
+        <Field label="Shown as">
+          <ChoiceChips options={NAME_FORMAT_OPTIONS} value={form.displayNameFormat} onChange={(v) => set('displayNameFormat', v)} />
+        </Field>
+        <Field label="Kind">
+          <ChoiceChips options={KIND_OPTIONS} value={form.kind} onChange={(v) => set('kind', v)} />
+        </Field>
+        <TextField style={fieldGap} label="Pronouns" autoCapitalize="none" value={form.pronouns} onChangeText={(v) => set('pronouns', v)} />
 
-      <List.Subheader>Reach</List.Subheader>
-      {channels.map((ch, i) => (
-        <View key={`ch-${i}`} style={styles.reachRow}>
-          <ReachIcon kind={ch.medium} />
-          <TextField
-            label={ch.medium === 'Phone' ? '+46…' : 'name@example.com'}
-            style={[fieldGap, styles.reachValue]}
-            autoCapitalize="none"
-            keyboardType={ch.medium === 'Phone' ? 'phone-pad' : 'email-address'}
-            value={ch.value}
-            onChangeText={(v) => setChannels((d) => d.map((x, j) => (j === i ? { ...x, value: v } : x)))}
+        <Field label="Birthday">
+          <List.Item
+            title="Enter year"
+            right={() => (
+              <Switch value={form.birthdayYearKnown} onValueChange={(v) => setBirthday(withYearKnown(birthday, v))} />
+            )}
           />
-          <Pressable
-            onPress={() => setChannels((d) => d.map((x, j) => (j === i
-              ? { ...x, type: CHANNEL_TYPES[(CHANNEL_TYPES.indexOf((x.type as typeof CHANNEL_TYPES[number]) ?? null) + 1) % CHANNEL_TYPES.length] }
-              : x)))}
-            hitSlop={6}
-          >
-            <Chip compact mode="outlined">{ch.type ?? 'type'}</Chip>
-          </Pressable>
-          <IconButton
-            icon={ch.preferred ? 'star' : 'star-outline'}
-            size={18}
-            iconColor={ch.preferred ? c.warning : c.border}
-            style={styles.star}
-            onPress={() => setChannels((d) => d.map((x, j) => (j === i ? { ...x, preferred: !x.preferred } : x)))}
-            hitSlop={6}
-          />
-          <IconButton
-            icon={ICONS.close}
-            size={16}
-            iconColor={c.textMuted}
-            style={styles.remove}
-            onPress={() => setChannels((d) => d.filter((_, j) => j !== i))}
-            hitSlop={6}
-          />
-        </View>
-      ))}
-      {profiles.map((p, i) => (
-        <View key={`pr-${i}`} style={styles.reachRow}>
-          <ReachIcon kind={p.service} />
-          <Text style={[styles.reachService, { color: c.textMuted }]} numberOfLines={1}>{p.service}</Text>
-          <TextField
-            label="@handle or URL"
-            style={[fieldGap, styles.reachValue]}
-            autoCapitalize="none"
-            value={p.handle}
-            onChangeText={(v) => setProfiles((d) => d.map((x, j) => (j === i ? { ...x, handle: v } : x)))}
-          />
-          <IconButton
-            icon={ICONS.close}
-            size={16}
-            iconColor={c.textMuted}
-            style={styles.remove}
-            onPress={() => setProfiles((d) => d.filter((_, j) => j !== i))}
-            hitSlop={6}
-          />
-        </View>
-      ))}
-      <View style={styles.addRow}>
-        {REACH_KINDS.map((k) => (
-          <Chip
-            key={k.key}
-            mode="outlined"
-            compact
-            icon={() => <ReachIcon kind={k.key} size={13} />}
-            onPress={() => addReach(k.key)}
-          >
-            {k.key}
-          </Chip>
+          {form.birthdayYearKnown ? (
+            <DateField
+              value={form.birthday}
+              onChange={(v) => set('birthday', v)}
+              initial={birthday.month && birthday.day ? partialDateToInput({ year: null, month: Number(birthday.month), day: Number(birthday.day) }) : undefined}
+            />
+          ) : (
+            <View style={styles.pair}>
+              <View style={styles.pairItem}>
+                <MenuField placeholder="Month" options={MONTH_OPTIONS} value={form.birthdayMonth} onChange={(m) => setBirthday({ ...birthday, month: m, day: clampBirthdayDay(m, birthday.day) })} />
+              </View>
+              <View style={styles.pairItem}>
+                <MenuField placeholder="Day" options={dayOptions(form.birthdayMonth)} value={form.birthdayDay} onChange={(d) => set('birthdayDay', d)} />
+              </View>
+            </View>
+          )}
+          {contactId && <Text style={[styles.muted, { color: c.textMuted }]}>Clearing a birthday isn't supported — leave empty to keep it.</Text>}
+        </Field>
+
+        <List.Subheader>Reach</List.Subheader>
+        {channels.map((ch, i) => (
+          <View key={`ch-${i}`} style={styles.reachRow}>
+            <ReachIcon kind={ch.medium} />
+            <TextField
+              label={ch.medium === 'Phone' ? '+46…' : 'name@example.com'}
+              style={[fieldGap, styles.reachValue]}
+              autoCapitalize="none"
+              keyboardType={ch.medium === 'Phone' ? 'phone-pad' : 'email-address'}
+              value={ch.value}
+              onChangeText={(v) => setChannels((d) => d.map((x, j) => (j === i ? { ...x, value: v } : x)))}
+            />
+            <Pressable
+              onPress={() => setChannels((d) => d.map((x, j) => (j === i
+                ? { ...x, type: CHANNEL_TYPES[(CHANNEL_TYPES.indexOf((x.type as typeof CHANNEL_TYPES[number]) ?? null) + 1) % CHANNEL_TYPES.length] }
+                : x)))}
+              hitSlop={6}
+            >
+              <Chip compact mode="outlined">{ch.type ?? 'type'}</Chip>
+            </Pressable>
+            <IconButton
+              icon={ch.preferred ? 'star' : 'star-outline'}
+              size={18}
+              iconColor={ch.preferred ? c.warning : c.border}
+              style={styles.star}
+              onPress={() => setChannels((d) => d.map((x, j) => (j === i ? { ...x, preferred: !x.preferred } : x)))}
+              hitSlop={6}
+            />
+            <IconButton
+              icon={ICONS.close}
+              size={16}
+              iconColor={c.textMuted}
+              style={styles.remove}
+              onPress={() => setChannels((d) => d.filter((_, j) => j !== i))}
+              hitSlop={6}
+            />
+          </View>
         ))}
-      </View>
+        {profiles.map((p, i) => (
+          <View key={`pr-${i}`} style={styles.reachRow}>
+            <ReachIcon kind={p.service} />
+            <Text style={[styles.reachService, { color: c.textMuted }]} numberOfLines={1}>{p.service}</Text>
+            <TextField
+              label="@handle or URL"
+              style={[fieldGap, styles.reachValue]}
+              autoCapitalize="none"
+              value={p.handle}
+              onChangeText={(v) => setProfiles((d) => d.map((x, j) => (j === i ? { ...x, handle: v } : x)))}
+            />
+            <IconButton
+              icon={ICONS.close}
+              size={16}
+              iconColor={c.textMuted}
+              style={styles.remove}
+              onPress={() => setProfiles((d) => d.filter((_, j) => j !== i))}
+              hitSlop={6}
+            />
+          </View>
+        ))}
+        <View style={styles.addRow}>
+          {REACH_KINDS.map((k) => (
+            <Chip
+              key={k.key}
+              mode="outlined"
+              compact
+              icon={() => <ReachIcon kind={k.key} size={13} />}
+              onPress={() => addReach(k.key)}
+            >
+              {k.key}
+            </Chip>
+          ))}
+        </View>
 
-      <TextField style={fieldGap} label="Tags (comma-separated)" autoCapitalize="none" value={tagsCsv} onChangeText={setTagsCsv} />
+        {contactId && (
+          <>
+            <List.Subheader>Addresses</List.Subheader>
+            {residencies.map((r) => (
+              <List.Item
+                key={r.id}
+                title={residencyPlaces.get(r.placeId)?.name ?? '…'}
+                description={residencyLine(r)}
+                left={(p) => <List.Icon {...p} icon={ICONS.place} />}
+                onPress={() => setEditingResidency(r)}
+              />
+            ))}
+            <List.Item title="Add address" left={(p) => <List.Icon {...p} icon={ICONS.add} />} onPress={() => setEditingResidency('new')} />
+          </>
+        )}
 
-      <TextField
-        label="Notes"
-        multiline
-        numberOfLines={3}
-        style={[fieldGap, { minHeight: 72 }]}
-        value={form.notes}
-        onChangeText={(v) => set('notes', v)}
-      />
+        <TextField style={fieldGap} label="Tags (comma-separated)" autoCapitalize="none" value={tagsCsv} onChangeText={setTagsCsv} />
 
-      <HelperText type="error" visible={!!error}>{error}</HelperText>
-    </ScrollView>
+        <TextField
+          label="Notes"
+          multiline
+          numberOfLines={3}
+          style={[fieldGap, { minHeight: 72 }]}
+          value={form.notes}
+          onChangeText={(v) => set('notes', v)}
+        />
+
+        <HelperText type="error" visible={!!error}>{error}</HelperText>
+      </ScrollView>
+      {contactId && editingResidency && (
+        <ResidencySheet
+          contactId={contactId}
+          residency={editingResidency === 'new' ? null : editingResidency}
+          onDismiss={() => setEditingResidency(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -295,6 +328,11 @@ const styles = StyleSheet.create({
   remove: { margin: 0 },
   addRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
 });
+
+function residencyLine(r: ResidencyDoc): string {
+  const former = residencyStatus(r.movedIn ?? null, r.movedOut ?? null) === 'former';
+  return former ? `${addressTypeLabel(r.type)} · former` : addressTypeLabel(r.type);
+}
 
 function snapshot(form: ContactForm, channels: ReachChannel[], profiles: SocialProfile[], tagsCsv: string): string {
   return JSON.stringify([form, channels, profiles, tagsCsv.trim()]);
