@@ -21,7 +21,8 @@ import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { useTieredContacts } from '../../../state/useTieredContacts';
 import { errText } from '../../errText';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
-import { birthdayFromFields, partialDateBadge } from '@lupira/cal-domain/partialDate';
+import { BirthdayMonthDay } from './BirthdayMonthDay';
+import { birthdayFromFields, partialDateBadge, withYearKnown, type BirthdayFields } from '@lupira/cal-domain/partialDate';
 import { contactNameError } from '@danbro96/lupira-domain-contacts/contactNames';
 import { parseList } from '@lupira/cal-domain/itemForm';
 import { useGroup } from './useGroup';
@@ -214,6 +215,9 @@ function NewContactForm({ defaultBookId, onDone }: { defaultBookId?: string; onD
     birthdayMonth: '',
     birthdayDay: '',
   });
+  const birthday: BirthdayFields = { yearKnown: form.birthdayYearKnown, date: form.birthday, month: form.birthdayMonth, day: form.birthdayDay };
+  const setBirthday = (b: BirthdayFields) =>
+    setForm({ ...form, birthdayYearKnown: b.yearKnown, birthday: b.date, birthdayMonth: b.month, birthdayDay: b.day });
 
   return (
     <Paper variant="outlined" component="form" sx={{ p: '12px 16px', my: 1.5 }}
@@ -232,9 +236,7 @@ function NewContactForm({ defaultBookId, onDone }: { defaultBookId?: string; onD
             familyName: form.familyName || null,
             nickname: form.nickname || null,
             channels: channels.length ? channels : null,
-            birthday: birthdayFromFields({
-              yearKnown: form.birthdayYearKnown, date: form.birthday, month: form.birthdayMonth, day: form.birthdayDay,
-            }),
+            birthday: birthdayFromFields(birthday),
           },
         });
       }}
@@ -259,7 +261,7 @@ function NewContactForm({ defaultBookId, onDone }: { defaultBookId?: string; onD
           <input
             type="checkbox"
             checked={form.birthdayYearKnown}
-            onChange={(e) => setForm({ ...form, birthdayYearKnown: e.target.checked, birthday: '', birthdayMonth: '', birthdayDay: '' })}
+            onChange={(e) => setBirthday(withYearKnown(birthday, e.target.checked))}
           />{' '}
           Enter year
         </Typography>
@@ -268,10 +270,7 @@ function NewContactForm({ defaultBookId, onDone }: { defaultBookId?: string; onD
             <TextField type="date" value={form.birthday} onChange={(e) => setForm({ ...form, birthday: e.target.value })} />
           </Tooltip>
         ) : (
-          <>
-            <TextField type="number" slotProps={{ htmlInput: { min: 1, max: 12 } }} placeholder="Birth month" value={form.birthdayMonth} onChange={(e) => setForm({ ...form, birthdayMonth: e.target.value })} />
-            <TextField type="number" slotProps={{ htmlInput: { min: 1, max: 31 } }} placeholder="Birth day" value={form.birthdayDay} onChange={(e) => setForm({ ...form, birthdayDay: e.target.value })} />
-          </>
+          <BirthdayMonthDay month={form.birthdayMonth} day={form.birthdayDay} onChange={(m, d) => setForm({ ...form, birthdayMonth: m, birthdayDay: d })} />
         )}
       </WrapRow>
       <WrapRow>

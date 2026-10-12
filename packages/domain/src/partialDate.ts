@@ -61,3 +61,32 @@ export function birthdayFromFields(f: BirthdayFields): PartialDate | null {
   if (f.yearKnown) return inputToPartialDate(f.date, true);
   return f.month && f.day ? { year: null, month: Number(f.month), day: Number(f.day) } : null;
 }
+
+/** Localized month names, January first. */
+export function monthNames(locale?: string): string[] {
+  const fmt = new Intl.DateTimeFormat(locale, { month: 'long' });
+  return Array.from({ length: 12 }, (_, i) => fmt.format(new Date(FALLBACK_YEAR, i, 1)));
+}
+
+/** Days in `month` (1–12); with no year February allows the 29th. */
+export function daysInMonth(month: number, year?: number | null): number {
+  return new Date(year ?? FALLBACK_YEAR, month, 0).getDate();
+}
+
+/** The pair's day pulled back inside `month` (31 → 30 in April). */
+export function clampBirthdayDay(month: string, day: string): string {
+  const max = daysInMonth(Number(month));
+  return Number(day) > max ? String(max) : day;
+}
+
+/** Flips the year switch without losing the day: month and day carry between the date and the pair, a year
+ *  already entered is kept, and none is invented. */
+export function withYearKnown(f: BirthdayFields, yearKnown: boolean): BirthdayFields {
+  if (yearKnown === f.yearKnown) return f;
+  const dated = inputToPartialDate(f.date, true);
+  if (!yearKnown) return dated ? { ...f, yearKnown, month: String(dated.month), day: String(dated.day) } : { ...f, yearKnown };
+  if (!dated || !f.month || !f.day) return { ...f, yearKnown };
+  const month = Number(f.month);
+  const day = Math.min(Number(f.day), daysInMonth(month, dated.year));
+  return { ...f, yearKnown, date: partialDateToInput({ year: dated.year, month, day }) };
+}

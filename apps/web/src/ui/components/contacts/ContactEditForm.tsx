@@ -39,10 +39,11 @@ import { errText } from '../../errText';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { fuzzyToInput, parseFuzzyInput, residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import { addressTypeLabel } from '@danbro96/lupira-domain-contacts/residents';
-import { birthdayFields, birthdayFromFields, partialDateKey } from '@lupira/cal-domain/partialDate';
+import { birthdayFields, birthdayFromFields, partialDateKey, withYearKnown } from '@lupira/cal-domain/partialDate';
 import { contactNameError } from '@danbro96/lupira-domain-contacts/contactNames';
 import { CHANNEL_TYPES, PROFILE_SERVICES } from '@lupira/cal-domain/reach';
 import { WrapRow } from '../WrapRow';
+import { BirthdayMonthDay } from './BirthdayMonthDay';
 
 // A residency as edited: id null until saved; placeId null until a place is picked (save skips those rows).
 type AddressDraft = {
@@ -200,6 +201,16 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
   const { fields: addressFields, append: appendAddress, remove: removeAddress } = useFieldArray({ control, name: 'addresses' });
   const { fields: profileFields, append: appendProfile, remove: removeProfile } = useFieldArray({ control, name: 'profiles' });
   const birthdayYearKnown = useWatch({ control, name: 'birthdayYearKnown' });
+  const birthdayMonth = useWatch({ control, name: 'birthdayMonth' });
+  const birthdayDay = useWatch({ control, name: 'birthdayDay' });
+  const toggleBirthdayYear = (yearKnown: boolean) => {
+    const v = getValues();
+    const b = withYearKnown({ yearKnown: v.birthdayYearKnown, date: v.birthday, month: v.birthdayMonth, day: v.birthdayDay }, yearKnown);
+    setValue('birthdayYearKnown', b.yearKnown, { shouldDirty: true });
+    setValue('birthday', b.date, { shouldDirty: true });
+    setValue('birthdayMonth', b.month, { shouldDirty: true });
+    setValue('birthdayDay', b.day, { shouldDirty: true });
+  };
   const watchedChannels = useWatch({ control, name: 'channels' });
   const watchedAddresses = useWatch({ control, name: 'addresses' });
   const deceased = useWatch({ control, name: 'deceased' });
@@ -278,12 +289,7 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
               <input
                 type="checkbox"
                 checked={field.value}
-                onChange={(e) => {
-                  field.onChange(e.target.checked);
-                  setValue('birthday', '');
-                  setValue('birthdayMonth', '');
-                  setValue('birthdayDay', '');
-                }}
+                onChange={(e) => toggleBirthdayYear(e.target.checked)}
               />{' '}
               Enter year
             </Typography>
@@ -293,19 +299,13 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
           <Controller name="birthday" control={control} render={({ field }) => <TextField type="date" {...field} />} />
         ) : (
           <WrapRow>
-            <Controller
-              name="birthdayMonth"
-              control={control}
-              render={({ field }) => (
-                <TextField type="number" slotProps={{ htmlInput: { min: 1, max: 12 } }} placeholder="Month" {...field} />
-              )}
-            />
-            <Controller
-              name="birthdayDay"
-              control={control}
-              render={({ field }) => (
-                <TextField type="number" slotProps={{ htmlInput: { min: 1, max: 31 } }} placeholder="Day" {...field} />
-              )}
+            <BirthdayMonthDay
+              month={birthdayMonth}
+              day={birthdayDay}
+              onChange={(m, d) => {
+                setValue('birthdayMonth', m, { shouldDirty: true });
+                setValue('birthdayDay', d, { shouldDirty: true });
+              }}
             />
           </WrapRow>
         )}

@@ -12,6 +12,7 @@ import { REACH_KINDS } from '../../domain/reach';
 import type { ContactForm } from '../../domain/editors';
 import type { ContactCore } from '../../domain/ops';
 import { parseList } from '@lupira/cal-domain/itemForm';
+import { clampBirthdayDay, daysInMonth, monthNames, partialDateToInput, withYearKnown, type BirthdayFields } from '@lupira/cal-domain/partialDate';
 import { CHANNEL_TYPES as SHARED_CHANNEL_TYPES } from '@lupira/cal-domain/reach';
 import { contactCoreFromForm, contactFormFromDoc, contactFormFromDraft, emptyContactForm } from '../../domain/editors';
 import { contactDraftFromLink } from '../../domain/drafts';
@@ -21,6 +22,7 @@ import { useContactState } from '../../state/useContactList';
 import { ChoiceChips } from '@danbro96/lupira-expo-paper/components/ChoiceChips';
 import { DateField } from '../components/DateField';
 import { Field } from '../components/Field';
+import { MenuField } from '../components/MenuField';
 import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
 import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { ReachIcon } from '../components/ReachIcon';
@@ -33,6 +35,9 @@ import { ICONS } from '../icons';
 const KIND_OPTIONS = [{ value: 'Individual', label: 'Person' }, { value: 'Organization', label: 'Organization' }];
 const NAME_FORMAT_OPTIONS = Object.entries(DISPLAY_NAME_FORMAT_LABELS).map(([value, label]) => ({ value, label }));
 const CHANNEL_TYPES = [null, ...SHARED_CHANNEL_TYPES] as const;
+const MONTH_OPTIONS = monthNames().map((label, i) => ({ value: String(i + 1), label }));
+const dayOptions = (month: string) =>
+  Array.from({ length: daysInMonth(Number(month) || 1) }, (_, i) => ({ value: String(i + 1), label: String(i + 1) }));
 
 export function ContactEditScreen() {
   const c = useColors();
@@ -72,6 +77,9 @@ export function ContactEditScreen() {
   const dirty = snapshot(form, channels, profiles, tagsCsv) !== baseline;
 
   const set = <K extends keyof ContactForm>(key: K, value: ContactForm[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const birthday: BirthdayFields = { yearKnown: form.birthdayYearKnown, date: form.birthday, month: form.birthdayMonth, day: form.birthdayDay };
+  const setBirthday = (b: BirthdayFields) =>
+    setForm((f) => ({ ...f, birthdayYearKnown: b.yearKnown, birthday: b.date, birthdayMonth: b.month, birthdayDay: b.day }));
 
   // The kind is chosen once, when the row is added — rows render it as a fixed icon+label afterwards.
   const addReach = (key: string) => {
@@ -163,32 +171,23 @@ export function ContactEditScreen() {
         <List.Item
           title="Enter year"
           right={() => (
-            <Switch
-              value={form.birthdayYearKnown}
-              onValueChange={(v) => setForm((f) => ({ ...f, birthdayYearKnown: v, birthday: '', birthdayMonth: '', birthdayDay: '' }))}
-            />
+            <Switch value={form.birthdayYearKnown} onValueChange={(v) => setBirthday(withYearKnown(birthday, v))} />
           )}
         />
         {form.birthdayYearKnown ? (
-          <DateField value={form.birthday} onChange={(v) => set('birthday', v)} />
+          <DateField
+            value={form.birthday}
+            onChange={(v) => set('birthday', v)}
+            initial={birthday.month && birthday.day ? partialDateToInput({ year: null, month: Number(birthday.month), day: Number(birthday.day) }) : undefined}
+          />
         ) : (
           <View style={styles.pair}>
-            <TextField
-              label="Month (1–12)"
-              style={[fieldGap, styles.pairItem]}
-              keyboardType="number-pad"
-              maxLength={2}
-              value={form.birthdayMonth}
-              onChangeText={(v) => set('birthdayMonth', v.replace(/[^0-9]/g, ''))}
-            />
-            <TextField
-              label="Day (1–31)"
-              style={[fieldGap, styles.pairItem]}
-              keyboardType="number-pad"
-              maxLength={2}
-              value={form.birthdayDay}
-              onChangeText={(v) => set('birthdayDay', v.replace(/[^0-9]/g, ''))}
-            />
+            <View style={styles.pairItem}>
+              <MenuField placeholder="Month" options={MONTH_OPTIONS} value={form.birthdayMonth} onChange={(m) => setBirthday({ ...birthday, month: m, day: clampBirthdayDay(m, birthday.day) })} />
+            </View>
+            <View style={styles.pairItem}>
+              <MenuField placeholder="Day" options={dayOptions(form.birthdayMonth)} value={form.birthdayDay} onChange={(d) => set('birthdayDay', d)} />
+            </View>
           </View>
         )}
         {contactId && <Text style={[styles.muted, { color: c.textMuted }]}>Clearing a birthday isn't supported — leave empty to keep it.</Text>}
