@@ -1,0 +1,351 @@
+{
+  "rows": [
+    {
+      "placeId": "a1000000-0000-0000-0000-000000000001",
+      "label": "Café Linnea",
+      "category": "Meal",
+      "day": "2025-03-03",
+      "contactIds": [
+        "10000000-0000-0000-0000-000000000001",
+        "20000000-0000-0000-0000-000000000002"
+      ]
+    },
+    {
+      "placeId": "a1000000-0000-0000-0000-000000000001",
+      "label": "Café Linnea",
+      "category": "Meal",
+      "day": "2025-03-10",
+      "contactIds": [
+        "10000000-0000-0000-0000-000000000001",
+        "20000000-0000-0000-0000-000000000002",
+        "20000000-0000-0000-0000-000000000002"
+      ]
+    },
+    {
+      "placeId": "a1000000-0000-0000-0000-000000000001",
+      "label": "Linnea",
+      "category": "Meeting",
+      "day": "2025-03-08",
+      "contactIds": [
+        "10000000-0000-0000-0000-000000000001",
+        "30000000-0000-0000-0000-000000000003",
+        "40000000-0000-0000-0000-000000000004",
+        "50000000-0000-0000-0000-000000000005",
+        "60000000-0000-0000-0000-000000000006",
+        "00000000-0000-0000-0000-0000000000ff"
+      ]
+    },
+    {
+      "placeId": "a1000000-0000-0000-0000-000000000001",
+      "label": "  ",
+      "category": null,
+      "day": "2025-03-13",
+      "contactIds": [
+        "80000000-0000-0000-0000-000000000008"
+      ]
+    },
+    {
+      "placeId": "a1000000-0000-0000-0000-000000000001",
+      "label": null,
+      "category": "Meal",
+      "day": "2025-03-13",
+      "contactIds": null
+    },
+    {
+      "placeId": "b2000000-0000-0000-0000-000000000002",
+      "label": "Old office",
+      "category": "Meeting",
+      "day": "2025-02-01",
+      "contactIds": null
+    },
+    {
+      "placeId": "b2000000-0000-0000-0000-000000000002",
+      "label": "Kontoret",
+      "category": "Meeting",
+      "day": "2025-02-03",
+      "contactIds": null
+    },
+    {
+      "placeId": "b2000000-0000-0000-0000-000000000002",
+      "label": "Kontoret HQ",
+      "category": "Focus",
+      "day": "2025-02-03",
+      "contactIds": null
+    },
+    {
+      "placeId": "b2000000-0000-0000-0000-000000000002",
+      "label": "Kontoret",
+      "category": "Meal",
+      "day": "2025-02-03",
+      "contactIds": null
+    },
+    {
+      "placeId": "0c300000-0000-0000-0000-000000000003",
+      "label": "Stadsparken",
+      "category": "Outing",
+      "day": "2025-03-13",
+      "contactIds": null
+    },
+    {
+      "placeId": "0c300000-0000-0000-0000-000000000003",
+      "label": "Stadsparken",
+      "category": "Activity",
+      "day": "2025-03-13",
+      "contactIds": null
+    },
+    {
+      "placeId": "ffff0000-0000-0000-0000-000000000004",
+      "label": "Gymmet",
+      "category": "Activity",
+      "day": "2025-03-13",
+      "contactIds": null
+    },
+    {
+      "placeId": "ffff0000-0000-0000-0000-000000000004",
+      "label": "Gymmet",
+      "category": "Activity",
+      "day": "2025-03-12",
+      "contactIds": null
+    },
+    {
+      "placeId": "d4000000-0000-0000-0000-000000000005",
+      "label": "Hemma",
+      "category": "Occasion",
+      "day": "2024-12-24",
+      "contactIds": [
+        "10000000-0000-0000-0000-000000000001"
+      ]
+    },
+    {
+      "placeId": "d4000000-0000-0000-0000-000000000005",
+      "label": "Hemma",
+      "category": "General",
+      "day": "2024-12-24",
+      "contactIds": [
+        "10000000-0000-0000-0000-000000000001"
+      ]
+    },
+    {
+      "placeId": "d4000000-0000-0000-0000-000000000005",
+      "label": "Hemma",
+      "category": "Chore",
+      "day": "2024-12-31",
+      "contactIds": [
+        "10000000-0000-0000-0000-000000000001"
+      ]
+    }
+  ],
+  "expected": [
+    {
+      "placeId": "a1000000-0000-0000-0000-000000000001",
+      "label": "Café Linnea",
+      "eventCount": 5,
+      "lastDay": "2025-03-13",
+      "byCategory": [
+        {
+          "category": "Meal",
+          "eventCount": 3,
+          "lastDay": "2025-03-13"
+        },
+        {
+          "category": "General",
+          "eventCount": 1,
+          "lastDay": "2025-03-13"
+        },
+        {
+          "category": "Meeting",
+          "eventCount": 1,
+          "lastDay": "2025-03-08"
+        }
+      ],
+      "companions": [
+        {
+          "contactId": "10000000-0000-0000-0000-000000000001",
+          "eventCount": 3
+        },
+        {
+          "contactId": "20000000-0000-0000-0000-000000000002",
+          "eventCount": 2
+        },
+        {
+          "contactId": "00000000-0000-0000-0000-0000000000ff",
+          "eventCount": 1
+        },
+        {
+          "contactId": "30000000-0000-0000-0000-000000000003",
+          "eventCount": 1
+        },
+        {
+          "contactId": "40000000-0000-0000-0000-000000000004",
+          "eventCount": 1
+        }
+      ]
+    },
+    {
+      "placeId": "0c300000-0000-0000-0000-000000000003",
+      "label": "Stadsparken",
+      "eventCount": 2,
+      "lastDay": "2025-03-13",
+      "byCategory": [
+        {
+          "category": "Outing",
+          "eventCount": 1,
+          "lastDay": "2025-03-13"
+        },
+        {
+          "category": "Activity",
+          "eventCount": 1,
+          "lastDay": "2025-03-13"
+        }
+      ],
+      "companions": []
+    },
+    {
+      "placeId": "ffff0000-0000-0000-0000-000000000004",
+      "label": "Gymmet",
+      "eventCount": 2,
+      "lastDay": "2025-03-13",
+      "byCategory": [
+        {
+          "category": "Activity",
+          "eventCount": 2,
+          "lastDay": "2025-03-13"
+        }
+      ],
+      "companions": []
+    },
+    {
+      "placeId": "b2000000-0000-0000-0000-000000000002",
+      "label": "Kontoret",
+      "eventCount": 4,
+      "lastDay": "2025-02-03",
+      "byCategory": [
+        {
+          "category": "Meeting",
+          "eventCount": 2,
+          "lastDay": "2025-02-03"
+        },
+        {
+          "category": "Meal",
+          "eventCount": 1,
+          "lastDay": "2025-02-03"
+        },
+        {
+          "category": "Focus",
+          "eventCount": 1,
+          "lastDay": "2025-02-03"
+        }
+      ],
+      "companions": []
+    },
+    {
+      "placeId": "d4000000-0000-0000-0000-000000000005",
+      "label": "Hemma",
+      "eventCount": 3,
+      "lastDay": "2024-12-31",
+      "byCategory": [
+        {
+          "category": "Chore",
+          "eventCount": 1,
+          "lastDay": "2024-12-31"
+        },
+        {
+          "category": "General",
+          "eventCount": 1,
+          "lastDay": "2024-12-24"
+        },
+        {
+          "category": "Occasion",
+          "eventCount": 1,
+          "lastDay": "2024-12-24"
+        }
+      ],
+      "companions": [
+        {
+          "contactId": "10000000-0000-0000-0000-000000000001",
+          "eventCount": 3
+        }
+      ]
+    }
+  ],
+  "expectedLimit3": [
+    {
+      "placeId": "a1000000-0000-0000-0000-000000000001",
+      "label": "Café Linnea",
+      "eventCount": 5,
+      "lastDay": "2025-03-13",
+      "byCategory": [
+        {
+          "category": "Meal",
+          "eventCount": 3,
+          "lastDay": "2025-03-13"
+        },
+        {
+          "category": "General",
+          "eventCount": 1,
+          "lastDay": "2025-03-13"
+        },
+        {
+          "category": "Meeting",
+          "eventCount": 1,
+          "lastDay": "2025-03-08"
+        }
+      ],
+      "companions": [
+        {
+          "contactId": "10000000-0000-0000-0000-000000000001",
+          "eventCount": 3
+        },
+        {
+          "contactId": "20000000-0000-0000-0000-000000000002",
+          "eventCount": 2
+        },
+        {
+          "contactId": "00000000-0000-0000-0000-0000000000ff",
+          "eventCount": 1
+        },
+        {
+          "contactId": "30000000-0000-0000-0000-000000000003",
+          "eventCount": 1
+        },
+        {
+          "contactId": "40000000-0000-0000-0000-000000000004",
+          "eventCount": 1
+        }
+      ]
+    },
+    {
+      "placeId": "0c300000-0000-0000-0000-000000000003",
+      "label": "Stadsparken",
+      "eventCount": 2,
+      "lastDay": "2025-03-13",
+      "byCategory": [
+        {
+          "category": "Outing",
+          "eventCount": 1,
+          "lastDay": "2025-03-13"
+        },
+        {
+          "category": "Activity",
+          "eventCount": 1,
+          "lastDay": "2025-03-13"
+        }
+      ],
+      "companions": []
+    },
+    {
+      "placeId": "ffff0000-0000-0000-0000-000000000004",
+      "label": "Gymmet",
+      "eventCount": 2,
+      "lastDay": "2025-03-13",
+      "byCategory": [
+        {
+          "category": "Activity",
+          "eventCount": 2,
+          "lastDay": "2025-03-13"
+        }
+      ],
+      "companions": []
+    }
+  ]
+}

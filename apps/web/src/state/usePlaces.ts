@@ -37,14 +37,17 @@ export function useCreatePlaceFromHit() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ hit, typedName }: { hit: GeocodeHit; typedName: string }): Promise<PlaceDto> => {
-      const req = placeRequestFromHit(hit, typedName, Object.values(PlaceCategory));
+      const req = placeRequestFromHit(hit);
       if (req.kind === 'fromGeocode') {
-        const res = await createPlaceFromGeocode(req.body);
+        const res = await createPlaceFromGeocode({ query: typedName, osmType: req.osmType, osmId: req.osmId });
         if (!res.placeId) throw new Error(GEOCODER_UNAVAILABLE);
         // from-geocode returns a thin resolution; fetch the full DTO once to seed the cache.
         return getPlace(res.placeId);
       }
-      return createPlace({ ...req.body, category: req.body.category as PlaceCategory | undefined });
+      return createPlace({
+        name: typedName || hit.displayName, latitude: req.lat, longitude: req.lon, formattedAddress: hit.displayName,
+        category: Object.values(PlaceCategory).find((c) => c === hit.category),
+      });
     },
     onSuccess: (place) => seedGetPlace(queryClient, place),
   });

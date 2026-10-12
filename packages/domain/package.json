@@ -16,8 +16,10 @@
     "@danbro96/lupira-config-eslint": "0.2.0"
   },
   "dependencies": {
+    "@danbro96/lupira-domain-contacts": "0.2.0",
     "@danbro96/lupira-domain-core": "0.1.0",
     "@danbro96/lupira-domain-events": "0.1.0",
+    "@danbro96/lupira-domain-places": "0.2.0",
     "fractional-indexing": "4.0.0"
   }
 }

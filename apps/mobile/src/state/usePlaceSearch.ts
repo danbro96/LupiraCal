@@ -74,12 +74,15 @@ export function useGeocodeHits(query: string) {
 /** A geocoder hit becomes a place: OSM-backed hits resolve server-side (deduped against existing places), the
  *  rest are created at their coordinates under the name that was typed. */
 export async function createPlaceFromHit(hit: GeocodeResultDto, typedName: string): Promise<PlaceOption> {
-  const req = placeRequestFromHit(hit, typedName, Object.values(PlaceCategory));
+  const req = placeRequestFromHit(hit);
   if (req.kind === 'fromGeocode') {
-    const resolved = await createPlaceFromGeocode(req.body);
+    const resolved = await createPlaceFromGeocode({ query: typedName, osmType: req.osmType, osmId: req.osmId });
     if (!resolved.placeId) throw new Error(GEOCODER_UNAVAILABLE);
     return { placeId: resolved.placeId, label: resolved.name };
   }
-  const place = await createPlace({ ...req.body, category: req.body.category as PlaceCategory | undefined });
+  const place = await createPlace({
+    name: typedName || hit.displayName, latitude: req.lat, longitude: req.lon, formattedAddress: hit.displayName,
+    category: Object.values(PlaceCategory).find((c) => c === hit.category),
+  });
   return { placeId: place.id, label: place.name };
 }

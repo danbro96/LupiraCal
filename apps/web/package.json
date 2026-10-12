@@ -16,13 +16,13 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@danbro96/lupira-domain-contacts": "0.1.0",
+    "@danbro96/lupira-domain-contacts": "0.2.0",
     "@danbro96/lupira-domain-core": "0.1.0",
     "@danbro96/lupira-domain-events": "0.1.0",
     "@danbro96/lupira-domain-links": "0.2.0",
     "@danbro96/lupira-domain-maps": "0.1.0",
     "@danbro96/lupira-domain-photos": "0.1.0",
-    "@danbro96/lupira-domain-places": "0.1.0",
+    "@danbro96/lupira-domain-places": "0.2.0",
     "@danbro96/lupira-http": "0.2.0",
     "@danbro96/lupira-tokens-calendar": "0.1.0",
     "@danbro96/lupira-tokens-core": "0.3.0",
