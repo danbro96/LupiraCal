@@ -7882,6 +7882,68 @@
         ]
       }
     },
+    "/tasks-api/lists": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List the lists the caller is a member of.",
+        "description": "`?archived=true` returns the caller's archived lists instead of the active ones.",
+        "operationId": "ListLists",
+        "parameters": [
+          {
+            "name": "archived",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ListDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/tasks-api/items": {
       "get": {
         "tags": [
@@ -7939,6 +8001,215 @@
                   "items": {
                     "$ref": "#/components/schemas/ItemDto"
                   }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/tasks-api/lists/{listId}/items": {
+      "get": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "List a list's items (Viewer+).",
+        "description": "Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.",
+        "operationId": "ListListItems",
+        "parameters": [
+          {
+            "name": "listId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "completed",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tagId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "parentItemId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "assignedTo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TasksItemStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ItemDto"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Cookie": [ ]
+          },
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "tasks"
+        ],
+        "summary": "Add an item (Editor+).",
+        "description": "Body `{ id (GUIDv7), title, parentItemId?, dueAt?, assigneeEmail?, quantity?, unit?, priority? (0..9), tagIds?, sortOrder, occurredAt? }`. Re-sending an existing id is idempotent.",
+        "operationId": "CreateListItem",
+        "parameters": [
+          {
+            "name": "listId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Client-generated GUIDv7 command id. A redelivery with the same key is a no-op that returns the prior result (offline-safe retry).",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -10686,6 +10957,83 @@
           }
         },
         "description": "Create a contact via REST/MCP. No `FullName` — the display name is composed from the structured parts.\n            An employer is set separately as membership in an `organization`-kind contact group."
+      },
+      "CreateItemRequest": {
+        "required": [
+          "id",
+          "title",
+          "sortOrder"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "parentItemId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "dueAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "assigneeEmail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "quantity": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "format": "double"
+          },
+          "unit": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "priority": {
+            "type": "integer",
+            "description": "Priority 0..9 (0 = none). Defaults to 0.",
+            "format": "int32"
+          },
+          "tagIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "sortOrder": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Client wall-clock at the moment of the change (LWW key). Defaults to server now.",
+            "format": "date-time"
+          }
+        },
+        "description": "Add an item. The client supplies a GUIDv7 Guid CreateItemRequest.Id (idempotent create) and a\nfractional-index string CreateItemRequest.SortOrder string. DateTimeOffset? CreateItemRequest.OccurredAt is the\nclient wall-clock used for last-writer-wins; when omitted the server stamps now."
       },
       "CreatePlaceFromGeocodeRequest": {
         "required": [

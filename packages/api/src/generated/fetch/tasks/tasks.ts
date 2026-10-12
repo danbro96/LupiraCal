@@ -5,8 +5,12 @@
  * OpenAPI spec version: v1
  */
 import type {
+  CreateItemRequest,
   ItemDto,
+  ListDto,
   ListItemsParams,
+  ListListItemsParams,
+  ListListsParams,
   SyncItemsParams,
   SyncListsParams,
   SyncPageOfListDto,
@@ -14,6 +18,37 @@ import type {
 } from '../../models';
 
 import { apiRequest } from '../../../transport';
+
+export const getListListsUrl = (params?: ListListsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/tasks-api/lists?${stringifiedParams}` : `/tasks-api/lists`
+}
+
+/**
+ * `?archived=true` returns the caller's archived lists instead of the active ones.
+ * @summary List the lists the caller is a member of.
+ */
+export const listLists = async (params?: ListListsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ListDto[]> => {
+
+  return apiRequest<ListDto[]>(getListListsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
 
 export const getListItemsUrl = (params?: ListItemsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -42,6 +77,78 @@ export const listItems = async (params?: ListItemsParams, options?: Parameters<t
     method: 'GET'
 
 
+  }
+);}
+
+
+export const getListListItemsUrl = (listId: string,
+    params?: ListListItemsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/tasks-api/lists/${listId}/items?${stringifiedParams}` : `/tasks-api/lists/${listId}/items`
+}
+
+/**
+ * Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.
+ * @summary List a list's items (Viewer+).
+ */
+export const listListItems = async (listId: string,
+    params?: ListListItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ItemDto[]> => {
+
+  return apiRequest<ItemDto[]>(getListListItemsUrl(listId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateListItemUrl = (listId: string,) => {
+
+
+
+
+  return `/tasks-api/lists/${listId}/items`
+}
+
+/**
+ * Body `{ id (GUIDv7), title, parentItemId?, dueAt?, assigneeEmail?, quantity?, unit?, priority? (0..9), tagIds?, sortOrder, occurredAt? }`. Re-sending an existing id is idempotent.
+ * @summary Add an item (Editor+).
+ */
+export const createListItem = async (listId: string,
+    createItemRequest: CreateItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ItemDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ItemDto>(getCreateListItemUrl(listId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createItemRequest)
   }
 );}
 

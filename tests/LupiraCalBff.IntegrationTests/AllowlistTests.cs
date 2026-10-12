@@ -86,6 +86,8 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
     [InlineData("/contact-api/sync/groups", "/sync/groups")]
     [InlineData("/tasks-api/sync/items", "/sync/items")]
     [InlineData("/tasks-api/sync/lists", "/sync/lists")]
+    [InlineData("/tasks-api/lists", "/lists")]
+    [InlineData("/tasks-api/lists/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/items", "/lists/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/items")]
     public async Task Listed_operations_the_clients_still_call_are_forwarded(string path, string upstreamPath)
     {
         var client = Client();
@@ -107,6 +109,17 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
         var resp = await client.PostAsync(path, new StringContent("BEGIN", MediaTypeHeaderValue.Parse(contentType)));
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         Assert.Equal(upstreamPath, (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
+    }
+
+    [Fact]
+    public async Task Task_create_is_forwarded()
+    {
+        var client = Client();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", BffTestFactory.MintToken());
+
+        var resp = await client.PostAsJsonAsync("/tasks-api/lists/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/items", new { title = "x" });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal("/lists/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/items", (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
     }
 
     [Fact]

@@ -5,23 +5,31 @@
  * OpenAPI spec version: v1
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
+  CreateItemRequest,
   ItemDto,
+  ListDto,
   ListItemsParams,
+  ListListItemsParams,
+  ListListsParams,
   ProblemDetails,
   SyncItemsParams,
   SyncListsParams,
@@ -54,6 +62,114 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListListsUrl = (params?: ListListsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/tasks-api/lists?${stringifiedParams}` : `/tasks-api/lists`
+}
+
+/**
+ * `?archived=true` returns the caller's archived lists instead of the active ones.
+ * @summary List the lists the caller is a member of.
+ */
+export const listLists = async (params?: ListListsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ListDto[]> => {
+
+  return apiRequest<ListDto[]>(getListListsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListListsQueryKey = (params?: ListListsParams,) => {
+    return [
+    `/tasks-api/lists`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListListsQueryOptions = <TData = Awaited<ReturnType<typeof listLists>>, TError = ProblemDetails>(params?: ListListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListListsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLists>>> = ({ signal }) => listLists(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListListsQueryResult = NonNullable<Awaited<ReturnType<typeof listLists>>>
+export type ListListsQueryError = ProblemDetails
+
+
+export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TError = ProblemDetails>(
+ params: undefined |  ListListsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLists>>,
+          TError,
+          Awaited<ReturnType<typeof listLists>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TError = ProblemDetails>(
+ params?: ListListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLists>>,
+          TError,
+          Awaited<ReturnType<typeof listLists>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TError = ProblemDetails>(
+ params?: ListListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List the lists the caller is a member of.
+ */
+
+export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TError = ProblemDetails>(
+ params?: ListListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListListsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
 
 export const getListItemsUrl = (params?: ListItemsParams,) => {
   const normalizedParams = new URLSearchParams();
@@ -163,7 +279,212 @@ export function useListItems<TData = Awaited<ReturnType<typeof listItems>>, TErr
 
 
 
-export const getTasksGetItemUrl = (listId: string,
+export const getListListItemsUrl = (listId: string,
+    params?: ListListItemsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/tasks-api/lists/${listId}/items?${stringifiedParams}` : `/tasks-api/lists/${listId}/items`
+}
+
+/**
+ * Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.
+ * @summary List a list's items (Viewer+).
+ */
+export const listListItems = async (listId: string,
+    params?: ListListItemsParams, options?: Parameters<typeof apiRequest>[1]): Promise<ItemDto[]> => {
+
+  return apiRequest<ItemDto[]>(getListListItemsUrl(listId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListListItemsQueryKey = (listId: string,
+    params?: ListListItemsParams,) => {
+    return [
+    `/tasks-api/lists/${listId}/items`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListListItemsQueryOptions = <TData = Awaited<ReturnType<typeof listListItems>>, TError = ProblemDetails>(listId: string,
+    params?: ListListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListListItemsQueryKey(listId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listListItems>>> = ({ signal }) => listListItems(listId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: listId !== null && listId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListListItemsQueryResult = NonNullable<Awaited<ReturnType<typeof listListItems>>>
+export type ListListItemsQueryError = ProblemDetails
+
+
+export function useListListItems<TData = Awaited<ReturnType<typeof listListItems>>, TError = ProblemDetails>(
+ listId: string,
+    params: undefined |  ListListItemsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listListItems>>,
+          TError,
+          Awaited<ReturnType<typeof listListItems>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListListItems<TData = Awaited<ReturnType<typeof listListItems>>, TError = ProblemDetails>(
+ listId: string,
+    params?: ListListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listListItems>>,
+          TError,
+          Awaited<ReturnType<typeof listListItems>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListListItems<TData = Awaited<ReturnType<typeof listListItems>>, TError = ProblemDetails>(
+ listId: string,
+    params?: ListListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List a list's items (Viewer+).
+ */
+
+export function useListListItems<TData = Awaited<ReturnType<typeof listListItems>>, TError = ProblemDetails>(
+ listId: string,
+    params?: ListListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListListItemsQueryOptions(listId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getCreateListItemUrl = (listId: string,) => {
+
+
+
+
+  return `/tasks-api/lists/${listId}/items`
+}
+
+/**
+ * Body `{ id (GUIDv7), title, parentItemId?, dueAt?, assigneeEmail?, quantity?, unit?, priority? (0..9), tagIds?, sortOrder, occurredAt? }`. Re-sending an existing id is idempotent.
+ * @summary Add an item (Editor+).
+ */
+export const createListItem = async (listId: string,
+    createItemRequest: CreateItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<ItemDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<ItemDto>(getCreateListItemUrl(listId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createItemRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateListItemMutationKey = () => ['createListItem'] as const;
+
+export const getCreateListItemMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createListItem>>, TError,CreateListItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createListItem>>, TError,CreateListItemMutationVariables, TContext> => {
+
+const mutationKey = getCreateListItemMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createListItem>>, CreateListItemMutationVariables> = (props) => {
+          const {listId,data} = props ?? {};
+
+          return  createListItem(listId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateListItemMutationResult = NonNullable<Awaited<ReturnType<typeof createListItem>>>
+    export type CreateListItemMutationBody = CreateItemRequest
+    export type CreateListItemMutationError = ProblemDetails
+    export type CreateListItemMutationVariables = {listId: string;data: CreateItemRequest}
+
+    /**
+ * @summary Add an item (Editor+).
+ */
+export const useCreateListItem = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createListItem>>, TError,CreateListItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createListItem>>,
+        TError,
+        CreateListItemMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateListItemMutationOptions(options), queryClient);
+    }
+    export const getTasksGetItemUrl = (listId: string,
     itemId: string,) => {
 
 
