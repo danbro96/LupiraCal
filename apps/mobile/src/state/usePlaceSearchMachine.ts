@@ -43,10 +43,7 @@ export function usePlaceSearchMachine({ pinNameRequired, seed = '', pin, near, o
     switch (command.kind) {
       case 'geocode':
         try {
-          const hits = await forwardGeocode({
-            q: command.q, intent: GeocodeIntent.Typeahead, nearLat: near?.lat, nearLon: near?.lon, limit: ADDRESS_SEARCH_LIMIT,
-          });
-          dispatch({ type: 'GEOCODE_OK', token: command.token, hits: hits.filter((h) => !h.isArea) });
+          dispatch({ type: 'GEOCODE_OK', token: command.token, hits: await typeaheadHits(command.q, near) });
         } catch {
           dispatch({ type: 'GEOCODE_ERROR', token: command.token });
         }
@@ -77,6 +74,11 @@ export function usePlaceSearchMachine({ pinNameRequired, seed = '', pin, near, o
   };
 
   return { state, dispatch, pickHit };
+}
+
+async function typeaheadHits(q: string, near: GeoPoint | null | undefined) {
+  const hits = await forwardGeocode({ q, intent: GeocodeIntent.Typeahead, nearLat: near?.lat, nearLon: near?.lon, limit: ADDRESS_SEARCH_LIMIT });
+  return hits.filter((h) => !h.isArea);
 }
 
 const unavailable = (e: unknown) => (e instanceof Error && e.message === GEOCODER_UNAVAILABLE ? e.message : undefined);
