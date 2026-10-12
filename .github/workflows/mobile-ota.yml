@@ -46,4 +46,4 @@ jobs:
         env:
           BRANCH: ${{ inputs.branch }}
           MESSAGE: ${{ inputs.message }}
-        run: eas update --branch "$BRANCH" --message "$MESSAGE" --non-interactive
+        run: eas update --branch "$BRANCH" --environment "$BRANCH" --platform android --message "$MESSAGE" --non-interactive
