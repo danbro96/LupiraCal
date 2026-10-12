@@ -55,7 +55,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 
 `ItemEditScreen`:
 
-- A new event starts on the last-used calendars (`prefs.lastCalendarIds`) with you invited as going — your contact id comes from the mirrored `/contact-api/me` doc (`contact.me`); an `item.invite` op's `accept` ids get an RSVP right after the invite. Events you're not on offer Join (detail) and Add me (`PeopleSheet`).
+- A new event starts on the last-used calendars (`prefs.lastCalendarIds`) with you invited as going — your contact id comes from the mirrored `/contact-api/me` doc (`contact.me`); an `item.invite` op's `accept` ids get an RSVP right after the invite. Events you're not on offer Join (detail) and Add me (`PeopleSheet`). `PeopleSheet` lists matches (name or nickname) right under its search field; the people picked are a chip row (tap = remove).
 - The place sheet is one list ranked by `@danbro96/lupira-domain-places/placeRank` (saved, hotspots decayed by last visit, typeahead `Place`s only, contacts' addresses by name; invited people's homes lead), each row saying who lives there (`residents` — current addresses only).
 - Title, when, place, description up front; the rare fields are More rows opening `ui/event/*Sheet` (`ui/components/Sheet`).
 - One Save = one `saveItem` enqueue: core revise + `item.file`/`item.unfile` + `item.invite`/`item.uninvite`. Participation has no section guard; each invite request carries a key derived from the op's command id + contact, and uninvite removes by contact — neither needs the participation id an offline invite doesn't have yet.

@@ -320,7 +320,6 @@ export function ItemEditScreen() {
       {sheet === 'people' && (
         <PeopleSheet
           selected={attendeeIds}
-          attendees={state?.doc.attendees ?? []}
           me={me}
           onChange={setAttendeeIds}
           onDismiss={() => setSheet(null)}
