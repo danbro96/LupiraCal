@@ -126,6 +126,7 @@ export * from './mergeItemMetadataParams';
 export * from './messageSource';
 export * from './modelTier';
 export * from './moveContactRequest';
+export * from './moveOutRequest';
 export * from './moveRequest';
 export * from './occurrenceOrigin';
 export * from './occurrenceOverride';

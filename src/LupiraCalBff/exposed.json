@@ -91,6 +91,7 @@
       "POST /groups/{groupId}/members",
       "POST /me/bootstrap",
       "POST /moves",
+      "POST /residencies/{id}/move-out",
       "PUT /address-books/{addressBookId}",
       "PUT /contacts/{id}",
       "PUT /contacts/{id}/channels",

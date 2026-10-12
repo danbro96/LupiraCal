@@ -60,7 +60,6 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
     [InlineData("POST", "/geo-api/curation/prune")]
     [InlineData("GET", "/api/items/by-place/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13")]
     [InlineData("POST", "/api/items/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/relations/batch")]
-    [InlineData("POST", "/contact-api/residencies/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/move-out")]
     [InlineData("GET", "/tasks-api/lists/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13")]
     public async Task Operation_removed_from_the_allowlist_is_not_forwarded(string method, string path)
     {
@@ -133,6 +132,17 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
         var resp = await client.PostAsJsonAsync("/geo-api/places/from-pin", new { latitude = 60.13, longitude = 12.99 });
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         Assert.Equal("/places/from-pin", (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
+    }
+
+    [Fact]
+    public async Task Residency_move_out_is_forwarded()
+    {
+        var client = Client();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", BffTestFactory.MintToken());
+
+        var resp = await client.PostAsJsonAsync("/contact-api/residencies/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/move-out", new { movedOut = new { year = 2026 } });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal("/residencies/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/move-out", (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
     }
 
     [Fact]
