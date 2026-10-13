@@ -4,6 +4,7 @@ const cal = vi.hoisted(() => ({
   getItem: vi.fn(),
   inviteParticipant: vi.fn(),
   respondToInvitation: vi.fn(),
+  setParticipantReminder: vi.fn(),
 }));
 vi.mock('@lupira/cal-api/fetch/cal', () => cal);
 const contact = vi.hoisted(() => ({
@@ -72,6 +73,34 @@ describe('item.respond replay', () => {
     await replayOp(respond);
 
     expect(cal.respondToInvitation).not.toHaveBeenCalled();
+  });
+});
+
+describe('item.reminder replay', () => {
+  const at = { aggregate: 'cal.item', aggregateId: 'item-1', itemId: 'item-1', contactId: 'anna', occurredAt: '2026-09-30T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000004' } as const;
+
+  beforeEach(() => {
+    cal.getItem.mockReset();
+    cal.setParticipantReminder.mockReset().mockResolvedValue({});
+  });
+
+  it('sets the reminder on the contact\'s participation, minutes only for Before', async () => {
+    cal.getItem.mockResolvedValue(invited('anna'));
+    await replayOp({ ...at, kind: 'item.reminder', reminder: { mode: 'Before', minutesBefore: 30 } });
+    await replayOp({ ...at, kind: 'item.reminder', reminder: { mode: 'Off', minutesBefore: null } });
+
+    const [[itemId, participationId, before, options], [, , off]] = cal.setParticipantReminder.mock.calls;
+    expect([itemId, participationId, before]).toEqual(['item-1', 'p-anna', { mode: 'Before', minutesBefore: 30, occurredAt: at.occurredAt }]);
+    expect(options.headers['Idempotency-Key']).toBe(at.commandId);
+    expect(off).toEqual({ mode: 'Off', occurredAt: at.occurredAt });
+  });
+
+  it('does nothing once the contact or the item is gone', async () => {
+    cal.getItem.mockResolvedValueOnce(invited('bo')).mockRejectedValueOnce(new ApiError(404, 'gone'));
+    await replayOp({ ...at, kind: 'item.reminder', reminder: { mode: 'Off', minutesBefore: null } });
+    await replayOp({ ...at, kind: 'item.reminder', reminder: { mode: 'Off', minutesBefore: null } });
+
+    expect(cal.setParticipantReminder).not.toHaveBeenCalled();
   });
 });
 

@@ -97,6 +97,23 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
       if (!attendees.some((a) => a.contactId === op.contactId)) return state;
       return { ...state, doc: { ...state.doc, attendees: attendees.map((a) => (a.contactId === op.contactId ? { ...a, status: op.status } : a)) } };
     }
+    // Guarded per participation like the server; an invite still in the outbox has no id to guard yet.
+    case 'item.reminder': {
+      if (!state) return state;
+      const attendees = state.doc.attendees ?? [];
+      const at = attendees.findIndex((a) => a.contactId === op.contactId);
+      if (at < 0) return state;
+      const key = attendees[at].participationId;
+      const g = key ? state.guards.reminders?.[key] : undefined;
+      if (g && !wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
+      const reminder = op.reminder.mode === 'Default' ? null : op.reminder;
+      return {
+        doc: { ...state.doc, attendees: attendees.map((a, i) => (i === at ? { ...a, reminder } : a)) },
+        guards: key
+          ? { ...state.guards, reminders: { ...state.guards.reminders, [key]: { ts: op.occurredAt, cmd: op.commandId } } }
+          : state.guards,
+      };
+    }
     default:
       return state;
   }

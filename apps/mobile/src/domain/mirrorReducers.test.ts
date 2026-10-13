@@ -206,6 +206,42 @@ describe('attendees', () => {
   });
 });
 
+describe('reminders', () => {
+  const remind = (contactId: string, minute: number, n: number, minutesBefore: number | null = 30): ClientOp => ({
+    aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.reminder', itemId: 'item-1', contactId, occurredAt: T(minute), commandId: cmd(n),
+    reminder: minutesBefore === null ? { mode: 'Default', minutesBefore: null } : { mode: 'Before', minutesBefore },
+  });
+  const withAnna = (): MirrorItem => ({
+    ...baseItem(),
+    doc: { ...baseItem().doc, attendees: [{ participationId: 'p-anna', contactId: 'anna', role: 'RequiredParticipant', status: 'Accepted' }] },
+  });
+
+  it('sets the attendee\'s reminder under a guard of its participation', () => {
+    const set = applyItemOp(withAnna(), remind('anna', 5, 5))!;
+    expect(set.doc.attendees?.[0].reminder).toEqual({ mode: 'Before', minutesBefore: 30 });
+    expect(set.guards.reminders).toEqual({ 'p-anna': { ts: T(5), cmd: cmd(5) } });
+  });
+
+  it('loses to a newer write from another device, like the server', () => {
+    const newer = applyItemOp(withAnna(), remind('anna', 9, 9, 60))!;
+    expect(applyItemOp(newer, remind('anna', 5, 5))).toBe(newer);
+  });
+
+  it('stores Default as no reminder', () => {
+    const set = applyItemOp(applyItemOp(withAnna(), remind('anna', 5, 5))!, remind('anna', 6, 6, null))!;
+    expect(set.doc.attendees?.[0].reminder).toBeNull();
+  });
+
+  it('applies unguarded behind an invite still in the outbox, and ignores someone not on the item', () => {
+    const op: ClientOp = { aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.invite', itemId: 'item-1', contactIds: ['me'], accept: ['me'], occurredAt: T(1), commandId: cmd(1) };
+    const invited = applyItemOp(baseItem(), op)!;
+    const set = applyItemOp(invited, remind('me', 2, 2))!;
+    expect(set.doc.attendees?.[0].reminder).toEqual({ mode: 'Before', minutesBefore: 30 });
+    expect(set.guards.reminders).toBeUndefined();
+    expect(applyItemOp(invited, remind('bo', 2, 2))).toBe(invited);
+  });
+});
+
 describe('applyResidencyOp', () => {
   const at = { aggregate: 'contact.residency', aggregateId: 'r-1', residencyId: 'r-1', contactId: 'c-1', occurredAt: T(1) } as const;
   const home = { placeId: 'p-1', type: 'Home', label: ' Summer ', movedIn: { year: 2020 }, movedOut: null };

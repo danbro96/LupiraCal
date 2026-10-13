@@ -1,6 +1,6 @@
 import { v7 as uuidv7 } from 'uuid';
 import type { Aggregate } from './aggregates';
-import type { ContactDoc, FuzzyDateDto, ItemDoc, ReachChannel, ResidencyDoc, SocialProfile } from './docTypes';
+import type { ContactDoc, FuzzyDateDto, ItemDoc, ParticipantReminder, ReachChannel, ResidencyDoc, SocialProfile } from './docTypes';
 
 /** The offline command vocabulary — one op per replayable REST write. Ops are enqueued transactionally with
  *  their optimistic mirror effect and replayed with `Idempotency-Key: commandId` + `occurredAt`, so a
@@ -47,6 +47,7 @@ export type ClientOp = Base & (
   | { kind: 'item.invite'; itemId: string; contactIds: string[]; accept?: string[] }
   | { kind: 'item.uninvite'; itemId: string; contactId: string }
   | { kind: 'item.respond'; itemId: string; contactId: string; status: RsvpStatus }
+  | { kind: 'item.reminder'; itemId: string; contactId: string; reminder: ParticipantReminder }
   | { kind: 'contact.create'; contactId: string; sourceKey: string; addressBookId: string; core: ContactCore }
   | { kind: 'contact.revise'; contactId: string; core: ContactCore }
   | { kind: 'contact.channels'; contactId: string; channels: ReachChannel[] }
@@ -77,6 +78,7 @@ export const OP_LABELS: Record<OpKind, string> = {
   'item.invite': 'Invite to event',
   'item.uninvite': 'Remove from event',
   'item.respond': 'Set RSVP',
+  'item.reminder': 'Set reminder',
   'contact.create': 'Create contact',
   'contact.revise': 'Edit contact',
   'contact.channels': 'Edit contact channels',

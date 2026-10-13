@@ -2,7 +2,7 @@ import { v7 as uuidv7 } from 'uuid';
 import { deterministicIdFor } from '../data/ids';
 import type { ResidencyChange } from '../domain/addressRows';
 import { Aggregate } from '../domain/aggregates';
-import type { ReachChannel, SocialProfile } from '../domain/docTypes';
+import type { ParticipantReminder, ReachChannel, SocialProfile } from '../domain/docTypes';
 import { residencyStreamKey } from '../domain/ids';
 import type { ClientOp, ContactCore, ItemCore, RsvpStatus } from '../domain/ops';
 import { stamp } from '../domain/ops';
@@ -66,6 +66,8 @@ export type ItemSave = {
   uninvite: string[];
   /** Invitees who accept on the spot — you. */
   accept?: string[];
+  /** Your own reminder; it replays behind the invite that puts you on the event. */
+  reminder?: { contactId: string; reminder: ParticipantReminder };
 };
 
 /** One editor save: the core write plus its filing and attendee diffs, enqueued as one transaction so a
@@ -90,6 +92,7 @@ export async function saveItem(itemId: string | undefined, save: ItemSave): Prom
     ops.push({ kind: 'item.invite', itemId: id, contactIds: save.invite, ...(accept?.length ? { accept } : {}), ...item(id) });
   }
   for (const contactId of save.uninvite) ops.push({ kind: 'item.uninvite', itemId: id, contactId, ...item(id) });
+  if (save.reminder) ops.push({ kind: 'item.reminder', itemId: id, ...save.reminder, ...item(id) });
   await engine.enqueue(ops);
   return id;
 }
@@ -105,6 +108,10 @@ export async function inviteToItem(itemId: string, contactId: string): Promise<v
 
 export async function setRsvp(itemId: string, contactId: string, status: RsvpStatus): Promise<void> {
   await submit({ kind: 'item.respond', itemId, contactId, status, ...item(itemId) });
+}
+
+export async function setReminder(itemId: string, contactId: string, reminder: ParticipantReminder): Promise<void> {
+  await submit({ kind: 'item.reminder', itemId, contactId, reminder, ...item(itemId) });
 }
 
 export async function createContact(addressBookId: string, core: ContactCore): Promise<string> {

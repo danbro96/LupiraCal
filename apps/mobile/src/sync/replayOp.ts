@@ -1,4 +1,6 @@
-import { createItem, deleteItem, getItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact, respondToInvitation, updateItem } from '@lupira/cal-api/fetch/cal';
+import {
+  createItem, deleteItem, getItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact, respondToInvitation, setParticipantReminder, updateItem,
+} from '@lupira/cal-api/fetch/cal';
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import {
@@ -8,6 +10,7 @@ import type { ContactAddressType, ContactReachChannel, ResidencyRequest } from '
 import { participationIdOf } from '@lupira/cal-domain/participation';
 import { v5 as uuidv5 } from 'uuid';
 import { ApiError } from '@danbro96/lupira-http/apiError';
+import type { ParticipantReminder } from '../domain/docTypes';
 import type { ClientOp, ItemCore, ResidencyFields } from '../domain/ops';
 
 /** Op → REST. Every call carries `Idempotency-Key: commandId` (the server ledger makes redelivery a no-op) and
@@ -72,6 +75,9 @@ export async function replayOp(op: ClientOp): Promise<void> {
       return;
     case 'item.respond':
       await respond(op.itemId, op.contactId, op.status, op.occurredAt, idem);
+      return;
+    case 'item.reminder':
+      await remind(op.itemId, op.contactId, op.reminder, op.occurredAt, idem);
       return;
     case 'contact.create':
       await createContact({
@@ -166,10 +172,20 @@ async function uninvite(itemId: string, contactId: string, idem: { headers: Reco
 /** Resolved at replay: an invite still ahead in the outbox mints the participation id only once it lands. Someone
  *  no longer on the item, or an item that is gone, has nothing to answer. */
 async function respond(itemId: string, contactId: string, status: string, occurredAt: string, idem: { headers: Record<string, string> }): Promise<void> {
+  await atParticipation(itemId, contactId, (participationId) => respondToInvitation(itemId, participationId, { status, occurredAt }, idem));
+}
+
+async function remind(itemId: string, contactId: string, reminder: ParticipantReminder, occurredAt: string, idem: { headers: Record<string, string> }): Promise<void> {
+  const minutes = reminder.mode === 'Before' ? { minutesBefore: reminder.minutesBefore ?? 0 } : {};
+  await atParticipation(itemId, contactId, (participationId) =>
+    setParticipantReminder(itemId, participationId, { mode: reminder.mode, ...minutes, occurredAt }, idem));
+}
+
+async function atParticipation(itemId: string, contactId: string, send: (participationId: string) => Promise<unknown>): Promise<void> {
   try {
     const participationId = participationIdOf(await getItem(itemId), contactId);
     if (!participationId) return;
-    await respondToInvitation(itemId, participationId, { status, occurredAt }, idem);
+    await send(participationId);
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return;
     throw e;

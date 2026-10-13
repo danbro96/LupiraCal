@@ -11,6 +11,8 @@ export type ItemGuards = {
   metadata: SectionGuard;
   payload: SectionGuard;
   filing: Record<string, SectionGuard>;
+  /** Keyed by participation id; only those ever set. */
+  reminders?: Record<string, SectionGuard>;
 };
 
 export type ContactGuards = {
@@ -23,8 +25,13 @@ export type ContactGuards = {
 
 export type CalendarMembership = { calendarId: string; status: string };
 
-/** `participationId` is '' until the server has minted one for an invite still in the outbox. */
-export type ItemAttendee = { participationId: string; contactId: string; role: string; status: string };
+export type ReminderMode = 'Default' | 'Off' | 'Before';
+/** One attendee's own reminder; `minutesBefore` only for Before. */
+export type ParticipantReminder = { mode: ReminderMode; minutesBefore: number | null };
+
+/** `participationId` is '' until the server has minted one for an invite still in the outbox. `reminder` null or
+ *  absent = the default. */
+export type ItemAttendee = { participationId: string; contactId: string; role: string; status: string; reminder?: ParticipantReminder | null };
 
 export type ItemDoc = {
   id: string;
