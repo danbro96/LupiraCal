@@ -3,6 +3,7 @@ import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { createSyncEngine } from '@danbro96/lupira-sync-engine/engine';
 import * as Sentry from '@sentry/react-native';
 import { getDb } from '../data/db/expoDb';
+import { expoNotificationPort } from '../data/notifications/port';
 import { Aggregate } from '../domain/aggregates';
 import { bridgePublish, drainBridgeInbox } from './bridge';
 import { maintainHorizon } from './horizon';
@@ -17,6 +18,7 @@ import { relationshipModule } from './modules/relationship';
 import { residencyModule } from './modules/residency';
 import { taskItemModule } from './modules/taskItem';
 import { taskListModule } from './modules/taskList';
+import { createNotifier } from './notifications';
 import { queryClient } from './queryClient';
 
 export const SYNC_TASK = 'lupira-calendar-sync';
@@ -28,6 +30,10 @@ const DERIVED_ROOTS = {
   [Aggregate.calendar]: ['occurrences'],
   [Aggregate.contact]: ['occurrences', Aggregate.relationship, Aggregate.residency],
 };
+
+/** What reminders, summaries and RSVP prompts are planned from. */
+const NOTIFY_SOURCES = new Set<string>([Aggregate.item, Aggregate.calendar, Aggregate.contact, Aggregate.me]);
+const invalidate = invalidateOnChange(queryClient, DERIVED_ROOTS);
 
 export const engine = createSyncEngine({
   openDb: getDb,
@@ -45,9 +51,19 @@ export const engine = createSyncEngine({
       await maintainHorizon(engine);
       await bridgePublish();
       await drainBridgeInbox(engine);
+      notifications.schedule();
     },
   },
-  onChange: invalidateOnChange(queryClient, DERIVED_ROOTS),
+  onChange: (event) => {
+    invalidate(event);
+    if (NOTIFY_SOURCES.has(event.aggregate)) notifications.schedule();
+  },
+});
+
+export const notifications = createNotifier({
+  db: readyDb,
+  port: expoNotificationPort,
+  onError: (e) => Sentry.captureException(e, { tags: { area: 'notifications' } }),
 });
 
 // Offline is expected; any other sync failure is invisible off the phone without this. Once per session per

@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { DEFAULT_NOTIFY_PREFS, notifyPrefKey, notifyPrefsFrom, notifyPrefValue, type NotifyPrefs } from '../domain/notificationPrefs';
+import { notifications } from '../sync/engine';
 import { readMeta, writeMeta } from '../sync/meta';
 import { CALENDAR_CHOICES_KEY } from '../sync/metaKeys';
 
@@ -52,6 +54,8 @@ type Prefs = {
   lastCalendarIds: string[];
   /** The list the last new task went to. */
   lastTaskListId: string | null;
+  /** Kept per key in meta too, where the headless reconciler reads them. */
+  notify: NotifyPrefs;
 };
 
 type PrefsActions = {
@@ -64,6 +68,7 @@ type PrefsActions = {
   setCalendarMode(value: CalendarMode): Promise<void>;
   setLastCalendarIds(value: string[]): Promise<void>;
   setLastTaskListId(value: string): Promise<void>;
+  setNotify<K extends keyof NotifyPrefs>(key: K, value: NotifyPrefs[K]): Promise<void>;
 };
 
 export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
@@ -76,8 +81,14 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
   calendarMode: 'month',
   lastCalendarIds: [],
   lastTaskListId: null,
+  notify: DEFAULT_NOTIFY_PREFS,
 
   init: async () => {
+    const notifyStored: Record<string, string> = {};
+    for (const field of Object.keys(DEFAULT_NOTIFY_PREFS) as (keyof NotifyPrefs)[]) {
+      const raw = await readMeta(notifyPrefKey(field));
+      if (raw !== null) notifyStored[notifyPrefKey(field)] = raw;
+    }
     set({
       debugEnabled: (await readMeta(DEBUG_KEY)) === '1',
       calendarChoices: parseJson(await readMeta(CALENDAR_CHOICES_KEY), isFlagRecord, {}),
@@ -87,6 +98,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
       calendarMode: (await readMeta(CALENDAR_MODE_KEY)) === 'week' ? 'week' : 'month',
       lastCalendarIds: parseJson(await readMeta(LAST_CALENDARS_KEY), isStringArray, []),
       lastTaskListId: await readMeta(LAST_TASK_LIST_KEY),
+      notify: notifyPrefsFrom(notifyStored),
       loaded: true,
     });
   },
@@ -100,6 +112,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
     const calendarChoices = { ...get().calendarChoices, [calendarId]: shown };
     set({ calendarChoices });
     await writeMeta(CALENDAR_CHOICES_KEY, JSON.stringify(calendarChoices));
+    notifications.schedule();
   },
 
   setShowTaskDeadlines: async (value) => {
@@ -130,5 +143,11 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
   setLastTaskListId: async (value) => {
     set({ lastTaskListId: value });
     await writeMeta(LAST_TASK_LIST_KEY, value);
+  },
+
+  setNotify: async (key, value) => {
+    set({ notify: { ...get().notify, [key]: value } });
+    await writeMeta(notifyPrefKey(key), notifyPrefValue(value));
+    notifications.schedule();
   },
 }));

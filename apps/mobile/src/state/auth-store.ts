@@ -4,7 +4,7 @@ import { createAuthStore } from '@danbro96/lupira-expo-oidc/authStore';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { DEFAULT_API_URL, DEFAULT_AUTH_MODE } from '../config';
 import { oidc } from '../data/auth/oidc';
-import { engine } from '../sync/engine';
+import { engine, notifications } from '../sync/engine';
 import { queryClient } from '../sync/queryClient';
 
 /** Pseudonymous Sentry identity: SHA-256 of the email (sendDefaultPii is off). Null clears it. */
@@ -27,6 +27,7 @@ export const useAuth = createAuthStore({
   oidc,
   log: logDebug,
   onAccountChange: async () => {
+    await notifications.cancelAll();
     await engine.wipe();
     queryClient.clear();
   },

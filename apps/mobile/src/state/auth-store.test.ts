@@ -18,7 +18,7 @@ vi.mock('expo-crypto', () => ({ CryptoDigestAlgorithm: { SHA256: 'SHA-256' }, di
 vi.mock('../data/auth/oidc', () => ({ oidc: { refreshTokens: vi.fn() } }));
 vi.mock('@danbro96/lupira-expo-oidc/oidc', () => ({ decodeJwt: (t: string) => ({ email: t }) }));
 const wipe = vi.hoisted(() => vi.fn());
-vi.mock('../sync/engine', () => ({ engine: { wipe } }));
+vi.mock('../sync/engine', () => ({ engine: { wipe }, notifications: { cancelAll: vi.fn() } }));
 vi.mock('../sync/queryClient', () => ({ queryClient: { clear: vi.fn() } }));
 
 const { useAuth } = await import('./auth-store');

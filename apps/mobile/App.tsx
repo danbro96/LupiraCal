@@ -4,7 +4,8 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/react-native';
-import { useColorScheme, View } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { AppState, Linking, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider, Text } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -18,7 +19,10 @@ import { usePrefs } from './src/state/prefs-store';
 import { connectFocusManager } from '@danbro96/lupira-expo-query/focus';
 import { connectOnlineManager } from '@danbro96/lupira-expo-query/online';
 import { startSyncTriggers } from '@danbro96/lupira-sync-engine/expo/triggers';
-import { engine, SYNC_TASK } from './src/sync/engine';
+import { engine, notifications, SYNC_TASK } from './src/sync/engine';
+import { bodyTapUrl, tapOf } from './src/data/notifications/port';
+import { showNotificationsInForeground } from './src/data/notifications/setup';
+import { respondToNotification } from './src/state/notificationResponses';
 import { persistOptions, queryClient } from './src/sync/queryClient';
 import { RootStack } from './src/ui/navigation/RootStack';
 import { clearImportFiles } from './src/data/imports';
@@ -31,6 +35,7 @@ import { initSentry } from '@danbro96/lupira-expo-diagnostics/initSentry';
 initSentry(SENTRY_DSN);
 connectOnlineManager();
 connectFocusManager();
+showNotificationsInForeground();
 
 /** Shown when the boundary catches (and reports) a render crash. */
 function ErrorFallback() {
@@ -60,7 +65,17 @@ export default function App() {
     if (!loaded || !authed) return;
     void useBridge.getState().init();   // hydrate the integration flag + self-repair account/permissions
     void usePrefs.getState().init();
-    return startSyncTriggers(engine, { backgroundTaskName: SYNC_TASK, registerBackgroundTask: !__DEV__ });
+    void notifications.prepare();
+    const active = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void notifications.reconcile();
+    });
+    const taps = Notifications.addNotificationResponseReceivedListener((r) => void respondToNotification(tapOf(r)));
+    const stopSync = startSyncTriggers(engine, { backgroundTaskName: SYNC_TASK, registerBackgroundTask: !__DEV__ });
+    return () => {
+      active.remove();
+      taps.remove();
+      stopSync();
+    };
   }, [loaded, authed]);
 
   if (!loaded) return null;   // hydration gate — avoids a login flash over a persisted session
@@ -98,5 +113,24 @@ const linking: LinkingOptions<RootStackParamList> = {
       ContactEdit: 'draft/contact',
       Import: 'import/:kind',
     },
+  },
+  // A tap on a notification's body opens its deep link, from a cold start too.
+  async getInitialURL() {
+    const url = await Linking.getInitialURL();
+    if (url) return url;
+    const tapped = bodyTapUrl(Notifications.getLastNotificationResponse());
+    Notifications.clearLastNotificationResponse();
+    return tapped;
+  },
+  subscribe(listener) {
+    const links = Linking.addEventListener('url', ({ url }) => listener(url));
+    const taps = Notifications.addNotificationResponseReceivedListener((r) => {
+      const url = bodyTapUrl(r);
+      if (url) listener(url);
+    });
+    return () => {
+      links.remove();
+      taps.remove();
+    };
   },
 };
