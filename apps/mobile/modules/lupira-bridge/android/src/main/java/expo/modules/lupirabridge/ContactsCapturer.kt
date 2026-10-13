@@ -64,11 +64,15 @@ object ContactsCapturer {
     val payload = JSONObject()
     val phones = JSONArray()
     val emails = JSONArray()
+    val postals = JSONArray()
     context.contentResolver.query(
       ContactsContract.Data.CONTENT_URI,
       arrayOf(
         ContactsContract.Data.MIMETYPE, ContactsContract.Data.DATA1, ContactsContract.Data.DATA2,
         ContactsContract.Data.DATA3, ContactsContract.Data.DATA5, ContactsContract.Data.IS_SUPER_PRIMARY,
+        CommonDataKinds.StructuredPostal.STREET, CommonDataKinds.StructuredPostal.CITY,
+        CommonDataKinds.StructuredPostal.POSTCODE, CommonDataKinds.StructuredPostal.COUNTRY,
+        ContactsContract.Data.SYNC1, ContactsContract.Data.SYNC2,
       ),
       "${ContactsContract.Data.RAW_CONTACT_ID} = ?", arrayOf(rawId.toString()), null,
     )?.use { c ->
@@ -84,6 +88,17 @@ object ContactsCapturer {
           CommonDataKinds.Note.CONTENT_ITEM_TYPE -> payload.put("notes", c.getString(1) ?: JSONObject.NULL)
           CommonDataKinds.Phone.CONTENT_ITEM_TYPE -> phones.put(channelJson(c.getString(1), c.getString(2), c.getInt(5)))
           CommonDataKinds.Email.CONTENT_ITEM_TYPE -> emails.put(channelJson(c.getString(1), c.getString(2), c.getInt(5)))
+          CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE -> postals.put(JSONObject().apply {
+            put("text", c.getString(1) ?: JSONObject.NULL)
+            put("type", c.getString(2)?.toIntOrNull() ?: JSONObject.NULL)
+            put("label", c.getString(3) ?: JSONObject.NULL)
+            put("street", c.getString(6) ?: JSONObject.NULL)
+            put("city", c.getString(7) ?: JSONObject.NULL)
+            put("postcode", c.getString(8) ?: JSONObject.NULL)
+            put("country", c.getString(9) ?: JSONObject.NULL)
+            put("source", c.getString(10) ?: JSONObject.NULL)
+            put("published", c.getString(11) ?: JSONObject.NULL)
+          })
           CommonDataKinds.Event.CONTENT_ITEM_TYPE ->
             if (c.getString(2) == CommonDataKinds.Event.TYPE_BIRTHDAY.toString())
               payload.put("birthday", c.getString(1) ?: JSONObject.NULL)
@@ -92,6 +107,7 @@ object ContactsCapturer {
     }
     payload.put("phones", phones)
     payload.put("emails", emails)
+    payload.put("postals", postals)
     return payload
   }
 

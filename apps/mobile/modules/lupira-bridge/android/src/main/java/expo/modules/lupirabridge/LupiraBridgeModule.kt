@@ -45,6 +45,7 @@ class LupiraBridgeModule : Module() {
       val am = AccountManager.get(context)
       val accounts = am.getAccountsByType(Bridge.ACCOUNT_TYPE)
       for (a in accounts) am.removeAccountExplicitly(a)
+      BridgeDb.clearAddressHints(context)
       accounts.isNotEmpty()
     }
 
@@ -120,6 +121,34 @@ class LupiraBridgeModule : Module() {
         asSyncAdapter(CalendarContract.Events.CONTENT_URI), values,
         "${CalendarContract.Events._SYNC_ID} = ?", arrayOf(pendingMarker),
       )
+    }
+
+    AsyncFunction("listAddressHints") { contactId: String? ->
+      BridgeDb.addressHints(context, contactId).map {
+        mapOf(
+          "id" to it.id, "contactId" to it.contactId, "residencyId" to it.residencyId, "type" to it.type, "text" to it.text,
+          "street" to it.street, "postcode" to it.postcode, "city" to it.city, "country" to it.country,
+        )
+      }
+    }
+
+    AsyncFunction("putAddressHint") { hint: Map<String, Any?> ->
+      BridgeDb.putAddressHint(
+        context,
+        AddressHint(
+          id = hint["id"] as String, contactId = hint["contactId"] as String, residencyId = hint["residencyId"] as String?,
+          type = hint["type"] as String?, text = hint["text"] as String, street = hint["street"] as String?,
+          postcode = hint["postcode"] as String?, city = hint["city"] as String?, country = hint["country"] as String?,
+        ),
+      )
+    }
+
+    AsyncFunction("deleteAddressHints") { ids: List<String> ->
+      BridgeDb.deleteAddressHints(context, ids)
+    }
+
+    AsyncFunction("invalidateContacts") { contactIds: List<String> ->
+      ContactsPublisher.invalidate(context, contactIds)
     }
 
     /// Recon for M7's write-back design: raw-contact rows with the columns the dirty-flag flow

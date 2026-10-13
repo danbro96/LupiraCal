@@ -5,7 +5,7 @@ import { Aggregate } from '../../domain/aggregates';
 import { emptyContactGuards } from '../../domain/docTypes';
 import { CONTACT_DDL, writeContactIndex } from '../indexes/contacts';
 import { RESIDENCY_DDL, writeResidencyIndex } from '../indexes/residencies';
-import { contactResidencies, residenciesOfContact } from './residencies';
+import { contactResidencies, residenciesOfContact, residencyPlaceIds } from './residencies';
 import { DOCS_DDL, putDoc } from './testDocs';
 
 let db: Db;
@@ -44,5 +44,17 @@ describe('residenciesOfContact', () => {
     expect(await residenciesOfContact(db, 'anna')).toEqual([{
       id: 'r1', place_id: 'flat', address_type: 'Home', label: null, moved_in: null, moved_out: null,
     }]);
+  });
+});
+
+describe('residencyPlaceIds', () => {
+  it('lists each place a residency points at once', async () => {
+    await db.exclusive(async (tx) => {
+      await putDoc(tx, Aggregate.residency, 'r1', { doc: { id: 'r1', contactId: 'anna', placeId: 'flat', type: 'Home' } }, writeResidencyIndex);
+      await putDoc(tx, Aggregate.residency, 'r2', { doc: { id: 'r2', contactId: 'bo', placeId: 'flat', type: 'Home' } }, writeResidencyIndex);
+      await putDoc(tx, Aggregate.residency, 'r3', { doc: { id: 'r3', contactId: 'bo', placeId: 'cabin', type: 'Vacation' } }, writeResidencyIndex);
+    });
+
+    expect(await residencyPlaceIds(db)).toEqual(['cabin', 'flat']);
   });
 });

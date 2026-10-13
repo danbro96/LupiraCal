@@ -51,3 +51,8 @@ export async function residenciesOfContact(tx: Tx, contactId: string): Promise<C
     [contactId],
   );
 }
+
+/** Every place a mirrored residency points at. */
+export async function residencyPlaceIds(tx: Tx): Promise<string[]> {
+  return (await tx.all<{ place_id: string }>('SELECT DISTINCT place_id FROM residency_index ORDER BY place_id')).map((r) => r.place_id);
+}

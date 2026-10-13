@@ -33,8 +33,10 @@ const THUMB = 72;
 /** One of a contact's addresses, typed as street, postcode, town and country. A matching address becomes the
  *  place and shows on a mini-map to confirm; the pin can be adjusted, an existing place or a relative's home
  *  used instead. A half-typed address blocks the contact's save. */
-export function AddressForm({ row, household, onChange, onRemove, onUseExisting, onPickOnMap }: {
+export function AddressForm({ row, seed, household, onChange, onRemove, onUseExisting, onPickOnMap }: {
   row: AddressRow;
+  /** The phone-typed address this row was started from. */
+  seed?: string;
   household: readonly HouseholdHome[];
   onChange: (row: AddressRow) => void;
   onRemove: () => void;
@@ -96,6 +98,7 @@ export function AddressForm({ row, household, onChange, onRemove, onUseExisting,
         </>
       ) : (
         <>
+          {!!seed && <Text style={[styles.muted, { color: c.textMuted }]}>From your phone: “{seed}”</Text>}
           <TextField style={fieldGap} label="Street and number" value={row.draft.street} onChangeText={(v) => setDraft('street', v)} />
           <View style={styles.pair}>
             <TextField style={[fieldGap, styles.postcode]} label="Postcode" value={row.draft.postcode} onChangeText={(v) => setDraft('postcode', v)} />

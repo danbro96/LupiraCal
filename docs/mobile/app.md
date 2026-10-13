@@ -40,11 +40,12 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 | `cal.item` | `/api/sync/items` | `item.*` ops | `item_index`, `item_calendars`, `item_occurrences`, `item_attendees`, `item_places`, view `bridge_items` |
 | `contact` | `/contact-api/sync/contacts` | `contact.*` ops | `contact_index`, `birthday_occurrences`, view `bridge_contacts` |
 | `contact.relationship` | `/contact-api/sync/relationships` | — | `relationship_index` |
-| `contact.residency` | `/contact-api/sync/residencies` | `contact.residency.*` ops | `residency_index` |
+| `contact.residency` | `/contact-api/sync/residencies` | `contact.residency.*` ops | `residency_index`, view `bridge_residencies` |
 | `contact.placeEntry` | `/contact-api/sync/place-entries` (doc id = place id) | — | — |
 | `tasks.list` | `/tasks-api/sync/lists` | — | — |
 | `tasks.item` | `/tasks-api/sync/items` | — (edits live in Lupira Tasks) | `task_deadlines` (open deadlines) |
 | `contact.me` | `/contact-api/me` (one-doc snapshot) | — | — |
+| `geo.place` | `/geo-api/places/lookup` (snapshot of the places residencies point at, doc id = the stored place id) | — | — |
 
 - New tasks (`TaskCreateScreen`, from the calendar overflow and ItemDetail's "Add task") post straight to tasks-api — online-only, no op — and `engine.sync()` pulls them in. The list picker reads the `tasks.list` mirror; from an event, a `task` relation links the event (`@lupira/cal-domain/tasks` `TASK_RELATION`).
 - Every change to an input (pulled doc, queued op, discard, ack) recomputes `local = reduce(server, ...ops)` with `domain/mirrorReducers` and rewrites the module's index rows; a deleted doc is `null`. Table DDL and row writers live in `data/indexes/`, the reads over them in `data/queries/`.
@@ -54,7 +55,16 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 - Prefs and bridge flags are kernel meta keys (`sync/meta.ts`). Signing in as a different account wipes the engine and the query cache (`state/auth-store.ts`, `onAccountChange`).
 - Triggers: `startSyncTriggers` (foreground, reconnect, sign-in) from `App.tsx`; the 15-minute background task is defined in `index.ts` and loads the auth session first. The Android bridge drains its inbox before each push and republishes after each pull (`hooks`).
 - `SyncBanner` is expo-paper's `StatusBanner` over `bannerState` (tap → Sync issues); `SyncIssuesScreen` is its `SyncStatusView` over the engine's `parked()`/`sync`/`retry`/`discard` (offline it shows no progress and Sync now only says so). Both, and Settings, read the kernel's status store (`state/useSyncStatus`); none shows a sync in progress while the device is offline. Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
-- `MirrorReader.kt` reads only the `bridge_*` views (`id`, `display_name` for contacts, `state` = the stored `{doc, guards}` JSON); `sync/modules/bridgeViews.test.ts` pins that contract.
+- `MirrorReader.kt` reads only the `bridge_*` views (`id`, `display_name` for contacts, `contact_id` + `place` for residencies, `state` = the stored `{doc, guards}` JSON); `sync/modules/bridgeViews.test.ts` pins that contract.
+
+## Android bridge
+
+`modules/lupira-bridge` publishes the mirror into the phone's calendar and contacts providers under the Lupira account and captures stock-app edits into a Kotlin-owned inbox (`lupira-bridge.db`); `sync/bridge.ts` drains it into ops (`domain/bridgeTranslate` is the pure half).
+
+- Events: one provider calendar per mirror calendar, one event per item (`_SYNC_ID` = item id, RRULE rows for series). `SYNC_DATA1` = content hash (skip + echo guard), `SYNC_DATA2` = the location published. A captured location equal to what was published (or, without one, to the mirror's label) keeps the place; cleared, it clears; anything else is stored as a label with no place (`locationUnresolved`). A stock-created event with a location starts unresolved the same way. The editor then shows "Needs a place".
+- Contacts: raw contacts by `SOURCE_ID` = contact id (name, phones, emails, birthday, notes, "Open in Lupira"), `SYNC1` = content hash. Each current residency whose place `geo.place` has looked up becomes a postal row (address, else the place's name; type Home/Work/Other, Vacation as a custom label) tagged `Data.SYNC1` = residency id, `Data.SYNC2` = the text published. Current = today inside moved-in…moved-out (`FuzzyDates.kt`, same rule as `residencyStatus`).
+- Postal edits in the stock app never become ops: a place can't be named there. `postalHints` turns them into address hints in the Kotlin table `contact_address_hint` (`listAddressHints` / `putAddressHint` / `deleteAddressHints`): an edited published address becomes a hint standing in for it (published instead of it, tagged `hint:<id>`), a new address a hint of its own, an edited hint row updates the hint, a deleted hint row dismisses it; a deleted published address is restored on the next publish (`invalidateContacts` drops the contact's hash). Rows the stock app re-inserts without their tags match by text. Hints are local to the phone and cleared when the integration is turned off.
+- `ContactDetail` lists hints as "Address needs a place"; `ContactEdit` offers them as "From your phone" chips (× dismisses). A chip adds a new address row typed from the hint (`hintAddressRow`; the old address stays, Remove or Moved out is the user's call); saving the row with a place settles the hint.
 
 ## Event editor
 

@@ -28,6 +28,19 @@ export type BridgeInboxRow = {
   capturedAt: number;
 };
 
+/// A stock-app address no place backs yet; `residencyId` is the published address it stands in for.
+export type AddressHint = {
+  id: string;
+  contactId: string;
+  residencyId: string | null;
+  type: string | null;
+  text: string;
+  street: string | null;
+  postcode: string | null;
+  city: string | null;
+  country: string | null;
+};
+
 type LupiraBridgeNative = {
   ensureAccount(): Promise<boolean>;
   removeAccount(): Promise<boolean>;
@@ -40,6 +53,11 @@ type LupiraBridgeNative = {
   drainInbox(): Promise<BridgeInboxRow[]>;
   ackInbox(ids: number[]): Promise<void>;
   assignEventSyncId(pendingMarker: string, syncId: string): Promise<void>;
+  listAddressHints(contactId: string | null): Promise<AddressHint[]>;
+  putAddressHint(hint: AddressHint): Promise<void>;
+  deleteAddressHints(ids: string[]): Promise<void>;
+  /// The next publish rewrites these contacts whole, restoring addresses deleted in the stock app.
+  invalidateContacts(contactIds: string[]): Promise<void>;
   readContactsSample(limit: number): Promise<{ total: number; rows: ContactsSampleRow[] }>;
   /// The text of a file another app shared (named by the import deep link); readable once.
   readImport(name: string): Promise<string>;

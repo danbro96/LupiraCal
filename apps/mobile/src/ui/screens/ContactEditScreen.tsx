@@ -9,7 +9,9 @@ import { useLayoutEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Chip, HelperText, IconButton, List, Switch, Text } from 'react-native-paper';
 import { v7 as uuidv7 } from 'uuid';
-import { addressRowsFrom, addressSaveError, newAddressRow, residencyChanges, type AddressRow, type ResidencyChange } from '../../domain/addressRows';
+import {
+  addressRowsFrom, addressSaveError, hintAddressRow, newAddressRow, residencyChanges, settledHintIds, type AddressRow, type ResidencyChange,
+} from '../../domain/addressRows';
 import type { ContactDoc, ReachChannel, SocialProfile } from '../../domain/docTypes';
 import { REACH_KINDS } from '../../domain/reach';
 import type { ContactForm } from '../../domain/editors';
@@ -20,7 +22,9 @@ import { CHANNEL_TYPES as SHARED_CHANNEL_TYPES } from '@lupira/cal-domain/reach'
 import { contactCoreFromForm, contactFormFromDoc, contactFormFromDraft, emptyContactForm } from '../../domain/editors';
 import { contactDraftFromLink } from '../../domain/drafts';
 import { createContact, reviseContact, saveResidencies, setContactChannels, setContactProfiles, setContactTags } from '../../state/actions';
+import { dismissAddressHints } from '../../sync/bridge';
 import { useAddressBooks } from '../../state/useAddressBooks';
+import { useAddressHints } from '../../state/useAddressHints';
 import { useContactRelations, useContactState } from '../../state/useContactList';
 import { useContactResidencies, useResidencyRows } from '../../state/useResidencies';
 import { ChoiceChips } from '@danbro96/lupira-expo-paper/components/ChoiceChips';
@@ -54,6 +58,7 @@ export function ContactEditScreen() {
   const { data: books } = useAddressBooks();
   const residencies = useContactResidencies(contactId);
   const residencyRows = useResidencyRows();
+  const hints = useAddressHints(contactId);
   const { data: relations } = useContactRelations(contactId ?? '');
   const household = contactId
     ? householdHomes(contactId, (relations ?? []).map((r) => ({ contactId: r.otherId, displayName: r.displayName, kind: r.kind, ended: r.ended })), residencyRows)
@@ -139,7 +144,9 @@ export function ContactEditScreen() {
     const cleanProfiles = profiles.filter((p) => p.service.trim() && p.handle.trim());
     const tags = withPinPreserved(parseList(tagsCsv), contactId ? state?.doc.tags : null);
 
-    return saveContact(contactId, bookId, r.value, cleanChannels, cleanProfiles, tags, residencyChanges(rows), state?.doc, setError);
+    const saved = await saveContact(contactId, bookId, r.value, cleanChannels, cleanProfiles, tags, residencyChanges(rows), state?.doc, setError);
+    if (saved) void dismissAddressHints(settledHintIds(rows));
+    return saved;
   };
 
   const guard = useUnsavedGuard(dirty, {
@@ -305,6 +312,7 @@ export function ContactEditScreen() {
           <AddressForm
             key={row.key}
             row={row}
+            seed={hints.find((h) => h.id === row.hintId)?.text}
             household={household.filter((h) => h.placeId !== row.placeId)}
             onChange={setRow}
             onRemove={() => setRow({ ...row, removed: true })}
@@ -312,6 +320,24 @@ export function ContactEditScreen() {
             onPickOnMap={(start) => navigation.navigate('PinPlace', { origin: 'ContactEdit', target: row.key, start, nameRequired: false })}
           />
         ))}
+        {hints.some((h) => !rows.some((r) => r.hintId === h.id)) && (
+          <Field label="From your phone">
+            <View style={styles.addRow}>
+              {hints.filter((h) => !rows.some((r) => r.hintId === h.id)).map((h) => (
+                <Chip
+                  key={h.id}
+                  compact
+                  mode="outlined"
+                  icon={ICONS.place}
+                  onPress={() => setAddresses((all) => [...(all ?? []), hintAddressRow(h, uuidv7())])}
+                  onClose={() => void dismissAddressHints([h.id])}
+                >
+                  {h.text}
+                </Chip>
+              ))}
+            </View>
+          </Field>
+        )}
         <List.Item
           title="Add address"
           left={(p) => <List.Icon {...p} icon={ICONS.add} />}
