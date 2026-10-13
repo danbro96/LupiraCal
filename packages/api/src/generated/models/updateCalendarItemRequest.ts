@@ -25,12 +25,18 @@ export interface UpdateCalendarItemRequest {
   status?: string | null;
   /**
      * Re-anchor the location to a resolved LupiraGeoApi place; string? UpdateCalendarItemRequest.Location then carries the display
-     *             label. Set bool UpdateCalendarItemRequest.PlaceIdProvided with a null value to clear. Free-text-only location changes are rejected
-     *             (resolve via geo first); an id geo doesn't know is rejected, a merged-away id is stored as its survivor.
+     *             label. Set bool UpdateCalendarItemRequest.PlaceIdProvided with a null value to clear the place; its label goes too unless
+     *             string? UpdateCalendarItemRequest.Location re-sends it. A changed label without a place is rejected unless
+     *             bool UpdateCalendarItemRequest.LocationUnresolved is set; an id geo doesn't know is rejected, a merged-away id is stored as its survivor.
      * @nullable
      */
   placeId?: string | null;
   placeIdProvided?: boolean;
+  /**
+     * Store string? UpdateCalendarItemRequest.Location verbatim as a label with no place (null clears it); geo is not called.
+     *             Cannot be combined with Guid? UpdateCalendarItemRequest.PlaceId.
+     */
+  locationUnresolved?: boolean;
   /** @nullable */
   startsAt?: string | null;
   startsAtProvided?: boolean;

@@ -146,6 +146,20 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
     }
 
     [Fact]
+    public async Task Participant_reminder_put_is_forwarded()
+    {
+        var client = Client();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", BffTestFactory.MintToken());
+
+        var request = new HttpRequestMessage(HttpMethod.Put,
+            "/api/items/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/participants/7a1d4e2b-5c8f-4b3a-9e6d-1f2a3b4c5d6e/reminder?mode=Before&minutesBefore=30");
+        request.Headers.Add("Idempotency-Key", "0b9e4c2a-6d1f-4a8e-b3c7-5e2f9a1d8c40");
+        var resp = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal("/items/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/participants/7a1d4e2b-5c8f-4b3a-9e6d-1f2a3b4c5d6e/reminder", (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
+    }
+
+    [Fact]
     public async Task Depz_without_the_probe_key_is_401()
     {
         Assert.Equal(HttpStatusCode.Unauthorized, (await Client().GetAsync("/depz")).StatusCode);

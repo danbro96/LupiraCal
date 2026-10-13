@@ -42,6 +42,7 @@ import type {
   SearchItemsParams,
   SetItemActionRequest,
   SetItemPromptRequest,
+  SetParticipantReminderParams,
   SyncPageOfContainerDto,
   SyncPageOfItemSyncChange,
   UpdateCalendarItemRequest
@@ -315,7 +316,7 @@ export const getCreateItemUrl = () => {
 }
 
 /**
- * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location must be a resolved PlaceId.
+ * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location is a resolved PlaceId (Location = its label), or free text kept as a label only with LocationUnresolved=true (no geo lookup); free text alone 400s.
  */
 export const createItem = async (createCalendarItemRequest: CreateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
@@ -421,7 +422,7 @@ export const getUpdateItemUrl = (id: string,) => {
 }
 
 /**
- * @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones, clearing the parent with ParentItemIdProvided=true and a null ParentItemId). Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates.
+ * @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones, clearing the parent with ParentItemIdProvided=true and a null ParentItemId). A location change needs PlaceId, or LocationUnresolved=true to store Location as a label with no place. Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates.
  */
 export const updateItem = async (id: string,
     updateCalendarItemRequest: UpdateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
@@ -1066,6 +1067,40 @@ export const leaveItem = async (id: string,
   {
     ...options,
     method: 'POST'
+
+
+  }
+);}
+
+
+export const getSetParticipantReminderUrl = (id: string,
+    participationId: string,
+    params?: SetParticipantReminderParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/items/${id}/participants/${participationId}/reminder?${stringifiedParams}` : `/api/items/${id}/participants/${participationId}/reminder`
+}
+
+/**
+ * @summary Set this participant's own reminder for the item, delivered on their device. mode = Default|Off|Before; required, anything else 400s. minutesBefore (0..40320) is required for Before and rejected otherwise. Last writer wins per participation on occurredAt. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
+ */
+export const setParticipantReminder = async (id: string,
+    participationId: string,
+    params?: SetParticipantReminderParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
+
+  return apiRequest<CalendarItemDto>(getSetParticipantReminderUrl(id,participationId,params),
+  {
+    ...options,
+    method: 'PUT'
 
 
   }

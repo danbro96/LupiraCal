@@ -6,13 +6,16 @@
  */
 import type { SectionGuardDto } from './sectionGuardDto';
 import type { SectionGuardsDtoFiling } from './sectionGuardsDtoFiling';
+import type { SectionGuardsDtoReminders } from './sectionGuardsDtoReminders';
 
 /**
- * Per-section guards for an item: core fields, metadata, the XOR payload, and per-calendar filing.
+ * Per-section guards for an item: core fields, metadata, the XOR payload, per-calendar filing, and
+ *             per-participation reminders (keyed by participation id, only those ever set).
  */
 export interface SectionGuardsDto {
   core: SectionGuardDto;
   metadata: SectionGuardDto;
   payload: SectionGuardDto;
   filing: SectionGuardsDtoFiling;
+  reminders: SectionGuardsDtoReminders;
 }

@@ -62,6 +62,7 @@ import type {
   SearchItemsParams,
   SetItemActionRequest,
   SetItemPromptRequest,
+  SetParticipantReminderParams,
   SyncPageOfContainerDto,
   SyncPageOfItemSyncChange,
   UpdateCalendarItemRequest
@@ -867,7 +868,7 @@ export const getCreateItemUrl = () => {
 }
 
 /**
- * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location must be a resolved PlaceId.
+ * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location is a resolved PlaceId (Location = its label), or free text kept as a label only with LocationUnresolved=true (no geo lookup); free text alone 400s.
  */
 export const createItem = async (createCalendarItemRequest: CreateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
 
@@ -933,7 +934,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateItemMutationVariables = {data: CreateCalendarItemRequest}
 
     /**
- * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location must be a resolved PlaceId.
+ * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location is a resolved PlaceId (Location = its label), or free text kept as a label only with LocationUnresolved=true (no geo lookup); free text alone 400s.
  */
 export const useCreateItem = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItem>>, TError,CreateItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -1150,7 +1151,7 @@ export const getUpdateItemUrl = (id: string,) => {
 }
 
 /**
- * @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones, clearing the parent with ParentItemIdProvided=true and a null ParentItemId). Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates.
+ * @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones, clearing the parent with ParentItemIdProvided=true and a null ParentItemId). A location change needs PlaceId, or LocationUnresolved=true to store Location as a label with no place. Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates.
  */
 export const updateItem = async (id: string,
     updateCalendarItemRequest: UpdateCalendarItemRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
@@ -1217,7 +1218,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateItemMutationVariables = {id: string;data: UpdateCalendarItemRequest}
 
     /**
- * @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones, clearing the parent with ParentItemIdProvided=true and a null ParentItemId). Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates.
+ * @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones, clearing the parent with ParentItemIdProvided=true and a null ParentItemId). A location change needs PlaceId, or LocationUnresolved=true to store Location as a label with no place. Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates.
  */
 export const useUpdateItem = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateItem>>, TError,UpdateItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
@@ -2908,6 +2909,90 @@ export const useLeaveItem = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getLeaveItemMutationOptions(options), queryClient);
+    }
+    export const getSetParticipantReminderUrl = (id: string,
+    participationId: string,
+    params?: SetParticipantReminderParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/items/${id}/participants/${participationId}/reminder?${stringifiedParams}` : `/api/items/${id}/participants/${participationId}/reminder`
+}
+
+/**
+ * @summary Set this participant's own reminder for the item, delivered on their device. mode = Default|Off|Before; required, anything else 400s. minutesBefore (0..40320) is required for Before and rejected otherwise. Last writer wins per participation on occurredAt. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
+ */
+export const setParticipantReminder = async (id: string,
+    participationId: string,
+    params?: SetParticipantReminderParams, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
+
+  return apiRequest<CalendarItemDto>(getSetParticipantReminderUrl(id,participationId,params),
+  {
+    ...options,
+    method: 'PUT'
+
+
+  }
+);}
+
+
+
+
+
+export const getSetParticipantReminderMutationKey = () => ['setParticipantReminder'] as const;
+
+export const getSetParticipantReminderMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setParticipantReminder>>, TError,SetParticipantReminderMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof setParticipantReminder>>, TError,SetParticipantReminderMutationVariables, TContext> => {
+
+const mutationKey = getSetParticipantReminderMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setParticipantReminder>>, SetParticipantReminderMutationVariables> = (props) => {
+          const {id,participationId,params} = props ?? {};
+
+          return  setParticipantReminder(id,participationId,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetParticipantReminderMutationResult = NonNullable<Awaited<ReturnType<typeof setParticipantReminder>>>
+
+    export type SetParticipantReminderMutationError = ProblemDetails
+    export type SetParticipantReminderMutationVariables = {id: string;participationId: string;params?: SetParticipantReminderParams}
+
+    /**
+ * @summary Set this participant's own reminder for the item, delivered on their device. mode = Default|Off|Before; required, anything else 400s. minutesBefore (0..40320) is required for Before and rejected otherwise. Last writer wins per participation on occurredAt. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
+ */
+export const useSetParticipantReminder = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setParticipantReminder>>, TError,SetParticipantReminderMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setParticipantReminder>>,
+        TError,
+        SetParticipantReminderMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSetParticipantReminderMutationOptions(options), queryClient);
     }
     export const getRemoveParticipantUrl = (id: string,
     participationId: string,) => {

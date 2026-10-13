@@ -4,6 +4,7 @@
  * LupiraCal BFF
  * OpenAPI spec version: v1
  */
+import type { ParticipantReminderDto } from './participantReminderDto';
 import type { ParticipationRole } from './participationRole';
 import type { ParticipationStatus } from './participationStatus';
 
@@ -23,4 +24,5 @@ export interface ItemAttendeeDto {
   attendedAt: string | null;
   /** @nullable */
   leftAt: string | null;
+  reminder: null | ParticipantReminderDto;
 }

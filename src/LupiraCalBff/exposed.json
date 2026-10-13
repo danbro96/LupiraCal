@@ -47,6 +47,7 @@
       "POST /me/bootstrap",
       "PUT /items/{id}",
       "PUT /items/{id}/action",
+      "PUT /items/{id}/participants/{participationId}/reminder",
       "PUT /items/{id}/prompt"
     ],
     "contact-api": [

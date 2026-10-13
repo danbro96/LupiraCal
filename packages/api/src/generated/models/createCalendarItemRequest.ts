@@ -11,8 +11,8 @@ import type { JsonObject } from './jsonObject';
 
 /**
  * Create an item via REST/MCP. `CalendarId` optional — when set, the item is accepted into that calendar;
- *             when null, the item is created unfiled (e.g. an automated source) for later curation. `Location` is free text
- *             resolved to a <see cref="!:LupiraCalApi.Core.Domain.Place" />. `Category`/`Status` are the enum names.
+ *             when null, the item is created unfiled (e.g. an automated source) for later curation. A location is a resolved
+ *             `PlaceId`, or free text with `LocationUnresolved`. `Category`/`Status` are the enum names.
  */
 export interface CreateCalendarItemRequest {
   /** @nullable */
@@ -41,9 +41,8 @@ export interface CreateCalendarItemRequest {
   /** @nullable */
   description?: string | null;
   /**
-     * Free-text location resolved server-side to a LupiraGeoApi place (fail-closed if geo is up but can't resolve).
-     *             Prefer Guid? CreateCalendarItemRequest.PlaceId when you have already resolved/vetted the place (places-first imports) — then string? CreateCalendarItemRequest.Location
-     *             is used only as the display label.
+     * The location's display label. Requires Guid? CreateCalendarItemRequest.PlaceId unless bool CreateCalendarItemRequest.LocationUnresolved is set;
+     *             free text alone is rejected.
      * @nullable
      */
   location?: string | null;
@@ -53,6 +52,11 @@ export interface CreateCalendarItemRequest {
      * @nullable
      */
   placeId?: string | null;
+  /**
+     * Keep string? CreateCalendarItemRequest.Location as a label with no place (the caller couldn't resolve it); geo is not called.
+     *             Cannot be combined with Guid? CreateCalendarItemRequest.PlaceId.
+     */
+  locationUnresolved?: boolean;
   /** @nullable */
   status?: string | null;
   isAllDay?: boolean;
