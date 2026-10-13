@@ -8,6 +8,7 @@ export type RootStackParamList = {
   Settings: undefined;
   CalendarSettings: undefined;
   AndroidSettings: undefined;
+  NotificationSettings: undefined;
   Login: undefined;
   Tabs: NavigatorScreenParams<TabParamList> | undefined;
   /** Reachable from Login too — switching to the LAN preset must not require signing in first. */

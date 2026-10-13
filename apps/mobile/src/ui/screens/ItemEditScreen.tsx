@@ -16,9 +16,10 @@ import {
   acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft,
 } from '../../domain/editors';
 import { itemDraftFromLink } from '../../domain/drafts';
-import type { ItemDoc } from '../../domain/docTypes';
+import type { ItemDoc, ParticipantReminder } from '../../domain/docTypes';
+import { reminderLabel, sameReminder } from '../../domain/notificationPrefs';
 import type { ItemCore } from '../../domain/ops';
-import { saveItem } from '../../state/actions';
+import { saveItem, type ItemSave } from '../../state/actions';
 import { usePrefs } from '../../state/prefs-store';
 import { useContactList } from '../../state/useContactList';
 import { selectableCalendars, useCalendars } from '../../state/useContainers';
@@ -32,6 +33,7 @@ import { TimeField } from '../components/TimeField';
 import { CalendarsSheet } from '../event/CalendarsSheet';
 import { CategorySheet, categoryIcon } from '../event/CategorySheet';
 import { PeopleSheet } from '../event/PeopleSheet';
+import { ReminderSheet } from '../event/ReminderSheet';
 import { RepeatSheet } from '../event/RepeatSheet';
 import { TimeZoneSheet, zoneSummary } from '../event/TimeZoneSheet';
 import { ICONS } from '../icons';
@@ -42,7 +44,7 @@ import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
 import { spacing, useColors } from '../theme';
 
-type SheetName = 'calendars' | 'category' | 'repeat' | 'zone' | 'place' | 'people';
+type SheetName = 'calendars' | 'category' | 'repeat' | 'zone' | 'place' | 'people' | 'reminder';
 
 /** Title, when, where and notes up front; everything used rarely is one row each under More, opening a sheet. */
 export function ItemEditScreen() {
@@ -89,6 +91,17 @@ export function ItemEditScreen() {
     setBaseline((b) => ({ ...b, people: JSON.stringify([me]) }));
   }
 
+  // Undefined = untouched; picking one on an event you're not on puts you on it as going.
+  const [reminder, setReminder] = useState<ParticipantReminder | undefined>();
+  const savedReminder = (state?.doc.attendees ?? []).find((a) => a.contactId === me)?.reminder ?? null;
+  const shownReminder = reminder ?? savedReminder;
+  const reminderChanged = reminder !== undefined && !sameReminder(reminder, savedReminder);
+  const pickReminder = (r: ParticipantReminder) => {
+    setReminder(r);
+    if (me && r.mode !== 'Default') setAttendeeIds((ids) => (ids.includes(me) ? ids : [me, ...ids]));
+  };
+  const notify = usePrefs((p) => p.notify);
+
   const prefsLoaded = usePrefs((p) => p.loaded);
   const lastCalendarIds = usePrefs((p) => p.lastCalendarIds);
   const initialCalendarIds = !itemId && calendarIds.length === 0 && prefsLoaded
@@ -109,7 +122,8 @@ export function ItemEditScreen() {
 
   const dirty = JSON.stringify(form) !== baseline.form
     || JSON.stringify(calendarIds) !== baseline.calendars
-    || JSON.stringify(attendeeIds) !== baseline.people;
+    || JSON.stringify(attendeeIds) !== baseline.people
+    || reminderChanged;
 
   const set = <K extends keyof ItemForm>(key: K, value: ItemForm[K]) => setForm((f) => ({ ...f, [key]: value }));
   const setSchedule = (field: ScheduleField, value: string) => {
@@ -149,7 +163,8 @@ export function ItemEditScreen() {
       return false;
     }
     setError(null);
-    return persistItem(itemId, r.value, state?.doc, calendarIds, attendeeIds, me, setError);
+    const ownReminder = me && reminderChanged && reminder ? { contactId: me, reminder } : undefined;
+    return persistItem(itemId, r.value, state?.doc, calendarIds, attendeeIds, me, ownReminder, setError);
   };
   const guard = useUnsavedGuard(dirty, {
     message: 'Save this event before leaving?',
@@ -197,6 +212,7 @@ export function ItemEditScreen() {
   const otherZone = !form.isAllDay && !!form.timeZone && form.timeZone !== deviceTimeZone();
   const zoneAt = form.timeZone && form.startDay && form.startTime ? wallToInstant(form.startDay, form.startTime, form.timeZone) : undefined;
   const legacyLocation = !form.place ? (state?.doc.locationLabel ?? draft?.location) : null;
+  const defaultMinutes = notify.defaultReminder && !form.isAllDay ? notify.defaultMinutes : null;
 
   return (
     <>
@@ -281,6 +297,9 @@ export function ItemEditScreen() {
           onPress={() => setSheet('repeat')}
         />
         <MoreRow icon={ICONS.group} title="People" value={people} onPress={() => setSheet('people')} />
+        {!!me && (
+          <MoreRow icon={ICONS.alarm} title="Reminder" value={reminderLabel(shownReminder, defaultMinutes)} onPress={() => setSheet('reminder')} />
+        )}
         {!form.isAllDay && !!form.timeZone && (
           <MoreRow icon={ICONS.public} title="Time zone" value={zoneSummary(form.timeZone, zoneAt)} onPress={() => setSheet('zone')} />
         )}
@@ -323,6 +342,9 @@ export function ItemEditScreen() {
           onDismiss={() => setSheet(null)}
         />
       )}
+      {sheet === 'reminder' && (
+        <ReminderSheet value={shownReminder} defaultMinutes={defaultMinutes} onPick={pickReminder} onDismiss={() => setSheet(null)} />
+      )}
       {sheet === 'people' && (
         <PeopleSheet
           selected={attendeeIds}
@@ -355,15 +377,13 @@ async function persistItem(
   calendarIds: string[],
   attendeeIds: string[],
   me: string | null,
+  reminder: ItemSave['reminder'],
   setError: (error: string | null) => void,
 ): Promise<boolean> {
+  const filing = filingChanges(doc?.calendars ?? [], calendarIds);
+  const attendees = attendeeChanges(doc?.attendees ?? [], attendeeIds);
   try {
-    await saveItem(itemId, {
-      core,
-      ...filingChanges(doc?.calendars ?? [], calendarIds),
-      ...attendeeChanges(doc?.attendees ?? [], attendeeIds),
-      accept: me ? [me] : [],
-    });
+    await saveItem(itemId, { core, ...filing, ...attendees, accept: me ? [me] : [], reminder });
     if (!itemId) void usePrefs.getState().setLastCalendarIds(calendarIds);
     return true;
   } catch (e) {

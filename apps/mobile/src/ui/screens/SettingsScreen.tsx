@@ -9,6 +9,7 @@ import { useAuth } from '../../state/auth-store';
 import { useBridge } from '../../state/bridge-store';
 import { usePrefs } from '../../state/prefs-store';
 import { useCalendars } from '../../state/useContainers';
+import { useNotificationAccess } from '../../state/useNotificationAccess';
 import { useSyncStatus } from '../../state/useSyncStatus';
 import { engine } from '../../sync/engine';
 import { IconButton } from '@danbro96/lupira-expo-paper/components/IconButton';
@@ -33,6 +34,7 @@ export function SettingsScreen() {
   const bridge = useBridge();
   const { phase, pending, parked, lastSyncAt } = useSyncStatus();
   const online = useOnline();
+  const { data: access } = useNotificationAccess();
 
   const chevron = () => <List.Icon icon={ICONS.chevronRight} />;
   const icon = (name: string) => (p: { color: string; style?: object }) => <List.Icon {...p} icon={name} />;
@@ -49,6 +51,13 @@ export function SettingsScreen() {
     bridge.status?.accountPresent === false ? 'Needs repair' : 'On',
     !bridge.permissionsOk && 'permissions missing',
   );
+  const notifyFlags = [prefs.notify.eventReminders, prefs.notify.defaultReminder, prefs.notify.morningSummary,
+    prefs.notify.birthdays, prefs.notify.askWhenInvited, prefs.notify.remindToReply];
+  const notifyOn = notifyFlags.filter(Boolean).length;
+  const notifyDenied = !!access && access.permission !== 'granted';
+  const notify = notifyDenied
+    ? 'Not allowed on this phone'
+    : notifyOn === notifyFlags.length ? 'All on' : notifyOn === 0 ? 'Off' : `${notifyOn} of ${notifyFlags.length} on`;
   const issues = pending + parked;
   const sync = join(
     online && phase !== 'idle' ? 'Syncing…' : lastSyncAt ? `Synced ${fmtDateTime(new Date(lastSyncAt))}` : 'Not synced yet',
@@ -71,6 +80,14 @@ export function SettingsScreen() {
         left={icon(ICONS.calendar)}
         right={chevron}
         onPress={() => navigation.navigate('CalendarSettings')}
+      />
+      <List.Item
+        title="Notifications"
+        description={notify}
+        descriptionStyle={notifyDenied ? attention : undefined}
+        left={icon(ICONS.notifications)}
+        right={chevron}
+        onPress={() => navigation.navigate('NotificationSettings')}
       />
       <List.Item
         title="Android integration"

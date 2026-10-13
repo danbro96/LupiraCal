@@ -10,6 +10,7 @@ import type { IconName } from '@lupira/cal-tokens/icons';
 export const ICONS = {
   account: 'account-circle',
   add: 'add',
+  alarm: 'alarm',
   alert: 'error-outline',
   cake: 'cake',
   calendar: 'calendar-month',
@@ -59,6 +60,7 @@ export const ICONS = {
   menu: 'menu',
   more: 'more-horiz',
   notes: 'notes',
+  notifications: 'notifications',
   person: 'person',
   phone: 'phone-android',
   personAdd: 'person-add',

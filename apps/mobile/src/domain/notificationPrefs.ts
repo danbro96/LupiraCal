@@ -27,8 +27,11 @@ export const DEFAULT_NOTIFY_PREFS: NotifyPrefs = {
   replyLeadMinutes: 1440,
 };
 
-export const DEFAULT_MINUTE_OPTIONS = [5, 10, 15, 30, 60] as const;
+export const DEFAULT_MINUTE_OPTIONS = [5, 15, 30, 60] as const;
 export const REPLY_LEAD_OPTIONS = [60, 180, 1440, 2880] as const;
+
+/** The leads offered for one event's own reminder. */
+export const REMINDER_LEADS = [5, 15, 30, 60, 120, 1440, 2880] as const;
 
 export const NOTIFY_PREFIX = 'prefs.notify.';
 export const notifyPrefKey = (field: keyof NotifyPrefs) => `${NOTIFY_PREFIX}${field}`;
@@ -58,4 +61,19 @@ export function leadLabel(minutes: number): string {
   if (minutes % 1440 === 0) return `${minutes / 1440} day${minutes === 1440 ? '' : 's'}`;
   if (minutes % 60 === 0) return `${minutes / 60} h`;
   return `${minutes} min`;
+}
+
+type Reminder = { mode: string; minutesBefore: number | null };
+
+/** Null is the default. */
+export function sameReminder(a: Reminder | null, b: Reminder | null): boolean {
+  const mode = (r: Reminder | null) => r?.mode ?? 'Default';
+  return mode(a) === mode(b) && (mode(a) !== 'Before' || a?.minutesBefore === b?.minutesBefore);
+}
+
+/** An event's reminder as its row reads; `defaultMinutes` null = the default gives this event none. */
+export function reminderLabel(reminder: Reminder | null, defaultMinutes: number | null): string {
+  if (!reminder || reminder.mode === 'Default') return `Default (${defaultMinutes === null ? 'none' : leadLabel(defaultMinutes)})`;
+  if (reminder.mode === 'Off') return 'Off';
+  return `${leadLabel(reminder.minutesBefore ?? 0)} before`;
 }

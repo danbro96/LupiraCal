@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_NOTIFY_PREFS, notifyPrefsFrom, notifyPrefKey, type NotifyPrefs } from './notificationPrefs';
+import { DEFAULT_NOTIFY_PREFS, notifyPrefsFrom, notifyPrefKey, reminderLabel, sameReminder, type NotifyPrefs } from './notificationPrefs';
 import {
   birthdayDigests, desiredReminders, eventReminders, leadMinutesFor, morningDigests, type MyOccurrence, type NotifyContext, type ShownOccurrence,
 } from './reminders';
@@ -24,6 +24,21 @@ describe('notifyPrefsFrom', () => {
       [notifyPrefKey('morningTime')]: '25:00', [notifyPrefKey('replyLeadMinutes')]: 'x',
     });
     expect([prefs.birthdays, prefs.defaultMinutes, prefs.morningTime, prefs.replyLeadMinutes]).toEqual([false, 30, '07:00', 1440]);
+  });
+});
+
+describe('reminderLabel', () => {
+  it('names the default with what it gives this event', () => {
+    expect(reminderLabel(null, 15)).toBe('Default (15 min)');
+    expect(reminderLabel({ mode: 'Default', minutesBefore: null }, null)).toBe('Default (none)');
+    expect(reminderLabel({ mode: 'Off', minutesBefore: null }, 15)).toBe('Off');
+    expect(reminderLabel({ mode: 'Before', minutesBefore: 120 }, 15)).toBe('2 h before');
+    expect(reminderLabel({ mode: 'Before', minutesBefore: 2880 }, 15)).toBe('2 days before');
+  });
+
+  it('treats no reminder as the default', () => {
+    expect(sameReminder(null, { mode: 'Default', minutesBefore: null })).toBe(true);
+    expect(sameReminder({ mode: 'Before', minutesBefore: 5 }, { mode: 'Before', minutesBefore: 15 })).toBe(false);
   });
 });
 

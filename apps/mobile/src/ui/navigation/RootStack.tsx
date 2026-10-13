@@ -24,6 +24,7 @@ import { PinPlaceScreen } from '../screens/PinPlaceScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AndroidSettingsScreen } from '../screens/AndroidSettingsScreen';
 import { CalendarSettingsScreen } from '../screens/CalendarSettingsScreen';
+import { NotificationSettingsScreen } from '../screens/NotificationSettingsScreen';
 import { SyncIssuesScreen } from '../screens/SyncIssuesScreen';
 import type { RootStackParamList, TabParamList } from './types';
 import { ICONS } from '../icons';
@@ -58,6 +59,7 @@ export function RootStack() {
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="CalendarSettings" component={CalendarSettingsScreen} options={{ title: 'Calendar' }} />
       <Stack.Screen name="AndroidSettings" component={AndroidSettingsScreen} options={{ title: 'Android integration' }} />
+      <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} options={{ title: 'Notifications' }} />
       <Stack.Screen name="SyncIssues" component={SyncIssuesScreen} options={{ title: 'Sync issues' }} />
       <Stack.Screen name="DebugLog" component={DebugLogScreen} options={{ title: 'Debug log' }} />
       <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: 'Event' }} />
