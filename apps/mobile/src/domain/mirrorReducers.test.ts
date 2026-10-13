@@ -166,6 +166,27 @@ describe('places', () => {
     expect(doc).toMatchObject({ placeId: 'p1', locationLabel: 'Park' });
     expect(doc).not.toHaveProperty('location');
   });
+
+  it('a create with an unresolved label stores it without a place', () => {
+    const create: ClientOp = {
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.create', itemId: 'item-2', sourceKey: 'sk', calendarId: 'cal-1', occurredAt: T(1), commandId: cmd(1),
+      core: { title: 'Picnic', isAllDay: false, location: ' Storgatan 1 ', locationUnresolved: true },
+    };
+    const doc = applyItemOp(null, create)!.doc;
+    expect(doc).toMatchObject({ placeId: null, locationLabel: 'Storgatan 1' });
+    expect(doc).not.toHaveProperty('locationUnresolved');
+  });
+
+  it('an unresolved revise drops the place; a null one clears both', () => {
+    const placed = applyItemOp(baseItem(), withPlace('p1', 'Folkets Park', 1))!;
+    const unresolved = (location: string | null, n: number): ClientOp => ({
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.revise', itemId: 'item-1', occurredAt: T(n), commandId: cmd(n),
+      core: { title: null, isAllDay: false, startsAt: '2026-08-01T09:00:00Z', location, locationUnresolved: true },
+    });
+    const relabelled = applyItemOp(placed, unresolved('Kyrkan', 2))!;
+    expect(relabelled.doc).toMatchObject({ placeId: null, locationLabel: 'Kyrkan' });
+    expect(applyItemOp(relabelled, unresolved(null, 3))!.doc).toMatchObject({ placeId: null, locationLabel: null });
+  });
 });
 
 describe('attendees', () => {

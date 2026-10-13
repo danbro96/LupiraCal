@@ -1,16 +1,22 @@
 import type { SyncEngine } from '@danbro96/lupira-sync-engine/engine';
-import type { BridgeInboxRow } from '../../modules/lupira-bridge/src';
+import { v7 as uuidv7 } from 'uuid';
+import type { AddressHint, BridgeInboxRow } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
 import { deterministicIdFor } from '../data/ids';
 import { Aggregate } from '../domain/aggregates';
-import type { CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow } from '../domain/bridgeTranslate';
-import { PENDING_PREFIX, contactReviseIsEcho, mergeChannelTypes, sourceKeyOfPendingMarker, translateCalRow, translateContactRow } from '../domain/bridgeTranslate';
-import type { ContactDoc, ItemDoc } from '../domain/docTypes';
+import type { CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow, PostalCapture } from '../domain/bridgeTranslate';
+import {
+  PENDING_PREFIX, contactReviseIsEcho, mergeChannelTypes, postalHints, publishedAddresses, sourceKeyOfPendingMarker, translateCalRow, translateContactRow,
+} from '../domain/bridgeTranslate';
+import type { ContactDoc, ItemDoc, PlaceDoc, ResidencyDoc } from '../domain/docTypes';
 import { stamp, type ClientOp } from '../domain/ops';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { readMeta } from './meta';
+import { queryClient } from './queryClient';
 
 export const BRIDGE_ENABLED_KEY = 'bridge.enabled';
+
+export const ADDRESS_HINTS_KEY = [Aggregate.contact, 'addressHints'] as const;
 
 /** Impure half of the write-back: pull captured provider edits from the Kotlin inbox, resolve ids
  *  (pending markers → deterministic aggregate ids), translate, enqueue through the normal outbox/LWW
@@ -84,6 +90,29 @@ export async function bridgePublish(): Promise<void> {
   }
 }
 
+/** A contact's phone-typed addresses; none while the integration is off. */
+export async function listAddressHints(contactId: string): Promise<AddressHint[]> {
+  if (!(await bridgeEnabled())) return [];
+  try {
+    return await LupiraBridge.listAddressHints(contactId);
+  } catch {
+    return [];
+  }
+}
+
+/** Settled or dismissed hints leave the stock app on the next publish, which runs right away. */
+export async function dismissAddressHints(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  try {
+    await LupiraBridge.deleteAddressHints(ids);
+  } catch (e) {
+    logDebug('bridge', `dismissing hints failed: ${String(e)}`);
+    return;
+  }
+  await queryClient.invalidateQueries({ queryKey: ADDRESS_HINTS_KEY });
+  void bridgePublish();
+}
+
 /** The user preference lives in the kernel meta so this layer can read it (boundaries: sync ↛ state). */
 async function bridgeEnabled(): Promise<boolean> {
   return (await readMeta(BRIDGE_ENABLED_KEY)) === '1';
@@ -109,6 +138,13 @@ async function translateContactInboxRow(engine: SyncEngine, row: BridgeInboxRow)
   };
   const t = translateContactRow(parsed);
   if (t.kind === 'delete') return [{ kind: 'contact.delete', contactId: t.contactId, ...stamp(Aggregate.contact, t.contactId, t.occurredAt) }];
+  if (payload.postals) {
+    try {
+      await settleAddressHints(engine, t.contactId, payload.postals);
+    } catch (e) {
+      logDebug('bridge', `contact inbox row ${row.id}: address hints failed: ${String(e)}`);
+    }
+  }
 
   const doc = (await engine.doc<ContactDoc, unknown>(Aggregate.contact, t.contactId))?.doc ?? null;
   const channels = doc ? mergeChannelTypes(t.channels, doc.channels ?? []) : t.channels;
@@ -121,6 +157,19 @@ async function translateContactInboxRow(engine: SyncEngine, row: BridgeInboxRow)
     // +1ms so the wholesale channel replacement deterministically outranks the revise on the shared guard.
     { kind: 'contact.channels', contactId: t.contactId, channels, ...stamp(Aggregate.contact, t.contactId, new Date(row.capturedAt + 1).toISOString()) },
   ];
+}
+
+/** Addresses typed in the stock app can't name a place, so they stay on the phone as hints — no ops. */
+async function settleAddressHints(engine: SyncEngine, contactId: string, postals: PostalCapture[]): Promise<void> {
+  const residencies = (await engine.docs<ResidencyDoc, null>(Aggregate.residency)).map((d) => d.state.doc).filter((r) => r.contactId === contactId);
+  const places = new Map<string, PlaceDoc | null>();
+  for (const r of residencies) places.set(r.placeId, (await engine.doc<PlaceDoc, null>(Aggregate.residencyPlace, r.placeId))?.doc ?? null);
+  const published = publishedAddresses(residencies, (id) => places.get(id) ?? null);
+  const changes = postalHints(contactId, postals, published, await LupiraBridge.listAddressHints(contactId), uuidv7);
+  for (const hint of changes.put) await LupiraBridge.putAddressHint(hint);
+  if (changes.remove.length > 0) await LupiraBridge.deleteAddressHints(changes.remove);
+  if (changes.restore) await LupiraBridge.invalidateContacts([contactId]);
+  if (changes.put.length + changes.remove.length > 0) await queryClient.invalidateQueries({ queryKey: ADDRESS_HINTS_KEY });
 }
 
 async function parseRow(row: BridgeInboxRow): Promise<ParsedCalRow | null> {

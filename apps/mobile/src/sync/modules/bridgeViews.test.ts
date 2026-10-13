@@ -7,6 +7,8 @@ import { emptyContactGuards, emptyItemGuards } from '../../domain/docTypes';
 import { calendarModule } from './calendar';
 import { calItemModule } from './calItem';
 import { contactModule } from './contact';
+import { residencyModule } from './residency';
+import { residencyPlaceModule } from './residencyPlace';
 
 vi.mock('@danbro96/lupira-expo-diagnostics/log', () => ({ logDebug: vi.fn() }));
 
@@ -34,6 +36,13 @@ beforeEach(async () => {
         contact: { id: 'c1', addressBookId: 'ab', givenName: 'Anna', channels: [{ medium: 'Phone', value: '070', preferred: true }] },
         guards: emptyContactGuards(),
       }]),
+      snapshotOf(residencyModule as AggregateModule, [
+        { id: 'r1', contactId: 'c1', placeId: 'p1', type: 'Home', movedIn: { year: 2020 }, movedOut: null },
+        { id: 'r2', contactId: 'c1', placeId: 'p2', type: 'Work' },
+      ]),
+      snapshotOf(residencyPlaceModule(async () => []) as AggregateModule, [
+        { requestedId: 'p1', place: { id: 'p1', name: 'Hemma', formattedAddress: 'Storgatan 1, Ljungby' } },
+      ]),
     ],
   });
   await engine.sync();
@@ -49,6 +58,7 @@ describe('bridge views', () => {
     expect(await columns('bridge_calendars')).toEqual(['id', 'state']);
     expect(await columns('bridge_items')).toEqual(['id', 'state']);
     expect(await columns('bridge_contacts')).toEqual(['id', 'display_name', 'state']);
+    expect(await columns('bridge_residencies')).toEqual(['id', 'contact_id', 'state', 'place']);
   });
 
   it('carry each doc under $.doc with the fields the publishers read', async () => {
@@ -61,5 +71,12 @@ describe('bridge views', () => {
     const [contact] = await db.all<{ id: string; display_name: string; state: string }>('SELECT id, display_name, state FROM bridge_contacts');
     expect(contact.display_name).toBe('Anna');
     expect(docOf(contact.state)).toMatchObject({ givenName: 'Anna', channels: [{ medium: 'Phone', value: '070' }] });
+
+    const residencies = await db.all<{ id: string; contact_id: string; state: string; place: string | null }>(
+      'SELECT id, contact_id, state, place FROM bridge_residencies ORDER BY id');
+    expect(residencies.map((r) => [r.id, r.contact_id])).toEqual([['r1', 'c1'], ['r2', 'c1']]);
+    expect(docOf(residencies[0].state)).toMatchObject({ type: 'Home', movedIn: { year: 2020 }, movedOut: null });
+    expect(docOf(residencies[0].place!)).toMatchObject({ name: 'Hemma', formattedAddress: 'Storgatan 1, Ljungby' });
+    expect(residencies[1].place).toBeNull();
   });
 });

@@ -74,6 +74,9 @@ export type ResidencyDoc = {
   movedOut?: FuzzyDateDto | null;
 };
 
+/** A place a residency points at, as the residency-place snapshot mirrors it (geo's PlaceDto), read-only. */
+export type PlaceDoc = { id: string; name: string; formattedAddress?: string | null; [key: string]: unknown };
+
 /** The door and gate codes at a place. Secret: never logged. */
 export type PlaceEntryDoc = { placeId: string; codes: { id: string; label: string; code: string; note?: string | null }[] };
 

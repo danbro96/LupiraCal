@@ -13,7 +13,7 @@ import {
   categoryAllDayDefault, emptyItemForm, withAllDay, withSchedule, type ItemForm, type ScheduleField,
 } from '@lupira/cal-domain/itemForm';
 import {
-  acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft,
+  acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft, unresolvedLabelOf,
 } from '../../domain/editors';
 import { itemDraftFromLink } from '../../domain/drafts';
 import type { ItemDoc, ParticipantReminder } from '../../domain/docTypes';
@@ -65,6 +65,8 @@ export function ItemEditScreen() {
   const [sheet, setSheet] = useState<SheetName | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [seeded, setSeeded] = useState(!itemId);
+  const [labelRemoved, setLabelRemoved] = useState(false);
+  const unresolvedLabel = labelRemoved ? null : unresolvedLabelOf(state?.doc, draft);
 
   /** Pristine snapshots; the exit guard and the header's Save state key off differences from them. A draft
    *  is unsaved work from the start. */
@@ -123,7 +125,8 @@ export function ItemEditScreen() {
   const dirty = JSON.stringify(form) !== baseline.form
     || JSON.stringify(calendarIds) !== baseline.calendars
     || JSON.stringify(attendeeIds) !== baseline.people
-    || reminderChanged;
+    || reminderChanged
+    || labelRemoved;
 
   const set = <K extends keyof ItemForm>(key: K, value: ItemForm[K]) => setForm((f) => ({ ...f, [key]: value }));
   const setSchedule = (field: ScheduleField, value: string) => {
@@ -149,7 +152,7 @@ export function ItemEditScreen() {
 
   /** Persists without navigating; false = validation failed, so the guard keeps the user here. */
   const submit = async (): Promise<boolean> => {
-    const r = itemCoreFromForm(form, state?.doc);
+    const r = itemCoreFromForm(form, state?.doc, unresolvedLabel);
     if (!r.ok) {
       setError(r.error);
       return false;
@@ -211,7 +214,7 @@ export function ItemEditScreen() {
   const noEnd = form.isAllDay ? 'Same day' : 'No end';
   const otherZone = !form.isAllDay && !!form.timeZone && form.timeZone !== deviceTimeZone();
   const zoneAt = form.timeZone && form.startDay && form.startTime ? wallToInstant(form.startDay, form.startTime, form.timeZone) : undefined;
-  const legacyLocation = !form.place ? (state?.doc.locationLabel ?? draft?.location) : null;
+  const placeHint = !form.place ? unresolvedLabel : null;
   const defaultMinutes = notify.defaultReminder && !form.isAllDay ? notify.defaultMinutes : null;
 
   return (
@@ -270,7 +273,14 @@ export function ItemEditScreen() {
         {otherZone && <Text style={[styles.muted, styles.zoneNote, { color: c.textMuted }]}>Times in {zoneSummary(form.timeZone, zoneAt)}</Text>}
 
         <PlaceChipsRow ctx={placeContext} value={form.place} onChange={(p) => set('place', p)} onMore={() => setSheet('place')} />
-        {!!legacyLocation && <Text style={[styles.muted, styles.legacy, { color: c.textMuted }]}>“{legacyLocation}” from calendar text</Text>}
+        {!!placeHint && (
+          <View style={styles.hint}>
+            <Text style={[styles.muted, styles.hintText, { color: c.warning }]} numberOfLines={2} onPress={() => setSheet('place')}>
+              Needs a place: “{placeHint}”
+            </Text>
+            <Button mode="text" compact onPress={() => setLabelRemoved(true)}>Remove</Button>
+          </View>
+        )}
         <TextField
           label="Description"
           multiline
@@ -335,7 +345,7 @@ export function ItemEditScreen() {
       {sheet === 'place' && (
         <PlaceSearchSheet
           ctx={placeContext}
-          seed={legacyLocation ?? undefined}
+          seed={placeHint ?? undefined}
           hasPlace={!!form.place}
           onPick={(p) => set('place', p)}
           onPickOnMap={(start) => navigation.navigate('PinPlace', { origin: 'ItemEdit', start, nameRequired: true })}
@@ -404,7 +414,8 @@ const styles = StyleSheet.create({
   day: { flex: 3 },
   time: { flex: 2 },
   zoneNote: { marginTop: 4, marginLeft: 56 },
-  legacy: { marginTop: 4, marginLeft: 36 },
+  hint: { flexDirection: 'row', alignItems: 'center', marginLeft: 36 },
+  hintText: { flex: 1 },
   description: { minHeight: 72 },
   subheader: { paddingHorizontal: 0, marginTop: 8 },
 });

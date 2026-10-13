@@ -15,6 +15,7 @@ import type { PartialDateDto } from '../../domain/docTypes';
 import { copyText } from '@danbro96/lupira-expo-feedback/copy';
 import { deleteContact } from '../../state/actions';
 import { useMyContactId } from '../../state/useMe';
+import { useAddressHints } from '../../state/useAddressHints';
 import { useContactRelations, useContactState } from '../../state/useContactList';
 import { useParentsHomes, useResidencyRows } from '../../state/useResidencies';
 import { Centered } from '../components/Centered';
@@ -44,6 +45,7 @@ export function ContactDetailScreen() {
   const { data: relations = [] } = useContactRelations(contactId);
   const residencyRows = useResidencyRows();
   const parentsHomes = useParentsHomes(contactId, residencyRows);
+  const hints = useAddressHints(contactId);
   const confirm = useConfirm();
   const [relationsOpen, setRelationsOpen] = useState(false);
   const [otherAddressesOpen, setOtherAddressesOpen] = useState(false);
@@ -148,7 +150,19 @@ export function ContactDetailScreen() {
         />
       ))}
 
-      {addresses.length + parentsHomes.length > 0 && <List.Subheader>Addresses</List.Subheader>}
+      {addresses.length + parentsHomes.length + hints.length > 0 && <List.Subheader>Addresses</List.Subheader>}
+      {hints.map((h) => (
+        <List.Item
+          key={h.id}
+          title={h.text}
+          titleNumberOfLines={2}
+          description="Address needs a place"
+          descriptionStyle={{ color: c.warning }}
+          style={styles.dense}
+          left={(p) => <List.Icon {...p} icon={ICONS.place} />}
+          onPress={() => navigation.navigate('ContactEdit', { contactId })}
+        />
+      ))}
       {currentAddresses.map((a, i) => (
         <View key={`now-${i}`}>
           <PlaceTile placeId={a.placeId} meta={addressMeta(a)} directions />

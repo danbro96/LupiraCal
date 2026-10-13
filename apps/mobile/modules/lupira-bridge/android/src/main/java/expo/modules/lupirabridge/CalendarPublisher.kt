@@ -12,7 +12,8 @@ import java.security.MessageDigest
 /// Calendars._SYNC_ID), one event per item (upsert by Events._SYNC_ID = item id). Recurring items publish
 /// DTSTART + DURATION + RRULE so the provider expands them — publishing expanded instances would break
 /// stock-app edit semantics. SYNC_DATA1 carries a content hash: unchanged rows are skipped, which is also
-/// the echo suppressor (a round-tripped write-back lands as the same hash). Rows with a pending inbox
+/// the echo suppressor (a round-tripped write-back lands as the same hash); SYNC_DATA2 the published location,
+/// so a capture can tell a location edit from a row the mirror has moved on from. Rows with a pending inbox
 /// capture are skipped so the user's stock-app edit isn't visibly reverted while it rides to the server.
 object CalendarPublisher {
 
@@ -85,18 +86,18 @@ object CalendarPublisher {
   private fun upsertEvents(
     resolver: ContentResolver, items: List<MirrorItem>, calendarRowIds: Map<String, Long>, holdBack: Set<String>,
   ) {
-    data class Row(val rowId: Long, val hash: String?, val dirty: Boolean)
+    data class Row(val rowId: Long, val hash: String?, val dirty: Boolean, val publishedLocation: String?)
     val existing = mutableMapOf<String, Row>()
     resolver.query(
       asSyncAdapter(CalendarContract.Events.CONTENT_URI),
       arrayOf(
         CalendarContract.Events._ID, CalendarContract.Events._SYNC_ID,
-        CalendarContract.Events.SYNC_DATA1, CalendarContract.Events.DIRTY,
+        CalendarContract.Events.SYNC_DATA1, CalendarContract.Events.DIRTY, CalendarContract.Events.SYNC_DATA2,
       ),
       "${CalendarContract.Events.ACCOUNT_TYPE} = ? AND ${CalendarContract.Events.DELETED} = 0",
       arrayOf(Bridge.ACCOUNT_TYPE), null,
     )?.use { c ->
-      while (c.moveToNext()) c.getString(1)?.let { existing[it] = Row(c.getLong(0), c.getString(2), c.getInt(3) == 1) }
+      while (c.moveToNext()) c.getString(1)?.let { existing[it] = Row(c.getLong(0), c.getString(2), c.getInt(3) == 1, c.getString(4)) }
     }
 
     val desired = mutableSetOf<String>()
@@ -108,7 +109,7 @@ object CalendarPublisher {
       if (current?.dirty == true) continue               // capture will pick it up first; don't clobber
 
       val hash = hashOf(item, calendarRowId)
-      if (current?.hash == hash) continue
+      if (current?.hash == hash && current?.publishedLocation == item.location) continue
 
       val values = eventValues(item, calendarRowId, hash)
       if (current != null) {
@@ -139,6 +140,7 @@ object CalendarPublisher {
       put(CalendarContract.Events.STATUS,
         if (item.cancelled) CalendarContract.Events.STATUS_CANCELED else CalendarContract.Events.STATUS_CONFIRMED)
       put(CalendarContract.Events.SYNC_DATA1, hash)
+      put(CalendarContract.Events.SYNC_DATA2, item.location)
       if (item.rrule != null) {
         // Recurring rows must carry DURATION, never DTEND (provider requirement).
         put(CalendarContract.Events.RRULE, item.rrule)

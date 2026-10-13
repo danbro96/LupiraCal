@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { ContactDoc, ItemDoc } from './docTypes';
-import type { CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow } from './bridgeTranslate';
-import { contactReviseIsEcho, mergeChannelTypes, parseProviderBirthday, parseRfc2445Duration, sourceKeyOfPendingMarker, translateCalRow, translateContactRow } from './bridgeTranslate';
+import type { ContactDoc, ItemDoc, ResidencyDoc } from './docTypes';
+import type { AddressHint, CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow, PostalCapture, PublishedAddress } from './bridgeTranslate';
+import {
+  contactReviseIsEcho, mergeChannelTypes, parseProviderBirthday, parseRfc2445Duration, postalHints, publishedAddresses, sourceKeyOfPendingMarker,
+  translateCalRow, translateContactRow,
+} from './bridgeTranslate';
 
 const payload = (over: Partial<CalCapturePayload> = {}): CalCapturePayload => ({
   title: 'From stock app', description: null, location: null,
@@ -73,6 +76,47 @@ describe('translateCalRow', () => {
   it('delete translates regardless of payload; startless non-deletes skip', () => {
     expect(translateCalRow(row('deleted', { dtstart: null }), existing)).toMatchObject({ kind: 'delete', itemId: 'item-1' });
     expect(translateCalRow(row('revised', { dtstart: null }), existing)).toMatchObject({ kind: 'skip' });
+  });
+});
+
+describe('captured location', () => {
+  const placed: ItemDoc = { ...existing, placeId: 'p1', locationLabel: 'Folkets Park' };
+  const coreOf = (t: ReturnType<typeof translateCalRow>) => {
+    if (t.kind !== 'revise' && t.kind !== 'create') throw new Error(t.kind);
+    return t.core;
+  };
+
+  it('an untouched location keeps the place', () => {
+    const core = coreOf(translateCalRow(row('revised', { location: 'Folkets Park', publishedLocation: 'Folkets Park' }), placed));
+    expect(core).not.toHaveProperty('location');
+    expect(core).not.toHaveProperty('locationUnresolved');
+  });
+
+  it('a row the mirror moved on from keeps the newer place', () => {
+    const core = coreOf(translateCalRow(row('revised', { location: 'Old hall', publishedLocation: 'Old hall' }), placed));
+    expect(core).not.toHaveProperty('locationUnresolved');
+  });
+
+  it('a cleared location clears the place', () => {
+    const core = coreOf(translateCalRow(row('revised', { location: '  ', publishedLocation: 'Folkets Park' }), placed));
+    expect(core).toMatchObject({ location: null, locationUnresolved: true });
+  });
+
+  it('typed text becomes an unresolved label', () => {
+    const core = coreOf(translateCalRow(row('revised', { location: ' Storgatan 1 ', publishedLocation: 'Folkets Park' }), placed));
+    expect(core).toMatchObject({ location: 'Storgatan 1', locationUnresolved: true });
+  });
+
+  it('without a published value, text matching the mirror is kept and other text is unresolved', () => {
+    expect(coreOf(translateCalRow(row('revised', { location: 'Folkets Park' }), placed))).not.toHaveProperty('locationUnresolved');
+    expect(coreOf(translateCalRow(row('revised', { location: 'Kyrkan' }), placed))).toMatchObject({ location: 'Kyrkan', locationUnresolved: true });
+    expect(coreOf(translateCalRow(row('revised', { location: 'Kyrkan' }), null))).not.toHaveProperty('locationUnresolved');
+  });
+
+  it('a create with text carries it unresolved; without text, nothing', () => {
+    const withText = coreOf(translateCalRow(row('created', { location: 'Kyrkan' }, { sourceKey: 'bridge:u1' }), null));
+    expect(withText).toMatchObject({ location: 'Kyrkan', locationUnresolved: true });
+    expect(coreOf(translateCalRow(row('created', {}, { sourceKey: 'bridge:u1' }), null))).not.toHaveProperty('locationUnresolved');
   });
 });
 
@@ -186,5 +230,112 @@ describe('sourceKeyOfPendingMarker', () => {
     expect(sourceKeyOfPendingMarker('pending:abc-123')).toBe('bridge:abc-123');
     expect(sourceKeyOfPendingMarker('item-guid')).toBeNull();
     expect(sourceKeyOfPendingMarker('pending:')).toBeNull();
+  });
+});
+
+describe('publishedAddresses', () => {
+  const residency = (id: string, over: Partial<ResidencyDoc> = {}): ResidencyDoc => ({ id, contactId: 'c-1', placeId: `p-${id}`, type: 'Home', ...over });
+  const places: Record<string, { name: string; formattedAddress?: string | null }> = {
+    'p-r1': { name: 'Home', formattedAddress: 'Storgatan 1, 341 30 Ljungby' },
+    'p-r2': { name: 'Stugan', formattedAddress: null },
+    'p-r3': { name: 'Old flat', formattedAddress: 'Kungsgatan 2' },
+  };
+
+  it('current residencies with a looked-up place, by address else name', () => {
+    const out = publishedAddresses(
+      [residency('r1'), residency('r2'), residency('r3', { movedOut: { year: 2020 } }), residency('r4')],
+      (id) => places[id] ?? null,
+      new Date(2026, 9, 13),
+    );
+    expect(out).toEqual([{ residencyId: 'r1', text: 'Storgatan 1, 341 30 Ljungby' }, { residencyId: 'r2', text: 'Stugan' }]);
+  });
+});
+
+describe('postalHints', () => {
+  const published: PublishedAddress[] = [
+    { residencyId: 'r1', text: 'Storgatan 1, 341 30 Ljungby' },
+    { residencyId: 'r2', text: 'Sjövägen 4, Torsby' },
+  ];
+  const postal = (text: string | null, over: Partial<PostalCapture> = {}): PostalCapture => ({
+    text, type: 1, label: null, street: null, city: null, postcode: null, country: null, source: null, published: null, ...over,
+  });
+  const asPublished = (p: PublishedAddress) => postal(p.text, { source: p.residencyId, published: p.text });
+  const hint = (id: string, text: string, residencyId: string | null = null): AddressHint => ({
+    id, contactId: 'c-1', residencyId, type: 'Home', text, street: null, postcode: null, city: null, country: null,
+  });
+  let n = 0;
+  const newId = () => `h-new-${++n}`;
+  const run = (captured: PostalCapture[], hints: AddressHint[] = []) => postalHints('c-1', captured, published, hints, newId);
+
+  it('unchanged published rows ask for nothing', () => {
+    expect(run(published.map(asPublished))).toEqual({ put: [], remove: [], restore: false });
+  });
+
+  it('an edited published address becomes a hint standing in for it', () => {
+    const { put, restore } = run([
+      postal('Storgatan 3, 341 30 Ljungby', { source: 'r1', published: published[0].text, street: 'Storgatan 3', postcode: '341 30', city: 'Ljungby', type: 2 }),
+      asPublished(published[1]),
+    ]);
+    expect(put).toEqual([{
+      id: expect.stringMatching(/^h-new-/), contactId: 'c-1', residencyId: 'r1', type: 'Work', text: 'Storgatan 3, 341 30 Ljungby',
+      street: 'Storgatan 3', postcode: '341 30', city: 'Ljungby', country: null,
+    }]);
+    expect(restore).toBe(false);
+  });
+
+  it('editing it again updates the standing hint', () => {
+    const standing = hint('h1', 'Storgatan 3', 'r1');
+    const { put, remove } = run([postal('Storgatan 5', { source: 'r1', published: published[0].text }), asPublished(published[1])], [standing]);
+    expect(put).toMatchObject([{ id: 'h1', residencyId: 'r1', text: 'Storgatan 5' }]);
+    expect(remove).toEqual([]);
+  });
+
+  it('a new address becomes a hint of its own; a duplicate of it does not', () => {
+    const { put } = run([...published.map(asPublished), postal('Kyrkvägen 9, Lysvik'), postal('kyrkvägen 9\nLysvik')]);
+    expect(put).toMatchObject([{ residencyId: null, text: 'Kyrkvägen 9, Lysvik' }]);
+  });
+
+  it('a hint row edited in the stock app updates the hint', () => {
+    const h = hint('h1', 'Kyrkvägen 9');
+    const { put, remove } = run([...published.map(asPublished), postal('Kyrkvägen 11', { source: 'hint:h1', published: 'Kyrkvägen 9' })], [h]);
+    expect(put).toMatchObject([{ id: 'h1', text: 'Kyrkvägen 11' }]);
+    expect(remove).toEqual([]);
+  });
+
+  it('an untouched hint row keeps the hint', () => {
+    const h = hint('h1', 'Kyrkvägen 9');
+    expect(run([...published.map(asPublished), postal('Kyrkvägen 9', { source: 'hint:h1', published: 'Kyrkvägen 9' })], [h]))
+      .toEqual({ put: [], remove: [], restore: false });
+  });
+
+  it('a hint row edited back to the address it stands in for dismisses the hint', () => {
+    const h = hint('h1', 'Storgatan 3', 'r1');
+    const { put, remove } = run([postal(published[0].text, { source: 'hint:h1', published: 'Storgatan 3' }), asPublished(published[1])], [h]);
+    expect(put).toEqual([]);
+    expect(remove).toEqual(['h1']);
+  });
+
+  it('a hint row deleted in the stock app dismisses the hint', () => {
+    expect(run(published.map(asPublished), [hint('h1', 'Kyrkvägen 9')])).toEqual({ put: [], remove: ['h1'], restore: false });
+  });
+
+  it('a deleted published address is restored', () => {
+    expect(run([asPublished(published[1])])).toEqual({ put: [], remove: [], restore: true });
+  });
+
+  it('rows the stock app re-inserted without their tags match by text', () => {
+    const h = hint('h1', 'Kyrkvägen 9');
+    const retyped = [postal('Storgatan 1\n341 30 Ljungby'), postal(published[1].text), postal('Kyrkvägen 9')];
+    expect(run(retyped, [h])).toEqual({ put: [], remove: [], restore: false });
+  });
+
+  it('a row for an address no longer published is ignored untouched and a new hint once edited', () => {
+    expect(run([...published.map(asPublished), postal('Gamla 1', { source: 'r9', published: 'Gamla 1' })]).put).toEqual([]);
+    expect(run([...published.map(asPublished), postal('Gamla 2', { source: 'r9', published: 'Gamla 1' })]).put).toMatchObject([{ residencyId: null, text: 'Gamla 2' }]);
+  });
+
+  it('blank rows are skipped and a custom Vacation label maps back', () => {
+    const { put } = run([...published.map(asPublished), postal('  '), postal('Fjällstugan', { type: 0, label: 'Vacation' })]);
+    expect(put).toMatchObject([{ text: 'Fjällstugan', type: 'Vacation' }]);
   });
 });

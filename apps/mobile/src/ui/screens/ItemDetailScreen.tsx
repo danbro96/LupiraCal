@@ -107,7 +107,9 @@ export function ItemDetailScreen() {
           <ZoneLine doc={doc} />
           {doc.recurrenceRule && <Text style={[styles.recur, { color: c.primary }]}>{describeRrule(doc.recurrenceRule)}</Text>}
         </View>
-        {(doc.placeId || doc.locationLabel) && <PlaceTile placeId={doc.placeId} label={doc.locationLabel} />}
+        {(doc.placeId || doc.locationLabel) && (
+          <PlaceTile placeId={doc.placeId} label={doc.locationLabel} meta={doc.placeId ? null : 'Needs a place'} />
+        )}
         <View style={styles.inset}>
           {((doc.status && !cancelled) || doc.category) && (
             <View style={styles.chipRow}>

@@ -282,8 +282,8 @@ EAS build (1.2.0) to Play internal.
 - [x] `USE_EXACT_ALARM` (Android 13+) + `SCHEDULE_EXACT_ALARM` capped at API 32; bridge `canScheduleExactAlarms()` on Bridge diagnostics
 - [ ] Notifications: per-event reminders, default reminder (Accepted/Tentative timed), morning-of digest, birthdays digest, RSVP ask-when-invited + remind-to-reply with Going/Maybe/Not going actions; 14-day horizon, cap 100; Settings toggles (all on after update)
 - [ ] Reminder op `item.reminder` + Reminder row in the event editor
-- [ ] Bridge: stock-calendar location edits captured as unresolved labels; editor keeps an unresolved label and offers it as the place search seed
-- [ ] Bridge: contact postal addresses published per current residency; phone-side edits kept as local address hints ("From your phone")
+- [x] Bridge: stock-calendar location edits captured as unresolved labels; editor keeps an unresolved label and offers it as the place search seed
+- [x] Bridge: contact postal addresses published per current residency; phone-side edits kept as local address hints ("From your phone")
 - [ ] Reconciler re-arms fires due within 2 h whenever exact alarms are unavailable
 
 ### Exit criteria

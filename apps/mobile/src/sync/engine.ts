@@ -4,6 +4,7 @@ import { createSyncEngine } from '@danbro96/lupira-sync-engine/engine';
 import * as Sentry from '@sentry/react-native';
 import { getDb } from '../data/db/expoDb';
 import { expoNotificationPort } from '../data/notifications/port';
+import { residencyPlaceIds } from '../data/queries/residencies';
 import { Aggregate } from '../domain/aggregates';
 import { bridgePublish, drainBridgeInbox } from './bridge';
 import { maintainHorizon } from './horizon';
@@ -16,6 +17,7 @@ import { meModule } from './modules/me';
 import { placeEntryModule } from './modules/placeEntry';
 import { relationshipModule } from './modules/relationship';
 import { residencyModule } from './modules/residency';
+import { residencyPlaceModule } from './modules/residencyPlace';
 import { taskItemModule } from './modules/taskItem';
 import { taskListModule } from './modules/taskList';
 import { createNotifier } from './notifications';
@@ -40,6 +42,7 @@ export const engine = createSyncEngine({
   modules: [
     calendarModule, addressBookModule, contactGroupModule, calItemModule, contactModule,
     relationshipModule, residencyModule, placeEntryModule, taskListModule, taskItemModule, meModule,
+    residencyPlaceModule(async () => residencyPlaceIds(await getDb())),
   ],
   cacheVersion: 1,
   hooks: {

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const cal = vi.hoisted(() => ({
+  createItem: vi.fn(),
+  updateItem: vi.fn(),
   getItem: vi.fn(),
   inviteParticipant: vi.fn(),
   respondToInvitation: vi.fn(),
@@ -19,6 +21,42 @@ const { ApiError } = await import('@danbro96/lupira-http/apiError');
 const { replayOp } = await import('./replayOp');
 
 const invited = (contactId: string) => ({ attendees: [{ contactId, participationId: `p-${contactId}` }] });
+
+describe('unresolved location replay', () => {
+  const at = { aggregate: 'cal.item', aggregateId: 'item-1', itemId: 'item-1', occurredAt: '2026-09-30T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000010' } as const;
+  const core = { title: 'Picnic', isAllDay: false, startsAt: '2026-10-01T09:00:00Z' };
+
+  beforeEach(() => {
+    cal.createItem.mockReset().mockResolvedValue(undefined);
+    cal.updateItem.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('a create sends the label with the flag and no place', async () => {
+    await replayOp({ ...at, kind: 'item.create', sourceKey: 'bridge:u1', calendarId: 'cal-1', core: { ...core, location: 'Kyrkan', locationUnresolved: true } });
+
+    const [body] = cal.createItem.mock.calls[0];
+    expect(body).toMatchObject({ location: 'Kyrkan', locationUnresolved: true });
+    expect(body.placeId).toBeUndefined();
+  });
+
+  it('a revise sends the label or its clear without touching the place sentinel', async () => {
+    await replayOp({ ...at, kind: 'item.revise', core: { ...core, location: 'Kyrkan', locationUnresolved: true } });
+    await replayOp({ ...at, kind: 'item.revise', core: { ...core, location: null, locationUnresolved: true } });
+
+    const [[, relabel], [, clear]] = cal.updateItem.mock.calls;
+    expect(relabel).toMatchObject({ location: 'Kyrkan', locationUnresolved: true });
+    expect(clear).toMatchObject({ location: null, locationUnresolved: true });
+    expect(relabel).not.toHaveProperty('placeIdProvided');
+  });
+
+  it('a placed create sends no flag', async () => {
+    await replayOp({ ...at, kind: 'item.create', sourceKey: 'k', calendarId: 'cal-1', core: { ...core, placeId: 'p1', location: 'Park' } });
+
+    const [body] = cal.createItem.mock.calls[0];
+    expect(body).toMatchObject({ placeId: 'p1', location: 'Park' });
+    expect(body.locationUnresolved).toBeUndefined();
+  });
+});
 
 describe('item.invite replay', () => {
   beforeEach(() => {

@@ -8,6 +8,7 @@ export const Aggregate = {
   relationship: 'contact.relationship',
   residency: 'contact.residency',
   placeEntry: 'contact.placeEntry',
+  residencyPlace: 'geo.place',
   me: 'contact.me',
   taskList: 'tasks.list',
   taskItem: 'tasks.item',
@@ -23,6 +24,7 @@ export const AGGREGATE_LABELS: Record<string, string> = {
   [Aggregate.relationship]: 'relationships',
   [Aggregate.residency]: 'addresses',
   [Aggregate.placeEntry]: 'entry codes',
+  [Aggregate.residencyPlace]: 'address places',
   [Aggregate.taskList]: 'task lists',
   [Aggregate.taskItem]: 'tasks',
 };

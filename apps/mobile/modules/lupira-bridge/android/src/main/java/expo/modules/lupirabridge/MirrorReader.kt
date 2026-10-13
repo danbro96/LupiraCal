@@ -2,6 +2,7 @@ package expo.modules.lupirabridge
 
 import android.database.sqlite.SQLiteDatabase
 import org.json.JSONObject
+import java.time.LocalDate
 
 /// Read-side projection of the RN mirror for the publisher, over the bridge_* views the app's sync modules
 /// define. Each `state` is the kernel's stored doc state; the doc itself sits under its "doc" key.
@@ -9,6 +10,9 @@ import org.json.JSONObject
 data class MirrorCalendar(val id: String, val displayName: String, val color: Int)
 
 data class MirrorChannel(val medium: String, val value: String, val type: String?, val preferred: Boolean)
+
+/// A current residency as the stock app shows it: the place's address, else its name.
+data class MirrorAddress(val residencyId: String, val type: String?, val formatted: String)
 
 data class MirrorContact(
   val id: String,
@@ -20,6 +24,7 @@ data class MirrorContact(
   val channels: List<MirrorChannel>,
   val birthday: String?,   // "yyyy-MM-dd", or Android's year-less "--MM-dd"
   val notes: String?,
+  val addresses: List<MirrorAddress>,
 )
 
 data class MirrorItem(
@@ -68,8 +73,9 @@ object MirrorReader {
       out
     }
 
-  fun contacts(db: SQLiteDatabase): List<MirrorContact> =
-    db.rawQuery("SELECT id, display_name, state FROM bridge_contacts", null).use { c ->
+  fun contacts(db: SQLiteDatabase): List<MirrorContact> {
+    val addresses = addresses(db)
+    return db.rawQuery("SELECT id, display_name, state FROM bridge_contacts", null).use { c ->
       val out = mutableListOf<MirrorContact>()
       while (c.moveToNext()) {
         val doc = docOf(c.getString(2))
@@ -93,11 +99,39 @@ object MirrorReader {
             channels = channels,
             birthday = birthdayString(doc.optJSONObject("birthday")),
             notes = doc.optStringOrNull("notes"),
+            addresses = addresses[c.getString(0)].orEmpty(),
           ),
         )
       }
       out
     }
+  }
+
+  /// Current residencies by contact id. Residencies whose place hasn't been looked up yet stay out until it has.
+  fun addresses(db: SQLiteDatabase, today: LocalDate = LocalDate.now()): Map<String, List<MirrorAddress>> {
+    val out = mutableMapOf<String, MutableList<MirrorAddress>>()
+    db.rawQuery("SELECT id, contact_id, state, place FROM bridge_residencies ORDER BY id", null).use { c ->
+      while (c.moveToNext()) {
+        val address = try {
+          addressOf(c.getString(0), docOf(c.getString(2)), c.getString(3)?.let { docOf(it) }, today)
+        } catch (e: Exception) {
+          android.util.Log.w(Bridge.TAG, "skipping residency ${c.getString(0)}: ${e.message}")
+          null
+        } ?: continue
+        out.getOrPut(c.getString(1)) { mutableListOf() }.add(address)
+      }
+    }
+    return out
+  }
+
+  private fun addressOf(id: String, residency: JSONObject, place: JSONObject?, today: LocalDate): MirrorAddress? {
+    if (!FuzzyDates.isCurrent(fuzzyOf(residency.optJSONObject("movedIn")), fuzzyOf(residency.optJSONObject("movedOut")), today)) return null
+    val formatted = place?.optStringOrNull("formattedAddress") ?: place?.optStringOrNull("name") ?: return null
+    return MirrorAddress(id, residency.optStringOrNull("type"), formatted)
+  }
+
+  private fun fuzzyOf(d: JSONObject?): FuzzyDate? =
+    if (d == null || d.isNull("year")) null else FuzzyDate(d.getInt("year"), d.optIntOrNull("month"), d.optIntOrNull("day"))
 
   private fun docOf(state: String): JSONObject = JSONObject(state).getJSONObject("doc")
 
@@ -169,3 +203,5 @@ object MirrorReader {
 
 private fun JSONObject.optStringOrNull(key: String): String? =
   if (isNull(key)) null else optString(key).ifEmpty { null }
+
+private fun JSONObject.optIntOrNull(key: String): Int? = if (isNull(key)) null else optInt(key)

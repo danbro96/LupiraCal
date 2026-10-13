@@ -1,16 +1,20 @@
+import { residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
-import type { ContactDoc, ItemDoc, PartialDateDto, ReachChannel } from './docTypes';
+import type { ContactDoc, ItemDoc, PartialDateDto, ReachChannel, ResidencyDoc } from './docTypes';
 import type { ContactCore, ItemCore } from './ops';
 
 /** Pure half of the bridge write-back: a captured provider edit → the op the engine should enqueue.
  *  The impure half (id resolution, mirror lookup, enqueue, ack) lives in sync/bridge.ts. Warts are
  *  inherited from the REST contract: title/description cleared in the stock app stay unchanged
- *  server-side (null = keep), and EVENT_LOCATION is publish-only (ItemCore has no location field). */
+ *  server-side (null = keep). A location typed in the stock app can't be resolved there, so it lands as a label
+ *  with no place for the app to resolve later. */
 
 export type CalCapturePayload = {
   title: string | null;
   description: string | null;
   location: string | null;
+  /** What the publisher last wrote (absent on rows captured before it recorded one). */
+  publishedLocation?: string | null;
   dtstart: number | null;
   dtend: number | null;
   duration: string | null;   // RFC2445, recurring rows carry this instead of dtend
@@ -54,6 +58,7 @@ export function translateCalRow(row: ParsedCalRow, existing: ItemDoc | null): Ca
     startsAt: null, endsAt: null, startDate: null, endDate: null,
     startTimezone: zone, endTimezone: zone,
     recurrenceRule: p.rrule ? p.rrule.replace(/^RRULE:/i, '') : null,
+    ...placeFieldsOf(p, existing, row.kind === 'created'),
   };
 
   const endMs = p.dtend ?? (p.duration ? p.dtstart + (parseRfc2445Duration(p.duration) ?? 0) : null);
@@ -71,6 +76,16 @@ export function translateCalRow(row: ParsedCalRow, existing: ItemDoc | null): Ca
     return { kind: 'create', itemId: row.itemId, sourceKey: row.sourceKey, calendarId: p.calendarSyncId, core, occurredAt: row.occurredAt };
   }
   return { kind: 'revise', itemId: row.itemId, core, occurredAt: row.occurredAt };
+}
+
+/** A row the mirror moved on from still shows its published location; only a real edit may touch the place. */
+function placeFieldsOf(p: CalCapturePayload, existing: ItemDoc | null, created: boolean): Pick<ItemCore, 'location' | 'locationUnresolved'> {
+  const captured = p.location?.trim() || null;
+  const unresolved = { location: captured, locationUnresolved: true };
+  if (created) return captured ? unresolved : {};
+  if (p.publishedLocation !== undefined && captured === (p.publishedLocation?.trim() || null)) return {};
+  if (!existing) return p.publishedLocation === undefined ? {} : unresolved;
+  return captured === (existing.locationLabel?.trim() || null) ? {} : unresolved;
 }
 
 /** RFC2445 duration subset the calendar provider emits (P1D, PT1800S, P1DT12H, P2W …). */
@@ -95,7 +110,130 @@ export type ContactCapturePayload = {
   birthday?: string | null;   // "yyyy-MM-dd" or the provider's year-less "--MM-dd"
   phones?: { value: string; type: number | null; preferred: boolean }[];
   emails?: { value: string; type: number | null; preferred: boolean }[];
+  /** Absent on rows captured before addresses were published. */
+  postals?: PostalCapture[];
 };
+
+/** A postal row as the stock app left it. `source` is what the publisher tagged it with (a residency id, or
+ *  `hint:<id>`), `published` the text it wrote; a row the user added carries neither. */
+export type PostalCapture = {
+  text: string | null;
+  type: number | null;
+  label: string | null;
+  street: string | null;
+  city: string | null;
+  postcode: string | null;
+  country: string | null;
+  source: string | null;
+  published: string | null;
+};
+
+/** A current residency as the publisher writes it (MirrorReader.kt's MirrorAddress). */
+export type PublishedAddress = { residencyId: string; text: string };
+
+/** An address typed in the stock app that no place backs yet, kept on the phone only; `residencyId` is the
+ *  published address it stands in for. */
+export type AddressHint = {
+  id: string;
+  contactId: string;
+  residencyId: string | null;
+  type: string | null;
+  text: string;
+  street: string | null;
+  postcode: string | null;
+  city: string | null;
+  country: string | null;
+};
+
+export type HintChanges = { put: AddressHint[]; remove: string[]; restore: boolean };
+
+export const HINT_PREFIX = 'hint:';
+
+/** Current residencies with a looked-up place, as the publisher shows them: the address, else the place's name. */
+export function publishedAddresses(
+  residencies: readonly ResidencyDoc[], placeOf: (placeId: string) => { name?: string | null; formattedAddress?: string | null } | null,
+  today = new Date(),
+): PublishedAddress[] {
+  return residencies.flatMap((r) => {
+    if (residencyStatus(r.movedIn ?? null, r.movedOut ?? null, today) !== 'active') return [];
+    const place = placeOf(r.placeId);
+    const text = place?.formattedAddress || place?.name;
+    return text ? [{ residencyId: r.id, text }] : [];
+  });
+}
+
+/** A contact's captured postal rows against what was published and the hints already kept: an edited published
+ *  address becomes a hint standing in for it, a new one a hint of its own, an edited hint is updated, a hint row
+ *  deleted in the stock app is dismissed, and a deleted published address is restored (`restore`). Rows the stock
+ *  app re-inserted without their tags match by text. */
+export function postalHints(
+  contactId: string, captured: readonly PostalCapture[], published: readonly PublishedAddress[], hints: readonly AddressHint[], newId: () => string,
+): HintChanges {
+  const put: AddressHint[] = [];
+  const kept = new Set<string>();
+  const seen = new Set(hints.flatMap((h) => (h.residencyId ? [h.residencyId] : [])));
+  const publishedByKey = new Map(published.map((p) => [addressKey(p.text), p.residencyId]));
+
+  for (const row of captured) {
+    const text = row.text?.trim();
+    if (!text) continue;
+    const key = addressKey(text);
+    const untouched = row.published != null && key === addressKey(row.published);
+    const hint = row.source?.startsWith(HINT_PREFIX) ? hints.find((h) => h.id === row.source!.slice(HINT_PREFIX.length)) : undefined;
+    if (hint) {
+      const replaced = published.find((p) => p.residencyId === hint.residencyId);
+      if (replaced && addressKey(replaced.text) === key) continue;
+      kept.add(hint.id);
+      if (!untouched) put.push({ ...hint, ...hintFieldsOf(row, text) });
+      continue;
+    }
+    const residency = published.find((p) => p.residencyId === row.source);
+    if (residency) seen.add(residency.residencyId);
+    if (untouched) continue;
+    if (residency) {
+      const standing = hints.find((h) => h.residencyId === residency.residencyId);
+      if (standing) kept.add(standing.id);
+      put.push({ ...(standing ?? { id: newId(), contactId, residencyId: residency.residencyId }), ...hintFieldsOf(row, text) });
+      continue;
+    }
+    const sameResidency = publishedByKey.get(key);
+    if (sameResidency) {
+      seen.add(sameResidency);
+      continue;
+    }
+    const sameHint = [...hints, ...put].find((h) => addressKey(h.text) === key);
+    if (sameHint) kept.add(sameHint.id);
+    else put.push({ id: newId(), contactId, residencyId: null, ...hintFieldsOf(row, text) });
+  }
+
+  return {
+    put,
+    remove: hints.filter((h) => !kept.has(h.id)).map((h) => h.id),
+    restore: published.some((p) => !seen.has(p.residencyId)),
+  };
+}
+
+function hintFieldsOf(row: PostalCapture, text: string): Omit<AddressHint, 'id' | 'contactId' | 'residencyId'> {
+  return {
+    type: postalTypeName(row.type, row.label),
+    text,
+    street: row.street?.trim() || null,
+    postcode: row.postcode?.trim() || null,
+    city: row.city?.trim() || null,
+    country: row.country?.trim() || null,
+  };
+}
+
+/** Addresses compare loosely: the provider re-joins its parts with newlines where the publisher wrote commas. */
+function addressKey(text: string): string {
+  return text.toLocaleLowerCase().replace(/[\s,]+/g, ' ').trim();
+}
+
+// Provider ints: StructuredPostal TYPE_CUSTOM=0, TYPE_HOME=1, TYPE_WORK=2, TYPE_OTHER=3.
+function postalTypeName(type: number | null, label: string | null): string | null {
+  if (type === 0) return label?.trim().toLowerCase() === 'vacation' ? 'Vacation' : 'Other';
+  return type === 1 ? 'Home' : type === 2 ? 'Work' : type === 3 ? 'Other' : null;
+}
 
 export type ParsedContactRow = {
   kind: 'revised' | 'deleted';

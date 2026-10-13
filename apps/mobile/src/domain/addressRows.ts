@@ -1,4 +1,5 @@
-import { EMPTY_ADDRESS_DRAFT, residencyRowState, residencySaveError, type AddressDraft } from '@lupira/cal-domain/addressDraft';
+import { EMPTY_ADDRESS_DRAFT, normalizePostcode, residencyRowState, residencySaveError, type AddressDraft } from '@lupira/cal-domain/addressDraft';
+import type { AddressHint } from './bridgeTranslate';
 import type { FuzzyDateDto, ResidencyDoc } from './docTypes';
 import type { ResidencyFields } from './ops';
 
@@ -13,6 +14,8 @@ export type AddressRow = {
   draft: AddressDraft;
   movedOut: FuzzyDateDto | null;
   removed: boolean;
+  /** The phone-typed address this row was started from; resolving it settles the hint. */
+  hintId?: string;
 };
 
 export type ResidencyChange =
@@ -29,6 +32,32 @@ export function addressRowsFrom(residencies: readonly ResidencyDoc[]): AddressRo
 
 export function newAddressRow(key: string): AddressRow {
   return { key, stored: null, placeId: null, label: '', type: 'Home', draft: EMPTY_ADDRESS_DRAFT, movedOut: null, removed: false };
+}
+
+/** A hint opens as a new row typed from it, even one standing in for a stored address: whether that one was a typo
+ *  or a move (Remove vs Moved out) is the user's call. */
+export function hintAddressRow(hint: AddressHint, key: string): AddressRow {
+  return { ...newAddressRow(key), type: hint.type ?? 'Home', draft: draftFromHint(hint), hintId: hint.id };
+}
+
+/** Hints whose row was saved; a removed row leaves its hint standing. */
+export function settledHintIds(rows: readonly AddressRow[]): string[] {
+  return rows.flatMap((r) => (r.hintId && !r.removed && r.placeId ? [r.hintId] : []));
+}
+
+function draftFromHint(hint: AddressHint): AddressDraft {
+  const country = hint.country?.trim() ?? '';
+  const countryCode = /^[a-z]{2}$/i.test(country) ? country.toUpperCase() : '';
+  if (!hint.street && !hint.postcode && !hint.city) {
+    const [street, ...rest] = hint.text.split(/\s*[,\n]\s*/);
+    return { ...EMPTY_ADDRESS_DRAFT, street: street ?? '', locality: rest.join(' '), countryCode };
+  }
+  return {
+    street: hint.street ?? '',
+    postcode: hint.postcode ? normalizePostcode(countryCode, hint.postcode) : '',
+    locality: hint.city ?? '',
+    countryCode,
+  };
 }
 
 export function addressSaveError(rows: readonly AddressRow[]): string | null {

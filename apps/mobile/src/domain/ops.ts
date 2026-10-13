@@ -22,6 +22,8 @@ export type ItemCore = Pick<ItemDoc,
   availability?: string | null;
   placeId?: string | null;
   location?: string | null;
+  /** `location` is a label with no place (null clears both) — text nothing could resolve, like a stock-app edit. */
+  locationUnresolved?: boolean;
 };
 
 /** Contact fields as ReviseContact interprets them: name/notes/etc null = keep; channels and tags UNION-merge
