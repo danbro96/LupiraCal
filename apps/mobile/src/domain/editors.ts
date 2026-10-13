@@ -64,8 +64,15 @@ export function itemCoreFromDraft(draft: ItemDraft): EditResult<ItemCore> {
   return itemCoreFromForm(itemFormFromDraft(draft));
 }
 
-/** `base` supplies the fields the form doesn't edit (parentItemId) so the whole-section write keeps them. */
-export function itemCoreFromForm(form: ItemForm, base?: ItemDoc): EditResult<ItemCore> {
+/** A location kept as text with no place — the form shows it as a hint until a place replaces it or it's removed. */
+export function unresolvedLabelOf(doc: ItemDoc | null | undefined, draft?: ItemDraft | null): string | null {
+  const label = doc ? (doc.placeId ? null : doc.locationLabel) : (draft?.placeId ? null : draft?.location);
+  return label?.trim() || null;
+}
+
+/** `base` supplies the fields the form doesn't edit (parentItemId) so the whole-section write keeps them;
+ *  `unresolvedLabel` is the hint still standing (null once removed). */
+export function itemCoreFromForm(form: ItemForm, base?: ItemDoc, unresolvedLabel = unresolvedLabelOf(base)): EditResult<ItemCore> {
   const schedule = scheduleFromForm(form);
   if (!schedule.ok) return schedule;
   const { startTimezone, ...when } = schedule.value;
@@ -82,10 +89,17 @@ export function itemCoreFromForm(form: ItemForm, base?: ItemDoc): EditResult<Ite
       startTimezone,
       endTimezone: startTimezone,
       recurrenceRule: form.recurrenceRule.trim() || null,
-      placeId: form.place?.placeId ?? null,
-      location: form.place?.label.trim() || null,
+      ...placeFieldsOf(form, base, unresolvedLabel?.trim() || null),
     },
   };
+}
+
+function placeFieldsOf(form: ItemForm, base: ItemDoc | undefined, label: string | null): Pick<ItemCore, 'placeId' | 'location' | 'locationUnresolved'> {
+  if (form.place) return { placeId: form.place.placeId, location: form.place.label.trim() || null };
+  const stored = unresolvedLabelOf(base);
+  if (stored && label === stored) return {};
+  if (stored || label) return { location: label, locationUnresolved: true };
+  return { placeId: null, location: null };
 }
 
 /** The doc's own core, verbatim — for one-field writes (cancel, restore) that must not touch the rest. */

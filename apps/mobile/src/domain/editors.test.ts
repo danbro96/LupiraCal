@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ContactDoc, ItemDoc } from './docTypes';
 import { emptyItemForm } from '@lupira/cal-domain/itemForm';
+import { selectPlace } from '@lupira/cal-domain/placeSelection';
 import {
   attendeeChanges, contactCoreFromDraft, contactCoreFromForm, contactFormFromDoc, contactFormFromDraft, coreOfDoc,
-  emptyContactForm, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft, metadataValueFromInput,
+  emptyContactForm, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft, metadataValueFromInput, unresolvedLabelOf,
 } from './editors';
 import type { ContactDraft, ItemDraft } from './drafts';
 
@@ -184,6 +185,36 @@ describe('place', () => {
     if (!r.ok) throw new Error(r.error);
     expect(r.value.placeId).toBeNull();
   });
+
+  const unresolved: ItemDoc = { ...timedDoc, placeId: null, locationLabel: 'Storgatan 1' };
+
+  it('an unresolved label survives a save', () => {
+    const form = itemFormFromDoc(unresolved);
+    expect(form.place).toBeNull();
+    expect(unresolvedLabelOf(unresolved)).toBe('Storgatan 1');
+    for (const r of [itemCoreFromForm(form, unresolved), itemCoreFromForm(form, unresolved, 'Storgatan 1')]) {
+      if (!r.ok) throw new Error(r.error);
+      expect(r.value.placeId).toBeUndefined();
+      expect(r.value).not.toHaveProperty('locationUnresolved');
+    }
+  });
+
+  it('Remove clears an unresolved label', () => {
+    const r = itemCoreFromForm(itemFormFromDoc(unresolved), unresolved, null);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value).toMatchObject({ location: null, locationUnresolved: true });
+  });
+
+  it('picking a place replaces the label', () => {
+    const r = itemCoreFromForm({ ...itemFormFromDoc(unresolved), place: selectPlace('p2', 'Kyrkan', 'search') }, unresolved);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value).toMatchObject({ placeId: 'p2', location: 'Kyrkan' });
+    expect(r.value).not.toHaveProperty('locationUnresolved');
+  });
+
+  it('a placed doc has no unresolved label', () => {
+    expect(unresolvedLabelOf({ ...timedDoc, placeId: 'p1', locationLabel: 'Folkets Park' })).toBeNull();
+  });
 });
 
 describe('coreOfDoc', () => {
@@ -265,6 +296,14 @@ describe('editors from drafts', () => {
       title: 'Lunch', description: 'Bring cake', recurrenceRule: 'FREQ=WEEKLY', isAllDay: false,
       startDay: '2026-10-06', startTime: '12:00', endDay: '2026-10-06', endTime: '13:00', place: null,
     });
+  });
+
+  it('a new event keeps a draft location as an unresolved label', () => {
+    const label = unresolvedLabelOf(null, timedDraft);
+    expect(label).toBe('Torsby');
+    const r = itemCoreFromForm(itemFormFromDraft(timedDraft), undefined, label);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value).toMatchObject({ location: 'Torsby', locationUnresolved: true });
   });
 
   it('carries a placed location into the form', () => {

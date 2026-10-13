@@ -24,6 +24,7 @@ object CalendarCapturer {
         CalendarContract.Events.TITLE, CalendarContract.Events.DESCRIPTION, CalendarContract.Events.EVENT_LOCATION,
         CalendarContract.Events.DTSTART, CalendarContract.Events.DTEND, CalendarContract.Events.DURATION,
         CalendarContract.Events.ALL_DAY, CalendarContract.Events.RRULE, CalendarContract.Events.CALENDAR_ID,
+        CalendarContract.Events.SYNC_DATA2,
       ),
       "${CalendarContract.Events.ACCOUNT_TYPE} = ? AND (${CalendarContract.Events.DIRTY} = 1 OR ${CalendarContract.Events.DELETED} = 1)",
       arrayOf(Bridge.ACCOUNT_TYPE), null,
@@ -50,6 +51,7 @@ object CalendarCapturer {
             put("title", c.getString(3) ?: JSONObject.NULL)
             put("description", c.getString(4) ?: JSONObject.NULL)
             put("location", c.getString(5) ?: JSONObject.NULL)
+            put("publishedLocation", c.getString(12) ?: JSONObject.NULL)
             put("dtstart", if (c.isNull(6)) JSONObject.NULL else c.getLong(6))
             put("dtend", if (c.isNull(7)) JSONObject.NULL else c.getLong(7))
             put("duration", c.getString(8) ?: JSONObject.NULL)

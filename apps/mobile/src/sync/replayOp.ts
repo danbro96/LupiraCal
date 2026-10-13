@@ -33,8 +33,9 @@ export async function replayOp(op: ClientOp): Promise<void> {
         tags: op.core.tags ?? undefined,
         parentItemId: op.core.parentItemId ?? undefined,
         availability: (op.core.availability ?? undefined) as never,
-        placeId: op.core.placeId ?? undefined,
-        location: op.core.placeId ? (op.core.location ?? undefined) : undefined,
+        placeId: op.core.locationUnresolved ? undefined : (op.core.placeId ?? undefined),
+        location: op.core.placeId || op.core.locationUnresolved ? (op.core.location ?? undefined) : undefined,
+        locationUnresolved: op.core.locationUnresolved || undefined,
       }, idem);
       return;
     case 'item.revise':
@@ -201,7 +202,7 @@ function totalizedPut(core: ItemCore, occurredAt: string): UpdateCalendarItemReq
     endTimezoneProvided: true,
     recurrenceRule: core.recurrenceRule ?? null,
     recurrenceRuleProvided: true,
-    ...(core.placeId === undefined ? {} : {
+    ...(core.locationUnresolved ? { location: core.location ?? null, locationUnresolved: true } : core.placeId === undefined ? {} : {
       placeId: core.placeId,
       placeIdProvided: true,
       location: core.location ?? undefined,

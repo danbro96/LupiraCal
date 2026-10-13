@@ -18,10 +18,12 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
   switch (op.kind) {
     case 'item.create': {
       if (state) return state;   // idempotent hit, like the server's SourceKey dedup
-      const { availability, placeId, location, ...core } = op.core;
+      const { availability, placeId, location, locationUnresolved, ...core } = op.core;
+      const label = location?.trim() || null;
       const doc: ItemDoc = {
         ...core,
-        ...(placeId ? { placeId, locationLabel: location?.trim() || null } : {}),
+        ...(placeId && !locationUnresolved ? { placeId, locationLabel: label } : {}),
+        ...(locationUnresolved && label ? { placeId: null, locationLabel: label } : {}),
         id: op.itemId,
         isAllDay: op.core.isAllDay ?? false,
         calendars: [{ calendarId: op.calendarId, status: 'Accepted' }],
@@ -121,7 +123,7 @@ function mergeItemCore(doc: ItemDoc, core: ItemCore): ItemDoc {
     startTimezone: core.startTimezone,
     endTimezone: core.endTimezone,
     recurrenceRule: core.recurrenceRule,
-    ...(core.placeId === undefined ? {} : {
+    ...(core.locationUnresolved ? { placeId: null, locationLabel: core.location?.trim() || null } : core.placeId === undefined ? {} : {
       placeId: core.placeId,
       // The server keeps the label when the place is unchanged and nothing new is sent.
       locationLabel: core.location != null

@@ -76,6 +76,47 @@ describe('translateCalRow', () => {
   });
 });
 
+describe('captured location', () => {
+  const placed: ItemDoc = { ...existing, placeId: 'p1', locationLabel: 'Folkets Park' };
+  const coreOf = (t: ReturnType<typeof translateCalRow>) => {
+    if (t.kind !== 'revise' && t.kind !== 'create') throw new Error(t.kind);
+    return t.core;
+  };
+
+  it('an untouched location keeps the place', () => {
+    const core = coreOf(translateCalRow(row('revised', { location: 'Folkets Park', publishedLocation: 'Folkets Park' }), placed));
+    expect(core).not.toHaveProperty('location');
+    expect(core).not.toHaveProperty('locationUnresolved');
+  });
+
+  it('a row the mirror moved on from keeps the newer place', () => {
+    const core = coreOf(translateCalRow(row('revised', { location: 'Old hall', publishedLocation: 'Old hall' }), placed));
+    expect(core).not.toHaveProperty('locationUnresolved');
+  });
+
+  it('a cleared location clears the place', () => {
+    const core = coreOf(translateCalRow(row('revised', { location: '  ', publishedLocation: 'Folkets Park' }), placed));
+    expect(core).toMatchObject({ location: null, locationUnresolved: true });
+  });
+
+  it('typed text becomes an unresolved label', () => {
+    const core = coreOf(translateCalRow(row('revised', { location: ' Storgatan 1 ', publishedLocation: 'Folkets Park' }), placed));
+    expect(core).toMatchObject({ location: 'Storgatan 1', locationUnresolved: true });
+  });
+
+  it('without a published value, text matching the mirror is kept and other text is unresolved', () => {
+    expect(coreOf(translateCalRow(row('revised', { location: 'Folkets Park' }), placed))).not.toHaveProperty('locationUnresolved');
+    expect(coreOf(translateCalRow(row('revised', { location: 'Kyrkan' }), placed))).toMatchObject({ location: 'Kyrkan', locationUnresolved: true });
+    expect(coreOf(translateCalRow(row('revised', { location: 'Kyrkan' }), null))).not.toHaveProperty('locationUnresolved');
+  });
+
+  it('a create with text carries it unresolved; without text, nothing', () => {
+    const withText = coreOf(translateCalRow(row('created', { location: 'Kyrkan' }, { sourceKey: 'bridge:u1' }), null));
+    expect(withText).toMatchObject({ location: 'Kyrkan', locationUnresolved: true });
+    expect(coreOf(translateCalRow(row('created', {}, { sourceKey: 'bridge:u1' }), null))).not.toHaveProperty('locationUnresolved');
+  });
+});
+
 describe('parseRfc2445Duration', () => {
   it('parses the provider subset', () => {
     expect(parseRfc2445Duration('P1D')).toBe(86_400_000);

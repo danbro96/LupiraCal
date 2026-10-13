@@ -5,12 +5,15 @@ import type { ContactCore, ItemCore } from './ops';
 /** Pure half of the bridge write-back: a captured provider edit → the op the engine should enqueue.
  *  The impure half (id resolution, mirror lookup, enqueue, ack) lives in sync/bridge.ts. Warts are
  *  inherited from the REST contract: title/description cleared in the stock app stay unchanged
- *  server-side (null = keep), and EVENT_LOCATION is publish-only (ItemCore has no location field). */
+ *  server-side (null = keep). A location typed in the stock app can't be resolved there, so it lands as a label
+ *  with no place for the app to resolve later. */
 
 export type CalCapturePayload = {
   title: string | null;
   description: string | null;
   location: string | null;
+  /** What the publisher last wrote (absent on rows captured before it recorded one). */
+  publishedLocation?: string | null;
   dtstart: number | null;
   dtend: number | null;
   duration: string | null;   // RFC2445, recurring rows carry this instead of dtend
@@ -54,6 +57,7 @@ export function translateCalRow(row: ParsedCalRow, existing: ItemDoc | null): Ca
     startsAt: null, endsAt: null, startDate: null, endDate: null,
     startTimezone: zone, endTimezone: zone,
     recurrenceRule: p.rrule ? p.rrule.replace(/^RRULE:/i, '') : null,
+    ...placeFieldsOf(p, existing, row.kind === 'created'),
   };
 
   const endMs = p.dtend ?? (p.duration ? p.dtstart + (parseRfc2445Duration(p.duration) ?? 0) : null);
@@ -71,6 +75,16 @@ export function translateCalRow(row: ParsedCalRow, existing: ItemDoc | null): Ca
     return { kind: 'create', itemId: row.itemId, sourceKey: row.sourceKey, calendarId: p.calendarSyncId, core, occurredAt: row.occurredAt };
   }
   return { kind: 'revise', itemId: row.itemId, core, occurredAt: row.occurredAt };
+}
+
+/** A row the mirror moved on from still shows its published location; only a real edit may touch the place. */
+function placeFieldsOf(p: CalCapturePayload, existing: ItemDoc | null, created: boolean): Pick<ItemCore, 'location' | 'locationUnresolved'> {
+  const captured = p.location?.trim() || null;
+  const unresolved = { location: captured, locationUnresolved: true };
+  if (created) return captured ? unresolved : {};
+  if (p.publishedLocation !== undefined && captured === (p.publishedLocation?.trim() || null)) return {};
+  if (!existing) return p.publishedLocation === undefined ? {} : unresolved;
+  return captured === (existing.locationLabel?.trim() || null) ? {} : unresolved;
 }
 
 /** RFC2445 duration subset the calendar provider emits (P1D, PT1800S, P1DT12H, P2W …). */
