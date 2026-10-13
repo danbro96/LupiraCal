@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { readMeta, writeMeta } from '../sync/meta';
+import { CALENDAR_CHOICES_KEY } from '../sync/metaKeys';
 
 /** Small user preferences, persisted in the sync kernel's meta table (same reasoning as bridge-store). */
 
 const DEBUG_KEY = 'prefs.debugEnabled';
-const CALENDAR_CHOICES_KEY = 'prefs.calendarChoices';
 const SHOW_TASKS_KEY = 'prefs.showTaskDeadlines';
 const HOUR_HEIGHT_KEY = 'prefs.weekHourHeight';
 const ALL_DAY_ROWS_KEY = 'prefs.allDayRows';
