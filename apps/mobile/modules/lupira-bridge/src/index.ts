@@ -33,6 +33,7 @@ type LupiraBridgeNative = {
   removeAccount(): Promise<boolean>;
   requestSync(): Promise<void>;
   getBridgeState(): Promise<BridgeState>;
+  canScheduleExactAlarms(): Promise<boolean>;
   /// Runs capture → publish in-process (same body as onPerformSync), immediately.
   bridgeSyncNow(): Promise<void>;
   /// Reads inbox rows WITHOUT consuming them — deletion happens via ackInbox after the ops are enqueued.

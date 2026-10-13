@@ -32,7 +32,8 @@
         }
       ],
       "permissions": [
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.USE_EXACT_ALARM"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -51,6 +52,14 @@
           "url": "https://de.sentry.io/",
           "project": "lupira-calendar",
           "organization": "brostrom"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#E76F51",
+          "defaultChannel": "reminders"
         }
       ],
       [

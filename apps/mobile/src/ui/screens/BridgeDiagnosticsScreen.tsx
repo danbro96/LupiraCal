@@ -15,6 +15,7 @@ export function BridgeDiagnosticsScreen() {
   const confirm = useConfirm();
   const [state, setState] = useState<BridgeState | null>(null);
   const [inboxCount, setInboxCount] = useState<number | null>(null);
+  const [exactAlarms, setExactAlarms] = useState<boolean | null>(null);
   const [log, setLog] = useState<string[]>([]);
   const [contacts, setContacts] = useState<{ total: number; rows: ContactsSampleRow[] } | null>(null);
 
@@ -23,6 +24,7 @@ export function BridgeDiagnosticsScreen() {
     .then(async (next) => {
       setState(next);
       setInboxCount((await LupiraBridge.drainInbox()).length);
+      setExactAlarms(await LupiraBridge.canScheduleExactAlarms());
     })
     .catch((e: unknown) => append(String(e))), []);
 
@@ -52,7 +54,8 @@ export function BridgeDiagnosticsScreen() {
       <Text style={styles.mono}>
         account: {state ? String(state.accountPresent) : '…'}   calendarId: {state?.calendarId ?? '—'}{'\n'}
         last OS sync: {state?.lastSyncAt ? new Date(state.lastSyncAt).toLocaleString() : 'never'}{'\n'}
-        inbox rows: {inboxCount ?? '…'}
+        inbox rows: {inboxCount ?? '…'}{'\n'}
+        exact alarms: {exactAlarms === null ? '…' : String(exactAlarms)}
       </Text>
 
       <List.Subheader style={styles.subheader}>Actions</List.Subheader>

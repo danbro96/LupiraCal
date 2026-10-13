@@ -8,6 +8,8 @@
   <!-- Install-time (non-runtime) permissions: setSyncAutomatically/setIsSyncable need WRITE. -->
   <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
   <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+  <!-- USE_EXACT_ALARM (app.json) starts at API 33; Android 12 needs this one. -->
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
 
   <!-- Lets the router find the system calendar app for events that aren't ours. -->
   <queries>

@@ -1,9 +1,11 @@
 package expo.modules.lupirabridge
 
 import android.accounts.AccountManager
+import android.app.AlarmManager
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.net.Uri
+import android.os.Build
 import android.os.Process
 import android.os.SystemClock
 import android.provider.CalendarContract
@@ -69,6 +71,11 @@ class LupiraBridgeModule : Module() {
         "calendarId" to calendarId,
         "lastSyncAt" to if (lastSync == 0L) null else lastSync.toDouble(),
       )
+    }
+
+    AsyncFunction("canScheduleExactAlarms") {
+      Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+        context.getSystemService(AlarmManager::class.java).canScheduleExactAlarms()
     }
 
     /// Runs the sync body in-process, immediately — the deterministic path for tests and the spike
