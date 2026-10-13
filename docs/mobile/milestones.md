@@ -21,6 +21,7 @@ criteria are verifiable commands/observations.
 | M9 | Task deadlines on the calendar | LupiraCal | in-progress |
 | M10 | Material re-skin (Paper + shared tokens) | LupiraCal | in-progress |
 | M14 | Device feedback pass | LupiraCal, LupiraCalApi | in-progress |
+| M15 | Native 1.2.0 | LupiraCal, LupiraCalApi | in-progress |
 
 Fixed identity: Android package `com.lupira.calendar`, scheme `lupiracalendar`
 (redirect `lupiracalendar://oauthredirect`), Authentik public client `lupira-cal-mobile`,
@@ -268,6 +269,31 @@ Grids (MonthView/WeekView), the PanResponder day-sheet, and the sync engine are 
 - [ ] Device: stacked pins open a list; a photo card's buttons clear the nav bar
 - [ ] Device: Month hides older photos/hotspots/track; week/month + last calendar survive kill/relaunch
 - [ ] Device: Settings fits 360 dp; a week with 6+ overlapping all-day items scrolls inside the strip
+
+## M15 — Native 1.2.0   [status: in-progress]
+
+Local notifications, stock-app location and address capture, Sentry symbolication; Expo 57.0.27. Ships as one
+EAS build (1.2.0) to Play internal.
+
+### Scope
+- [ ] cal-api: per-participant reminder (`Default` / `Off` / `Before` n min) on attendees, `PUT /items/{id}/participants/{pid}/reminder`, synced via `/sync/items`; `LocationUnresolved` on create/update stores the label without a place. BFF exposes the PUT
+- [x] Expo 57.0.27 SDK pins + `expo-notifications`; version 1.2.0
+- [x] Sentry config plugin (de.sentry.io) + `getSentryExpoConfig` metro; EAS build profiles name their environment (SENTRY_AUTH_TOKEN); mobile-ota uploads source maps
+- [x] `USE_EXACT_ALARM` (Android 13+) + `SCHEDULE_EXACT_ALARM` capped at API 32; bridge `canScheduleExactAlarms()` on Bridge diagnostics
+- [ ] Notifications: per-event reminders, default reminder (Accepted/Tentative timed), morning-of digest, birthdays digest, RSVP ask-when-invited + remind-to-reply with Going/Maybe/Not going actions; 14-day horizon, cap 100; Settings toggles (all on after update)
+- [ ] Reminder op `item.reminder` + Reminder row in the event editor
+- [ ] Bridge: stock-calendar location edits captured as unresolved labels; editor keeps an unresolved label and offers it as the place search seed
+- [ ] Bridge: contact postal addresses published per current residency; phone-side edits kept as local address hints ("From your phone")
+- [ ] Reconciler re-arms fires due within 2 h whenever exact alarms are unavailable
+
+### Exit criteria
+- [ ] Root `npm run typecheck` / `lint` / `test` green; cal-api unit + integration green
+- [ ] `npx expo export --platform android` bundles; clean-tree fingerprint differs from 1.1.0's runtime
+- [ ] Device: notifications fire foreground / background / killed / after reboot / after package replace / under Doze, exact on and off; permission denied shows the settings row; account switch cancels all
+- [ ] Device: RSVP action buttons answer from a killed app and offline (replayed on reconnect)
+- [ ] Device: Samsung Calendar location edit and Samsung Contacts address edit come back as hints; no op echo after two syncs
+- [ ] Sentry: a release-build crash and an OTA crash both symbolicate
+- [ ] 1.1.0 → 1.2.0 upgrade drill (outbox survives); 1.1.0 stragglers still get OTAs from `runtime/1.1.0`
 
 ## Split into Lupira Maps and Lupira Photos
 
