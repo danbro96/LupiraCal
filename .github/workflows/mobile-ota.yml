@@ -41,9 +41,17 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+      - name: Export bundle
+        working-directory: apps/mobile
+        run: npx expo export --platform android --source-maps
       - name: Publish update
         working-directory: apps/mobile
         env:
           BRANCH: ${{ inputs.branch }}
           MESSAGE: ${{ inputs.message }}
-        run: eas update --branch "$BRANCH" --environment "$BRANCH" --platform android --message "$MESSAGE" --non-interactive
+        run: eas update --skip-bundler --platform android --branch "$BRANCH" --environment "$BRANCH" --message "$MESSAGE" --non-interactive
+      - name: Upload source maps to Sentry
+        working-directory: apps/mobile
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: npx sentry-expo-upload-sourcemaps dist

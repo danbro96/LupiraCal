@@ -46,6 +46,14 @@
       "@maplibre/maplibre-react-native",
       "expo-image",
       [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://de.sentry.io/",
+          "project": "lupira-calendar",
+          "organization": "brostrom"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
