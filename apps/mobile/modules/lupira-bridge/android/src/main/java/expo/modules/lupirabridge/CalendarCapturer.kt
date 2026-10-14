@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.provider.CalendarContract
 import android.util.Log
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
@@ -11,7 +12,8 @@ import java.util.UUID
 /// (DIRTY=1), creations (no _SYNC_ID), and deletions (DELETED=1) into the bridge inbox, then settles the
 /// provider row: dirty cleared, deletions physically removed, creations stamped with a pending marker.
 /// The marker doubles as the deterministic sourceKey ("bridge:<uuid>"), so a re-captured or re-drained
-/// creation converges on the same aggregate — no duplicate creation.
+/// creation converges on the same aggregate — no duplicate creation. A row for one occurrence of our series (an
+/// exception: ORIGINAL_SYNC_ID / ORIGINAL_ID) is captured under `ProviderRecurrence.exceptionSyncId`, never as a new event.
 object CalendarCapturer {
 
   fun capture(context: Context) {
@@ -24,7 +26,9 @@ object CalendarCapturer {
         CalendarContract.Events.TITLE, CalendarContract.Events.DESCRIPTION, CalendarContract.Events.EVENT_LOCATION,
         CalendarContract.Events.DTSTART, CalendarContract.Events.DTEND, CalendarContract.Events.DURATION,
         CalendarContract.Events.ALL_DAY, CalendarContract.Events.RRULE, CalendarContract.Events.CALENDAR_ID,
-        CalendarContract.Events.SYNC_DATA2,
+        CalendarContract.Events.SYNC_DATA2, CalendarContract.Events.ORIGINAL_SYNC_ID, CalendarContract.Events.ORIGINAL_ID,
+        CalendarContract.Events.ORIGINAL_INSTANCE_TIME, CalendarContract.Events.ORIGINAL_ALL_DAY, CalendarContract.Events.STATUS,
+        CalendarContract.Events.EXDATE, CalendarContract.Events.SYNC_DATA3,
       ),
       "${CalendarContract.Events.ACCOUNT_TYPE} = ? AND (${CalendarContract.Events.DIRTY} = 1 OR ${CalendarContract.Events.DELETED} = 1)",
       arrayOf(Bridge.ACCOUNT_TYPE), null,
@@ -34,7 +38,17 @@ object CalendarCapturer {
           val rowId = c.getLong(0)
           var syncId = c.getString(1)
           val deleted = c.getInt(2) == 1
+          val originalSyncId = (if (c.isNull(14)) null else syncIdOf(context, c.getLong(14))) ?: c.getString(13)
+          val originalInstance = if (c.isNull(15)) null else c.getLong(15)
+          val exception = originalSyncId != null && originalInstance != null
+          if (exception && originalSyncId!!.startsWith("pending:")) continue   // its series has no item yet; stays dirty
 
+          if (exception && syncId == null && !deleted) {
+            syncId = ProviderRecurrence.exceptionSyncId(originalSyncId!!, originalInstance!!)
+            val stamp = ContentValues().apply { put(CalendarContract.Events._SYNC_ID, syncId) }
+            resolver.update(CalendarPublisher.asSyncAdapter(CalendarContract.Events.CONTENT_URI), stamp,
+              "${CalendarContract.Events._ID} = ?", arrayOf(rowId.toString()))
+          }
           val kind = when {
             deleted -> "deleted"
             syncId == null -> "created"
@@ -58,6 +72,15 @@ object CalendarCapturer {
             put("allDay", c.getInt(9) == 1)
             put("rrule", c.getString(10) ?: JSONObject.NULL)
             put("calendarSyncId", calendarSyncIdOf(context, c.getLong(11)) ?: JSONObject.NULL)
+            put("status", if (c.isNull(17)) JSONObject.NULL else c.getInt(17))
+            if (exception) {
+              put("originalSyncId", originalSyncId)
+              put("originalInstanceTime", originalInstance)
+              put("originalAllDay", c.getInt(16) == 1)
+            } else {
+              put("exdates", JSONArray(ProviderRecurrence.parseDates(c.getString(18))))
+              put("publishedExdates", c.getString(19)?.let { JSONArray(ProviderRecurrence.parseDates(it)) } ?: JSONObject.NULL)
+            }
           }
 
           if (kind == "created") {
@@ -86,6 +109,12 @@ object CalendarCapturer {
     }
     if (captured > 0) Log.i(Bridge.TAG, "capture: $captured provider edits into the inbox")
   }
+
+  private fun syncIdOf(context: Context, eventRowId: Long): String? =
+    context.contentResolver.query(
+      CalendarPublisher.asSyncAdapter(CalendarContract.Events.CONTENT_URI), arrayOf(CalendarContract.Events._SYNC_ID),
+      "${CalendarContract.Events._ID} = ?", arrayOf(eventRowId.toString()), null,
+    )?.use { if (it.moveToFirst()) it.getString(0) else null }
 
   private fun calendarSyncIdOf(context: Context, calendarRowId: Long): String? =
     context.contentResolver.query(

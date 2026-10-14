@@ -1,4 +1,8 @@
 import { residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
+import {
+  allDayKey, hasSeriesOccurrence, occurrenceEdit, occurrenceKey, overrideFor, type OccurrenceChange, type OccurrenceEdit, type OccurrencePatch,
+  type SeriesItem,
+} from '@lupira/cal-domain/seriesOccurrences';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import type { ContactDoc, ItemDoc, PartialDateDto, ReachChannel, ResidencyDoc } from './docTypes';
 import type { ContactCore, ItemCore } from './ops';
@@ -21,6 +25,14 @@ export type CalCapturePayload = {
   allDay: boolean;
   rrule: string | null;
   calendarSyncId: string | null;
+  /** The provider's STATUS: 0 tentative, 1 confirmed, 2 cancelled. */
+  status?: number | null;
+  /** Set on a row for one occurrence of the series `originalSyncId`, by its unmodified start. */
+  originalSyncId?: string | null;
+  originalInstanceTime?: number | null;
+  /** A series row's excluded starts, and those last published (null = not recorded). */
+  exdates?: number[];
+  publishedExdates?: number[] | null;
 };
 
 export type ParsedCalRow = {
@@ -76,6 +88,70 @@ export function translateCalRow(row: ParsedCalRow, existing: ItemDoc | null): Ca
     return { kind: 'create', itemId: row.itemId, sourceKey: row.sourceKey, calendarId: p.calendarSyncId, core, occurredAt: row.occurredAt };
   }
   return { kind: 'revise', itemId: row.itemId, core, occurredAt: row.occurredAt };
+}
+
+export type ParsedOccurrenceRow = {
+  deleted: boolean;
+  itemId: string;
+  originalStart: string;
+  payload: CalCapturePayload;
+  occurredAt: string;
+};
+
+export type OccurrenceTranslation =
+  | { kind: 'occurrence'; itemId: string; originalStart: string; edit: Exclude<OccurrenceEdit, { kind: 'restore' }>; occurredAt: string }
+  | { kind: 'restore'; itemId: string; originalStart: string; occurredAt: string }
+  | { kind: 'skip'; reason: string };
+
+const PROVIDER_CANCELLED = 2;
+const DAY_MS = 86_400_000;
+
+/** A captured row for one occurrence of a series → its change. Deleting or cancelling it there excludes it; per-occurrence
+ *  places don't exist, so its location is not read. What the mirror already holds is an echo. */
+export function translateOccurrenceRow(row: ParsedOccurrenceRow, existing: ItemDoc | null): OccurrenceTranslation {
+  if (!existing) return { kind: 'skip', reason: 'series not in the mirror' };
+  if (!hasSeriesOccurrence(existing, row.originalStart)) return { kind: 'skip', reason: 'no such occurrence in the series' };
+  const at = Date.parse(row.originalStart);
+  const excluded = (existing.excludedOccurrences ?? []).some((x) => Date.parse(x) === at);
+  const target = { itemId: row.itemId, originalStart: occurrenceKey(at), occurredAt: row.occurredAt };
+  const p = row.payload;
+  if (row.deleted || p.status === PROVIDER_CANCELLED) {
+    return excluded ? { kind: 'skip', reason: 'echo' } : { kind: 'occurrence', ...target, edit: { kind: 'exclude' } };
+  }
+  if (p.dtstart === null) return { kind: 'skip', reason: 'captured row has no start' };
+
+  const endMs = p.dtend ?? (p.duration ? p.dtstart + (parseRfc2445Duration(p.duration) ?? 0) : null);
+  const patch: OccurrencePatch = {
+    title: p.title?.trim() || null,
+    description: p.description?.trim() || null,
+    ...(existing.isAllDay
+      ? { startsAt: allDayKey(utcDayKey(p.dtstart)), endsAt: endMs && endMs > p.dtstart + DAY_MS ? allDayKey(utcDayKey(endMs - DAY_MS)) : null }
+      : { startsAt: new Date(p.dtstart).toISOString(), endsAt: endMs && endMs > p.dtstart ? new Date(endMs).toISOString() : null }),
+  };
+  const edit = occurrenceEdit(existing as SeriesItem, target.originalStart, patch);
+  const current = overrideFor(existing, target.originalStart);
+  if (edit.kind === 'restore') return excluded || current ? { kind: 'restore', ...target } : { kind: 'skip', reason: 'echo' };
+  if (edit.kind === 'change' && !excluded && current && sameChange(current, edit.change)) return { kind: 'skip', reason: 'echo' };
+  return { kind: 'occurrence', ...target, edit: edit.kind === 'change' ? edit : { kind: 'exclude' } };
+}
+
+function sameChange(a: OccurrenceChange, b: OccurrenceChange): boolean {
+  const instant = (v?: string | null) => (v ? Date.parse(v) : null);
+  return instant(a.startsAt) === instant(b.startsAt) && instant(a.endsAt) === instant(b.endsAt)
+    && (a.title ?? null) === (b.title ?? null) && (a.description ?? null) === (b.description ?? null) && (a.status ?? null) === (b.status ?? null);
+}
+
+/** The exclusions the user changed on a series row: against what was published, never the mirror, so an exclusion
+ *  made elsewhere and not yet published isn't undone. */
+export function exclusionChanges(p: CalCapturePayload, existing: ItemDoc | null): { exclude: string[]; restore: string[] } {
+  if (!existing || !p.exdates || p.publishedExdates == null) return { exclude: [], restore: [] };
+  const captured = new Set(p.exdates);
+  const published = new Set(p.publishedExdates);
+  const mirrored = new Set((existing.excludedOccurrences ?? []).map((x) => Date.parse(x)));
+  return {
+    exclude: p.exdates.filter((t) => !published.has(t) && !mirrored.has(t)).map(occurrenceKey).filter((k) => hasSeriesOccurrence(existing, k)),
+    restore: p.publishedExdates.filter((t) => !captured.has(t) && mirrored.has(t)).map(occurrenceKey),
+  };
 }
 
 /** A row the mirror moved on from still shows its published location; only a real edit may touch the place. */

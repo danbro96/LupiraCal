@@ -1,4 +1,5 @@
 import type { SyncEngine } from '@danbro96/lupira-sync-engine/engine';
+import { occurrenceKey } from '@lupira/cal-domain/seriesOccurrences';
 import { v7 as uuidv7 } from 'uuid';
 import type { AddressHint, BridgeInboxRow } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
@@ -7,7 +8,8 @@ import { deterministicIdFor } from '../data/ids';
 import { Aggregate } from '../domain/aggregates';
 import type { CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow, PostalCapture } from '../domain/bridgeTranslate';
 import {
-  PENDING_PREFIX, contactReviseIsEcho, mergeChannelTypes, postalHints, publishedAddresses, sourceKeyOfPendingMarker, translateCalRow, translateContactRow,
+  PENDING_PREFIX, contactReviseIsEcho, exclusionChanges, mergeChannelTypes, postalHints, publishedAddresses, sourceKeyOfPendingMarker, translateCalRow,
+  translateContactRow, translateOccurrenceRow,
 } from '../domain/bridgeTranslate';
 import type { ContactDoc, ItemDoc, PlaceDoc, ResidencyDoc } from '../domain/docTypes';
 import { stamp, type ClientOp } from '../domain/ops';
@@ -49,7 +51,13 @@ export async function drainBridgeInbox(engine: SyncEngine): Promise<number> {
       ackIds.push(row.id);
       continue;
     }
-    const parsed = await parseRow(row);
+    const payload = calPayloadOf(row);
+    if (payload?.originalSyncId) {
+      ops.push(...(await occurrenceOps(engine, row, payload)));
+      ackIds.push(row.id);
+      continue;
+    }
+    const parsed = payload && (await parseRow(row, payload));
     if (!parsed) {
       ackIds.push(row.id);
       continue;
@@ -61,9 +69,19 @@ export async function drainBridgeInbox(engine: SyncEngine): Promise<number> {
         ops.push({ kind: 'item.create', itemId: t.itemId, sourceKey: t.sourceKey, calendarId: t.calendarId, core: t.core, ...stamp(Aggregate.item, t.itemId, t.occurredAt) });
         assignments.push({ marker: row.syncId!, syncId: t.itemId });
         break;
-      case 'revise':
+      case 'revise': {
         ops.push({ kind: 'item.revise', itemId: t.itemId, core: t.core, ...stamp(Aggregate.item, t.itemId, t.occurredAt) });
+        // +1ms so exclusions edited on the series row outrank its revise on the shared guard.
+        const later = new Date(row.capturedAt + 1).toISOString();
+        const { exclude, restore } = exclusionChanges(parsed.payload, existing?.doc ?? null);
+        for (const originalStart of exclude) {
+          ops.push({ kind: 'item.occurrence', itemId: t.itemId, originalStart, edit: { kind: 'exclude' }, ...stamp(Aggregate.item, t.itemId, later) });
+        }
+        for (const originalStart of restore) {
+          ops.push({ kind: 'item.occurrence.restore', itemId: t.itemId, originalStart, ...stamp(Aggregate.item, t.itemId, later) });
+        }
         break;
+      }
       case 'delete':
         ops.push({ kind: 'item.delete', itemId: t.itemId, ...stamp(Aggregate.item, t.itemId, t.occurredAt) });
         break;
@@ -174,14 +192,40 @@ async function settleAddressHints(engine: SyncEngine, contactId: string, postals
   if (changes.put.length + changes.remove.length > 0) await queryClient.invalidateQueries({ queryKey: ADDRESS_HINTS_KEY });
 }
 
-async function parseRow(row: BridgeInboxRow): Promise<ParsedCalRow | null> {
-  let payload: CalCapturePayload;
+function calPayloadOf(row: BridgeInboxRow): CalCapturePayload | null {
   try {
-    payload = JSON.parse(row.payload) as CalCapturePayload;
+    return JSON.parse(row.payload) as CalCapturePayload;
   } catch {
     logDebug('bridge', `inbox row ${row.id}: unparseable payload`);
     return null;
   }
+}
+
+/** A row for one occurrence of a series becomes a change to that occurrence, never an event of its own. */
+async function occurrenceOps(engine: SyncEngine, row: BridgeInboxRow, payload: CalCapturePayload): Promise<ClientOp[]> {
+  const itemId = payload.originalSyncId!;
+  if (!GUID_RE.test(itemId) || payload.originalInstanceTime == null) {
+    logDebug('bridge', `inbox row ${row.id}: occurrence of unknown series '${itemId}'`);
+    return [];
+  }
+  const occurredAt = new Date(row.capturedAt).toISOString();
+  const existing = await engine.doc<ItemDoc, unknown>(Aggregate.item, itemId);
+  const t = translateOccurrenceRow(
+    { deleted: row.kind === 'deleted', itemId, originalStart: occurrenceKey(payload.originalInstanceTime), payload, occurredAt },
+    existing?.doc ?? null,
+  );
+  switch (t.kind) {
+    case 'occurrence':
+      return [{ kind: 'item.occurrence', itemId, originalStart: t.originalStart, edit: t.edit, ...stamp(Aggregate.item, itemId, occurredAt) }];
+    case 'restore':
+      return [{ kind: 'item.occurrence.restore', itemId, originalStart: t.originalStart, ...stamp(Aggregate.item, itemId, occurredAt) }];
+    case 'skip':
+      logDebug('bridge', `inbox row ${row.id} skipped: ${t.reason}`);
+      return [];
+  }
+}
+
+async function parseRow(row: BridgeInboxRow, payload: CalCapturePayload): Promise<ParsedCalRow | null> {
   const occurredAt = new Date(row.capturedAt).toISOString();
   if (!row.syncId) return null;
 

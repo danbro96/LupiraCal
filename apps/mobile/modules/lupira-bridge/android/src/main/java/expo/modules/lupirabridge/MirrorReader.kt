@@ -1,6 +1,7 @@
 package expo.modules.lupirabridge
 
 import android.database.sqlite.SQLiteDatabase
+import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
 
@@ -27,6 +28,18 @@ data class MirrorContact(
   val addresses: List<MirrorAddress>,
 )
 
+/// One occurrence's change, by its unmodified start; null members inherit from the series. An all-day `endMs` is the
+/// last day.
+data class MirrorOverride(
+  val originalStartMs: Long,
+  val startMs: Long?,
+  val endMs: Long?,
+  val title: String?,
+  val description: String?,
+  val status: String?,
+  val location: String?,
+)
+
 data class MirrorItem(
   val id: String,
   val calendarId: String,      // first accepted membership — the provider calendar that hosts the event
@@ -38,6 +51,10 @@ data class MirrorItem(
   val startMs: Long,
   val endMs: Long?,            // exclusive; null = open-ended
   val rrule: String?,
+  val zone: String? = null,
+  val excluded: List<Long> = emptyList(),
+  val extras: List<Long> = emptyList(),
+  val overrides: List<MirrorOverride> = emptyList(),
 )
 
 object MirrorReader {
@@ -160,6 +177,7 @@ object MirrorReader {
       endMs = doc.optStringOrNull("endsAt")?.let { isoMs(it) }
     }
     if (endMs != null && endMs <= startMs) endMs = null
+    val rrule = doc.optStringOrNull("recurrenceRule")?.removePrefix("RRULE:")
     return MirrorItem(
       id = id,
       calendarId = calendarId,
@@ -170,9 +188,31 @@ object MirrorReader {
       allDay = allDay,
       startMs = startMs,
       endMs = endMs,
-      rrule = doc.optStringOrNull("recurrenceRule")?.removePrefix("RRULE:"),
+      rrule = rrule,
+      zone = doc.optStringOrNull("startTimezone"),
+      excluded = if (rrule == null) emptyList() else instants(doc.optJSONArray("excludedOccurrences")),
+      extras = if (rrule == null) emptyList() else instants(doc.optJSONArray("extraOccurrences")),
+      overrides = if (rrule == null) emptyList() else overrides(doc.optJSONArray("occurrenceOverrides")),
     )
   }
+
+  private fun instants(values: JSONArray?): List<Long> =
+    (0 until (values?.length() ?: 0)).mapNotNull { i -> values!!.optString(i).takeIf { it.isNotEmpty() }?.let { runCatching { isoMs(it) }.getOrNull() } }
+
+  private fun overrides(values: JSONArray?): List<MirrorOverride> =
+    (0 until (values?.length() ?: 0)).mapNotNull { i ->
+      val o = values!!.optJSONObject(i) ?: return@mapNotNull null
+      val original = o.optStringOrNull("originalStart")?.let { runCatching { isoMs(it) }.getOrNull() } ?: return@mapNotNull null
+      MirrorOverride(
+        originalStartMs = original,
+        startMs = o.optStringOrNull("startsAt")?.let { isoMs(it) },
+        endMs = o.optStringOrNull("endsAt")?.let { isoMs(it) },
+        title = o.optStringOrNull("title"),
+        description = o.optStringOrNull("description"),
+        status = o.optStringOrNull("status"),
+        location = o.optStringOrNull("locationLabel"),
+      )
+    }
 
   private fun firstAccepted(doc: JSONObject): String? {
     val memberships = doc.optJSONArray("calendars") ?: return null

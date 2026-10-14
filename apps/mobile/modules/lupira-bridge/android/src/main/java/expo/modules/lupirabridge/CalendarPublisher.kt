@@ -10,11 +10,13 @@ import java.security.MessageDigest
 
 /// Mirror → provider, run inside onPerformSync. One provider calendar per mirror calendar (upsert by
 /// Calendars._SYNC_ID), one event per item (upsert by Events._SYNC_ID = item id). Recurring items publish
-/// DTSTART + DURATION + RRULE so the provider expands them — publishing expanded instances would break
-/// stock-app edit semantics. SYNC_DATA1 carries a content hash: unchanged rows are skipped, which is also
+/// DTSTART + DURATION + RRULE (+ EXDATE/RDATE) in the item's zone so the provider expands them — publishing expanded
+/// instances would break stock-app edit semantics — and one exception row per changed occurrence
+/// (`ProviderRecurrence.exceptionSyncId`). SYNC_DATA1 carries a content hash: unchanged rows are skipped, which is also
 /// the echo suppressor (a round-tripped write-back lands as the same hash); SYNC_DATA2 the published location,
-/// so a capture can tell a location edit from a row the mirror has moved on from. Rows with a pending inbox
-/// capture are skipped so the user's stock-app edit isn't visibly reverted while it rides to the server.
+/// so a capture can tell a location edit from a row the mirror has moved on from; SYNC_DATA3 the published EXDATE, so
+/// a capture can tell which exclusions the user changed. Rows of an item with a pending inbox capture are skipped so the
+/// user's stock-app edit isn't visibly reverted while it rides to the server.
 object CalendarPublisher {
 
   fun publish(context: Context) {
@@ -83,11 +85,12 @@ object CalendarPublisher {
     return rowIds
   }
 
+  private data class EventRow(val rowId: Long, val hash: String?, val dirty: Boolean, val publishedLocation: String?)
+
   private fun upsertEvents(
     resolver: ContentResolver, items: List<MirrorItem>, calendarRowIds: Map<String, Long>, holdBack: Set<String>,
   ) {
-    data class Row(val rowId: Long, val hash: String?, val dirty: Boolean, val publishedLocation: String?)
-    val existing = mutableMapOf<String, Row>()
+    val existing = mutableMapOf<String, EventRow>()
     resolver.query(
       asSyncAdapter(CalendarContract.Events.CONTENT_URI),
       arrayOf(
@@ -97,50 +100,66 @@ object CalendarPublisher {
       "${CalendarContract.Events.ACCOUNT_TYPE} = ? AND ${CalendarContract.Events.DELETED} = 0",
       arrayOf(Bridge.ACCOUNT_TYPE), null,
     )?.use { c ->
-      while (c.moveToNext()) c.getString(1)?.let { existing[it] = Row(c.getLong(0), c.getString(2), c.getInt(3) == 1, c.getString(4)) }
+      while (c.moveToNext()) c.getString(1)?.let { existing[it] = EventRow(c.getLong(0), c.getString(2), c.getInt(3) == 1, c.getString(4)) }
     }
 
     val desired = mutableSetOf<String>()
+    val exceptions = mutableListOf<Pair<String, ContentValues>>()
     for (item in items) {
       val calendarRowId = calendarRowIds[item.calendarId] ?: continue
       desired.add(item.id)
-      if (holdBack.contains(item.id)) continue           // un-drained stock edit owns this row for now
-      val current = existing[item.id]
-      if (current?.dirty == true) continue               // capture will pick it up first; don't clobber
-
-      val hash = hashOf(item, calendarRowId)
-      if (current?.hash == hash && current?.publishedLocation == item.location) continue
-
-      val values = eventValues(item, calendarRowId, hash)
-      if (current != null) {
-        resolver.update(asSyncAdapter(CalendarContract.Events.CONTENT_URI), values,
-          "${CalendarContract.Events._ID} = ?", arrayOf(current.rowId.toString()))
-      } else {
-        values.put(CalendarContract.Events._SYNC_ID, item.id)
-        resolver.insert(asSyncAdapter(CalendarContract.Events.CONTENT_URI), values)
-      }
+      val changes = item.overrides.filter { it.originalStartMs !in item.excluded }
+      changes.forEach { desired.add(ProviderRecurrence.exceptionSyncId(item.id, it.originalStartMs)) }
+      if (holdBack.contains(item.id)) continue           // un-drained stock edit owns this series' rows for now
+      upsertEvent(resolver, existing[item.id], item.id, eventValues(item, calendarRowId))
+      changes.forEach { exceptions.add(ProviderRecurrence.exceptionSyncId(item.id, it.originalStartMs) to exceptionValues(item, it, calendarRowId)) }
     }
+    // After every series row exists: the provider links an exception to its series by ORIGINAL_SYNC_ID on insert.
+    for ((syncId, values) in exceptions) upsertEvent(resolver, existing[syncId], syncId, values)
 
     for ((syncId, row) in existing) {
-      if (desired.contains(syncId) || holdBack.contains(syncId)) continue
+      if (desired.contains(syncId) || holdBack.contains(ProviderRecurrence.itemIdOf(syncId))) continue
       resolver.delete(asSyncAdapter(CalendarContract.Events.CONTENT_URI),
         "${CalendarContract.Events._ID} = ?", arrayOf(row.rowId.toString()))
     }
   }
 
-  private fun eventValues(item: MirrorItem, calendarRowId: Long, hash: String): ContentValues =
-    ContentValues().apply {
+  private fun upsertEvent(resolver: ContentResolver, current: EventRow?, syncId: String, values: ContentValues) {
+    if (current?.dirty == true) return                   // capture will pick it up first; don't clobber
+    val location = values.getAsString(CalendarContract.Events.SYNC_DATA2)
+    if (current?.hash == values.getAsString(CalendarContract.Events.SYNC_DATA1) && current?.publishedLocation == location) return
+    if (current != null) {
+      resolver.update(asSyncAdapter(CalendarContract.Events.CONTENT_URI), values,
+        "${CalendarContract.Events._ID} = ?", arrayOf(current.rowId.toString()))
+    } else {
+      values.put(CalendarContract.Events._SYNC_ID, syncId)
+      resolver.insert(asSyncAdapter(CalendarContract.Events.CONTENT_URI), values)
+    }
+  }
+
+  private fun eventValues(item: MirrorItem, calendarRowId: Long): ContentValues {
+    val zone = ProviderRecurrence.eventZone(item.allDay, item.zone)
+    val exdate = item.rrule?.let { ProviderRecurrence.formatDates(item.allDay, item.excluded) }
+    val rdate = item.rrule?.let { ProviderRecurrence.formatDates(item.allDay, item.extras) }
+    val hash = md5(listOf(
+      item.title, item.description ?: "", item.location ?: "", item.cancelled, item.allDay,
+      item.startMs, item.endMs ?: -1L, item.rrule ?: "", calendarRowId, zone, exdate ?: "", rdate ?: "",
+    ))
+    return ContentValues().apply {
       put(CalendarContract.Events.CALENDAR_ID, calendarRowId)
       put(CalendarContract.Events.TITLE, item.title)
       put(CalendarContract.Events.DESCRIPTION, item.description)
       put(CalendarContract.Events.EVENT_LOCATION, item.location)
       put(CalendarContract.Events.DTSTART, item.startMs)
       put(CalendarContract.Events.ALL_DAY, if (item.allDay) 1 else 0)
-      put(CalendarContract.Events.EVENT_TIMEZONE, "UTC")
+      put(CalendarContract.Events.EVENT_TIMEZONE, zone)
       put(CalendarContract.Events.STATUS,
         if (item.cancelled) CalendarContract.Events.STATUS_CANCELED else CalendarContract.Events.STATUS_CONFIRMED)
       put(CalendarContract.Events.SYNC_DATA1, hash)
       put(CalendarContract.Events.SYNC_DATA2, item.location)
+      put(CalendarContract.Events.SYNC_DATA3, exdate ?: "")
+      put(CalendarContract.Events.EXDATE, exdate)
+      put(CalendarContract.Events.RDATE, rdate)
       if (item.rrule != null) {
         // Recurring rows must carry DURATION, never DTEND (provider requirement).
         put(CalendarContract.Events.RRULE, item.rrule)
@@ -152,6 +171,39 @@ object CalendarPublisher {
         putNull(CalendarContract.Events.DURATION)
       }
     }
+  }
+
+  private fun exceptionValues(item: MirrorItem, change: MirrorOverride, calendarRowId: Long): ContentValues {
+    val zone = ProviderRecurrence.eventZone(item.allDay, item.zone)
+    val start = change.startMs ?: change.originalStartMs
+    val end = ProviderRecurrence.exceptionEnd(item.allDay, start, change.endMs, (item.endMs ?: defaultEnd(item)) - item.startMs)
+    val title = change.title ?: item.title
+    val description = change.description ?: item.description
+    val location = change.location ?: item.location
+    val cancelled = change.status == "Cancelled" || (change.status == null && item.cancelled)
+    val hash = md5(listOf(
+      title, description ?: "", location ?: "", cancelled, item.allDay, start, end, change.originalStartMs, calendarRowId, zone,
+    ))
+    return ContentValues().apply {
+      put(CalendarContract.Events.CALENDAR_ID, calendarRowId)
+      put(CalendarContract.Events.TITLE, title)
+      put(CalendarContract.Events.DESCRIPTION, description)
+      put(CalendarContract.Events.EVENT_LOCATION, location)
+      put(CalendarContract.Events.DTSTART, start)
+      put(CalendarContract.Events.DTEND, end)
+      put(CalendarContract.Events.ALL_DAY, if (item.allDay) 1 else 0)
+      put(CalendarContract.Events.EVENT_TIMEZONE, zone)
+      put(CalendarContract.Events.STATUS,
+        if (cancelled) CalendarContract.Events.STATUS_CANCELED else CalendarContract.Events.STATUS_CONFIRMED)
+      put(CalendarContract.Events.ORIGINAL_SYNC_ID, item.id)
+      put(CalendarContract.Events.ORIGINAL_INSTANCE_TIME, change.originalStartMs)
+      put(CalendarContract.Events.ORIGINAL_ALL_DAY, if (item.allDay) 1 else 0)
+      put(CalendarContract.Events.SYNC_DATA1, hash)
+      put(CalendarContract.Events.SYNC_DATA2, location)
+      putNull(CalendarContract.Events.RRULE)
+      putNull(CalendarContract.Events.DURATION)
+    }
+  }
 
   private fun durationOf(item: MirrorItem): String {
     val ms = (item.endMs ?: defaultEnd(item)) - item.startMs
@@ -161,13 +213,8 @@ object CalendarPublisher {
   private fun defaultEnd(item: MirrorItem): Long =
     item.startMs + if (item.allDay) 86_400_000L else 1_800_000L
 
-  private fun hashOf(item: MirrorItem, calendarRowId: Long): String {
-    val canonical = listOf(
-      item.title, item.description ?: "", item.location ?: "", item.cancelled, item.allDay,
-      item.startMs, item.endMs ?: -1L, item.rrule ?: "", calendarRowId,
-    ).joinToString("|")
-    return MessageDigest.getInstance("MD5").digest(canonical.toByteArray()).joinToString("") { "%02x".format(it) }
-  }
+  private fun md5(parts: List<Any>): String =
+    MessageDigest.getInstance("MD5").digest(parts.joinToString("|").toByteArray()).joinToString("") { "%02x".format(it) }
 
   fun asSyncAdapter(uri: Uri): Uri = uri.buildUpon()
     .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")

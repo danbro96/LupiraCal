@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { ContactDoc, ItemDoc, ResidencyDoc } from './docTypes';
 import type { AddressHint, CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow, PostalCapture, PublishedAddress } from './bridgeTranslate';
 import {
-  contactReviseIsEcho, mergeChannelTypes, parseProviderBirthday, parseRfc2445Duration, postalHints, publishedAddresses, sourceKeyOfPendingMarker,
-  translateCalRow, translateContactRow,
+  contactReviseIsEcho, exclusionChanges, mergeChannelTypes, parseProviderBirthday, parseRfc2445Duration, postalHints, publishedAddresses,
+  sourceKeyOfPendingMarker, translateCalRow, translateContactRow, translateOccurrenceRow, type ParsedOccurrenceRow,
 } from './bridgeTranslate';
 
 const payload = (over: Partial<CalCapturePayload> = {}): CalCapturePayload => ({
@@ -337,5 +337,68 @@ describe('postalHints', () => {
   it('blank rows are skipped and a custom Vacation label maps back', () => {
     const { put } = run([...published.map(asPublished), postal('  '), postal('Fjällstugan', { type: 0, label: 'Vacation' })]);
     expect(put).toMatchObject([{ text: 'Fjällstugan', type: 'Vacation' }]);
+  });
+});
+
+describe('occurrences captured from the stock calendar', () => {
+  const weekly: ItemDoc = {
+    id: 'item-1', title: 'Training', description: 'Bring water', status: 'Confirmed', isAllDay: false,
+    startsAt: '2026-08-03T16:00:00Z', endsAt: '2026-08-03T17:00:00Z', startTimezone: 'Europe/Stockholm', recurrenceRule: 'FREQ=WEEKLY;COUNT=4',
+    calendars: [{ calendarId: 'cal-1', status: 'Accepted' }],
+  };
+  const occurrence = (p: Partial<CalCapturePayload>, over: Partial<ParsedOccurrenceRow> = {}): ParsedOccurrenceRow => ({
+    deleted: false, itemId: 'item-1', originalStart: '2026-08-10T16:00:00Z', occurredAt: '2026-08-04T09:00:00.000Z',
+    payload: payload({
+      title: 'Training', description: 'Bring water', dtstart: Date.UTC(2026, 7, 10, 16), dtend: Date.UTC(2026, 7, 10, 17),
+      originalSyncId: 'item-1', originalInstanceTime: Date.UTC(2026, 7, 10, 16), ...p,
+    }),
+    ...over,
+  });
+
+  it('a moved or renamed occurrence becomes its change, not a new event', () => {
+    const t = translateOccurrenceRow(occurrence({ title: 'Match', dtstart: Date.UTC(2026, 7, 11, 16), dtend: Date.UTC(2026, 7, 11, 18) }), weekly);
+    expect(t).toMatchObject({
+      kind: 'occurrence', itemId: 'item-1', originalStart: '2026-08-10T16:00:00Z',
+      edit: { kind: 'change', change: { startsAt: '2026-08-11T16:00:00Z', endsAt: '2026-08-11T18:00:00Z', title: 'Match', description: null } },
+    });
+  });
+
+  it('deleting or cancelling it there excludes it', () => {
+    expect(translateOccurrenceRow(occurrence({}, { deleted: true }), weekly)).toMatchObject({ kind: 'occurrence', edit: { kind: 'exclude' } });
+    expect(translateOccurrenceRow(occurrence({ status: 2 }), weekly)).toMatchObject({ kind: 'occurrence', edit: { kind: 'exclude' } });
+    const excluded = { ...weekly, excludedOccurrences: ['2026-08-10T16:00:00Z'] };
+    expect(translateOccurrenceRow(occurrence({}, { deleted: true }), excluded)).toEqual({ kind: 'skip', reason: 'echo' });
+  });
+
+  it('suppresses what the mirror already holds, and restores an occurrence set back to the series', () => {
+    expect(translateOccurrenceRow(occurrence({}), weekly)).toEqual({ kind: 'skip', reason: 'echo' });
+    const changed: ItemDoc = {
+      ...weekly,
+      occurrenceOverrides: [{ originalStart: '2026-08-10T16:00:00Z', startsAt: null, endsAt: null, title: 'Match', description: null, status: null, locationLabel: null }],
+    };
+    expect(translateOccurrenceRow(occurrence({ title: 'Match' }), changed)).toEqual({ kind: 'skip', reason: 'echo' });
+    expect(translateOccurrenceRow(occurrence({}), changed)).toMatchObject({ kind: 'restore', originalStart: '2026-08-10T16:00:00Z' });
+  });
+
+  it('dates an all-day occurrence with its last day as the end', () => {
+    const allDay: ItemDoc = { ...weekly, isAllDay: true, startsAt: null, endsAt: null, startDate: '2026-08-03', endDate: '2026-08-03' };
+    const t = translateOccurrenceRow(occurrence({
+      allDay: true, dtstart: Date.UTC(2026, 7, 11), dtend: Date.UTC(2026, 7, 13), originalInstanceTime: Date.UTC(2026, 7, 10),
+    }, { originalStart: '2026-08-10T00:00:00Z' }), allDay);
+    expect(t).toMatchObject({ edit: { change: { startsAt: '2026-08-11T00:00:00Z', endsAt: '2026-08-12T00:00:00Z' } } });
+  });
+
+  it('ignores a series or occurrence the mirror does not have', () => {
+    expect(translateOccurrenceRow(occurrence({}), null).kind).toBe('skip');
+    expect(translateOccurrenceRow(occurrence({}, { originalStart: '2026-08-11T16:00:00Z' }), weekly).kind).toBe('skip');
+  });
+
+  it('exclusions edited on the series row diff against what was published, not the mirror', () => {
+    const published = [Date.UTC(2026, 7, 17, 16)];
+    const mirror: ItemDoc = { ...weekly, excludedOccurrences: ['2026-08-17T16:00:00Z', '2026-08-24T16:00:00Z'] };
+    expect(exclusionChanges(payload({ exdates: [Date.UTC(2026, 7, 10, 16), Date.UTC(2026, 7, 17, 16)], publishedExdates: published }), mirror))
+      .toEqual({ exclude: ['2026-08-10T16:00:00Z'], restore: [] });
+    expect(exclusionChanges(payload({ exdates: [], publishedExdates: published }), mirror)).toEqual({ exclude: [], restore: ['2026-08-17T16:00:00Z'] });
+    expect(exclusionChanges(payload({ exdates: [Date.UTC(2026, 7, 10, 16)], publishedExdates: null }), mirror)).toEqual({ exclude: [], restore: [] });
   });
 });

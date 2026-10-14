@@ -76,11 +76,15 @@ object BridgeDb {
     db.rawQuery("PRAGMA busy_timeout = 30000", null).use { it.moveToFirst() }
   }
 
+  /// Captured rows' sync ids, plus the item each belongs to: an occurrence's capture holds its whole series back.
   fun pendingSyncIds(context: Context): Set<String> =
     open(context).use { db ->
       db.rawQuery("SELECT DISTINCT sync_id FROM bridge_inbox WHERE sync_id IS NOT NULL", null).use { c ->
         val out = mutableSetOf<String>()
-        while (c.moveToNext()) out.add(c.getString(0))
+        while (c.moveToNext()) {
+          out.add(c.getString(0))
+          out.add(ProviderRecurrence.itemIdOf(c.getString(0)))
+        }
         out
       }
     }

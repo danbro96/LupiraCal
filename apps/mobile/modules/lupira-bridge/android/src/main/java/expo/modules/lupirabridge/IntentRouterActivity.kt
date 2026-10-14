@@ -30,7 +30,7 @@ class IntentRouterActivity : Activity() {
       type == CONTACT_ROW_TYPE -> intent.data?.let { contactRowLink(it) }
       type == EVENT_ITEM_TYPE && intent.action == Intent.ACTION_VIEW -> intent.data?.let { eventLink(intent, it) }
       type == EVENT_ITEM_TYPE && intent.action == Intent.ACTION_EDIT ->
-        intent.data?.let { ourItemId(it) }?.let { link("item/${Uri.encode(it)}/edit") } ?: eventDraftLink(intent)
+        intent.data?.let { ourItemId(it) }?.let { link(itemPath(it, edit = true)) } ?: eventDraftLink(intent)
       type == EVENT_ITEM_TYPE || type == EVENT_DIR_TYPE -> eventDraftLink(intent)
       type in CONTACT_DIR_TYPES -> contactDraftLink(intent)
       type in CALENDAR_FILE_TYPES -> intent.data?.let { importLink(it, "calendar") }
@@ -46,7 +46,7 @@ class IntentRouterActivity : Activity() {
     }?.let { link("contact/${Uri.encode(it)}") }
 
   private fun eventLink(intent: Intent, uri: Uri): Uri? {
-    ourItemId(uri)?.let { return link("item/${Uri.encode(it)}") }
+    ourItemId(uri)?.let { return link(itemPath(it, edit = false)) }
     handOffToCalendarApp(intent)
     return null
   }
@@ -61,6 +61,13 @@ class IntentRouterActivity : Activity() {
       null
     }
     return row?.takeIf { it.second == Bridge.ACCOUNT_TYPE }?.first?.takeUnless { it.startsWith("pending:") }
+  }
+
+  /// An exception row opens its occurrence of the series.
+  private fun itemPath(syncId: String, edit: Boolean): String {
+    val item = "item/${Uri.encode(ProviderRecurrence.itemIdOf(syncId))}${if (edit) "/edit" else ""}"
+    val start = ProviderRecurrence.originalStartOf(syncId) ?: return item
+    return "$item?occ=${ProviderRecurrence.occurrenceKey(start)}${if (edit) "&scope=this" else ""}"
   }
 
   private fun handOffToCalendarApp(original: Intent) {
