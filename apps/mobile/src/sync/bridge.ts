@@ -2,6 +2,7 @@ import type { SyncEngine } from '@danbro96/lupira-sync-engine/engine';
 import { v7 as uuidv7 } from 'uuid';
 import type { AddressHint, BridgeInboxRow } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
+import { getDb } from '../data/db/expoDb';
 import { deterministicIdFor } from '../data/ids';
 import { Aggregate } from '../domain/aggregates';
 import type { CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow, PostalCapture } from '../domain/bridgeTranslate';
@@ -11,6 +12,7 @@ import {
 import type { ContactDoc, ItemDoc, PlaceDoc, ResidencyDoc } from '../domain/docTypes';
 import { stamp, type ClientOp } from '../domain/ops';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
+import { withHoldKeys } from './holdKeys';
 import { readMeta } from './meta';
 import { queryClient } from './queryClient';
 
@@ -72,7 +74,7 @@ export async function drainBridgeInbox(engine: SyncEngine): Promise<number> {
     ackIds.push(row.id);
   }
 
-  if (ops.length > 0) await engine.enqueue(ops);
+  if (ops.length > 0) await engine.enqueue(await withHoldKeys(await getDb(), ops));
   for (const a of assignments) await LupiraBridge.assignEventSyncId(a.marker, a.syncId);
   await LupiraBridge.ackInbox(ackIds);
   logDebug('bridge', `drained ${rows.length} inbox rows → ${ops.length} ops`);

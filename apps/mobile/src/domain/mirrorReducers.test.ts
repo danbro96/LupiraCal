@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ContactDoc, ItemDoc } from './docTypes';
 import { emptyContactGuards, emptyItemGuards } from './docTypes';
 import type { MirrorContact, MirrorItem } from './mirrorReducers';
-import { applyContactOp, applyItemOp, applyResidencyOp } from './mirrorReducers';
+import { applyContactOp, applyItemOp, applyResidencyOp, continuationOf } from './mirrorReducers';
 import type { ClientOp } from './ops';
 
 const T = (m: number) => `2026-07-01T12:${String(m).padStart(2, '0')}:00.000Z`;
@@ -260,6 +260,84 @@ describe('reminders', () => {
     expect(set.doc.attendees?.[0].reminder).toEqual({ mode: 'Before', minutesBefore: 30 });
     expect(set.guards.reminders).toBeUndefined();
     expect(applyItemOp(invited, remind('bo', 2, 2))).toBe(invited);
+  });
+});
+
+describe('series occurrences', () => {
+  const weekly = (over: Partial<ItemDoc> = {}): MirrorItem => ({
+    doc: {
+      id: 'item-1', title: 'Training', isAllDay: false, startsAt: '2026-08-03T17:00:00Z', endsAt: '2026-08-03T18:00:00Z',
+      startTimezone: 'Europe/Stockholm', recurrenceRule: 'FREQ=WEEKLY;COUNT=4',
+      calendars: [{ calendarId: 'cal-1', status: 'Accepted' }, { calendarId: 'cal-2', status: 'Removed' }], ...over,
+    } as ItemDoc,
+    guards: emptyItemGuards(),
+  });
+  const op = (minute: number, n: number) => ({ aggregate: 'cal.item', aggregateId: 'item-1', itemId: 'item-1', occurredAt: T(minute), commandId: cmd(n) } as const);
+  const change = { originalStart: '2026-08-10T17:00:00Z', startsAt: '2026-08-11T17:00:00Z', endsAt: null, title: 'Match', description: null, status: null, locationLabel: 'Typed' };
+
+  it('excludes and changes one occurrence under the core guard', () => {
+    const excluded = applyItemOp(weekly(), { ...op(1, 1), kind: 'item.occurrence', originalStart: '2026-08-17T17:00:00Z', edit: { kind: 'exclude' } })!;
+    const changed = applyItemOp(excluded, { ...op(2, 2), kind: 'item.occurrence', originalStart: '2026-08-10T17:00:00Z', edit: { kind: 'change', change } })!;
+    expect(changed.doc.excludedOccurrences).toEqual(['2026-08-17T17:00:00Z']);
+    expect(changed.doc.occurrenceOverrides).toEqual([{ ...change, locationLabel: null }]);
+    expect(changed.guards.core).toEqual({ ts: T(2), cmd: cmd(2) });
+
+    const stale = applyItemOp(changed, { ...op(1, 0), kind: 'item.occurrence', originalStart: '2026-08-24T17:00:00Z', edit: { kind: 'exclude' } });
+    expect(stale).toBe(changed);
+    expect(applyItemOp(changed, { ...op(3, 3), kind: 'item.occurrence', originalStart: '2026-08-12T17:00:00Z', edit: { kind: 'exclude' } })).toBe(changed);
+  });
+
+  it('keeps the location label an occurrence already has', () => {
+    const labelled = weekly({ occurrenceOverrides: [{ ...change, title: null, startsAt: null }] });
+    const after = applyItemOp(labelled, { ...op(1, 1), kind: 'item.occurrence', originalStart: '2026-08-10T17:00:00+00:00', edit: { kind: 'change', change: { ...change, locationLabel: null } } })!;
+    expect(after.doc.occurrenceOverrides?.[0].locationLabel).toBe('Typed');
+  });
+
+  it('restores a changed occurrence, and leaves an unchanged one and its guard alone', () => {
+    const changed = applyItemOp(weekly(), { ...op(1, 1), kind: 'item.occurrence', originalStart: change.originalStart, edit: { kind: 'change', change } })!;
+    const restored = applyItemOp(changed, { ...op(2, 2), kind: 'item.occurrence.restore', originalStart: change.originalStart })!;
+    expect(restored.doc.occurrenceOverrides).toBeNull();
+    expect(applyItemOp(restored, { ...op(3, 3), kind: 'item.occurrence.restore', originalStart: change.originalStart })).toBe(restored);
+  });
+
+  it('a split ends the series before the occurrence; from the first one it revises or deletes the whole series', () => {
+    const capped = applyItemOp(weekly(), { ...op(1, 1), kind: 'item.split', originalStart: '2026-08-17T17:00:00Z', newItemId: 'item-2', sourceKey: 'k', core: { title: 'New', isAllDay: false } })!;
+    expect(capped.doc).toMatchObject({ title: 'Training', recurrenceRule: 'FREQ=WEEKLY;COUNT=2' });
+
+    const first = { ...op(1, 1), kind: 'item.split', originalStart: '2026-08-03T17:00:00Z', newItemId: null, sourceKey: null } as const;
+    expect(applyItemOp(weekly(), { ...first, core: null })).toBeNull();
+    expect(applyItemOp(weekly(), { ...first, core: { title: 'All', isAllDay: false, startsAt: '2026-08-03T17:00:00Z', recurrenceRule: 'FREQ=WEEKLY;COUNT=4' } })!.doc.title).toBe('All');
+    expect(applyItemOp({ ...weekly(), guards: { ...emptyItemGuards(), core: { ts: T(9), cmd: cmd(9) } } }, { ...first, core: null })).not.toBeNull();
+  });
+
+  it('the continuing series copies the original over the following part, re-keying participations', () => {
+    const original = weekly({
+      attendees: [{ participationId: '6f1c1b1e-1c55-4c9a-9b3b-1b2d3c4d5e6f', contactId: 'anna', role: 'RequiredParticipant', status: 'Accepted' }],
+      excludedOccurrences: ['2026-08-10T17:00:00Z', '2026-08-24T17:00:00Z'],
+    });
+    original.guards.reminders = { '6f1c1b1e-1c55-4c9a-9b3b-1b2d3c4d5e6f': { ts: T(1), cmd: cmd(1) } };
+    const core = { title: 'Later', isAllDay: false, startsAt: '2026-08-17T18:00:00Z', endsAt: '2026-08-17T19:00:00Z', startTimezone: 'Europe/Stockholm', recurrenceRule: 'FREQ=WEEKLY;COUNT=2' };
+    const next = continuationOf(original, 'item-2', '2026-08-17T17:00:00Z', core, { ts: T(5), cmd: cmd(5) })!;
+
+    expect(next.doc).toMatchObject({
+      id: 'item-2', continuesItemId: 'item-1', title: 'Later', startsAt: '2026-08-17T18:00:00Z',
+      excludedOccurrences: ['2026-08-24T18:00:00Z'], calendars: [{ calendarId: 'cal-1', status: 'Accepted' }],
+    });
+    const [anna] = next.doc.attendees!;
+    expect(anna.participationId).not.toBe('6f1c1b1e-1c55-4c9a-9b3b-1b2d3c4d5e6f');
+    expect(next.guards.reminders).toEqual({ [anna.participationId]: { ts: T(1), cmd: cmd(1) } });
+    expect(next.guards.filing).toEqual({ 'cal-1': { ts: T(5), cmd: cmd(5) } });
+    expect(continuationOf(original, 'item-2', '2026-08-03T17:00:00Z', core, { ts: T(5), cmd: cmd(5) })).toBeNull();
+  });
+
+  it('moving the series carries its changed occurrences and its end along', () => {
+    const bounded = weekly({ recurrenceRule: 'FREQ=WEEKLY;UNTIL=20260824T170000Z', occurrenceOverrides: [change] });
+    const moved = applyItemOp(bounded, {
+      ...op(1, 1), kind: 'item.revise',
+      core: { isAllDay: false, startsAt: '2026-08-03T18:00:00Z', endsAt: '2026-08-03T19:00:00Z', startTimezone: 'Europe/Stockholm', recurrenceRule: 'FREQ=WEEKLY;UNTIL=20260824T170000Z' },
+    })!;
+    expect(moved.doc.recurrenceRule).toBe('FREQ=WEEKLY;UNTIL=20260824T180000Z');
+    expect(moved.doc.occurrenceOverrides?.map((o) => o.originalStart)).toEqual(['2026-08-10T18:00:00Z']);
   });
 });
 

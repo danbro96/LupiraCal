@@ -1,5 +1,6 @@
 import {
-  createItem, deleteItem, getItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact, respondToInvitation, setParticipantReminder, updateItem,
+  changeFollowingOccurrences, changeOccurrence, createItem, deleteItem, getItem, inviteParticipant, mergeItemMetadata, removeParticipantByContact,
+  respondToInvitation, restoreOccurrence, setParticipantReminder, updateItem,
 } from '@lupira/cal-api/fetch/cal';
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
@@ -79,6 +80,34 @@ export async function replayOp(op: ClientOp): Promise<void> {
       return;
     case 'item.reminder':
       await remind(op.itemId, op.contactId, op.reminder, op.occurredAt, idem);
+      return;
+    case 'item.occurrence': {
+      const change = op.edit.kind === 'change' ? op.edit.change : null;
+      await changeOccurrence(op.itemId, op.originalStart, {
+        excluded: op.edit.kind === 'exclude',
+        startsAt: change?.startsAt ?? null,
+        endsAt: change?.endsAt ?? null,
+        title: change?.title ?? null,
+        description: change?.description ?? null,
+        status: change?.status ?? null,
+        occurredAt: op.occurredAt,
+      }, idem);
+      return;
+    }
+    case 'item.occurrence.restore':
+      await restoreOccurrence(op.itemId, op.originalStart, { occurredAt: op.occurredAt }, idem);
+      return;
+    case 'item.split':
+      await changeFollowingOccurrences(op.itemId, op.originalStart, {
+        excluded: op.core === null,
+        changes: op.core ? totalizedPut(op.core, op.occurredAt) : null,
+        sourceKey: op.sourceKey,
+        occurredAt: op.occurredAt,
+      }, idem);
+      return;
+    // The split it follows created the series; a 404 means that split never landed (discarded), so this parks too.
+    case 'item.continue':
+      await getItem(op.itemId);
       return;
     case 'contact.create':
       await createContact({

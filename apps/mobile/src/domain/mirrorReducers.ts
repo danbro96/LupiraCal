@@ -1,6 +1,11 @@
 import { wins } from '@danbro96/lupira-sync-core/lww';
-import type { ContactDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, ResidencyDoc, SocialProfile } from './docTypes';
-import { emptyContactGuards, emptyItemGuards } from './docTypes';
+import {
+  applyOccurrenceChange, continuedParticipationId, followDeviations, hasSeriesOccurrence, overrideFor, splitSeries,
+} from '@lupira/cal-domain/seriesOccurrences';
+import type {
+  ContactDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, ResidencyDoc, SectionGuard, SocialProfile,
+} from './docTypes';
+import { emptyContactGuards, emptyItemGuards, ZERO_GUARD } from './docTypes';
 import type { ClientOp, ContactCore, ItemCore, ResidencyFields } from './ops';
 
 /** Client twins of the servers' section reducers: applying an op locally must land on the same state the
@@ -116,15 +121,80 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
           : state.guards,
       };
     }
+    // Per-occurrence edits share the core guard, as on the server; a change keeps the occurrence's location label.
+    case 'item.occurrence': {
+      if (!state || !hasSeriesOccurrence(state.doc, op.originalStart)) return state;
+      const g = state.guards.core;
+      if (!wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
+      const edit = op.edit.kind === 'change'
+        ? { ...op.edit, change: { ...op.edit.change, locationLabel: overrideFor(state.doc, op.originalStart)?.locationLabel ?? null } }
+        : op.edit;
+      return {
+        doc: { ...state.doc, ...applyOccurrenceChange(state.doc, op.originalStart, edit) },
+        guards: { ...state.guards, core: { ts: op.occurredAt, cmd: op.commandId } },
+      };
+    }
+    case 'item.occurrence.restore': {
+      if (!state || !hasSeriesOccurrence(state.doc, op.originalStart)) return state;
+      const at = Date.parse(op.originalStart);
+      const changed = !!overrideFor(state.doc, op.originalStart) || (state.doc.excludedOccurrences ?? []).some((x) => Date.parse(x) === at);
+      const g = state.guards.core;
+      if (!changed || !wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
+      return {
+        doc: { ...state.doc, ...applyOccurrenceChange(state.doc, op.originalStart, { kind: 'restore' }) },
+        guards: { ...state.guards, core: { ts: op.occurredAt, cmd: op.commandId } },
+      };
+    }
+    // At the first occurrence there is nothing before it: the whole series changes or goes.
+    case 'item.split': {
+      if (!state) return state;
+      const g = state.guards.core;
+      if (!wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
+      const guards = { ...state.guards, core: { ts: op.occurredAt, cmd: op.commandId } };
+      const split = splitSeries(state.doc, op.originalStart);
+      if (!split) return op.core ? { doc: mergeItemCore(state.doc, op.core), guards } : null;
+      const { recurrenceRule, excludedOccurrences, extraOccurrences, occurrenceOverrides } = split.earlier;
+      return { doc: { ...state.doc, recurrenceRule, excludedOccurrences, extraOccurrences, occurrenceOverrides }, guards };
+    }
+    case 'item.continue':
+      return state ?? op.state;
     default:
       return state;
   }
 }
 
-/** The totalized PUT's merge: sentinel-backed fields land verbatim; title/description/status/category/tags/
- *  parent keep the current value when the op carries null (the REST contract has no clear for them). */
-function mergeItemCore(doc: ItemDoc, core: ItemCore): ItemDoc {
+/** The series a split at `originalStart` starts, as cal-api builds it: the original's fields, calendars, attendees (each
+ *  participation under its continued id) and payloads over the following part, revised with `core`, every section
+ *  stamped with the split. Null when there is nothing before `originalStart` to split from. */
+export function continuationOf(original: MirrorItem, newItemId: string, originalStart: string, core: ItemCore, split: SectionGuard): MirrorItem | null {
+  const parts = splitSeries(original.doc, originalStart);
+  if (!parts) return null;
+  const continued = (participationId: string) => (participationId ? continuedParticipationId(newItemId, participationId) : '');
+  const calendars = original.doc.calendars.filter((m) => m.status !== 'Removed');
+  const attendees = original.doc.attendees?.map((a) => ({ ...a, participationId: continued(a.participationId) }));
+  const reminders = original.guards.reminders
+    && Object.fromEntries(Object.entries(original.guards.reminders).map(([id, g]) => [continued(id), g]));
+  const doc: ItemDoc = {
+    ...original.doc, ...parts.following, id: newItemId, continuesItemId: original.doc.id, calendars, ...(attendees ? { attendees } : {}),
+  };
+  const hasMetadata = Object.keys(original.doc.metadata ?? {}).length > 0;
   return {
+    doc: mergeItemCore(doc, core),
+    guards: {
+      core: split,
+      metadata: hasMetadata ? split : ZERO_GUARD,
+      payload: original.doc.prompt != null || original.doc.action != null ? split : ZERO_GUARD,
+      filing: Object.fromEntries(calendars.map((m) => [m.calendarId, split])),
+      ...(reminders ? { reminders } : {}),
+    },
+  };
+}
+
+/** The totalized PUT's merge: sentinel-backed fields land verbatim; title/description/status/category/tags/
+ *  parent keep the current value when the op carries null (the REST contract has no clear for them). A moved series
+ *  takes its bound and per-occurrence changes along. */
+function mergeItemCore(doc: ItemDoc, core: ItemCore): ItemDoc {
+  const next: ItemDoc = {
     ...doc,
     title: core.title ?? doc.title,
     description: core.description ?? doc.description,
@@ -148,6 +218,7 @@ function mergeItemCore(doc: ItemDoc, core: ItemCore): ItemDoc {
         : (core.placeId === doc.placeId ? doc.locationLabel : null),
     }),
   };
+  return { ...next, ...followDeviations(doc, next) };
 }
 
 export function applyContactOp(state: MirrorContact | null, op: ClientOp): MirrorContact | null {

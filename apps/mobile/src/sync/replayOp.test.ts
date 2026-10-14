@@ -7,6 +7,9 @@ const cal = vi.hoisted(() => ({
   inviteParticipant: vi.fn(),
   respondToInvitation: vi.fn(),
   setParticipantReminder: vi.fn(),
+  changeOccurrence: vi.fn(),
+  restoreOccurrence: vi.fn(),
+  changeFollowingOccurrences: vi.fn(),
 }));
 vi.mock('@lupira/cal-api/fetch/cal', () => cal);
 const contact = vi.hoisted(() => ({
@@ -172,5 +175,48 @@ describe('residency replay', () => {
   it('treats a residency already gone as removed', async () => {
     contact.removeResidency.mockRejectedValue(new ApiError(404, 'gone'));
     await expect(replayOp({ ...at, kind: 'contact.residency.remove' })).resolves.toBeUndefined();
+  });
+});
+
+describe('occurrence replay', () => {
+  const at = { aggregate: 'cal.item', aggregateId: 'item-1', itemId: 'item-1', originalStart: '2026-10-07T17:00:00Z', occurredAt: '2026-09-30T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000020' } as const;
+  const key = (options: { headers: Record<string, string> }) => options.headers['Idempotency-Key'];
+
+  beforeEach(() => {
+    cal.changeOccurrence.mockReset().mockResolvedValue(undefined);
+    cal.restoreOccurrence.mockReset().mockResolvedValue(undefined);
+    cal.changeFollowingOccurrences.mockReset().mockResolvedValue({});
+    cal.getItem.mockReset();
+  });
+
+  it('excludes, changes and restores one occurrence under the command id', async () => {
+    await replayOp({ ...at, kind: 'item.occurrence', edit: { kind: 'exclude' } });
+    await replayOp({
+      ...at, kind: 'item.occurrence',
+      edit: { kind: 'change', change: { originalStart: at.originalStart, startsAt: null, endsAt: null, title: 'Match', description: null, status: null, locationLabel: 'x' } },
+    });
+    await replayOp({ ...at, kind: 'item.occurrence.restore' });
+
+    const [[, start, exclude, options], [, , changed]] = cal.changeOccurrence.mock.calls;
+    expect([start, exclude.excluded, key(options)]).toEqual([at.originalStart, true, at.commandId]);
+    expect(changed).toEqual({ excluded: false, startsAt: null, endsAt: null, title: 'Match', description: null, status: null, occurredAt: at.occurredAt });
+    expect(cal.restoreOccurrence.mock.calls[0].slice(1, 3)).toEqual([at.originalStart, { occurredAt: at.occurredAt }]);
+  });
+
+  it('splits with the whole new series and its source key, or deletes the following occurrences', async () => {
+    const core = { title: 'Later', isAllDay: false, startsAt: '2026-10-07T18:00:00Z', recurrenceRule: 'FREQ=WEEKLY;COUNT=2' };
+    await replayOp({ ...at, kind: 'item.split', newItemId: 'item-2', sourceKey: 'k', core });
+    await replayOp({ ...at, kind: 'item.split', newItemId: null, sourceKey: null, core: null });
+
+    const [[, , split, options], [, , remove]] = cal.changeFollowingOccurrences.mock.calls;
+    expect(split).toMatchObject({ excluded: false, sourceKey: 'k', occurredAt: at.occurredAt, changes: { title: 'Later', recurrenceRule: 'FREQ=WEEKLY;COUNT=2', recurrenceRuleProvided: true } });
+    expect(key(options)).toBe(at.commandId);
+    expect(remove).toMatchObject({ excluded: true, changes: null });
+  });
+
+  it('a continuation parks when its split never created the series', async () => {
+    cal.getItem.mockRejectedValueOnce(new ApiError(404, 'gone'));
+    const continuation = { ...at, kind: 'item.continue', itemId: 'item-2', aggregateId: 'item-2', continuesItemId: 'item-1', state: { doc: { id: 'item-2', isAllDay: false, calendars: [] }, guards: {} } } as const;
+    await expect(replayOp(continuation as never)).rejects.toMatchObject({ status: 404 });
   });
 });

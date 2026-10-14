@@ -23,6 +23,7 @@ export const calItemModule: AggregateModule<ItemDoc, ItemGuards, ClientOp, ItemS
   },
   reduce: applyItemOp,
   replay: replayOp,
+  holdKeyOf: (op) => op.holdKey ?? op.aggregateId,
   index: { version: 7, tables: ITEM_TABLES, ddl: ITEM_DDL + BRIDGE_VIEW, write: writeItemIndex },
 };
 

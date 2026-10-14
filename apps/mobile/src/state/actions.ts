@@ -1,12 +1,18 @@
+import {
+  continuationId, hasSeriesOccurrence, isFirstOccurrence, occurrenceKey, type OccurrenceEdit,
+} from '@lupira/cal-domain/seriesOccurrences';
 import { v7 as uuidv7 } from 'uuid';
 import { deterministicIdFor } from '../data/ids';
+import { lineageRoot } from '../data/queries/itemLineage';
 import type { ResidencyChange } from '../domain/addressRows';
 import { Aggregate } from '../domain/aggregates';
 import type { ParticipantReminder, ReachChannel, SocialProfile } from '../domain/docTypes';
 import { residencyStreamKey } from '../domain/ids';
+import { continuationOf, type MirrorItem } from '../domain/mirrorReducers';
 import type { ClientOp, ContactCore, ItemCore, RsvpStatus } from '../domain/ops';
 import { stamp } from '../domain/ops';
-import { engine } from '../sync/engine';
+import { engine, readyDb } from '../sync/engine';
+import { withHoldKeys } from '../sync/holdKeys';
 
 /** The screens' entire write surface: build an op, enqueue it (optimistic mirror write + outbox row in one
  *  exclusive transaction), let the engine push it when the network allows. Creates mint a sourceKey and derive
@@ -16,8 +22,8 @@ const item = (itemId: string) => stamp(Aggregate.item, itemId);
 const contact = (contactId: string) => stamp(Aggregate.contact, contactId);
 const residency = (residencyId: string) => stamp(Aggregate.residency, residencyId);
 
-function submit(op: ClientOp): Promise<void> {
-  return engine.enqueue(op);
+async function submit(ops: ClientOp | ClientOp[]): Promise<void> {
+  await engine.enqueue(await withHoldKeys(await readyDb(), [ops].flat()));
 }
 
 export async function createItem(calendarId: string, core: ItemCore): Promise<string> {
@@ -93,7 +99,7 @@ export async function saveItem(itemId: string | undefined, save: ItemSave): Prom
   }
   for (const contactId of save.uninvite) ops.push({ kind: 'item.uninvite', itemId: id, contactId, ...item(id) });
   if (save.reminder) ops.push({ kind: 'item.reminder', itemId: id, ...save.reminder, ...item(id) });
-  await engine.enqueue(ops);
+  await submit(ops);
   return id;
 }
 
@@ -112,6 +118,49 @@ export async function setRsvp(itemId: string, contactId: string, status: RsvpSta
 
 export async function setReminder(itemId: string, contactId: string, reminder: ParticipantReminder): Promise<void> {
   await submit({ kind: 'item.reminder', itemId, contactId, reminder, ...item(itemId) });
+}
+
+/** Excludes or changes one occurrence; a change that leaves nothing different from the series restores it. */
+export async function changeOccurrence(itemId: string, originalStart: string, edit: OccurrenceEdit): Promise<void> {
+  const key = occurrenceKey(originalStart);
+  if (edit.kind === 'restore') await restoreOccurrence(itemId, key);
+  else await submit({ kind: 'item.occurrence', itemId, originalStart: key, edit, ...item(itemId) });
+}
+
+export async function restoreOccurrence(itemId: string, originalStart: string): Promise<void> {
+  await submit({ kind: 'item.occurrence.restore', itemId, originalStart: occurrenceKey(originalStart), ...item(itemId) });
+}
+
+/** "This and following": the series ends before `originalStart` and a new one, known by id offline, continues it as
+ *  `core`. From the first occurrence it is the whole series. Returns the series now holding `originalStart`. */
+export async function splitItem(state: MirrorItem, originalStart: string, core: ItemCore): Promise<string> {
+  const itemId = state.doc.id;
+  const key = occurrenceKey(originalStart);
+  const sourceKey = uuidv7();
+  const newItemId = continuationId(sourceKey);
+  const holdKey = await lineageRoot(await readyDb(), itemId);
+  const split: ClientOp = { kind: 'item.split', itemId, originalStart: key, newItemId, sourceKey, core, ...item(itemId), holdKey };
+  const continuation = continuationOf(state, newItemId, key, core, { ts: split.occurredAt, cmd: split.commandId });
+  if (!continuation) {
+    await reviseItem(itemId, core);
+    return itemId;
+  }
+  await submit([
+    split,
+    { kind: 'item.continue', itemId: newItemId, continuesItemId: itemId, state: continuation, ...stamp(Aggregate.item, newItemId, split.occurredAt), holdKey },
+  ]);
+  return newItemId;
+}
+
+/** Deletes `originalStart` and every occurrence after it; from the first occurrence that is the whole series. */
+export async function deleteFollowing(state: MirrorItem, originalStart: string): Promise<void> {
+  const itemId = state.doc.id;
+  if (!hasSeriesOccurrence(state.doc, originalStart)) return;
+  if (isFirstOccurrence(state.doc, originalStart)) {
+    await deleteItem(itemId);
+    return;
+  }
+  await submit({ kind: 'item.split', itemId, originalStart: occurrenceKey(originalStart), newItemId: null, sourceKey: null, core: null, ...item(itemId) });
 }
 
 export async function createContact(addressBookId: string, core: ContactCore): Promise<string> {

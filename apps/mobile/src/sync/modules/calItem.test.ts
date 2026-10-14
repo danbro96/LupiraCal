@@ -4,9 +4,12 @@ import { ApiError } from '@danbro96/lupira-http/apiError';
 import { createSyncEngine } from '@danbro96/lupira-sync-engine/engine';
 import type { ItemSyncChange } from '@lupira/cal-api/models';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ItemDoc } from '../../domain/docTypes';
+import { lineageRoot } from '../../data/queries/itemLineage';
+import type { ItemDoc, ItemGuards } from '../../domain/docTypes';
 import { emptyItemGuards } from '../../domain/docTypes';
+import { continuationOf } from '../../domain/mirrorReducers';
 import type { ClientOp, ItemCore } from '../../domain/ops';
+import { withHoldKeys } from '../holdKeys';
 import { calItemModule } from './calItem';
 
 const T = (m: number) => `2026-08-01T12:${String(m).padStart(2, '0')}:00.000Z`;
@@ -99,5 +102,97 @@ describe('calItem module', () => {
     expect(await titles()).toEqual([]);
     expect(await db.all('SELECT * FROM item_occurrences')).toEqual([]);
     expect(await db.all('SELECT * FROM item_calendars')).toEqual([]);
+  });
+});
+
+describe('this and following, offline', () => {
+  const replayed: string[] = [];
+  let failWith: ((op: ClientOp) => ApiError | null) | null = null;
+  const splitModule = {
+    ...calItemModule,
+    feed: { ...calItemModule.feed, fetch: async () => ({ cursor: 'c', hasMore: false, reset: false, ...pages.shift()! }) },
+    replay: async (op: ClientOp) => {
+      const failure = failWith?.(op);
+      if (failure) throw failure;
+      replayed.push(`${op.kind}:${op.aggregateId}`);
+    },
+  };
+  const splitEngine = () => createSyncEngine({ openDb: async () => db, modules: [splitModule], cacheVersion: 1, onChange: () => {} });
+
+  const weekly = (rule: string, id = 'a'): ItemSyncChange => ({
+    item: {
+      id, title: 'Training', isAllDay: false, startsAt: '2026-08-10T09:00:00.000Z', endsAt: '2026-08-10T10:00:00.000Z',
+      recurrenceRule: rule, calendars: [{ calendarId: 'cal-1', status: 'Accepted' }],
+    },
+    guards: emptyItemGuards(),
+  } as unknown as ItemSyncChange);
+
+  const occurrences = (id: string) => db.all<{ original_start: string }>('SELECT original_start FROM item_occurrences WHERE item_id = ? ORDER BY start_utc', [id]);
+
+  async function splitAt(e: ReturnType<typeof splitEngine>, originalStart: string, core: ItemCore): Promise<ClientOp[]> {
+    const state = (await e.doc<ItemDoc, ItemGuards>('cal.item', 'a'))!;
+    const holdKey = await lineageRoot(db, 'a');
+    const split: ClientOp = { kind: 'item.split', itemId: 'a', originalStart, newItemId: 'b', sourceKey: 'k', core, ...at(10), holdKey };
+    const continuation = continuationOf(state, 'b', originalStart, core, { ts: split.occurredAt, cmd: split.commandId })!;
+    const ops: ClientOp[] = [split, { kind: 'item.continue', itemId: 'b', continuesItemId: 'a', state: continuation, ...at(11), aggregateId: 'b', holdKey }];
+    await e.enqueue(ops);
+    return ops;
+  }
+
+  const following: ItemCore = {
+    title: 'Later', isAllDay: false, startsAt: '2026-08-17T09:00:00.000Z', endsAt: '2026-08-17T10:00:00.000Z', recurrenceRule: 'FREQ=WEEKLY;COUNT=3',
+  };
+
+  beforeEach(() => {
+    replayed.length = 0;
+    failWith = null;
+  });
+
+  it('shows both series offline, holds the new series\' edits behind the split, and converges once it lands', async () => {
+    const e = splitEngine();
+    pages.push({ changed: [weekly('FREQ=WEEKLY;COUNT=4')], deleted: [] });
+    await e.sync();
+    failWith = (op) => (op.kind === 'item.split' ? new ApiError(503, 'down') : null);
+    await splitAt(e, '2026-08-17T09:00:00Z', following);
+
+    expect(await occurrences('a')).toEqual([{ original_start: '2026-08-10T09:00:00Z' }]);
+    expect((await occurrences('b')).map((o) => o.original_start)).toEqual(['2026-08-17T09:00:00Z', '2026-08-24T09:00:00Z', '2026-08-31T09:00:00Z']);
+    expect(await lineageRoot(db, 'b')).toBe('a');
+
+    const [rename] = await withHoldKeys(db, [{ kind: 'item.revise', itemId: 'b', core: { ...following, title: 'Renamed' }, ...at(12), aggregateId: 'b' }]);
+    expect(rename.holdKey).toBe('a');
+    await e.enqueue(rename);
+    await e.push();
+    expect(replayed).toEqual([]);
+
+    failWith = null;
+    vi.setSystemTime(new Date('2026-08-02T00:00:00Z'));
+    await e.push();
+    expect(replayed).toEqual(['item.split:a', 'item.continue:b', 'item.revise:b']);
+
+    pages.push({ changed: [weekly('FREQ=WEEKLY;COUNT=1'), { ...weekly('FREQ=WEEKLY;COUNT=3', 'b'), item: { ...weekly('FREQ=WEEKLY;COUNT=3', 'b').item, title: 'Renamed', startsAt: '2026-08-17T09:00:00.000Z' } } as unknown as ItemSyncChange], deleted: [] });
+    await e.sync();
+    expect((await e.doc<ItemDoc, unknown>('cal.item', 'b'))?.doc.title).toBe('Renamed');
+    expect(await lineageRoot(db, 'b')).toBe('b');
+    expect(await occurrences('a')).toEqual([{ original_start: '2026-08-10T09:00:00Z' }]);
+  });
+
+  it('a discarded split leaves the series whole, and its continuation parks for discarding too', async () => {
+    const e = splitEngine();
+    pages.push({ changed: [weekly('FREQ=WEEKLY;COUNT=4')], deleted: [] });
+    await e.sync();
+    failWith = (op) => (op.kind === 'item.split' ? new ApiError(409, 'stale') : op.kind === 'item.continue' ? new ApiError(404, 'gone') : null);
+    const [split, continuation] = await splitAt(e, '2026-08-17T09:00:00Z', following);
+    await e.push();
+    expect((await e.parked()).map((p) => p.op.kind)).toEqual(['item.split']);
+
+    await e.discard(split.commandId);
+    await e.push();
+    expect((await occurrences('a'))).toHaveLength(4);
+    expect((await e.parked()).map((p) => p.op.kind)).toEqual(['item.continue']);
+
+    await e.discard(continuation.commandId);
+    expect(await e.doc('cal.item', 'b')).toBeNull();
+    expect(await occurrences('b')).toEqual([]);
   });
 });

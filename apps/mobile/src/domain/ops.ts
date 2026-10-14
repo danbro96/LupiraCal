@@ -1,6 +1,7 @@
+import type { OccurrenceEdit } from '@lupira/cal-domain/seriesOccurrences';
 import { v7 as uuidv7 } from 'uuid';
 import type { Aggregate } from './aggregates';
-import type { ContactDoc, FuzzyDateDto, ItemDoc, ParticipantReminder, ReachChannel, ResidencyDoc, SocialProfile } from './docTypes';
+import type { ContactDoc, FuzzyDateDto, ItemDoc, ItemGuards, ParticipantReminder, ReachChannel, ResidencyDoc, SocialProfile } from './docTypes';
 
 /** The offline command vocabulary — one op per replayable REST write. Ops are enqueued transactionally with
  *  their optimistic mirror effect and replayed with `Idempotency-Key: commandId` + `occurredAt`, so a
@@ -8,7 +9,8 @@ import type { ContactDoc, FuzzyDateDto, ItemDoc, ParticipantReminder, ReachChann
 
 export type OpAggregate = typeof Aggregate.item | typeof Aggregate.contact | typeof Aggregate.residency;
 
-type Base = { commandId: string; occurredAt: string; aggregate: OpAggregate; aggregateId: string };
+/** `holdKey`: the queue this op replays in order with, when not its own aggregate's — set at enqueue. */
+type Base = { commandId: string; occurredAt: string; aggregate: OpAggregate; aggregateId: string; holdKey?: string };
 
 /** Desired core-section state for a calendar item (whole-section write — PUT with every sentinel set).
  *  null on title/description/status/category/tags means "keep" (the REST contract has no clear for those).
@@ -50,6 +52,14 @@ export type ClientOp = Base & (
   | { kind: 'item.uninvite'; itemId: string; contactId: string }
   | { kind: 'item.respond'; itemId: string; contactId: string; status: RsvpStatus }
   | { kind: 'item.reminder'; itemId: string; contactId: string; reminder: ParticipantReminder }
+  /** One occurrence of a series, named by its unmodified start: excluded, or changed (replacing its previous change). */
+  | { kind: 'item.occurrence'; itemId: string; originalStart: string; edit: Exclude<OccurrenceEdit, { kind: 'restore' }> }
+  | { kind: 'item.occurrence.restore'; itemId: string; originalStart: string }
+  /** "This and following": the series ends before `originalStart` and `newItemId` continues it with `core`; a null
+   *  `core` deletes them instead. */
+  | { kind: 'item.split'; itemId: string; originalStart: string; newItemId: string | null; sourceKey: string | null; core: ItemCore | null }
+  /** The series a split creates, as the split will leave it; queued behind the split, so it replays once that landed. */
+  | { kind: 'item.continue'; itemId: string; continuesItemId: string; state: { doc: ItemDoc; guards: ItemGuards } }
   | { kind: 'contact.create'; contactId: string; sourceKey: string; addressBookId: string; core: ContactCore }
   | { kind: 'contact.revise'; contactId: string; core: ContactCore }
   | { kind: 'contact.channels'; contactId: string; channels: ReachChannel[] }
@@ -81,6 +91,10 @@ export const OP_LABELS: Record<OpKind, string> = {
   'item.uninvite': 'Remove from event',
   'item.respond': 'Set RSVP',
   'item.reminder': 'Set reminder',
+  'item.occurrence': 'Change one event',
+  'item.occurrence.restore': 'Revert event to series',
+  'item.split': 'Change following events',
+  'item.continue': 'Continue series',
   'contact.create': 'Create contact',
   'contact.revise': 'Edit contact',
   'contact.channels': 'Edit contact channels',
