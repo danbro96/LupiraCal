@@ -241,6 +241,11 @@ export function ItemDetailScreen() {
 
 const DEVIATION_LABELS: Record<SeriesDeviationRow['kind'], string> = { excluded: 'Deleted', cancelled: 'Cancelled', changed: 'Changed' };
 
+function deviationDetail(d: SeriesDeviationRow, allDay: boolean): string | undefined {
+  const moved = d.change?.startsAt ? `→ ${fmtWhen(d.change.startsAt, allDay)}` : null;
+  return [moved, d.change?.title].filter(Boolean).join(' · ') || undefined;
+}
+
 /** A series' deleted, cancelled and changed occurrences, each one tap from its own view and one from the series. */
 function ChangedOccurrences({ doc, onOpen, onRevert }: {
   doc: ItemDoc;
@@ -257,7 +262,7 @@ function ChangedOccurrences({ doc, onOpen, onRevert }: {
           key={d.originalStart}
           style={styles.dense}
           title={`${fmtWhen(d.originalStart, doc.isAllDay)} · ${DEVIATION_LABELS[d.kind]}`}
-          description={[d.change?.startsAt && `→ ${fmtWhen(d.change.startsAt, doc.isAllDay)}`, d.change?.title].filter(Boolean).join(' · ') || undefined}
+          description={deviationDetail(d, doc.isAllDay)}
           onPress={() => onOpen(d.originalStart)}
           right={() => <Button title="Revert" variant="text" onPress={() => onRevert(d.originalStart)} />}
         />
