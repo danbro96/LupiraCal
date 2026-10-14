@@ -26,6 +26,7 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 - Lanes are laid out in percent of the day so a zoom frame animates one height.
 - Search (`ItemSearchScreen`) reads the mirror, not the API, so it works offline.
 - Tentative items draw outlined in both modes: a dashed border in the calendar colour over a tint of it (`TENTATIVE` in `@lupira/cal-tokens/color`, applied by `ui/calendar/tentative`; uniform width and colour, or Android draws the rounded border solid). The week view dims and strikes through Cancelled ones.
+- A tapped occurrence of a recurring event opens as that occurrence (`ItemDetail` `occurrence` = its unmodified start, the `@lupira/cal-domain/seriesOccurrences` key; grid, search, contact events and reminders pass it). See "Recurring events".
 - `ItemDetailScreen`'s Hierarchy section shows "Part of <parent>" and the direct children (title, first date) from `item_index.parent_item_id` (`useItemHierarchy`, keyed `['cal.item', 'hierarchy', …]`); a row opens that item. A parent outside the mirror shows no row.
 
 ## Sync
@@ -37,7 +38,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 | `cal.calendar` | `/api/sync/calendars` (snapshot; seeds a missing standard set) | — | `calendar_index`, view `bridge_calendars` |
 | `contact.addressBook` | `/contact-api/sync/address-books` (snapshot; seeds) | — | — |
 | `contact.group` | `/contact-api/sync/groups` (snapshot) | — | — |
-| `cal.item` | `/api/sync/items` | `item.*` ops | `item_index`, `item_calendars`, `item_occurrences`, `item_attendees`, `item_places`, view `bridge_items` |
+| `cal.item` | `/api/sync/items` (occurrence identities normalized to occurrence keys) | `item.*` ops | `item_index`, `item_calendars`, `item_occurrences` (`original_start`, per-occurrence `title`/`status`), `item_attendees`, `item_places`, view `bridge_items` |
 | `contact` | `/contact-api/sync/contacts` | `contact.*` ops | `contact_index`, `birthday_occurrences`, view `bridge_contacts` |
 | `contact.relationship` | `/contact-api/sync/relationships` | — | `relationship_index` |
 | `contact.residency` | `/contact-api/sync/residencies` | `contact.residency.*` ops | `residency_index`, view `bridge_residencies` |
@@ -51,7 +52,8 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 - Every change to an input (pulled doc, queued op, discard, ack) recomputes `local = reduce(server, ...ops)` with `domain/mirrorReducers` and rewrites the module's index rows; a deleted doc is `null`. Table DDL and row writers live in `data/indexes/`, the reads over them in `data/queries/`.
 - Ops (`domain/ops.ts`) carry `aggregate`/`aggregateId` from `stamp()`; `state/actions.ts` is the write surface, `sync/replayOp.ts` the REST replay (`Idempotency-Key: commandId`). Ops of one aggregate replay in order; a parked or backed-off op holds the ones behind it.
 - Residency ops hold on the contact's id, so an address added to a contact created offline waits for that create. A start sends a UUIDv7 `sourceKey`; its residency id is `deterministicIdFor(residencyStreamKey(contactId, key))`, contact-api's `Residency.StreamIdOf` (fixture in `domain/ids.test.ts`). Move-out replays as `POST /residencies/{id}/move-out`, not the wholesale correction.
-- Occurrences are materialized over a rolling horizon (`domain/materialize`); `sync/horizon.ts` keeps it in kernel meta and reindexes `cal.item` and `contact` when it drifts a month.
+- Occurrences are materialized over a rolling horizon (`domain/materialize`, `expandSeries`: excluded and cancelled occurrences left out, moved ones at their new start, per-occurrence title and status in the row); `sync/horizon.ts` keeps it in kernel meta and reindexes `cal.item` and `contact` when it drifts a month. Grid, search, contact events and notification reads COALESCE the row's title and status over the item's.
+- Item ops queue per hold key (`calItemModule.holdKeyOf` = the op's `holdKey`, else its item). Ops on a series created by a split the server hasn't confirmed take the hold key of the series it continues (`sync/holdKeys` over `data/queries/itemLineage`, set at enqueue by `state/actions` and the bridge drain), so they never replay before the split.
 - Prefs and bridge flags are kernel meta keys (`sync/meta.ts`). Signing in as a different account wipes the engine and the query cache (`state/auth-store.ts`, `onAccountChange`).
 - Triggers: `startSyncTriggers` (foreground, reconnect, sign-in) from `App.tsx`; the 15-minute background task is defined in `index.ts` and loads the auth session first. The Android bridge drains its inbox before each push and republishes after each pull (`hooks`).
 - `SyncBanner` is expo-paper's `StatusBanner` over `bannerState` (tap → Sync issues); `SyncIssuesScreen` is its `SyncStatusView` over the engine's `parked()`/`sync`/`retry`/`discard` (offline it shows no progress and Sync now only says so). Both, and Settings, read the kernel's status store (`state/useSyncStatus`); none shows a sync in progress while the device is offline. Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
@@ -61,7 +63,8 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 
 `modules/lupira-bridge` publishes the mirror into the phone's calendar and contacts providers under the Lupira account and captures stock-app edits into a Kotlin-owned inbox (`lupira-bridge.db`); `sync/bridge.ts` drains it into ops (`domain/bridgeTranslate` is the pure half).
 
-- Events: one provider calendar per mirror calendar, one event per item (`_SYNC_ID` = item id, RRULE rows for series). `SYNC_DATA1` = content hash (skip + echo guard), `SYNC_DATA2` = the location published. A captured location equal to what was published (or, without one, to the mirror's label) keeps the place; cleared, it clears; anything else is stored as a label with no place (`locationUnresolved`). A stock-created event with a location starts unresolved the same way. The editor then shows "Needs a place".
+- Events: one provider calendar per mirror calendar, one event per item (`_SYNC_ID` = item id, RRULE rows for series). `SYNC_DATA1` = content hash (skip + echo guard), `SYNC_DATA2` = the location published, `SYNC_DATA3` = the EXDATE published. A series repeats in its own zone (`EVENT_TIMEZONE` = the item's zone, UTC for all-day), so it keeps its wall clock across DST; exclusions publish as EXDATE, extra occurrences as RDATE, and each changed occurrence as an exception row (`ORIGINAL_SYNC_ID`, `ORIGINAL_INSTANCE_TIME`, `_SYNC_ID` = `<item id>@<original start ms>`, cancelled = `STATUS_CANCELED`, location by the `SYNC_DATA2` rule). Exception rows the mirror no longer has are deleted. `ProviderRecurrence.kt` is the pure half (JVM-tested).
+- Occurrence write-back: a captured row with `ORIGINAL_SYNC_ID` / `ORIGINAL_ID` (an occurrence edited in the stock app, or one of ours) is stamped with its exception `_SYNC_ID` and drains as `item.occurrence` (`translateOccurrenceRow`): a deleted or cancelled one excludes it, anything else becomes its change, and what the mirror already holds is skipped. An EXDATE edited on the series row diffs against `SYNC_DATA3` (`exclusionChanges`) into exclude / restore ops, 1 ms after the row's revise. A pending capture holds back the whole series (`BridgeDb.pendingSyncIds` adds the item id). A captured location equal to what was published (or, without one, to the mirror's label) keeps the place; cleared, it clears; anything else is stored as a label with no place (`locationUnresolved`). A stock-created event with a location starts unresolved the same way. The editor then shows "Needs a place".
 - Contacts: raw contacts by `SOURCE_ID` = contact id (name, phones, emails, birthday, notes, "Open in Lupira"), `SYNC1` = content hash. Each current residency whose place `geo.place` has looked up becomes a postal row (address, else the place's name; type Home/Work/Other, Vacation as a custom label) tagged `Data.SYNC1` = residency id, `Data.SYNC2` = the text published. Current = today inside moved-in…moved-out (`FuzzyDates.kt`, same rule as `residencyStatus`).
 - Postal edits in the stock app never become ops: a place can't be named there. `postalHints` turns them into address hints in the Kotlin table `contact_address_hint` (`listAddressHints` / `putAddressHint` / `deleteAddressHints`): an edited published address becomes a hint standing in for it (published instead of it, tagged `hint:<id>`), a new address a hint of its own, an edited hint row updates the hint, a deleted hint row dismisses it; a deleted published address is restored on the next publish (`invalidateContacts` drops the contact's hash). Rows the stock app re-inserts without their tags match by text. Hints are local to the phone and cleared when the integration is turned off.
 - `ContactDetail` lists hints as "Address needs a place"; `ContactEdit` offers them as "From your phone" chips (× dismisses). A chip adds a new address row typed from the hint (`hintAddressRow`; the old address stays, Remove or Moved out is the user's call); saving the row with a place settles the hint.
@@ -81,13 +84,23 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 - Place = a `PlaceSelection` (geo `placeId` + label). cal-api 400s free-text `location` without one unless `locationUnresolved` is set, which stores it as a label with no place (`ItemCore.locationUnresolved`; null clears both) — the bridge's and the editor's way to keep text nothing resolved.
 - Timed events carry `startTimezone` (the device's by default; the calendar bridge keeps an existing zone): the server repeats a zoned series on that zone's wall clock, so `@lupira/cal-domain/recurrence` does too. Parity fixtures come from LupiraCalApi `tools/FixtureEmitter` (a UTC UNTIL bounds the instant; a floating or date one, the wall clock).
 
+## Recurring events
+
+An occurrence is named by its unmodified start (`occurrenceKey`, UTC whole seconds; all-day at 00:00Z). The series rules are `@lupira/cal-domain/seriesOccurrences`, at parity with cal-api's fixtures.
+
+- `ItemDetailScreen` with an `occurrence` shows it as it reads (its own time, title, description, status). A changed or deleted one says "Changed from the series" / "Deleted from the series" with Revert. Edit, Cancel and Delete open an `ActionMenu` (`lupira-expo-paper`): This event / This and following / All events. "This and following" is offered only from a rule occurrence after the first (`occurrenceScopes`); at the first one it is the whole series. Deleting or cancelling one event toasts Undo; deleting the following ones or all asks first. A recurring item lists its Changed occurrences (deleted, cancelled, changed), each opening that occurrence, with Revert.
+- `ItemEditScreen` `scope`: `this` edits title, times, description and Tentative only (`itemFormFromOccurrence`; saved as the occurrence's change, `occurrenceEdit` — nothing left different restores it). `following` opens the series continuing from the occurrence (`followingSeriesOf`) without Calendars, People and Reminder; Save splits and lands on the new series. `series` is the whole item. All-day occurrence times are dates at 00:00Z; an end is the last day.
+- Ops (`domain/ops.ts`), all under the core guard like the server: `item.occurrence` (exclude, or a change replacing the previous one, keeping its location label), `item.occurrence.restore`, `item.split` (`POST /items/{id}/occurrences/{originalStart}/following` with the new series' whole core and a `sourceKey`; null core deletes the following ones). A split enqueues `item.continue` with it: the new series as the server will build it (`continuationOf`: id `continuationId(sourceKey)`, `continuesItemId`, calendars, attendees under `continuedParticipationId`, every section stamped with the split), so it shows offline at once. Its replay only checks the series exists: a discarded split leaves it 404, parked for discarding too. A stale split is a 409 and parks.
+- A revise that moves a series carries its changed occurrences and its UNTIL bound along (`followDeviations` in `mergeItemCore`).
+- Per-occurrence place stays series-only.
+
 ## Notifications
 
 Local notifications only (no push), planned from the mirror on the device:
 
 | Kind | Id | Channel | When |
 | --- | --- | --- | --- |
-| Event reminder | `cal:rem:<item>:<start>` | `reminders` | Your own Before; else the default lead for timed events you're Going / Maybe to; Off silences. All-day: counted back from the morning time |
+| Event reminder | `cal:rem:<item>:<start>` | `reminders` | Your own Before; else the default lead for timed events you're Going / Maybe to; Off silences. All-day: counted back from the morning time. A moved occurrence reminds at its new start under its own title; excluded and cancelled ones never; a tap opens that occurrence (`item/<id>?occ=`) |
 | Morning summary | `cal:day:<day>` | `daily` | Morning time; that day's events in shown calendars (multi-day trips and stays with "day k of n"), never availability, cancelled or declined |
 | Birthdays | `cal:bday:<day>` | `daily` | Birthday time; one per day, with ages |
 | Invited | `rsvp:<item>:invited` | `rsvp` | Shown on the next reconcile after an invitation from the last 48 h; at most five a run |
@@ -107,13 +120,14 @@ Local notifications only (no push), planned from the mirror on the device:
 
 | Intent | Deep link |
 | --- | --- |
-| VIEW an event row (`vnd.android.cursor.item/event`) | ours (account `com.lupira.calendar`, real `_SYNC_ID`) → `item/<id>`; anyone else's → re-sent to the system calendar app |
-| EDIT one of our events | `item/<id>/edit` |
+| VIEW an event row (`vnd.android.cursor.item/event`) | ours (account `com.lupira.calendar`, real `_SYNC_ID`) → `item/<id>`, an exception row → `item/<id>?occ=<original start>`; anyone else's → re-sent to the system calendar app |
+| EDIT one of our events | `item/<id>/edit` (an exception row: `?occ=<original start>&scope=this`) |
 | INSERT/EDIT any other event (`CalendarContract` extras) | `draft/event?begin=&end=&allDay=&title=&location=&description=&recurrence=` (epoch ms) |
 | INSERT a contact (`ContactsContract.Intents.Insert` extras) | `draft/contact?name=&phone=&email=&company=&notes=` |
 | VIEW a shared calendar or contact file | `import/<calendar\|contacts>?file=<uuid>` |
 | "Open in Lupira" contact row | `contact/<id>` |
 
+- `?occ=` names an occurrence; the linking config's `getStateFromPath` reads it as the `occurrence` route param.
 - Shared files are copied to `cacheDir/imports/<uuid>` (5 MB cap; over it, a toast and nothing opens). `readImport` hands the text over once; `clearImports` at app start drops files left by earlier runs.
 - `ImportScreen` posts the text to `POST /api/items/drafts?zone=<device zone>` (`text/calendar`) or `POST /contact-api/contacts/drafts` (`text/vcard`), which answer with drafts (`data/imports.ts`, raw body through `apiRequest` — the generated fetchers JSON-encode a string body); it needs a connection. A 400 reads "can't be read", a 413 "too large". Item drafts' locations become places through the place typeahead, or move into the description. One draft opens the editor pre-filled; several show a checklist and a calendar / address-book choice, then one create per draft keyed by its opaque per-user `sourceKey`, so importing again changes nothing.
 - Drafts (`domain/drafts.ts`) pre-fill `ItemEditScreen` / `ContactEditScreen` as a new, unsaved entry. A screen opened this way can be the only one in the stack; leaving it lands on the tabs (`leaveScreen`).

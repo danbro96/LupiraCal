@@ -22,6 +22,7 @@ criteria are verifiable commands/observations.
 | M10 | Material re-skin (Paper + shared tokens) | LupiraCal | in-progress |
 | M14 | Device feedback pass | LupiraCal, LupiraCalApi | in-progress |
 | M15 | Native 1.2.0 | LupiraCal, LupiraCalApi | in-progress |
+| M16 | Per-occurrence editing | LupiraCal, LupiraCalApi | in-progress |
 
 Fixed identity: Android package `com.lupira.calendar`, scheme `lupiracalendar`
 (redirect `lupiracalendar://oauthredirect`), Authentik public client `lupira-cal-mobile`,
@@ -294,6 +295,28 @@ EAS build (1.2.0) to Play internal.
 - [ ] Device: Samsung Calendar location edit and Samsung Contacts address edit come back as hints; no op echo after two syncs
 - [ ] Sentry: a release-build crash and an OTA crash both symbolicate
 - [ ] 1.1.0 → 1.2.0 upgrade drill (outbox survives); 1.1.0 stragglers still get OTAs from `runtime/1.1.0`
+
+## M16 — Per-occurrence editing   [status: in-progress]
+
+"This event / This and following / All events" for edit, cancel and delete; occurrences render as their series
+deviates offline; the Android calendar round-trips per-occurrence changes. cal-api, BFF and web shipped first; the app
+part ships in one native build (Kotlin bridge + JS together).
+
+### Scope
+- [x] cal-api: occurrence identity (`originalStart`, `isChanged`), all-day change ends as the last day, `POST /items/{id}/occurrences/{originalStart}/following` (`sourceKey`, `continuesItemId`), UNTIL shifts with a moved series; client fixtures `series.json`, `series-follow.json`, `split.json`
+- [x] BFF exposes change / restore / following; web drawer scope toggle, revert, changed occurrences, `?occ=` links
+- [x] Item index v7: `item_occurrences.original_start`, per-occurrence `title` / `status` over `expandSeries`; grid, search, contact events and notification reads; reminders follow a moved start and open `item/<id>?occ=`
+- [x] Ops `item.occurrence`, `item.occurrence.restore`, `item.split` (+ `item.continue`), core-guard reducers, `Idempotency-Key` replay, split-lineage hold keys, `followDeviations` on schedule change
+- [x] Detail: occurrence view, Revert, scope `ActionMenu` on Edit / Cancel / Delete, Changed occurrences; editor scopes this / following / series
+- [x] Bridge: zone-true `EVENT_TIMEZONE`, EXDATE / RDATE, exception rows per change; captured exception rows and EXDATE edits drain as occurrence ops; exception rows open their occurrence
+
+### Exit criteria
+- [x] Root `npm run typecheck` / `lint` / `test` green; bridge JVM tests (`ProviderRecurrenceTest`) green; `npx expo export --platform android` bundles
+- [ ] Device: a web-made occurrence change shows moved / hidden in month, week and search
+- [ ] Device: offline one-occurrence edit and offline this-and-following converge after reconnect
+- [ ] Device: a moved occurrence's reminder fires at the new time and its notification opens that occurrence
+- [ ] Device: the Android calendar shows exclusions and moved occurrences at the right local time across a DST change
+- [ ] Device: editing / deleting one occurrence in the stock calendar arrives as an occurrence change (not a new item), with no echo after two syncs
 
 ## Split into Lupira Maps and Lupira Photos
 
