@@ -1,8 +1,5 @@
-// TS twin of cal-api's series rules: occurrence identity and expansion with deviations (RecurrenceExpander.Occurrences),
-// per-occurrence changes (CalendarItem.ApplyOccurrence), deviations following a moved series (SeriesDeviations.Follow,
-// RecurringSeries.KeepingBoundOf) and cutting a series at an occurrence (SeriesSplit). Parity is pinned by
-// test/fixtures/series.json, series-follow.json and split.json, emitted from the server itself.
-// Every occurrence is identified by the start it has in the unmodified series (UTC; an all-day one at 00:00Z).
+// Twin of cal-api's series rules, pinned to the server by test/fixtures/{series,series-follow,split}.json.
+// An occurrence is identified by its start in the unmodified series (UTC; all-day at 00:00Z).
 
 import { deterministicGuid } from './deterministicGuid';
 import { expandRecurrence } from './recurrence';
@@ -275,9 +272,8 @@ function sameSeries(a: SeriesShape, b: SeriesShape): boolean {
     && (a.startTimezone ?? null) === (b.startTimezone ?? null) && (a.recurrenceRule ?? null) === (b.recurrenceRule ?? null);
 }
 
-/** The series' rule and deviations once it moves from `before` to `after` (a new time, day, zone or rule): an unchanged
- *  bounded rule moves its last start along, and each deviation follows its occurrence while the moved series still has it.
- *  One keyed on an extra occurrence stays put. */
+/** Rule and deviations after the series moves: an unchanged bounded rule keeps its last occurrence, and each deviation
+ *  follows its occurrence while the moved series still has it (extra-keyed ones stay put). */
 export function followDeviations(before: SeriesShape, after: SeriesShape): { recurrenceRule: string | null } & SeriesDeviations {
   const shift = shiftBetween(before, after);
   const rule = after.recurrenceRule ?? null;
@@ -379,9 +375,7 @@ export function capRule(item: SeriesShape, originalStart: string): { earlier: st
   return { earlier: withPart(rule, 'UNTIL', item.isAllDay ? formatDate(last) : `${formatWall(roundedUp)}Z`), following: rule };
 }
 
-/** The series cut at one of its rule's occurrences (not the first): the earlier part keeps every occurrence before it,
- *  the following part starts at it with the rest of the rule, at the series' length. Deviations go with the part their
- *  unmodified start falls in. */
+/** The series cut at a rule occurrence after the first; deviations go with the part their unmodified start falls in. */
 export function splitSeries(item: SeriesShape, originalStart: string): SeriesSplit | null {
   const rules = capRule(item, originalStart);
   if (!rules) return null;
