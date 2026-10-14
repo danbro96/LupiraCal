@@ -34,6 +34,38 @@ describe('occurrenceRowsForItem', () => {
     expect(rows[0].allDay).toBe(true);
   });
 
+  it('honours the series deviations: excluded, moved, renamed and cancelled occurrences', () => {
+    const rows = occurrenceRowsForItem(item({
+      startsAt: '2026-01-05T09:00:00Z', endsAt: '2026-01-05T10:00:00Z', recurrenceRule: 'FREQ=WEEKLY;COUNT=4',
+      excludedOccurrences: ['2026-01-12T09:00:00Z'],
+      occurrenceOverrides: [
+        { originalStart: '2026-01-19T09:00:00Z', startsAt: '2026-01-20T15:00:00Z', endsAt: null, title: 'Moved', description: null, status: null, locationLabel: null },
+        { originalStart: '2026-01-26T09:00:00Z', startsAt: null, endsAt: null, title: null, description: null, status: 'Cancelled', locationLabel: null },
+      ],
+    }), horizon);
+    expect(rows.map((r) => [r.originalStart, r.startUtc, r.endUtc, r.title])).toEqual([
+      ['2026-01-05T09:00:00Z', '2026-01-05T09:00:00.000Z', '2026-01-05T10:00:00.000Z', null],
+      ['2026-01-19T09:00:00Z', '2026-01-20T15:00:00.000Z', '2026-01-20T16:00:00.000Z', 'Moved'],
+    ]);
+  });
+
+  it('keeps an all-day change\'s inclusive last day as the row end', () => {
+    const rows = occurrenceRowsForItem(item({
+      isAllDay: true, startDate: '2026-02-02', recurrenceRule: 'FREQ=WEEKLY;COUNT=2',
+      occurrenceOverrides: [
+        { originalStart: '2026-02-09T00:00:00Z', startsAt: '2026-02-10T00:00:00Z', endsAt: '2026-02-11T00:00:00Z', title: null, description: null, status: 'Tentative', locationLabel: null },
+      ],
+    }), horizon);
+    expect(rows.map((r) => [r.startDay, r.endUtc, r.status])).toEqual([
+      ['2026-02-02', null, null],
+      ['2026-02-10', '2026-02-11T00:00:00.000Z', 'Tentative'],
+    ]);
+  });
+
+  it('names no occurrence for a one-off item', () => {
+    expect(occurrenceRowsForItem(item({ startsAt: '2026-01-05T09:00:00Z' }), horizon)[0].originalStart).toBeNull();
+  });
+
   it('produces nothing for startless items', () => {
     expect(occurrenceRowsForItem(item({}), horizon)).toHaveLength(0);
   });

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_NOTIFY_PREFS, notifyPrefsFrom, notifyPrefKey, reminderLabel, sameReminder, type NotifyPrefs } from './notificationPrefs';
 import {
-  birthdayDigests, desiredReminders, eventReminders, leadMinutesFor, morningDigests, type MyOccurrence, type NotifyContext, type ShownOccurrence,
+  birthdayDigests, desiredReminders, eventReminders, itemUrl, leadMinutesFor, morningDigests, type MyOccurrence, type NotifyContext, type ShownOccurrence,
 } from './reminders';
 
 const ZONE = 'Europe/Stockholm';
 const ctx = (now: string, prefs: Partial<NotifyPrefs> = {}): NotifyContext => ({ now: new Date(now), zone: ZONE, prefs: { ...DEFAULT_NOTIFY_PREFS, ...prefs } });
 
 const timed = (over: Partial<MyOccurrence> = {}): MyOccurrence => ({
-  itemId: 'i1', title: 'Dentist', itemStatus: 'Confirmed', place: null, allDay: false,
+  itemId: 'i1', originalStart: null, title: 'Dentist', itemStatus: 'Confirmed', place: null, allDay: false,
   startUtc: '2026-10-14T09:00:00.000Z', endUtc: '2026-10-14T10:00:00.000Z', startDay: '2026-10-14',
   rsvp: 'Accepted', reminder: null, ...over,
 });
@@ -39,6 +39,15 @@ describe('reminderLabel', () => {
   it('treats no reminder as the default', () => {
     expect(sameReminder(null, { mode: 'Default', minutesBefore: null })).toBe(true);
     expect(sameReminder({ mode: 'Before', minutesBefore: 5 }, { mode: 'Before', minutesBefore: 15 })).toBe(false);
+  });
+});
+
+describe('itemUrl', () => {
+  it('opens the occurrence a reminder is for', () => {
+    const [moved] = eventReminders([timed({ originalStart: '2026-10-14T08:00:00Z' })], ctx('2026-10-14T06:00:00Z'));
+    expect(moved.data.url).toBe('lupiracalendar://item/i1?occ=2026-10-14T08:00:00Z');
+    expect(moved.fireAt).toBe('2026-10-14T08:45:00.000Z');
+    expect(itemUrl('i1')).toBe('lupiracalendar://item/i1');
   });
 });
 

@@ -4,6 +4,8 @@ import { inShownCalendars, preferredCalendar, type CalendarFilter } from './cale
 export type GridRow = {
   source: string;
   source_id: string;
+  /** The occurrence's key in its series, for opening that occurrence; null for one-off items and birthdays. */
+  original_start: string | null;
   start_utc: string;
   end_utc: string | null;
   start_day: string;
@@ -25,15 +27,15 @@ export async function gridRowsBetween(tx: Tx, fromDay: string, toDay: string, fi
        WHERE (CASE o.source WHEN 'item' THEN ${inShownCalendars('o.source_id')} ELSE ? END)` : '';
   return tx.all<GridRow>(
     `WITH o AS (
-       SELECT 'item' AS source, item_id AS source_id, start_utc, end_utc, start_day, all_day
+       SELECT 'item' AS source, item_id AS source_id, original_start, start_utc, end_utc, start_day, all_day, title, status
        FROM item_occurrences WHERE start_day >= ? AND start_day <= ?
        UNION ALL
-       SELECT 'birthday', contact_id, start_utc, NULL, start_day, 1
+       SELECT 'birthday', contact_id, NULL, start_utc, NULL, start_day, 1, NULL, NULL
        FROM birthday_occurrences WHERE start_day >= ? AND start_day <= ?
      )
-     SELECT o.source, o.source_id, o.start_utc, o.end_utc, o.start_day, o.all_day,
-            COALESCE(i.title, c.display_name) AS title,
-            i.status AS status,
+     SELECT o.source, o.source_id, o.original_start, o.start_utc, o.end_utc, o.start_day, o.all_day,
+            COALESCE(o.title, i.title, c.display_name) AS title,
+            COALESCE(o.status, i.status) AS status,
             ${preferredCalendar('o.source_id')} AS calendar_id,
             (SELECT 1 FROM item_calendars ia JOIN calendar_index ca ON ca.id = ia.calendar_id
              WHERE ia.item_id = o.source_id AND ca.kind = 'Availability' LIMIT 1) AS is_availability,

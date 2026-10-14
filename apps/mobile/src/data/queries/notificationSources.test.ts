@@ -57,6 +57,23 @@ describe('notification sources', () => {
     ]);
   });
 
+  it('reads a moved occurrence at its new time and title, and leaves excluded and cancelled ones out', async () => {
+    await item('w', '2026-10-14T09:00:00.000Z', [on('me')], {
+      recurrenceRule: 'FREQ=DAILY;COUNT=4',
+      excludedOccurrences: ['2026-10-15T09:00:00Z'],
+      occurrenceOverrides: [
+        { originalStart: '2026-10-16T09:00:00Z', startsAt: '2026-10-16T13:00:00Z', endsAt: null, title: 'Later', description: null, status: null, locationLabel: null },
+        { originalStart: '2026-10-17T09:00:00Z', startsAt: null, endsAt: null, title: null, description: null, status: 'Cancelled', locationLabel: null },
+      ],
+    });
+
+    const rows = await myOccurrences(db, 'me', '2026-10-13', '2026-10-28');
+    expect(rows.map((r) => [r.originalStart, r.startUtc, r.title])).toEqual([
+      ['2026-10-14T09:00:00Z', '2026-10-14T09:00:00.000Z', 'w'],
+      ['2026-10-16T09:00:00Z', '2026-10-16T13:00:00.000Z', 'Later'],
+    ]);
+  });
+
   it('lists shown calendars only, never availability, with your RSVP where you are on it', async () => {
     await calendar('personal', 'Personal');
     await calendar('avail', 'Availability');

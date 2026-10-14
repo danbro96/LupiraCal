@@ -12,7 +12,21 @@ export type ItemSearchRow = {
   next_utc: string | null;
   /** Last occurrence before `today`, else the item's own start (it may predate the window). */
   last_utc: string | null;
+  /** The occurrence a tap opens: the next one, else the last; null for one-off items. */
+  occurrence: string | null;
 };
+
+/** An item's row as of `today`: its next occurrence (title and status as that occurrence reads), else its last. Binds `today` twice. */
+export const OCCURRENCE_COLUMNS = `i.id, COALESCE(n.title, i.title) AS title, COALESCE(n.status, i.status) AS status, i.is_all_day, i.recurrence_rule,
+            ${preferredCalendar('i.id')} AS calendar_id,
+            n.start_utc AS next_utc,
+            COALESCE(l.start_utc, i.start_utc) AS last_utc,
+            COALESCE(n.original_start, l.original_start) AS occurrence`;
+
+export const OCCURRENCE_JOINS = `LEFT JOIN item_occurrences n ON n.rowid =
+       (SELECT o.rowid FROM item_occurrences o WHERE o.item_id = i.id AND o.start_day >= ? ORDER BY o.start_utc LIMIT 1)
+     LEFT JOIN item_occurrences l ON l.rowid =
+       (SELECT o.rowid FROM item_occurrences o WHERE o.item_id = i.id AND o.start_day < ? ORDER BY o.start_utc DESC LIMIT 1)`;
 
 const likeTerm = (term: string) => `%${term.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
 
@@ -24,11 +38,9 @@ export async function searchItems(tx: Tx, query: string, today: string, filter?:
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) return [];
   return tx.all<ItemSearchRow>(
-    `SELECT i.id, i.title, i.status, i.is_all_day, i.recurrence_rule,
-            ${preferredCalendar('i.id')} AS calendar_id,
-            (SELECT MIN(o.start_utc) FROM item_occurrences o WHERE o.item_id = i.id AND o.start_day >= ?) AS next_utc,
-            COALESCE((SELECT MAX(o.start_utc) FROM item_occurrences o WHERE o.item_id = i.id AND o.start_day < ?), i.start_utc) AS last_utc
+    `SELECT ${OCCURRENCE_COLUMNS}
      FROM item_index i
+     ${OCCURRENCE_JOINS}
      WHERE ${terms.map(() => `i.search_text LIKE ? ESCAPE '\\'`).join('\n       AND ')}
        ${filter ? `AND ${inShownCalendars('i.id')}` : ''}
      ORDER BY next_utc IS NULL, next_utc, last_utc DESC

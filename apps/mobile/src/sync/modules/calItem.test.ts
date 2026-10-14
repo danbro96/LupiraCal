@@ -68,6 +68,26 @@ describe('calItem module', () => {
     expect(await titles()).toEqual([{ id: 'a', title: 'Mine' }]);
   });
 
+  it('keeps occurrence identities as keys and indexes the series as it deviates', async () => {
+    const e = engine();
+    const change = serverChange('Weekly', 0);
+    Object.assign(change.item, {
+      recurrenceRule: 'FREQ=WEEKLY;COUNT=3',
+      excludedOccurrences: ['2026-08-17T11:00:00+02:00'],
+      occurrenceOverrides: [{ originalStart: '2026-08-24T09:00:00+00:00', startsAt: '2026-08-24T12:00:00Z', endsAt: null, title: 'Moved', description: null, status: null, locationLabel: null }],
+    });
+    pages.push({ changed: [change], deleted: [] });
+    await e.sync();
+
+    const doc = (await e.doc<ItemDoc, unknown>('cal.item', 'a'))!.doc;
+    expect(doc.excludedOccurrences).toEqual(['2026-08-17T09:00:00Z']);
+    expect(doc.occurrenceOverrides?.[0].originalStart).toBe('2026-08-24T09:00:00Z');
+    expect(await db.all('SELECT original_start, start_utc, title FROM item_occurrences ORDER BY start_utc')).toEqual([
+      { original_start: '2026-08-10T09:00:00Z', start_utc: '2026-08-10T09:00:00.000Z', title: null },
+      { original_start: '2026-08-24T09:00:00Z', start_utc: '2026-08-24T12:00:00.000Z', title: 'Moved' },
+    ]);
+  });
+
   it('drops a deleted item from every index table', async () => {
     const e = engine();
     pages.push({ changed: [serverChange('Server', 0)], deleted: [] });

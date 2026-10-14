@@ -23,15 +23,18 @@ export async function calendarsForVisibility(tx: Tx): Promise<CalendarVisibility
 }
 
 type OccurrenceRow = {
-  item_id: string; title: string | null; item_status: string | null; all_day: number;
+  item_id: string; original_start: string | null; title: string | null; item_status: string | null; all_day: number;
   start_utc: string; end_utc: string | null; start_day: string;
 };
+
+/** An occurrence's columns, read as that occurrence (its own title and status over the item's). */
+const OCCURRENCE = `o.item_id, o.original_start, COALESCE(o.title, i.title) AS title, COALESCE(o.status, i.status) AS item_status,
+            o.all_day, o.start_utc, o.end_utc, o.start_day`;
 
 /** Occurrences of the items you're on, with your RSVP and reminder. */
 export async function myOccurrences(tx: Tx, contactId: string, fromDay: string, toDay: string): Promise<MyOccurrence[]> {
   const rows = await tx.all<OccurrenceRow & { place: string | null; rsvp: string; reminder_mode: string | null; reminder_minutes: number | null }>(
-    `SELECT o.item_id, i.title, i.status AS item_status, i.location_label AS place, o.all_day, o.start_utc, o.end_utc, o.start_day,
-            a.status AS rsvp, a.reminder_mode, a.reminder_minutes
+    `SELECT ${OCCURRENCE}, i.location_label AS place, a.status AS rsvp, a.reminder_mode, a.reminder_minutes
      FROM item_occurrences o
      JOIN item_attendees a ON a.item_id = o.item_id AND a.contact_id = ?
      JOIN item_index i ON i.id = o.item_id
@@ -49,7 +52,7 @@ export async function myOccurrences(tx: Tx, contactId: string, fromDay: string, 
 /** Occurrences in shown calendars that start in the range, never availability entries; `rsvp` is yours. */
 export async function shownOccurrences(tx: Tx, fromDay: string, toDay: string, calendarIds: string[], contactId: string | null): Promise<ShownOccurrence[]> {
   const rows = await tx.all<OccurrenceRow & { rsvp: string | null }>(
-    `SELECT o.item_id, i.title, i.status AS item_status, o.all_day, o.start_utc, o.end_utc, o.start_day,
+    `SELECT ${OCCURRENCE},
             (SELECT a.status FROM item_attendees a WHERE a.item_id = o.item_id AND a.contact_id = ?) AS rsvp
      FROM item_occurrences o
      JOIN item_index i ON i.id = o.item_id
@@ -114,7 +117,7 @@ async function contactNames(tx: Tx, ids: string[]): Promise<Map<string, string>>
 
 function occurrenceOf(r: OccurrenceRow) {
   return {
-    itemId: r.item_id, title: r.title, itemStatus: r.item_status, allDay: r.all_day === 1,
+    itemId: r.item_id, originalStart: r.original_start, title: r.title, itemStatus: r.item_status, allDay: r.all_day === 1,
     startUtc: r.start_utc, endUtc: r.end_utc, startDay: r.start_day,
   };
 }

@@ -1,4 +1,4 @@
-import { expandRecurrence } from '@lupira/cal-domain/recurrence';
+import { expandSeries } from '@lupira/cal-domain/seriesOccurrences';
 import { ymd } from '@danbro96/lupira-domain-core/time';
 import type { ContactDoc, ItemDoc } from './docTypes';
 
@@ -9,8 +9,13 @@ import type { ContactDoc, ItemDoc } from './docTypes';
 export type OccurrenceRow = {
   source: 'item' | 'birthday';
   sourceId: string;
+  /** The occurrence's key in its series; null for a one-off item and for birthdays. */
+  originalStart: string | null;
   startUtc: string;
   endUtc: string | null;
+  /** This occurrence's own title and status where it changes them; null inherits the item's. */
+  title: string | null;
+  status: string | null;
   /** Grid bucket. Timed occurrences bucket by the DEVICE's local day (grids are local); all-day occurrences
    *  keep their calendar date verbatim (an all-day event belongs to its date in every timezone). */
   startDay: string;
@@ -45,26 +50,24 @@ export function occurrenceRowsForItem(doc: ItemDoc, horizon: Horizon): Occurrenc
     ? (doc.endDate ? new Date(`${doc.endDate}T00:00:00Z`) : null)
     : (doc.endsAt ? new Date(doc.endsAt) : null);
   const durationMs = end && end.getTime() > start.getTime() ? end.getTime() - start.getTime() : null;
+  const recurring = !!doc.recurrenceRule?.trim();
 
-  let starts: Date[];
-  if (doc.recurrenceRule) {
-    // Outside the supported rule subset → degrade to the anchor occurrence (same as an unexpandable rule
-    // on the server would at least show its first instance) rather than dropping the item from grids.
-    starts = expandRecurrence(doc.recurrenceRule, start, horizon.start, horizon.end, allDay ? null : doc.startTimezone ?? null)
-      ?? [start];
-  } else {
-    const inWindow = start.getTime() >= horizon.start.getTime() && start.getTime() < horizon.end.getTime();
-    starts = inWindow ? [start] : [];
-  }
-
-  return starts.map((s) => ({
-    source: 'item',
-    sourceId: doc.id,
-    startUtc: s.toISOString(),
-    endUtc: durationMs !== null ? new Date(s.getTime() + durationMs).toISOString() : null,
-    startDay: allDay ? utcDayKey(s) : ymd(s),
-    allDay,
-  }));
+  return expandSeries(doc, horizon.start, horizon.end).map((o) => {
+    const s = new Date(o.start);
+    const changedEnd = o.change?.endsAt ? Date.parse(o.change.endsAt) : null;
+    const endMs = changedEnd !== null ? (changedEnd > s.getTime() ? changedEnd : null) : durationMs !== null ? s.getTime() + durationMs : null;
+    return {
+      source: 'item',
+      sourceId: doc.id,
+      originalStart: recurring ? o.originalStart : null,
+      startUtc: s.toISOString(),
+      endUtc: endMs !== null ? new Date(endMs).toISOString() : null,
+      title: o.change?.title ?? null,
+      status: o.change?.status ?? null,
+      startDay: allDay ? utcDayKey(s) : ymd(s),
+      allDay,
+    };
+  });
 }
 
 /** Birthdays synthesize straight into the occurrence table — never stored as items (matching the server's
@@ -82,8 +85,11 @@ export function birthdayRows(contact: ContactDoc, horizon: Horizon): OccurrenceR
     rows.push({
       source: 'birthday',
       sourceId: contact.id,
+      originalStart: null,
       startUtc: start.toISOString(),
       endUtc: null,
+      title: null,
+      status: null,
       startDay: utcDayKey(start),
       allDay: true,
     });

@@ -45,6 +45,22 @@ describe('gridRowsBetween', () => {
     ]);
   });
 
+  it('reads a changed occurrence under its own title and status, keyed by its series start', async () => {
+    await db.exclusive((tx) => writeItemIndex(tx, 'weekly', {
+      doc: {
+        id: 'weekly', title: 'Training', status: 'Confirmed', isAllDay: false, startsAt: '2026-08-03T17:00:00.000Z', recurrenceRule: 'FREQ=WEEKLY;COUNT=2',
+        occurrenceOverrides: [{ originalStart: '2026-08-10T17:00:00Z', startsAt: '2026-08-11T17:00:00Z', endsAt: null, title: 'Match', description: null, status: 'Tentative', locationLabel: null }],
+        calendars: [{ calendarId: 'cal-a', status: 'Accepted' }],
+      },
+      guards: emptyItemGuards(),
+    }));
+    const rows = (await gridRowsBetween(db, '2026-08-01', '2026-08-31')).filter((r) => r.source_id === 'weekly');
+    expect(rows.map((r) => [r.original_start, r.start_day, r.title, r.status])).toEqual([
+      ['2026-08-03T17:00:00Z', '2026-08-03', 'Training', 'Confirmed'],
+      ['2026-08-10T17:00:00Z', '2026-08-11', 'Match', 'Tentative'],
+    ]);
+  });
+
   it('drops hidden calendars and, when asked, birthdays', async () => {
     const rows = await gridRowsBetween(db, '2026-08-01', '2026-08-31', { calendarIds: ['cal-a'], birthdays: false });
     expect(rows.map((r) => r.source_id)).toEqual(['meet']);

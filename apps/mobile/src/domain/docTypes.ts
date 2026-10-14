@@ -3,6 +3,7 @@
  *  full server JSON and only reads/writes the fields the reducers know. */
 
 import type { SectionGuard } from '@danbro96/lupira-sync-core/lww';
+import type { OccurrenceChange } from '@lupira/cal-domain/seriesOccurrences';
 
 export type { SectionGuard };
 
@@ -46,6 +47,12 @@ export type ItemDoc = {
   startTimezone?: string | null;
   endTimezone?: string | null;
   recurrenceRule?: string | null;
+  /** Occurrence keys (`occurrenceKey`), as the feed adapter normalizes them. */
+  excludedOccurrences?: string[] | null;
+  extraOccurrences?: string[] | null;
+  occurrenceOverrides?: OccurrenceChange[] | null;
+  /** The series this one continues from a "this and following" change. */
+  continuesItemId?: string | null;
   category?: string | null;
   tags?: string[] | null;
   parentItemId?: string | null;

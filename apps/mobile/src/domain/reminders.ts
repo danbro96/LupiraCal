@@ -9,9 +9,11 @@ import type { NotifyPrefs } from './notificationPrefs';
 
 export type NotifyContext = { now: Date; zone: string; prefs: NotifyPrefs };
 
-/** One occurrence of an item you're on, with your RSVP and your own reminder. */
+/** One occurrence of an item you're on, with your RSVP and your own reminder. `originalStart` names it in its
+ *  series (null for a one-off item); title and status are the occurrence's own. */
 export type MyOccurrence = {
   itemId: string;
+  originalStart: string | null;
   title: string | null;
   itemStatus: string | null;
   place: string | null;
@@ -42,7 +44,8 @@ export const UNTITLED = 'Untitled event';
 const MINUTE = 60_000;
 const DAY = 86_400_000;
 
-export const itemUrl = (itemId: string) => `lupiracalendar://item/${itemId}`;
+export const itemUrl = (itemId: string, occurrence?: string | null) =>
+  `lupiracalendar://item/${itemId}${occurrence ? `?occ=${occurrence}` : ''}`;
 export const contactUrl = (contactId: string) => `lupiracalendar://contact/${contactId}`;
 const APP_URL = 'lupiracalendar://';
 
@@ -111,7 +114,7 @@ export function eventReminders(mine: readonly MyOccurrence[], { now, zone, prefs
       channel: 'reminders',
       title: o.title || UNTITLED,
       body: o.place ? `${when} · ${o.place}` : when,
-      data: { url: itemUrl(o.itemId), itemId: o.itemId },
+      data: { url: itemUrl(o.itemId, o.originalStart), itemId: o.itemId },
     });
   }
   return out;
