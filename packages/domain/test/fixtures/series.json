@@ -1,0 +1,317 @@
+[
+  {
+    "Name": "exclude-add-move-cancel-and-pull-in",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-01T09:00:00+00:00",
+      "EndsAt": "2026-07-01T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY",
+      "ExcludedOccurrences": [
+        "2026-07-08T09:00:00+00:00"
+      ],
+      "ExtraOccurrences": [
+        "2026-07-10T12:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-07-15T09:00:00+00:00",
+          "StartsAt": "2026-07-15T14:00:00+00:00",
+          "Title": "Moved"
+        },
+        {
+          "OriginalStart": "2026-07-22T09:00:00+00:00",
+          "Status": 2
+        },
+        {
+          "OriginalStart": "2026-07-29T09:00:00+00:00",
+          "StartsAt": "2026-07-28T09:00:00+00:00"
+        }
+      ]
+    },
+    "WindowStart": "2026-07-01T00:00:00+00:00",
+    "WindowEnd": "2026-07-29T00:00:00+00:00",
+    "Expected": [
+      {
+        "OriginalStart": "2026-07-01T09:00:00+00:00",
+        "Start": "2026-07-01T09:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-07-10T12:00:00+00:00",
+        "Start": "2026-07-10T12:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-07-15T09:00:00+00:00",
+        "Start": "2026-07-15T14:00:00+00:00",
+        "Change": {
+          "OriginalStart": "2026-07-15T09:00:00+00:00",
+          "StartsAt": "2026-07-15T14:00:00+00:00",
+          "Title": "Moved"
+        }
+      },
+      {
+        "OriginalStart": "2026-07-29T09:00:00+00:00",
+        "Start": "2026-07-28T09:00:00+00:00",
+        "Change": {
+          "OriginalStart": "2026-07-29T09:00:00+00:00",
+          "StartsAt": "2026-07-28T09:00:00+00:00"
+        }
+      }
+    ]
+  },
+  {
+    "Name": "excluded-extra",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-01T09:00:00+00:00",
+      "EndsAt": "2026-07-01T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;COUNT=2",
+      "ExcludedOccurrences": [
+        "2026-07-03T12:00:00+00:00"
+      ],
+      "ExtraOccurrences": [
+        "2026-07-03T12:00:00+00:00"
+      ]
+    },
+    "WindowStart": "2026-07-01T00:00:00+00:00",
+    "WindowEnd": "2026-08-01T00:00:00+00:00",
+    "Expected": [
+      {
+        "OriginalStart": "2026-07-01T09:00:00+00:00",
+        "Start": "2026-07-01T09:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-07-08T09:00:00+00:00",
+        "Start": "2026-07-08T09:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "Name": "moved-onto-another-start",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-01T09:00:00+00:00",
+      "EndsAt": "2026-07-01T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;COUNT=3",
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-07-08T09:00:00+00:00",
+          "StartsAt": "2026-07-15T09:00:00+00:00",
+          "Title": "Moved"
+        }
+      ]
+    },
+    "WindowStart": "2026-07-01T00:00:00+00:00",
+    "WindowEnd": "2026-08-01T00:00:00+00:00",
+    "Expected": [
+      {
+        "OriginalStart": "2026-07-01T09:00:00+00:00",
+        "Start": "2026-07-01T09:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-07-08T09:00:00+00:00",
+        "Start": "2026-07-15T09:00:00+00:00",
+        "Change": {
+          "OriginalStart": "2026-07-08T09:00:00+00:00",
+          "StartsAt": "2026-07-15T09:00:00+00:00",
+          "Title": "Moved"
+        }
+      },
+      {
+        "OriginalStart": "2026-07-15T09:00:00+00:00",
+        "Start": "2026-07-15T09:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "Name": "moved-out-of-the-window",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-01T09:00:00+00:00",
+      "EndsAt": "2026-07-01T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY",
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-07-08T09:00:00+00:00",
+          "StartsAt": "2026-08-20T09:00:00+00:00"
+        }
+      ]
+    },
+    "WindowStart": "2026-07-01T00:00:00+00:00",
+    "WindowEnd": "2026-07-20T00:00:00+00:00",
+    "Expected": [
+      {
+        "OriginalStart": "2026-07-01T09:00:00+00:00",
+        "Start": "2026-07-01T09:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-07-15T09:00:00+00:00",
+        "Start": "2026-07-15T09:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "Name": "change-keyed-off-the-series",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-01T09:00:00+00:00",
+      "EndsAt": "2026-07-01T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;COUNT=2",
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-07-02T09:00:00+00:00",
+          "StartsAt": "2026-07-03T09:00:00+00:00"
+        }
+      ]
+    },
+    "WindowStart": "2026-07-01T00:00:00+00:00",
+    "WindowEnd": "2026-08-01T00:00:00+00:00",
+    "Expected": [
+      {
+        "OriginalStart": "2026-07-01T09:00:00+00:00",
+        "Start": "2026-07-01T09:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-07-08T09:00:00+00:00",
+        "Start": "2026-07-08T09:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "Name": "change-on-an-extra",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-01T09:00:00+00:00",
+      "EndsAt": "2026-07-01T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;COUNT=2",
+      "ExtraOccurrences": [
+        "2026-07-03T12:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-07-03T12:00:00+00:00",
+          "StartsAt": "2026-07-04T12:00:00+00:00",
+          "Title": "Extra moved"
+        }
+      ]
+    },
+    "WindowStart": "2026-07-01T00:00:00+00:00",
+    "WindowEnd": "2026-08-01T00:00:00+00:00",
+    "Expected": [
+      {
+        "OriginalStart": "2026-07-01T09:00:00+00:00",
+        "Start": "2026-07-01T09:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-07-03T12:00:00+00:00",
+        "Start": "2026-07-04T12:00:00+00:00",
+        "Change": {
+          "OriginalStart": "2026-07-03T12:00:00+00:00",
+          "StartsAt": "2026-07-04T12:00:00+00:00",
+          "Title": "Extra moved"
+        }
+      },
+      {
+        "OriginalStart": "2026-07-08T09:00:00+00:00",
+        "Start": "2026-07-08T09:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "Name": "zoned-across-the-autumn-shift",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-18T16:00:00+00:00",
+          "StartsAt": "2026-10-19T16:00:00+00:00",
+          "EndsAt": "2026-10-19T19:00:00+00:00",
+          "Title": "Monday"
+        }
+      ]
+    },
+    "WindowStart": "2026-10-01T00:00:00+00:00",
+    "WindowEnd": "2026-11-16T00:00:00+00:00",
+    "Expected": [
+      {
+        "OriginalStart": "2026-10-04T16:00:00+00:00",
+        "Start": "2026-10-04T16:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-10-11T16:00:00+00:00",
+        "Start": "2026-10-11T16:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-10-18T16:00:00+00:00",
+        "Start": "2026-10-19T16:00:00+00:00",
+        "Change": {
+          "OriginalStart": "2026-10-18T16:00:00+00:00",
+          "StartsAt": "2026-10-19T16:00:00+00:00",
+          "EndsAt": "2026-10-19T19:00:00+00:00",
+          "Title": "Monday"
+        }
+      },
+      {
+        "OriginalStart": "2026-10-25T17:00:00+00:00",
+        "Start": "2026-10-25T17:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-11-08T17:00:00+00:00",
+        "Start": "2026-11-08T17:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-11-15T17:00:00+00:00",
+        "Start": "2026-11-15T17:00:00+00:00"
+      }
+    ]
+  },
+  {
+    "Name": "all-day-with-a-longer-occurrence",
+    "Item": {
+      "IsAllDay": true,
+      "StartDate": "2026-07-27",
+      "EndDate": "2026-07-28",
+      "RecurrenceRule": "FREQ=WEEKLY;COUNT=3",
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-08-03T00:00:00+00:00",
+          "StartsAt": "2026-08-04T00:00:00+00:00",
+          "EndsAt": "2026-08-07T00:00:00+00:00"
+        }
+      ]
+    },
+    "WindowStart": "2026-07-01T00:00:00+00:00",
+    "WindowEnd": "2026-09-01T00:00:00+00:00",
+    "Expected": [
+      {
+        "OriginalStart": "2026-07-27T00:00:00+00:00",
+        "Start": "2026-07-27T00:00:00+00:00"
+      },
+      {
+        "OriginalStart": "2026-08-03T00:00:00+00:00",
+        "Start": "2026-08-04T00:00:00+00:00",
+        "Change": {
+          "OriginalStart": "2026-08-03T00:00:00+00:00",
+          "StartsAt": "2026-08-04T00:00:00+00:00",
+          "EndsAt": "2026-08-07T00:00:00+00:00"
+        }
+      },
+      {
+        "OriginalStart": "2026-08-10T00:00:00+00:00",
+        "Start": "2026-08-10T00:00:00+00:00"
+      }
+    ]
+  }
+]

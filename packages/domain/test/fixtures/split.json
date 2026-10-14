@@ -1,0 +1,294 @@
+[
+  {
+    "Name": "count",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO;COUNT=5"
+    },
+    "At": "2026-07-20T09:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO;COUNT=2"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-20T09:00:00+00:00",
+      "EndsAt": "2026-07-20T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO;COUNT=3"
+    },
+    "SourceKey": "split-count",
+    "ContinuationId": "d4edb32d-e27f-b4fc-0485-30bf3e7a459c",
+    "ParticipationId": "23f70c61-8e28-47ea-ee01-6ffdc15b75fe",
+    "ContinuedParticipationId": "405d58bf-4f11-dc66-66cc-bdbf0dae2e02"
+  },
+  {
+    "Name": "open",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO"
+    },
+    "At": "2026-07-27T09:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO;UNTIL=20260720T090000Z"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-27T09:00:00+00:00",
+      "EndsAt": "2026-07-27T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO"
+    },
+    "SourceKey": "split-open",
+    "ContinuationId": "6fd93ca4-5bef-3933-9da9-c362d571776f",
+    "ParticipationId": "ff677018-f81c-5abe-07da-12e1f3fc182a",
+    "ContinuedParticipationId": "29f3da70-6554-9d7f-0396-8f93a09a58e8"
+  },
+  {
+    "Name": "until",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=DAILY;UNTIL=20260715T090000Z"
+    },
+    "At": "2026-07-10T09:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=DAILY;UNTIL=20260709T090000Z"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-10T09:00:00+00:00",
+      "EndsAt": "2026-07-10T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=DAILY;UNTIL=20260715T090000Z"
+    },
+    "SourceKey": "split-until",
+    "ContinuationId": "07d81f87-6e7c-bfb2-f69c-ff24b8beaf00",
+    "ParticipationId": "39bd0a28-6116-e272-4fda-afd1ca154bfc",
+    "ContinuedParticipationId": "5ffde75b-51c8-9125-6a6e-0a5b49446754"
+  },
+  {
+    "Name": "all-day",
+    "Item": {
+      "IsAllDay": true,
+      "StartDate": "2026-07-04",
+      "EndDate": "2026-07-05",
+      "RecurrenceRule": "FREQ=WEEKLY"
+    },
+    "At": "2026-07-18T00:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": true,
+      "StartDate": "2026-07-04",
+      "EndDate": "2026-07-05",
+      "RecurrenceRule": "FREQ=WEEKLY;UNTIL=20260711"
+    },
+    "Following": {
+      "IsAllDay": true,
+      "StartDate": "2026-07-18",
+      "EndDate": "2026-07-19",
+      "RecurrenceRule": "FREQ=WEEKLY"
+    },
+    "SourceKey": "split-all-day",
+    "ContinuationId": "fd7413fd-b340-993a-5aa5-7922afb3f22f",
+    "ParticipationId": "e93405d5-0231-bdb1-cb2c-2bd4b61c880a",
+    "ContinuedParticipationId": "0ab450b4-0622-62a3-8731-d4d00750a161"
+  },
+  {
+    "Name": "zoned-across-the-autumn-shift",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU"
+    },
+    "At": "2026-11-01T17:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261025T170000Z"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2026-11-01T17:00:00+00:00",
+      "EndsAt": "2026-11-01T20:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU"
+    },
+    "SourceKey": "split-zoned-across-the-autumn-shift",
+    "ContinuationId": "c9bc29ef-0b03-6973-ca79-07a0f43a038a",
+    "ParticipationId": "9919a360-c29f-35e3-0c19-a7da2968417b",
+    "ContinuedParticipationId": "6da271f2-f597-7f8e-7186-9dfec6c0779e"
+  },
+  {
+    "Name": "sub-second-start",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00.5+00:00",
+      "EndsAt": "2026-07-06T10:00:00.5+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=DAILY"
+    },
+    "At": "2026-07-09T09:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00.5+00:00",
+      "EndsAt": "2026-07-06T10:00:00.5+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=DAILY;UNTIL=20260708T090000Z"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-09T09:00:00+00:00",
+      "EndsAt": "2026-07-09T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=DAILY"
+    },
+    "SourceKey": "split-sub-second-start",
+    "ContinuationId": "2f57e7e1-87a4-d92b-d01b-b58363436851",
+    "ParticipationId": "45b57e59-c5dd-b164-e996-ce9b3d40d1fe",
+    "ContinuedParticipationId": "afc62f87-23b2-7c4e-af99-75069de5b053"
+  },
+  {
+    "Name": "deviations-go-with-their-part",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO",
+      "ExcludedOccurrences": [
+        "2026-07-13T09:00:00+00:00",
+        "2026-08-03T09:00:00+00:00"
+      ],
+      "ExtraOccurrences": [
+        "2026-07-15T12:00:00+00:00",
+        "2026-07-29T12:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-07-06T09:00:00+00:00",
+          "Title": "First"
+        },
+        {
+          "OriginalStart": "2026-07-27T09:00:00+00:00",
+          "StartsAt": "2026-07-19T09:00:00+00:00",
+          "Title": "Pulled earlier"
+        }
+      ]
+    },
+    "At": "2026-07-20T09:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO;UNTIL=20260713T090000Z",
+      "ExcludedOccurrences": [
+        "2026-07-13T09:00:00+00:00"
+      ],
+      "ExtraOccurrences": [
+        "2026-07-15T12:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-07-06T09:00:00+00:00",
+          "Title": "First"
+        }
+      ]
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-20T09:00:00+00:00",
+      "EndsAt": "2026-07-20T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO",
+      "ExcludedOccurrences": [
+        "2026-08-03T09:00:00+00:00"
+      ],
+      "ExtraOccurrences": [
+        "2026-07-29T12:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-07-27T09:00:00+00:00",
+          "StartsAt": "2026-07-19T09:00:00+00:00",
+          "Title": "Pulled earlier"
+        }
+      ]
+    },
+    "SourceKey": "split-deviations-go-with-their-part",
+    "ContinuationId": "a66fb787-d137-5a3a-aff0-3d61a3e0d0f8",
+    "ParticipationId": "a5ef0a19-f983-1795-5d82-5ef2adf08e52",
+    "ContinuedParticipationId": "9f605e66-eb61-d0bc-5301-95a227149e31"
+  },
+  {
+    "Name": "first-occurrence",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO"
+    },
+    "At": "2026-07-06T09:00:00+00:00",
+    "SourceKey": "split-first-occurrence",
+    "ContinuationId": "a8866ca0-0b19-caf8-706e-1bfbc18e2ec5",
+    "ParticipationId": "4b4e04f0-6a72-9a1a-2327-550cc6252a1e",
+    "ContinuedParticipationId": "135f4c8d-c408-613d-7361-eb6b11871f74"
+  },
+  {
+    "Name": "extra-only",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO",
+      "ExtraOccurrences": [
+        "2026-07-15T12:00:00+00:00"
+      ]
+    },
+    "At": "2026-07-15T12:00:00+00:00",
+    "SourceKey": "split-extra-only",
+    "ContinuationId": "ba7f21fc-3915-1f68-8b6e-35221e134f0e",
+    "ParticipationId": "c8e478e6-a644-ffd9-5b63-8db00ca6d820",
+    "ContinuedParticipationId": "19a9a140-8563-78dd-aaff-fa5073cd6fa8"
+  },
+  {
+    "Name": "off-the-series",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T11:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO"
+    },
+    "At": "2026-07-14T09:00:00+00:00",
+    "SourceKey": "split-off-the-series",
+    "ContinuationId": "2b82ede6-fb79-9974-73d9-289d2e144cb9",
+    "ParticipationId": "da7efb75-4ce1-35a3-84d9-2d5122de59e7",
+    "ContinuedParticipationId": "497471e1-2e82-c579-a1d6-b7abdb839479"
+  }
+]

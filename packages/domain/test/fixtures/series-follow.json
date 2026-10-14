@@ -1,0 +1,654 @@
+[
+  {
+    "Name": "new-time-across-the-autumn-shift",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T17:00:00+00:00",
+      "EndsAt": "2026-10-04T20:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "ExpectedRule": "FREQ=WEEKLY;BYDAY=SU",
+    "ExpectedExcluded": [
+      "2026-10-18T17:00:00+00:00",
+      "2026-11-01T18:00:00+00:00"
+    ],
+    "ExpectedOverrides": [
+      {
+        "OriginalStart": "2026-10-11T17:00:00+00:00",
+        "Title": "Renamed"
+      },
+      {
+        "OriginalStart": "2026-10-25T18:00:00+00:00",
+        "StartsAt": "2026-10-26T17:00:00+00:00",
+        "EndsAt": "2026-10-26T19:00:00+00:00",
+        "Status": 0
+      }
+    ]
+  },
+  {
+    "Name": "new-day",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-05T16:00:00+00:00",
+      "EndsAt": "2026-10-05T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "ExpectedRule": "FREQ=WEEKLY;BYDAY=MO",
+    "ExpectedExcluded": [
+      "2026-10-19T16:00:00+00:00",
+      "2026-11-02T17:00:00+00:00"
+    ],
+    "ExpectedOverrides": [
+      {
+        "OriginalStart": "2026-10-12T16:00:00+00:00",
+        "Title": "Renamed"
+      },
+      {
+        "OriginalStart": "2026-10-26T17:00:00+00:00",
+        "StartsAt": "2026-10-26T17:00:00+00:00",
+        "EndsAt": "2026-10-26T19:00:00+00:00",
+        "Status": 0
+      }
+    ]
+  },
+  {
+    "Name": "new-zone-same-wall-clock",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T17:00:00+00:00",
+      "EndsAt": "2026-10-04T20:00:00+00:00",
+      "StartTimezone": "Europe/London",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "ExpectedRule": "FREQ=WEEKLY;BYDAY=SU",
+    "ExpectedExcluded": [
+      "2026-10-18T17:00:00+00:00",
+      "2026-11-01T18:00:00+00:00"
+    ],
+    "ExpectedOverrides": [
+      {
+        "OriginalStart": "2026-10-11T17:00:00+00:00",
+        "Title": "Renamed"
+      },
+      {
+        "OriginalStart": "2026-10-25T18:00:00+00:00",
+        "StartsAt": "2026-10-26T17:00:00+00:00",
+        "EndsAt": "2026-10-26T19:00:00+00:00",
+        "Status": 0
+      }
+    ]
+  },
+  {
+    "Name": "rule-no-longer-has-them",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=MONTHLY;BYDAY=1SU",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "ExpectedRule": "FREQ=MONTHLY;BYDAY=1SU",
+    "ExpectedExcluded": [
+      "2026-11-01T17:00:00+00:00"
+    ]
+  },
+  {
+    "Name": "stops-recurring",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    }
+  },
+  {
+    "Name": "extra-stays-put",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-10-14T10:00:00+00:00"
+      ],
+      "ExtraOccurrences": [
+        "2026-10-14T10:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T17:00:00+00:00",
+      "EndsAt": "2026-10-04T20:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "ExpectedRule": "FREQ=WEEKLY;BYDAY=SU",
+    "ExpectedExcluded": [
+      "2026-10-14T10:00:00+00:00"
+    ],
+    "ExpectedOverrides": [
+      {
+        "OriginalStart": "2026-10-11T17:00:00+00:00",
+        "Title": "Renamed"
+      },
+      {
+        "OriginalStart": "2026-10-25T18:00:00+00:00",
+        "StartsAt": "2026-10-26T17:00:00+00:00",
+        "EndsAt": "2026-10-26T19:00:00+00:00",
+        "Status": 0
+      }
+    ]
+  },
+  {
+    "Name": "bounded-instant-moves-along",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261025T170000Z",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T17:00:00+00:00",
+      "EndsAt": "2026-10-04T20:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261025T170000Z",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "ExpectedRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261025T180000Z",
+    "ExpectedExcluded": [
+      "2026-10-18T17:00:00+00:00"
+    ],
+    "ExpectedOverrides": [
+      {
+        "OriginalStart": "2026-10-11T17:00:00+00:00",
+        "Title": "Renamed"
+      },
+      {
+        "OriginalStart": "2026-10-25T18:00:00+00:00",
+        "StartsAt": "2026-10-26T17:00:00+00:00",
+        "EndsAt": "2026-10-26T19:00:00+00:00",
+        "Status": 0
+      }
+    ]
+  },
+  {
+    "Name": "bounded-wall-clock-moves-along",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261025T180000",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T17:00:00+00:00",
+      "EndsAt": "2026-10-04T20:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261025T180000",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "ExpectedRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261025T190000",
+    "ExpectedExcluded": [
+      "2026-10-18T17:00:00+00:00"
+    ],
+    "ExpectedOverrides": [
+      {
+        "OriginalStart": "2026-10-11T17:00:00+00:00",
+        "Title": "Renamed"
+      },
+      {
+        "OriginalStart": "2026-10-25T18:00:00+00:00",
+        "StartsAt": "2026-10-26T17:00:00+00:00",
+        "EndsAt": "2026-10-26T19:00:00+00:00",
+        "Status": 0
+      }
+    ]
+  },
+  {
+    "Name": "bounded-count-is-kept",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU;COUNT=5",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T17:00:00+00:00",
+      "EndsAt": "2026-10-04T20:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU;COUNT=5",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "ExpectedRule": "FREQ=WEEKLY;BYDAY=SU;COUNT=5",
+    "ExpectedExcluded": [
+      "2026-10-18T17:00:00+00:00",
+      "2026-11-01T18:00:00+00:00"
+    ],
+    "ExpectedOverrides": [
+      {
+        "OriginalStart": "2026-10-11T17:00:00+00:00",
+        "Title": "Renamed"
+      },
+      {
+        "OriginalStart": "2026-10-25T18:00:00+00:00",
+        "StartsAt": "2026-10-26T17:00:00+00:00",
+        "EndsAt": "2026-10-26T19:00:00+00:00",
+        "Status": 0
+      }
+    ]
+  },
+  {
+    "Name": "new-rule-taken-as-written",
+    "Before": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T16:00:00+00:00",
+      "EndsAt": "2026-10-04T19:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261025T170000Z",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "After": {
+      "IsAllDay": false,
+      "StartsAt": "2026-10-04T17:00:00+00:00",
+      "EndsAt": "2026-10-04T20:00:00+00:00",
+      "StartTimezone": "Europe/Stockholm",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261101T170000Z",
+      "ExcludedOccurrences": [
+        "2026-10-18T16:00:00+00:00",
+        "2026-11-01T17:00:00+00:00"
+      ],
+      "OccurrenceOverrides": [
+        {
+          "OriginalStart": "2026-10-11T16:00:00+00:00",
+          "Title": "Renamed"
+        },
+        {
+          "OriginalStart": "2026-10-25T17:00:00+00:00",
+          "StartsAt": "2026-10-26T17:00:00+00:00",
+          "EndsAt": "2026-10-26T19:00:00+00:00",
+          "Status": 0
+        }
+      ]
+    },
+    "ExpectedRule": "FREQ=WEEKLY;BYDAY=SU;UNTIL=20261101T170000Z",
+    "ExpectedExcluded": [
+      "2026-10-18T17:00:00+00:00"
+    ],
+    "ExpectedOverrides": [
+      {
+        "OriginalStart": "2026-10-11T17:00:00+00:00",
+        "Title": "Renamed"
+      },
+      {
+        "OriginalStart": "2026-10-25T18:00:00+00:00",
+        "StartsAt": "2026-10-26T17:00:00+00:00",
+        "EndsAt": "2026-10-26T19:00:00+00:00",
+        "Status": 0
+      }
+    ]
+  },
+  {
+    "Name": "all-day-by-whole-days",
+    "Before": {
+      "IsAllDay": true,
+      "StartDate": "2026-10-03",
+      "EndDate": "2026-10-04",
+      "RecurrenceRule": "FREQ=WEEKLY;UNTIL=20261031",
+      "ExcludedOccurrences": [
+        "2026-10-17T00:00:00+00:00"
+      ]
+    },
+    "After": {
+      "IsAllDay": true,
+      "StartDate": "2026-10-04",
+      "EndDate": "2026-10-05",
+      "RecurrenceRule": "FREQ=WEEKLY;UNTIL=20261031",
+      "ExcludedOccurrences": [
+        "2026-10-17T00:00:00+00:00"
+      ]
+    },
+    "ExpectedRule": "FREQ=WEEKLY;UNTIL=20261101",
+    "ExpectedExcluded": [
+      "2026-10-18T00:00:00+00:00"
+    ]
+  }
+]

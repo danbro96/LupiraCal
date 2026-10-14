@@ -116,7 +116,8 @@ export function expandRecurrence(
 
   const zone = isValidTimeZone(timeZone) && timeZone !== 'UTC' ? timeZone : null;
   const toInstant = zone ? (wall: number) => fromWallMs(wall, zone) : (wall: number) => wall;
-  const anchor = zone ? new Date(toWallMs(start.getTime(), zone)) : start;
+  const startMs = Math.floor(start.getTime() / 1000) * 1000;
+  const anchor = new Date(zone ? toWallMs(startMs, zone) : startMs);
 
   const out: Date[] = [];
   let produced = 0;
