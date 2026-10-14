@@ -8,8 +8,8 @@ import type { ItemStatus } from './itemStatus';
 
 /**
  * A change to one occurrence of a recurring item, identified by the start it would have had unchanged
- *             (DateTimeOffset OccurrenceOverride.OriginalStart, UTC; an all-day series uses the date at 00:00Z). Null members inherit from the series;
- *             ItemStatus.Cancelled drops the occurrence.
+ *             (DateTimeOffset OccurrenceOverride.OriginalStart, UTC; an all-day series uses the date at 00:00Z, and DateTimeOffset? OccurrenceOverride.EndsAt is then the inclusive
+ *             last day at 00:00Z). Null members inherit from the series; ItemStatus.Cancelled drops the occurrence.
  */
 export interface OccurrenceOverride {
   originalStart: string;

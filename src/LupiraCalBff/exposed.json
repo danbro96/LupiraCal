@@ -15,6 +15,7 @@
       "DELETE /calendars/{calendarId}/owners",
       "DELETE /items/{id}",
       "DELETE /items/{id}/action",
+      "DELETE /items/{id}/occurrences/{originalStart}",
       "DELETE /items/{id}/participants",
       "DELETE /items/{id}/participants/{participationId}",
       "DELETE /items/{id}/prompt",
@@ -37,6 +38,7 @@
       "POST /items",
       "POST /items/drafts",
       "POST /items/{id}/metadata",
+      "POST /items/{id}/occurrences/{originalStart}/following",
       "POST /items/{id}/participants",
       "POST /items/{id}/participants/{participationId}/attend",
       "POST /items/{id}/participants/{participationId}/leave",
@@ -47,6 +49,7 @@
       "POST /me/bootstrap",
       "PUT /items/{id}",
       "PUT /items/{id}/action",
+      "PUT /items/{id}/occurrences/{originalStart}",
       "PUT /items/{id}/participants/{participationId}/reminder",
       "PUT /items/{id}/prompt"
     ],

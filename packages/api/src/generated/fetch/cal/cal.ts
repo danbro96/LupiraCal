@@ -9,6 +9,8 @@ import type {
   BootstrapRequest,
   CalendarItemDto,
   CalendarItemOccurrenceDto,
+  ChangeFollowingOccurrencesRequest,
+  ChangeOccurrenceRequest,
   ClearItemActionParams,
   ClearItemPromptParams,
   ConfirmAttendanceParams,
@@ -38,8 +40,10 @@ import type {
   RemoveItemFromCalendarParams,
   RemoveParticipantByContactParams,
   RespondToInvitationParams,
+  RestoreOccurrenceParams,
   RevokeCalendarOwnerParams,
   SearchItemsParams,
+  SeriesSplitDto,
   SetItemActionRequest,
   SetItemPromptRequest,
   SetParticipantReminderParams,
@@ -470,6 +474,120 @@ export const deleteItem = async (id: string, options?: Parameters<typeof apiRequ
     method: 'DELETE'
 
 
+  }
+);}
+
+
+export const getChangeOccurrenceUrl = (id: string,
+    originalStart: string,) => {
+
+
+
+
+  return `/api/items/${id}/occurrences/${originalStart}`
+}
+
+/**
+ * @summary Change one occurrence of a recurring item, addressed by its unmodified start (UTC, e.g. 2026-05-31T16:00:00Z; originalStart from SearchItems). Excluded=true removes it from the series; otherwise StartsAt/EndsAt/Title/Description/Status override the series for that occurrence (omitted = inherit). Replaces the occurrence's previous change.
+ */
+export const changeOccurrence = async (id: string,
+    originalStart: string,
+    changeOccurrenceRequest: ChangeOccurrenceRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<CalendarItemDto>(getChangeOccurrenceUrl(id,originalStart),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(changeOccurrenceRequest)
+  }
+);}
+
+
+export const getRestoreOccurrenceUrl = (id: string,
+    originalStart: string,
+    params?: RestoreOccurrenceParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/items/${id}/occurrences/${originalStart}?${stringifiedParams}` : `/api/items/${id}/occurrences/${originalStart}`
+}
+
+/**
+ * @summary Revert one occurrence of a recurring item to the series (drops its exclusion or override).
+ */
+export const restoreOccurrence = async (id: string,
+    originalStart: string,
+    params?: RestoreOccurrenceParams, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
+
+  return apiRequest<void>(getRestoreOccurrenceUrl(id,originalStart,params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getChangeFollowingOccurrencesUrl = (id: string,
+    originalStart: string,) => {
+
+
+
+
+  return `/api/items/${id}/occurrences/${originalStart}/following`
+}
+
+/**
+ * @summary Change one occurrence of a recurring item and every one after it, addressed by its unmodified start (UTC; originalStart from SearchItems). The series ends before it; a new series continuing it (continuesItemId) takes the rest with Changes applied, or Excluded=true deletes them. At the first occurrence the whole series is updated or deleted instead. SourceKey fixes the new series' id for offline clients; an OccurredAt older than the series' last schedule change is a 409. A one-off added occurrence can't start a series (400).
+ */
+export const changeFollowingOccurrences = async (id: string,
+    originalStart: string,
+    changeFollowingOccurrencesRequest: ChangeFollowingOccurrencesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<SeriesSplitDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<SeriesSplitDto>(getChangeFollowingOccurrencesUrl(id,originalStart),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(changeFollowingOccurrencesRequest)
   }
 );}
 

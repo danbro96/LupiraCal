@@ -28,6 +28,8 @@ import type {
   BootstrapRequest,
   CalendarItemDto,
   CalendarItemOccurrenceDto,
+  ChangeFollowingOccurrencesRequest,
+  ChangeOccurrenceRequest,
   ClearItemActionParams,
   ClearItemPromptParams,
   ConfirmAttendanceParams,
@@ -58,8 +60,10 @@ import type {
   RemoveItemFromCalendarParams,
   RemoveParticipantByContactParams,
   RespondToInvitationParams,
+  RestoreOccurrenceParams,
   RevokeCalendarOwnerParams,
   SearchItemsParams,
+  SeriesSplitDto,
   SetItemActionRequest,
   SetItemPromptRequest,
   SetParticipantReminderParams,
@@ -1302,6 +1306,270 @@ export const useDeleteItem = <TError = ProblemDetails,
         TContext
       > => {
       return useMutation(getDeleteItemMutationOptions(options), queryClient);
+    }
+    export const getChangeOccurrenceUrl = (id: string,
+    originalStart: string,) => {
+
+
+
+
+  return `/api/items/${id}/occurrences/${originalStart}`
+}
+
+/**
+ * @summary Change one occurrence of a recurring item, addressed by its unmodified start (UTC, e.g. 2026-05-31T16:00:00Z; originalStart from SearchItems). Excluded=true removes it from the series; otherwise StartsAt/EndsAt/Title/Description/Status override the series for that occurrence (omitted = inherit). Replaces the occurrence's previous change.
+ */
+export const changeOccurrence = async (id: string,
+    originalStart: string,
+    changeOccurrenceRequest: ChangeOccurrenceRequest, options?: Parameters<typeof apiRequest>[1]): Promise<CalendarItemDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<CalendarItemDto>(getChangeOccurrenceUrl(id,originalStart),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(changeOccurrenceRequest)
+  }
+);}
+
+
+
+
+
+export const getChangeOccurrenceMutationKey = () => ['changeOccurrence'] as const;
+
+export const getChangeOccurrenceMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeOccurrence>>, TError,ChangeOccurrenceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeOccurrence>>, TError,ChangeOccurrenceMutationVariables, TContext> => {
+
+const mutationKey = getChangeOccurrenceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeOccurrence>>, ChangeOccurrenceMutationVariables> = (props) => {
+          const {id,originalStart,data} = props ?? {};
+
+          return  changeOccurrence(id,originalStart,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeOccurrenceMutationResult = NonNullable<Awaited<ReturnType<typeof changeOccurrence>>>
+    export type ChangeOccurrenceMutationBody = ChangeOccurrenceRequest
+    export type ChangeOccurrenceMutationError = ProblemDetails
+    export type ChangeOccurrenceMutationVariables = {id: string;originalStart: string;data: ChangeOccurrenceRequest}
+
+    /**
+ * @summary Change one occurrence of a recurring item, addressed by its unmodified start (UTC, e.g. 2026-05-31T16:00:00Z; originalStart from SearchItems). Excluded=true removes it from the series; otherwise StartsAt/EndsAt/Title/Description/Status override the series for that occurrence (omitted = inherit). Replaces the occurrence's previous change.
+ */
+export const useChangeOccurrence = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeOccurrence>>, TError,ChangeOccurrenceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof changeOccurrence>>,
+        TError,
+        ChangeOccurrenceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getChangeOccurrenceMutationOptions(options), queryClient);
+    }
+    export const getRestoreOccurrenceUrl = (id: string,
+    originalStart: string,
+    params?: RestoreOccurrenceParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/items/${id}/occurrences/${originalStart}?${stringifiedParams}` : `/api/items/${id}/occurrences/${originalStart}`
+}
+
+/**
+ * @summary Revert one occurrence of a recurring item to the series (drops its exclusion or override).
+ */
+export const restoreOccurrence = async (id: string,
+    originalStart: string,
+    params?: RestoreOccurrenceParams, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
+
+  return apiRequest<void>(getRestoreOccurrenceUrl(id,originalStart,params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getRestoreOccurrenceMutationKey = () => ['restoreOccurrence'] as const;
+
+export const getRestoreOccurrenceMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreOccurrence>>, TError,RestoreOccurrenceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreOccurrence>>, TError,RestoreOccurrenceMutationVariables, TContext> => {
+
+const mutationKey = getRestoreOccurrenceMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreOccurrence>>, RestoreOccurrenceMutationVariables> = (props) => {
+          const {id,originalStart,params} = props ?? {};
+
+          return  restoreOccurrence(id,originalStart,params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreOccurrenceMutationResult = NonNullable<Awaited<ReturnType<typeof restoreOccurrence>>>
+
+    export type RestoreOccurrenceMutationError = ProblemDetails
+    export type RestoreOccurrenceMutationVariables = {id: string;originalStart: string;params?: RestoreOccurrenceParams}
+
+    /**
+ * @summary Revert one occurrence of a recurring item to the series (drops its exclusion or override).
+ */
+export const useRestoreOccurrence = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreOccurrence>>, TError,RestoreOccurrenceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof restoreOccurrence>>,
+        TError,
+        RestoreOccurrenceMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRestoreOccurrenceMutationOptions(options), queryClient);
+    }
+    export const getChangeFollowingOccurrencesUrl = (id: string,
+    originalStart: string,) => {
+
+
+
+
+  return `/api/items/${id}/occurrences/${originalStart}/following`
+}
+
+/**
+ * @summary Change one occurrence of a recurring item and every one after it, addressed by its unmodified start (UTC; originalStart from SearchItems). The series ends before it; a new series continuing it (continuesItemId) takes the rest with Changes applied, or Excluded=true deletes them. At the first occurrence the whole series is updated or deleted instead. SourceKey fixes the new series' id for offline clients; an OccurredAt older than the series' last schedule change is a 409. A one-off added occurrence can't start a series (400).
+ */
+export const changeFollowingOccurrences = async (id: string,
+    originalStart: string,
+    changeFollowingOccurrencesRequest: ChangeFollowingOccurrencesRequest, options?: Parameters<typeof apiRequest>[1]): Promise<SeriesSplitDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<SeriesSplitDto>(getChangeFollowingOccurrencesUrl(id,originalStart),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(changeFollowingOccurrencesRequest)
+  }
+);}
+
+
+
+
+
+export const getChangeFollowingOccurrencesMutationKey = () => ['changeFollowingOccurrences'] as const;
+
+export const getChangeFollowingOccurrencesMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeFollowingOccurrences>>, TError,ChangeFollowingOccurrencesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof changeFollowingOccurrences>>, TError,ChangeFollowingOccurrencesMutationVariables, TContext> => {
+
+const mutationKey = getChangeFollowingOccurrencesMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof changeFollowingOccurrences>>, ChangeFollowingOccurrencesMutationVariables> = (props) => {
+          const {id,originalStart,data} = props ?? {};
+
+          return  changeFollowingOccurrences(id,originalStart,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ChangeFollowingOccurrencesMutationResult = NonNullable<Awaited<ReturnType<typeof changeFollowingOccurrences>>>
+    export type ChangeFollowingOccurrencesMutationBody = ChangeFollowingOccurrencesRequest
+    export type ChangeFollowingOccurrencesMutationError = ProblemDetails
+    export type ChangeFollowingOccurrencesMutationVariables = {id: string;originalStart: string;data: ChangeFollowingOccurrencesRequest}
+
+    /**
+ * @summary Change one occurrence of a recurring item and every one after it, addressed by its unmodified start (UTC; originalStart from SearchItems). The series ends before it; a new series continuing it (continuesItemId) takes the rest with Changes applied, or Excluded=true deletes them. At the first occurrence the whole series is updated or deleted instead. SourceKey fixes the new series' id for offline clients; an OccurredAt older than the series' last schedule change is a 409. A one-off added occurrence can't start a series (400).
+ */
+export const useChangeFollowingOccurrences = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeFollowingOccurrences>>, TError,ChangeFollowingOccurrencesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof changeFollowingOccurrences>>,
+        TError,
+        ChangeFollowingOccurrencesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getChangeFollowingOccurrencesMutationOptions(options), queryClient);
     }
     export const getMergeItemMetadataUrl = (id: string,
     params?: MergeItemMetadataParams,) => {

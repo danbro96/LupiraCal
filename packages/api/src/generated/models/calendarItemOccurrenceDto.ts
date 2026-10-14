@@ -24,6 +24,14 @@ export interface CalendarItemOccurrenceDto {
   start: string;
   /** @nullable */
   end?: string | null;
+  /**
+     * The start this occurrence has in the unmodified series — the key its per-occurrence changes and a split
+     *             address it by. Null when the item doesn't recur.
+     * @nullable
+     */
+  originalStart?: string | null;
+  /** This occurrence deviates from its series (moved, renamed, re-described or re-statused). */
+  isChanged: boolean;
   /** Accepted calendar memberships, limited to calendars the caller can read. */
   calendarIds: string[];
   category?: null | ItemCategory;

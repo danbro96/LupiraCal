@@ -43,12 +43,12 @@ export interface CalendarItemDto {
      * Recurring items: unmodified starts removed from the series.
      * @nullable
      */
-  excludedOccurrences?: unknown[] | null;
+  excludedOccurrences?: string[] | null;
   /**
      * Recurring items: one-off starts added to the series.
      * @nullable
      */
-  extraOccurrences?: unknown[] | null;
+  extraOccurrences?: string[] | null;
   /**
      * Recurring items: occurrences that deviate from the series (null members inherit).
      * @nullable
@@ -62,6 +62,11 @@ export interface CalendarItemDto {
   locationLabel?: string | null;
   /** @nullable */
   parentItemId?: string | null;
+  /**
+     * The series this one continues, when it was split off at one of that series' occurrences.
+     * @nullable
+     */
+  continuesItemId?: string | null;
   /** @nullable */
   tags?: string[] | null;
   metadata: JsonObject;
