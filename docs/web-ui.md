@@ -41,9 +41,21 @@ A form's place is a `PlaceSelection` from `@lupira/cal-domain/placeSelection` (a
 
 Hand-rolled (no calendar lib). `GET /items?from&to` returns recurrence-expanded occurrences; `useRangeOccurrences` makes one query and groups by the occurrence DTO's `calendarIds`. Proposed items ghost from `GET /calendars/{id}/proposed` and are accepted or removed in the item drawer's `CalendarsPanel` (no separate curation screen; `/inbox` redirects to `/`); the availability band joins occurrence → item detail for status. Tentative items draw outlined (dashed border in the calendar colour over a tint, `TENTATIVE` in `@lupira/cal-tokens/color` via `ui/theme/tentative`); Cancelled ones dim and strike through.
 
+## Recurring items
+
+Rules live in `@lupira/cal-domain/seriesOccurrences` (twin of cal-api's series rules, pinned by its fixtures).
+
+- An occurrence is identified by its start in the unmodified series (`originalStart` on `GET /items`), written as `occurrenceKey` (UTC, whole seconds, `Z`); instants are compared as epoch ms. Grid entries carry it; a grid click or an `/items` row opens `?item=<id>&occ=<key>`. `AppShell` hands `occ` to the drawer and drops it with `item`; every other `?item=` link clears it.
+- The drawer of a recurring item's occurrence has a scope toggle in its sticky header: This event (default), This and following (only from a later rule occurrence), All events. The choice holds while the drawer stays on that occurrence.
+  - **This event**: title, status, description and times go through `occurrenceEdit` (merged with the occurrence's existing change; members equal to the series inherit) to `PUT /items/{id}/occurrences/{originalStart}`, or `DELETE` (restore) when nothing is left. Zone, repeats, place, tags and availability are disabled; the payload, attendee, calendar, relation and metadata panels are dimmed and inert.
+  - **This and following**: the edit goes as `changes` to `POST /items/{id}/occurrences/{originalStart}/following`; the drawer then opens the continuing series at its first occurrence with All events selected. The panels stay inert (they write the original series).
+  - **All events**: `PUT /items/{id}`.
+- A changed occurrence shows "Changed from the series" with "Revert to series". "Changed occurrences" lists the series' deleted, cancelled and changed occurrences (`seriesDeviationRows`), each with Revert. Cancelled occurrences stay hidden in the grids.
+- Delete on an occurrence offers the same scopes: this one (`PUT … { excluded: true }`), this and following (`POST …/following { excluded: true }`), or the whole item.
+
 ## /items page
 
-Global list/search across all readable calendars in one infinite query (`useItemSearch`, skip/take paging, filters in URL params: q/tag/cal/category/status/range/from/to/parent); rows open the shared `?item=` drawer. Search covers accepted items only (never proposed).
+Global list/search across all readable calendars in one infinite query (`useItemSearch`, skip/take paging, filters in URL params: q/tag/cal/category/status/range/from/to/parent); rows open the shared `?item=` drawer at that occurrence. Search covers accepted items only (never proposed).
 
 Hierarchy: one visual level — children nest under their parent's first loaded occurrence (`domain/itemTree.ts`; parent absent → flat row with `↳ parent` chip). `?parent=<id>` drills into all children (API defaults parentId searches to all-time). The drawer has a HierarchyPanel, distinct from RelationsPanel's cross-API edges.
 

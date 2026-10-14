@@ -6,7 +6,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useIsPhone } from '../../hooks/useIsPhone';
 
 /** Shared shell for the ?item= / ?task= / birthday detail cards: right drawer on desktop, bottom sheet on phones. */
-export function DetailDrawer({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+export function DetailDrawer({ onClose, header, children }: { onClose: () => void; header?: ReactNode; children: ReactNode }) {
   const isPhone = useIsPhone();
   return (
     <Drawer
@@ -15,7 +15,8 @@ export function DetailDrawer({ onClose, children }: { onClose: () => void; child
       onClose={onClose}
       slotProps={{ paper: { sx: isPhone ? { maxHeight: '85dvh' } : { width: 'min(480px, 100vw)' } } }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1, position: 'sticky', top: 0, bgcolor: 'background.default', zIndex: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, p: 1, position: 'sticky', top: 0, bgcolor: 'background.default', zIndex: 1 }}>
+        {header && <Box sx={{ flex: 1, minWidth: 0 }}>{header}</Box>}
         <IconButton onClick={onClose} aria-label="Close">
           <CloseIcon fontSize="small" />
         </IconButton>

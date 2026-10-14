@@ -1,6 +1,7 @@
 import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto, ItemStatus, OccurrenceOrigin } from '@lupira/cal-api/models';
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { lastDayOf } from '@lupira/cal-domain/occurrences';
+import { occurrenceKey } from '@lupira/cal-domain/seriesOccurrences';
 import { isOverdue } from '@lupira/cal-domain/tasks';
 import { parseYmd, sameDay, ymd } from '@danbro96/lupira-domain-core/time';
 import type { OpenTask } from '../state/useTaskDeadlines';
@@ -11,6 +12,7 @@ import { CALENDAR_KIND_ICONS, calendarColor } from './theme/kinds';
 export interface GridEntry {
   key: string;
   itemId: string;
+  originalStart?: string | null;
   title: string;
   start: Date;
   end: Date | null;
@@ -35,8 +37,9 @@ export interface GridEntry {
 
 export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: ContainerDto): GridEntry {
   return {
-    key: `${o.id}:${o.start}`,
+    key: `${o.id}:${o.originalStart ?? o.start}`,
     itemId: o.id,
+    originalStart: o.originalStart ? occurrenceKey(o.originalStart) : null,
     title: displayTitle(o.title),
     start: new Date(o.start),
     end: o.end ? new Date(o.end) : null,

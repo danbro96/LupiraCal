@@ -63,6 +63,7 @@ function TaskForm({ lists, event, onClose }: { lists: ListDto[]; event?: TaskEve
                 const next = new URLSearchParams(prev);
                 next.set('task', `${task.listId}:${task.id}`);
                 next.delete('item');
+                next.delete('occ');
                 return next;
               }),
           });

@@ -70,6 +70,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
         setSearchParams((prev) => {
           const next = new URLSearchParams(prev);
           next.set('item', created.id);
+          next.delete('occ');
           return next;
         });
       },

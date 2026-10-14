@@ -22,6 +22,7 @@ export function HierarchyPanel({ item }: { item: CalendarItemDto }) {
   const itemHref = (id: string) => {
     const next = new URLSearchParams(params);
     next.set('item', id);
+    next.delete('occ');
     return `?${next.toString()}`;
   };
 

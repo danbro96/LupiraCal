@@ -43,6 +43,7 @@ export function AppShell() {
   const [creating, setCreating] = useState(false);
   const [settingAvailability, setSettingAvailability] = useState(false);
   const itemId = searchParams.get('item');
+  const occurrence = searchParams.get('occ');
   const birthdayContactId = searchParams.get('birthday');
   const birthdayYear = searchParams.get('year');
   // ?task=<listId>:<itemId> — the tasks API addresses items list-scoped, so the ref carries both GUIDs.
@@ -102,7 +103,7 @@ export function AppShell() {
         </Box>
         <BottomNav />
       </Box>
-      {itemId && <ItemDrawer itemId={itemId} onClose={() => dropParams('item')} />}
+      {itemId && <ItemDrawer key={`${itemId}:${occurrence ?? ''}`} itemId={itemId} occurrence={occurrence} onClose={() => dropParams('item', 'occ')} />}
       {birthdayContactId && (
         <BirthdayCard contactId={birthdayContactId} year={birthdayYear} onClose={() => dropParams('birthday', 'year')} />
       )}

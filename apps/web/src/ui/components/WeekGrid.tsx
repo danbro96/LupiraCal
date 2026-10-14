@@ -47,7 +47,7 @@ interface Props {
   days: Date[];
   entries: GridEntry[];
   segments: AvailabilitySegment[];
-  onOpenItem: (id: string) => void;
+  onOpenItem: (id: string, originalStart?: string | null) => void;
   selectedFamilyKey?: string;
 }
 
@@ -147,7 +147,7 @@ function AllDayStrip({
   cols: Record<string, string>;
   famOf: FamOf;
   onHoverFamily: (key: string | null) => void;
-  onOpenItem: (id: string) => void;
+  onOpenItem: (id: string, originalStart?: string | null) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const bars = useMemo(() => {
@@ -212,7 +212,7 @@ function AllDayStrip({
         return (
           <ButtonBase
             key={e.key}
-            onClick={() => onOpenItem(e.itemId)}
+            onClick={() => onOpenItem(e.itemId, e.originalStart)}
             onMouseEnter={fk ? () => onHoverFamily(fk) : undefined}
             onMouseLeave={fk ? () => onHoverFamily(null) : undefined}
             sx={{
@@ -290,7 +290,7 @@ function DayColumn({
   rails: DayRail[];
   famOf: FamOf;
   onHoverFamily: (key: string | null) => void;
-  onOpenItem: (id: string) => void;
+  onOpenItem: (id: string, originalStart?: string | null) => void;
 }) {
   const positioned = useMemo(() => {
     // Parents drawn as a rail are excluded from column packing so they bracket their children
@@ -490,7 +490,7 @@ function DayColumn({
               width: `calc(${(1 / p.cols) * 100}% - ${4 + inset}px)`,
               background: isTentative(p.item) ? tentativeFill(p.item.color) : p.item.color,
             }}
-            onClick={() => onOpenItem(p.item.itemId)}
+            onClick={() => onOpenItem(p.item.itemId, p.item.originalStart)}
             onMouseEnter={fk ? () => onHoverFamily(fk) : undefined}
             onMouseLeave={fk ? () => onHoverFamily(null) : undefined}
             title={p.item.ghost ? `${p.item.title} (proposed)` : p.item.title}

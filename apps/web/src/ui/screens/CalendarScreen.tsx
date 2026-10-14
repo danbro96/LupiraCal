@@ -94,7 +94,7 @@ export function CalendarScreen() {
   // Birthdays are read-time contact projections, not stored items — route them to the read-only card
   // (the ?item= drawer would 404 on their synthetic id) instead of the editable item drawer.
   // Task deadlines likewise live in LupiraTasks, so they route to the TaskCard.
-  const openItem = (id: string) => {
+  const openItem = (id: string, originalStart?: string | null) => {
     const e = entries.find((x) => x.itemId === id);
     if (e?.task) {
       const { listId, itemId } = e.task;
@@ -102,6 +102,7 @@ export function CalendarScreen() {
         const next = new URLSearchParams(prev);
         next.set('task', `${listId}:${itemId}`);
         next.delete('item');
+        next.delete('occ');
         next.delete('birthday');
         next.delete('year');
         return next;
@@ -112,10 +113,17 @@ export function CalendarScreen() {
         next.set('birthday', e.origin!.sourceId);
         next.set('year', String(e.start.getUTCFullYear()));
         next.delete('item');
+        next.delete('occ');
         return next;
       });
     } else {
-      setParam('item', id);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('item', id);
+        if (originalStart) next.set('occ', originalStart);
+        else next.delete('occ');
+        return next;
+      });
     }
   };
 

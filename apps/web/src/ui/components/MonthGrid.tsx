@@ -57,7 +57,7 @@ interface Props {
   segments: AvailabilitySegment[];
   /** Phone treatment: each cell is one tap-to-day button showing event dots instead of chips. */
   compact?: boolean;
-  onOpenItem: (id: string) => void;
+  onOpenItem: (id: string, originalStart?: string | null) => void;
   onOpenDay: (d: Date) => void;
   selectedFamilyKey?: string;
 }
@@ -170,7 +170,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
                 <ButtonBase
                   key={e.key}
                   sx={chipSx(e, accent, fam(fk))}
-                  onClick={() => onOpenItem(e.itemId)}
+                  onClick={() => onOpenItem(e.itemId, e.originalStart)}
                   onMouseEnter={fk ? () => setHoverFamily(fk) : undefined}
                   onMouseLeave={fk ? () => setHoverFamily(null) : undefined}
                   title={e.ghost ? `${e.title} (proposed)` : e.task ? `${e.title} — due ${fmtTime(e.task.dueAt)}` : e.title}

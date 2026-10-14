@@ -17,6 +17,7 @@ import { useGetItem } from '@lupira/cal-api/query/cal';
 import { useGetContact } from '@lupira/cal-api/query/contact';
 import { ItemCategory, ItemStatus, OriginKind, type CalendarItemOccurrenceDto, type ContainerDto } from '@lupira/cal-api/models';
 import { groupOccurrences } from '@lupira/cal-domain/itemTree';
+import { occurrenceKey } from '@lupira/cal-domain/seriesOccurrences';
 import { statusBadge, displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { fmtWhen } from '@danbro96/lupira-domain-core/time';
 import { RANGE_PRESETS } from '@lupira/cal-domain/searchRange';
@@ -59,7 +60,7 @@ export function ItemsScreen() {
     setSearch('');
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      for (const k of ['item', 'q', 'tag', 'cal', 'category', 'status', 'range', 'from', 'to', 'contact']) next.delete(k);
+      for (const k of ['item', 'occ', 'q', 'tag', 'cal', 'category', 'status', 'range', 'from', 'to', 'contact']) next.delete(k);
       next.set('parent', id);
       return next;
     });
@@ -82,6 +83,7 @@ export function ItemsScreen() {
   const occHref = (o: CalendarItemOccurrenceDto) => {
     const next = new URLSearchParams(searchParams);
     next.delete('item');
+    next.delete('occ');
     next.delete('birthday');
     next.delete('year');
     if (o.origin?.kind === OriginKind.Birthday) {
@@ -89,6 +91,7 @@ export function ItemsScreen() {
       next.set('year', o.start.slice(0, 4));
     } else {
       next.set('item', o.id);
+      if (o.originalStart) next.set('occ', occurrenceKey(o.originalStart));
     }
     return `?${next.toString()}`;
   };
