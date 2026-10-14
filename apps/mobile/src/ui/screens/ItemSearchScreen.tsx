@@ -33,7 +33,7 @@ export function ItemSearchScreen() {
     ...(past.length ? [{ title: 'Past', data: past }] : []),
   ];
 
-  const open = (itemId: string) => navigation.navigate('ItemDetail', { itemId });
+  const open = (row: ItemSearchRow) => navigation.navigate('ItemDetail', { itemId: row.id, occurrence: row.occurrence ?? undefined });
 
   return (
     <View style={[styles.root, { backgroundColor: c.bg }]}>
@@ -66,12 +66,12 @@ export function ItemSearchScreen() {
   );
 }
 
-const ResultRow = memo(function ResultRow({ row, onOpen }: { row: ItemSearchRow; onOpen: (itemId: string) => void }) {
+const ResultRow = memo(function ResultRow({ row, onOpen }: { row: ItemSearchRow; onOpen: (row: ItemSearchRow) => void }) {
   const c = useColors();
   const colorOf = useCalendarColors();
   const when = row.next_utc ?? row.last_utc;
   return (
-    <Pressable style={styles.row} android_ripple={{ color: c.divider }} onPress={() => onOpen(row.id)}>
+    <Pressable style={styles.row} android_ripple={{ color: c.divider }} onPress={() => onOpen(row)}>
       <View style={[styles.dot, { backgroundColor: colorOf(row.calendar_id) }]} />
       <View style={styles.rowText}>
         <Text variant="bodyLarge" numberOfLines={1} style={{ color: c.text }}>{displayTitle(row.title)}</Text>

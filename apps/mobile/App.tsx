@@ -1,5 +1,5 @@
 import type { LinkingOptions } from '@react-navigation/native';
-import { NavigationContainer } from '@react-navigation/native';
+import { getStateFromPath, NavigationContainer } from '@react-navigation/native';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -114,6 +114,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       Import: 'import/:kind',
     },
   },
+  getStateFromPath: (path, options) => getStateFromPath(path.replace(/([?&])occ=/, '$1occurrence='), options),
   // A tap on a notification's body opens its deep link, from a cold start too.
   async getInitialURL() {
     const url = await Linking.getInitialURL();

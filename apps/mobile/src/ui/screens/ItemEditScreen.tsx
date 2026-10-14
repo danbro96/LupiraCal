@@ -1,9 +1,12 @@
 import { describeRrule, NO_REPEAT } from '@lupira/cal-domain/rrule';
+import {
+  allDayKey, occurrenceEdit, occurrenceKey, occurrenceScopes, type OccurrenceScope, type SeriesItem,
+} from '@lupira/cal-domain/seriesOccurrences';
 import { deviceTimeZone, wallToInstant } from '@lupira/cal-domain/zonedTime';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, List, Switch, Text } from 'react-native-paper';
 import { calendarLabel, defaultCalendarIds } from '@lupira/cal-domain/calendars';
@@ -13,13 +16,14 @@ import {
   categoryAllDayDefault, emptyItemForm, withAllDay, withSchedule, type ItemForm, type ScheduleField,
 } from '@lupira/cal-domain/itemForm';
 import {
-  acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft, unresolvedLabelOf,
+  acceptedCalendarIds, attendeeChanges, filingChanges, followingSeriesOf, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft,
+  itemFormFromOccurrence, occurrencePatchFromForm, unresolvedLabelOf,
 } from '../../domain/editors';
 import { itemDraftFromLink } from '../../domain/drafts';
 import type { ItemDoc, ParticipantReminder } from '../../domain/docTypes';
 import { reminderLabel, sameReminder } from '../../domain/notificationPrefs';
 import type { ItemCore } from '../../domain/ops';
-import { saveItem, type ItemSave } from '../../state/actions';
+import { changeOccurrence, saveItem, splitItem, type ItemSave } from '../../state/actions';
 import { usePrefs } from '../../state/prefs-store';
 import { useContactList } from '../../state/useContactList';
 import { selectableCalendars, useCalendars } from '../../state/useContainers';
@@ -46,13 +50,21 @@ import { spacing, useColors } from '../theme';
 
 type SheetName = 'calendars' | 'category' | 'repeat' | 'zone' | 'place' | 'people' | 'reminder';
 
-/** Title, when, where and notes up front; everything used rarely is one row each under More, opening a sheet. */
+/** Title, when, where and notes up front; everything used rarely is one row each under More, opening a sheet. A
+ *  series' occurrence edits as "this event" (its own times, title, notes, status) or "this and following" (a new series). */
 export function ItemEditScreen() {
   const c = useColors();
   const route = useRoute<RouteProp<RootStackParamList, 'ItemEdit'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const itemId = route.params?.itemId;
   const { data: state } = useItemState(itemId ?? '');
+  const occurrence = route.params?.occurrence;
+  const key = occurrence && !Number.isNaN(Date.parse(occurrence)) ? occurrenceKey(occurrence) : null;
+  const following = state && key && route.params?.scope === 'following' ? followingSeriesOf(state.doc, key) : null;
+  const scope: OccurrenceScope = state && key && route.params?.scope && occurrenceScopes(state.doc, key).includes(route.params.scope)
+    && (route.params.scope !== 'following' || following) ? route.params.scope : 'series';
+  const base = following ?? state?.doc;
+  const continued = useRef<{ itemId: string; occurrence: string } | null>(null);
   const { data: calendars } = useCalendars();
   const { data: contacts } = useContactList();
   const pickable = selectableCalendars(calendars);
@@ -73,7 +85,7 @@ export function ItemEditScreen() {
   const [baseline, setBaseline] = useState(() => ({ form: draft ? '' : JSON.stringify(form), calendars: '[]', people: '[]' }));
 
   if (!seeded && itemId && state) {
-    const seededForm = itemFormFromDoc(state.doc);
+    const seededForm = scope === 'this' && key ? itemFormFromOccurrence(state.doc, key) : itemFormFromDoc(base ?? state.doc);
     const seededCalendars = acceptedCalendarIds(state.doc.calendars);
     const seededPeople = (state.doc.attendees ?? []).map((a) => a.contactId);
     setForm(seededForm);
@@ -152,7 +164,8 @@ export function ItemEditScreen() {
 
   /** Persists without navigating; false = validation failed, so the guard keeps the user here. */
   const submit = async (): Promise<boolean> => {
-    const r = itemCoreFromForm(form, state?.doc, unresolvedLabel);
+    if (scope === 'this' && state && key) return saveOccurrence(state.doc, key);
+    const r = itemCoreFromForm(form, base, unresolvedLabel);
     if (!r.ok) {
       setError(r.error);
       return false;
@@ -166,8 +179,24 @@ export function ItemEditScreen() {
       return false;
     }
     setError(null);
+    if (scope === 'following' && state && key) {
+      const core = r.value;
+      const first = core.isAllDay ? (core.startDate ? allDayKey(core.startDate) : key) : (core.startsAt ? occurrenceKey(core.startsAt) : key);
+      continued.current = { itemId: await splitItem(state, key, core), occurrence: first };
+      return true;
+    }
     const ownReminder = me && reminderChanged && reminder ? { contactId: me, reminder } : undefined;
     return persistItem(itemId, r.value, state?.doc, calendarIds, attendeeIds, me, ownReminder, setError);
+  };
+  const saveOccurrence = async (doc: ItemDoc, originalStart: string): Promise<boolean> => {
+    const r = occurrencePatchFromForm(form, doc);
+    if (!r.ok) {
+      setError(r.error);
+      return false;
+    }
+    setError(null);
+    await changeOccurrence(doc.id, originalStart, occurrenceEdit(doc as SeriesItem, originalStart, r.value));
+    return true;
   };
   const guard = useUnsavedGuard(dirty, {
     message: 'Save this event before leaving?',
@@ -178,7 +207,8 @@ export function ItemEditScreen() {
     void submit().then((saved) => {
       if (!saved) return;
       guard.leave();
-      leaveScreen(navigation);
+      if (continued.current) navigation.popTo('ItemDetail', continued.current);
+      else leaveScreen(navigation);
     });
   };
 
@@ -216,6 +246,8 @@ export function ItemEditScreen() {
   const zoneAt = form.timeZone && form.startDay && form.startTime ? wallToInstant(form.startDay, form.startTime, form.timeZone) : undefined;
   const placeHint = !form.place ? unresolvedLabel : null;
   const defaultMinutes = notify.defaultReminder && !form.isAllDay ? notify.defaultMinutes : null;
+  const seriesFields = scope !== 'this';
+  const sharedFields = scope === 'series';
 
   return (
     <>
@@ -226,14 +258,21 @@ export function ItemEditScreen() {
         {cancelled && (
           <Text style={[styles.notice, { color: c.danger }]}>This event is cancelled — restore it from the event screen.</Text>
         )}
+        {scope !== 'series' && (
+          <Text style={[styles.muted, { color: c.textMuted }]}>
+            {scope === 'this' ? 'Changes only this event' : 'Changes this and every later event'}
+          </Text>
+        )}
         <TextField label="Title" autoFocus={!itemId} style={[fieldGap, styles.title]} value={form.title} onChangeText={(v) => set('title', v)} />
 
-        <List.Item
-          title="All-day"
-          style={styles.row}
-          left={(p) => <List.Icon {...p} icon={ICONS.schedule} />}
-          right={() => <Switch value={form.isAllDay} onValueChange={toggleAllDay} />}
-        />
+        {seriesFields && (
+          <List.Item
+            title="All-day"
+            style={styles.row}
+            left={(p) => <List.Icon {...p} icon={ICONS.schedule} />}
+            right={() => <Switch value={form.isAllDay} onValueChange={toggleAllDay} />}
+          />
+        )}
         <View style={styles.whenRow}>
           <Text style={[styles.whenLabel, { color: c.textMuted }]}>Starts</Text>
           <View style={styles.day}>
@@ -272,8 +311,10 @@ export function ItemEditScreen() {
         </View>
         {otherZone && <Text style={[styles.muted, styles.zoneNote, { color: c.textMuted }]}>Times in {zoneSummary(form.timeZone, zoneAt)}</Text>}
 
-        <PlaceChipsRow ctx={placeContext} value={form.place} onChange={(p) => set('place', p)} onMore={() => setSheet('place')} />
-        {!!placeHint && (
+        {seriesFields && (
+          <PlaceChipsRow ctx={placeContext} value={form.place} onChange={(p) => set('place', p)} onMore={() => setSheet('place')} />
+        )}
+        {seriesFields && !!placeHint && (
           <View style={styles.hint}>
             <Text style={[styles.muted, styles.hintText, { color: c.warning }]} numberOfLines={2} onPress={() => setSheet('place')}>
               Needs a place: “{placeHint}”
@@ -290,27 +331,31 @@ export function ItemEditScreen() {
           onChangeText={(v) => set('description', v)}
         />
 
-        <List.Subheader style={styles.subheader}>More</List.Subheader>
-        {pickable.length > 1 && (
+        {seriesFields && <List.Subheader style={styles.subheader}>More</List.Subheader>}
+        {sharedFields && pickable.length > 1 && (
           <MoreRow icon={ICONS.calendar} title="Calendars" value={calendarIds.map(calendarName).join(', ')} onPress={() => setSheet('calendars')} />
         )}
-        <MoreRow
-          icon={form.category ? categoryIcon(form.category) : ICONS.event}
-          title="Category"
-          value={form.category || 'None'}
-          onPress={() => setSheet('category')}
-        />
-        <MoreRow
-          icon={ICONS.repeat}
-          title="Repeats"
-          value={form.recurrenceRule ? describeRrule(form.recurrenceRule) : NO_REPEAT}
-          onPress={() => setSheet('repeat')}
-        />
-        <MoreRow icon={ICONS.group} title="People" value={people} onPress={() => setSheet('people')} />
-        {!!me && (
+        {seriesFields && (
+          <MoreRow
+            icon={form.category ? categoryIcon(form.category) : ICONS.event}
+            title="Category"
+            value={form.category || 'None'}
+            onPress={() => setSheet('category')}
+          />
+        )}
+        {seriesFields && (
+          <MoreRow
+            icon={ICONS.repeat}
+            title="Repeats"
+            value={form.recurrenceRule ? describeRrule(form.recurrenceRule) : NO_REPEAT}
+            onPress={() => setSheet('repeat')}
+          />
+        )}
+        {sharedFields && <MoreRow icon={ICONS.group} title="People" value={people} onPress={() => setSheet('people')} />}
+        {sharedFields && !!me && (
           <MoreRow icon={ICONS.alarm} title="Reminder" value={reminderLabel(shownReminder, defaultMinutes)} onPress={() => setSheet('reminder')} />
         )}
-        {!form.isAllDay && !!form.timeZone && (
+        {seriesFields && !form.isAllDay && !!form.timeZone && (
           <MoreRow icon={ICONS.public} title="Time zone" value={zoneSummary(form.timeZone, zoneAt)} onPress={() => setSheet('zone')} />
         )}
         {!cancelled && (
@@ -323,7 +368,9 @@ export function ItemEditScreen() {
             )}
           />
         )}
-        <TextField style={fieldGap} label="Tags (comma-separated)" autoCapitalize="none" value={form.tagsCsv} onChangeText={(v) => set('tagsCsv', v)} />
+        {seriesFields && (
+          <TextField style={fieldGap} label="Tags (comma-separated)" autoCapitalize="none" value={form.tagsCsv} onChangeText={(v) => set('tagsCsv', v)} />
+        )}
 
         <HelperText type="error" visible={!!error}>{error}</HelperText>
       </ScrollView>

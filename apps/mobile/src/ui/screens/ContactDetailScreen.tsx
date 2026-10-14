@@ -219,7 +219,7 @@ export function ContactDetailScreen() {
         </List.Accordion>
       )}
 
-      <ContactEventsSection contactId={contactId} onOpen={(itemId) => navigation.navigate('ItemDetail', { itemId })} />
+      <ContactEventsSection contactId={contactId} onOpen={(itemId, occurrence) => navigation.navigate('ItemDetail', { itemId, occurrence: occurrence ?? undefined })} />
 
       <TagRow tags={visibleTags(doc.tags)} />
 

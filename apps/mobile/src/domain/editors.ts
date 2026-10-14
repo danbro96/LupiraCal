@@ -2,6 +2,9 @@ import { contactNameError } from '@danbro96/lupira-domain-contacts/contactNames'
 import { emptyItemForm, scheduleFromForm, parseList, type EditResult, type ItemForm } from '@lupira/cal-domain/itemForm';
 import { birthdayFields, birthdayFromFields } from '@lupira/cal-domain/partialDate';
 import { fromStored } from '@lupira/cal-domain/placeSelection';
+import {
+  allDayKey, occurrenceView, splitSeries, type OccurrencePatch, type OccurrenceStatus, type SeriesItem,
+} from '@lupira/cal-domain/seriesOccurrences';
 import { deviceTimeZone, eventZone, isoToWall } from '@lupira/cal-domain/zonedTime';
 import type { CalendarMembership, ContactDoc, ItemAttendee, ItemDoc, ReachChannel } from './docTypes';
 import type { ContactDraft, ItemDraft } from './drafts';
@@ -33,6 +36,40 @@ export function itemFormFromDoc(doc: ItemDoc): ItemForm {
     recurrenceRule: doc.recurrenceRule ?? '',
     timeZone,
     place: doc.placeId ? fromStored(doc.placeId, doc.locationLabel) : null,
+  };
+}
+
+/** One occurrence as it reads now — its own times, title, description and status over the series'. */
+export function itemFormFromOccurrence(doc: ItemDoc, originalStart: string): ItemForm {
+  const view = occurrenceView(doc as SeriesItem, originalStart);
+  if (!view) return itemFormFromDoc(doc);
+  const shown: ItemDoc = { ...doc, title: view.title, description: view.description, status: view.status };
+  return itemFormFromDoc(doc.isAllDay
+    ? { ...shown, startDate: view.start.slice(0, 10), endDate: view.end?.slice(0, 10) ?? null }
+    : { ...shown, startsAt: view.start, endsAt: view.end });
+}
+
+/** The series that "this and following" from `originalStart` would continue as; null where nothing precedes it. */
+export function followingSeriesOf(doc: ItemDoc, originalStart: string): ItemDoc | null {
+  const parts = splitSeries(doc, originalStart);
+  return parts ? { ...doc, ...parts.following } : null;
+}
+
+/** An occurrence form → its change; all-day times are dates at 00:00Z, the end the last day. */
+export function occurrencePatchFromForm(form: ItemForm, doc: ItemDoc): EditResult<OccurrencePatch> {
+  const r = itemCoreFromForm(form, doc);
+  if (!r.ok) return r;
+  const c = r.value;
+  const day = (d: string | null | undefined) => (d ? allDayKey(d) : null);
+  return {
+    ok: true,
+    value: {
+      title: c.title ?? null,
+      description: c.description ?? null,
+      status: (c.status as OccurrenceStatus | null) ?? null,
+      startsAt: doc.isAllDay ? day(c.startDate) : (c.startsAt ?? null),
+      endsAt: doc.isAllDay ? day(c.endDate) : (c.endsAt ?? null),
+    },
   };
 }
 

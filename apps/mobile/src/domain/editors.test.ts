@@ -4,7 +4,8 @@ import { emptyItemForm } from '@lupira/cal-domain/itemForm';
 import { selectPlace } from '@lupira/cal-domain/placeSelection';
 import {
   attendeeChanges, contactCoreFromDraft, contactCoreFromForm, contactFormFromDoc, contactFormFromDraft, coreOfDoc,
-  emptyContactForm, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft, metadataValueFromInput, unresolvedLabelOf,
+  emptyContactForm, filingChanges, followingSeriesOf, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft, itemFormFromOccurrence,
+  metadataValueFromInput, occurrencePatchFromForm, unresolvedLabelOf,
 } from './editors';
 import type { ContactDraft, ItemDraft } from './drafts';
 
@@ -342,5 +343,38 @@ describe('editors from drafts', () => {
 
   it('rejects a draft without any name', () => {
     expect(contactCoreFromDraft({ ...contactDraft, givenName: null, familyName: null, organization: null }).ok).toBe(false);
+  });
+});
+
+describe('occurrence editor', () => {
+  const zone = 'Europe/Stockholm';
+  const weekly: ItemDoc = {
+    id: 'w1', title: 'Training', status: 'Confirmed', isAllDay: false, startTimezone: zone, recurrenceRule: 'FREQ=WEEKLY;COUNT=4',
+    startsAt: '2026-08-03T16:00:00Z', endsAt: '2026-08-03T17:00:00Z', calendars: [],
+    occurrenceOverrides: [{ originalStart: '2026-08-10T16:00:00Z', startsAt: '2026-08-10T17:00:00Z', endsAt: null, title: 'Match', description: null, status: null, locationLabel: null }],
+  };
+
+  it('opens one occurrence as it reads, and saves back only what differs from the series', () => {
+    const form = itemFormFromOccurrence(weekly, '2026-08-10T16:00:00Z');
+    expect([form.title, form.startDay, form.startTime, form.endTime]).toEqual(['Match', '2026-08-10', '19:00', '20:00']);
+
+    const patch = occurrencePatchFromForm({ ...form, title: 'Final' }, weekly);
+    expect(patch.ok && patch.value).toEqual({
+      title: 'Final', description: null, status: 'Confirmed', startsAt: '2026-08-10T17:00:00.000Z', endsAt: '2026-08-10T18:00:00.000Z',
+    });
+  });
+
+  it('dates an all-day occurrence at 00:00Z with its last day as the end', () => {
+    const allDay: ItemDoc = { id: 'a1', isAllDay: true, startDate: '2026-08-03', endDate: '2026-08-04', recurrenceRule: 'FREQ=WEEKLY', calendars: [] };
+    const form = itemFormFromOccurrence(allDay, '2026-08-10T00:00:00Z');
+    expect([form.startDay, form.endDay]).toEqual(['2026-08-10', '2026-08-11']);
+    const patch = occurrencePatchFromForm({ ...form, startDay: '2026-08-12', endDay: '2026-08-12' }, allDay);
+    expect(patch.ok && [patch.value.startsAt, patch.value.endsAt]).toEqual(['2026-08-12T00:00:00Z', '2026-08-12T00:00:00Z']);
+  });
+
+  it('opens "this and following" as the series continuing from the occurrence', () => {
+    const next = followingSeriesOf(weekly, '2026-08-17T16:00:00Z')!;
+    expect([next.startsAt, next.recurrenceRule, next.occurrenceOverrides]).toEqual(['2026-08-17T16:00:00Z', 'FREQ=WEEKLY;COUNT=2', null]);
+    expect(followingSeriesOf(weekly, '2026-08-03T16:00:00Z')).toBeNull();
   });
 });

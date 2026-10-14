@@ -14,7 +14,7 @@ import { AddToEventSheet } from './AddToEventSheet';
 const SHOWN = 5;
 
 /** The events this contact is on, upcoming soonest-first then past most-recent-first, from the mirror. */
-export function ContactEventsSection({ contactId, onOpen }: { contactId: string; onOpen: (itemId: string) => void }) {
+export function ContactEventsSection({ contactId, onOpen }: { contactId: string; onOpen: (itemId: string, occurrence: string | null) => void }) {
   const c = useColors();
   const { data: rows = [] } = useContactEvents(contactId);
   const [all, setAll] = useState(false);
@@ -45,12 +45,12 @@ export function ContactEventsSection({ contactId, onOpen }: { contactId: string;
   );
 }
 
-function EventRow({ row, onOpen }: { row: ContactEventRow; onOpen: (itemId: string) => void }) {
+function EventRow({ row, onOpen }: { row: ContactEventRow; onOpen: (itemId: string, occurrence: string | null) => void }) {
   const colorOf = useCalendarColors();
   const when = row.next_utc ?? row.last_utc;
   return (
     <List.Item
-      onPress={() => onOpen(row.id)}
+      onPress={() => onOpen(row.id, row.occurrence)}
       title={displayTitle(row.title)}
       description={[when ? fmtWhen(when, row.is_all_day === 1) : 'No date', rsvpLabel(row.rsvp)].join(' · ')}
       style={styles.dense}
