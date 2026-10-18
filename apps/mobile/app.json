@@ -51,7 +51,8 @@
         {
           "url": "https://de.sentry.io/",
           "project": "lupira-calendar",
-          "organization": "brostrom"
+          "organization": "brostrom",
+          "experimental_android": { "enableAndroidGradlePlugin": true }
         }
       ],
       [

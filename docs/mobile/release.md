@@ -53,7 +53,8 @@ Builds and OTAs both upload source maps, so crash stacks symbolicate.
   de.sentry.io) uploads during the EAS build. Each `eas.json` build profile names its EAS
   environment (`development` / `preview` / `production`); `SENTRY_AUTH_TOKEN` must exist in all
   three, or the release build fails at the upload step. Variables on the GitHub runner do not
-  reach the EAS build worker.
+  reach the EAS build worker. `experimental_android.enableAndroidGradlePlugin` adds the Sentry
+  Android Gradle Plugin, which also uploads native debug symbols and the ProGuard mapping.
 - OTA: `getSentryExpoConfig` (metro) stamps debug IDs; mobile-ota uploads `dist` with
   `SENTRY_AUTH_TOKEN`.
 
