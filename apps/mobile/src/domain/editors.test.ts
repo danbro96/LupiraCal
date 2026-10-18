@@ -4,7 +4,7 @@ import { emptyItemForm } from '@lupira/cal-domain/itemForm';
 import { selectPlace } from '@lupira/cal-domain/placeSelection';
 import {
   attendeeChanges, contactCoreFromDraft, contactCoreFromForm, contactFormFromDoc, contactFormFromDraft, coreOfDoc,
-  emptyContactForm, filingChanges, followingSeriesOf, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft, itemFormFromOccurrence,
+  emptyContactForm, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft, itemFormFromOccurrence,
   metadataValueFromInput, occurrencePatchFromForm, unresolvedLabelOf,
 } from './editors';
 import type { ContactDraft, ItemDraft } from './drafts';
@@ -370,11 +370,5 @@ describe('occurrence editor', () => {
     expect([form.startDay, form.endDay]).toEqual(['2026-08-10', '2026-08-11']);
     const patch = occurrencePatchFromForm({ ...form, startDay: '2026-08-12', endDay: '2026-08-12' }, allDay);
     expect(patch.ok && [patch.value.startsAt, patch.value.endsAt]).toEqual(['2026-08-12T00:00:00Z', '2026-08-12T00:00:00Z']);
-  });
-
-  it('opens "this and following" as the series continuing from the occurrence', () => {
-    const next = followingSeriesOf(weekly, '2026-08-17T16:00:00Z')!;
-    expect([next.startsAt, next.recurrenceRule, next.occurrenceOverrides]).toEqual(['2026-08-17T16:00:00Z', 'FREQ=WEEKLY;COUNT=2', null]);
-    expect(followingSeriesOf(weekly, '2026-08-03T16:00:00Z')).toBeNull();
   });
 });

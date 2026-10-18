@@ -27,6 +27,7 @@ import {
 import { describeRrule, NO_REPEAT, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import {
   allDayKey,
+  followingSeriesOf,
   occurrenceEdit,
   occurrenceKey,
   occurrenceScopes,
@@ -158,17 +159,18 @@ function DrawerBody({
     },
   });
 
-  const view = scope !== 'series' && occurrence ? occurrenceView(item, occurrence) : null;
+  const view = scope === 'this' && occurrence ? occurrenceView(item, occurrence) : null;
+  const base = (scope === 'following' && occurrence ? followingSeriesOf(item, occurrence) : null) ?? item;
   const seriesOnly = scope === 'this';
   const panelsLocked = scope !== 'series';
   const shown = {
-    title: view ? view.title : item.title,
-    description: view ? view.description : item.description,
-    status: view ? view.status : item.status,
-    startsAt: view && !item.isAllDay ? view.start : item.startsAt,
-    endsAt: view && !item.isAllDay ? view.end : item.endsAt,
-    startDate: view && item.isAllDay ? view.start.slice(0, 10) : item.startDate,
-    endDate: view && item.isAllDay ? (view.end?.slice(0, 10) ?? null) : item.endDate,
+    title: view ? view.title : base.title,
+    description: view ? view.description : base.description,
+    status: view ? view.status : base.status,
+    startsAt: view && !item.isAllDay ? view.start : base.startsAt,
+    endsAt: view && !item.isAllDay ? view.end : base.endsAt,
+    startDate: view && item.isAllDay ? view.start.slice(0, 10) : base.startDate,
+    endDate: view && item.isAllDay ? (view.end?.slice(0, 10) ?? null) : base.endDate,
   };
 
   const patch = (data: UpdateCalendarItemRequest) => {

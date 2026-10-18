@@ -1,6 +1,6 @@
 import { describeRrule } from '@lupira/cal-domain/rrule';
 import {
-  occurrenceEdit, occurrenceKey, occurrenceScopes, occurrenceView, seriesDeviationRows,
+  followingSeriesOf, occurrenceEdit, occurrenceKey, occurrenceScopes, occurrenceView, seriesDeviationRows,
   type OccurrenceEdit, type OccurrenceScope, type SeriesDeviationRow, type SeriesItem,
 } from '@lupira/cal-domain/seriesOccurrences';
 import { fmtWhen, ymd } from '@danbro96/lupira-domain-core/time';
@@ -16,7 +16,7 @@ import { calendarLabel } from '@lupira/cal-domain/calendars';
 import { attendeeName } from '@danbro96/lupira-domain-contacts/contactNames';
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import type { CalendarMembership, ItemDoc } from '../../domain/docTypes';
-import { coreOfDoc, followingSeriesOf, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
+import { coreOfDoc, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
 import { copyText } from '@danbro96/lupira-expo-feedback/copy';
 import { toast } from '@danbro96/lupira-expo-feedback/toast';
 import {

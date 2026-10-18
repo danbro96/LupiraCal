@@ -413,6 +413,13 @@ export function splitSeries(item: SeriesShape, originalStart: string): SeriesSpl
   };
 }
 
+/** The series that "this and following" from `originalStart` would continue as: its own fields, not the occurrence's
+ *  change. Null where nothing precedes it. */
+export function followingSeriesOf<T extends SeriesShape>(item: T, originalStart: string): T | null {
+  const parts = splitSeries(item, originalStart);
+  return parts ? { ...item, ...parts.following } : null;
+}
+
 /** The id the series continuing a split gets for `sourceKey`, so an offline client knows it up front. */
 export function continuationId(sourceKey: string): string {
   return deterministicGuid(sourceKey.trim());

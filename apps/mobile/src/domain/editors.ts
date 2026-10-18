@@ -3,7 +3,7 @@ import { emptyItemForm, scheduleFromForm, parseList, type EditResult, type ItemF
 import { birthdayFields, birthdayFromFields } from '@lupira/cal-domain/partialDate';
 import { fromStored } from '@lupira/cal-domain/placeSelection';
 import {
-  allDayKey, occurrenceView, splitSeries, type OccurrencePatch, type OccurrenceStatus, type SeriesItem,
+  allDayKey, occurrenceView, type OccurrencePatch, type OccurrenceStatus, type SeriesItem,
 } from '@lupira/cal-domain/seriesOccurrences';
 import { deviceTimeZone, eventZone, isoToWall } from '@lupira/cal-domain/zonedTime';
 import type { CalendarMembership, ContactDoc, ItemAttendee, ItemDoc, ReachChannel } from './docTypes';
@@ -47,12 +47,6 @@ export function itemFormFromOccurrence(doc: ItemDoc, originalStart: string): Ite
   return itemFormFromDoc(doc.isAllDay
     ? { ...shown, startDate: view.start.slice(0, 10), endDate: view.end?.slice(0, 10) ?? null }
     : { ...shown, startsAt: view.start, endsAt: view.end });
-}
-
-/** The series that "this and following" from `originalStart` would continue as; null where nothing precedes it. */
-export function followingSeriesOf(doc: ItemDoc, originalStart: string): ItemDoc | null {
-  const parts = splitSeries(doc, originalStart);
-  return parts ? { ...doc, ...parts.following } : null;
 }
 
 /** An occurrence form → its change; all-day times are dates at 00:00Z, the end the last day. */

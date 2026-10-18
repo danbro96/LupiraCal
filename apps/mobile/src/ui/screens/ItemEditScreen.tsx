@@ -1,6 +1,6 @@
 import { describeRrule, NO_REPEAT } from '@lupira/cal-domain/rrule';
 import {
-  allDayKey, occurrenceEdit, occurrenceKey, occurrenceScopes, type OccurrenceScope, type SeriesItem,
+  allDayKey, followingSeriesOf, occurrenceEdit, occurrenceKey, occurrenceScopes, type OccurrenceScope, type SeriesItem,
 } from '@lupira/cal-domain/seriesOccurrences';
 import { deviceTimeZone, wallToInstant } from '@lupira/cal-domain/zonedTime';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -16,7 +16,7 @@ import {
   categoryAllDayDefault, emptyItemForm, withAllDay, withSchedule, type ItemForm, type ScheduleField,
 } from '@lupira/cal-domain/itemForm';
 import {
-  acceptedCalendarIds, attendeeChanges, filingChanges, followingSeriesOf, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft,
+  acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft,
   itemFormFromOccurrence, occurrencePatchFromForm, unresolvedLabelOf,
 } from '../../domain/editors';
 import { itemDraftFromLink } from '../../domain/drafts';

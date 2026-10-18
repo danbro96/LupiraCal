@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { movedEnd } from './itemForm';
 import {
   allDayKey,
   applyOccurrenceChange,
@@ -7,6 +8,7 @@ import {
   continuedParticipationId,
   expandSeries,
   followDeviations,
+  followingSeriesOf,
   instantList,
   isFirstOccurrence,
   occurrenceEdit,
@@ -245,5 +247,34 @@ describe('occurrence views and edits', () => {
     expect(applyOccurrenceChange({ ...weekly, ...changed }, '2026-07-13T09:00:00Z', { kind: 'restore' })).toEqual({
       excludedOccurrences: null, occurrenceOverrides: null,
     });
+  });
+});
+
+describe('this and following', () => {
+  const moved: OccurrenceChange = {
+    originalStart: '2026-08-17T08:00:00Z', startsAt: '2026-08-17T09:00:00Z', endsAt: null, title: 'Moved', description: null, status: null, locationLabel: null,
+  };
+  const weekly: SeriesItem = {
+    isAllDay: false, title: 'Training', description: 'Bring water', status: 'Confirmed',
+    startsAt: '2026-08-03T08:00:00Z', endsAt: '2026-08-03T09:00:00Z', startTimezone: 'Europe/Stockholm',
+    recurrenceRule: 'FREQ=WEEKLY;COUNT=4', occurrenceOverrides: [moved],
+  };
+
+  it('continues from the series at the occurrence, not from its change', () => {
+    const following = followingSeriesOf(weekly, moved.originalStart)!;
+    expect(following).toMatchObject({
+      title: 'Training', description: 'Bring water', status: 'Confirmed',
+      startsAt: '2026-08-17T08:00:00Z', endsAt: '2026-08-17T09:00:00Z', recurrenceRule: 'FREQ=WEEKLY;COUNT=2', occurrenceOverrides: [moved],
+    });
+    expect(followingSeriesOf(weekly, '2026-08-03T08:00:00Z')).toBeNull();
+  });
+
+  it('moving the continuation to 12:00 is +2 h on the series, and the moved occurrence follows it', () => {
+    const following = followingSeriesOf(weekly, moved.originalStart)!;
+    const startsAt = '2026-08-17T10:00:00.000Z';
+    const endsAt = movedEnd(following.startsAt!, following.endsAt!, startsAt, 'Europe/Stockholm');
+    expect(endsAt).toBe('2026-08-17T11:00:00.000Z');
+    const after = followDeviations(following, { ...following, startsAt, endsAt });
+    expect(after.occurrenceOverrides).toEqual([{ ...moved, originalStart: '2026-08-17T10:00:00Z' }]);
   });
 });
