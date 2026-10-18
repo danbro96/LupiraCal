@@ -202,6 +202,12 @@ describe('scopes', () => {
     expect(occurrenceScopes({ ...weekly, recurrenceRule: null }, null)).toEqual(['series']);
     expect(isFirstOccurrence(weekly, '2026-07-06T09:00:00+00:00')).toBe(true);
   });
+
+  it('offers following on an occurrence decades into a daily series', () => {
+    const daily: SeriesShape = { ...weekly, startTimezone: 'Europe/Stockholm', recurrenceRule: 'FREQ=DAILY' };
+    expect(occurrenceScopes(daily, '2056-07-06T09:00:00Z')).toEqual(['this', 'following', 'series']);
+    expect(followingSeriesOf(daily, '2056-07-06T09:00:00Z')?.startsAt).toBe('2056-07-06T09:00:00Z');
+  });
 });
 
 describe('occurrence views and edits', () => {

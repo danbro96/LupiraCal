@@ -290,5 +290,150 @@
     "ContinuationId": "2b82ede6-fb79-9974-73d9-289d2e144cb9",
     "ParticipationId": "da7efb75-4ce1-35a3-84d9-2d5122de59e7",
     "ContinuedParticipationId": "497471e1-2e82-c579-a1d6-b7abdb839479"
+  },
+  {
+    "Name": "daily-20-years",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=DAILY"
+    },
+    "At": "2046-07-06T09:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=DAILY;UNTIL=20460705T090000Z"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2046-07-06T09:00:00+00:00",
+      "EndsAt": "2046-07-06T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=DAILY"
+    },
+    "SourceKey": "split-daily-20-years",
+    "ContinuationId": "dd17fecf-8f87-0218-5362-4e9082663e59",
+    "ParticipationId": "b94ec4ff-1fbf-9982-0f97-d514adbc2d1d",
+    "ContinuedParticipationId": "46981833-a44b-e1ac-d165-082fef688273"
+  },
+  {
+    "Name": "weekdays-40-years",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
+    },
+    "At": "2066-07-05T09:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;UNTIL=20660702T090000Z"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2066-07-05T09:00:00+00:00",
+      "EndsAt": "2066-07-05T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
+    },
+    "SourceKey": "split-weekdays-40-years",
+    "ContinuationId": "df32ba07-af50-55f9-9833-1a114dfea53e",
+    "ParticipationId": "6bb9800c-b307-b392-33e0-29f11a5bc36b",
+    "ContinuedParticipationId": "84687c26-4cd5-57a9-13dd-c3a5e65702e0"
+  },
+  {
+    "Name": "weekdays-count-15000",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;COUNT=15000"
+    },
+    "At": "2066-07-05T09:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-07-06T09:00:00+00:00",
+      "EndsAt": "2026-07-06T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;COUNT=10435"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2066-07-05T09:00:00+00:00",
+      "EndsAt": "2066-07-05T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;COUNT=4565"
+    },
+    "SourceKey": "split-weekdays-count-15000",
+    "ContinuationId": "b87f5f6f-88c8-6e42-cc09-0aa4d767fd3c",
+    "ParticipationId": "822381e7-c2b1-d8ba-c6a6-fbed39a1015c",
+    "ContinuedParticipationId": "f7033b1f-2c99-ad46-20dd-68b6d1ea8cbb"
+  },
+  {
+    "Name": "monthly-31st",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2026-01-31T08:00:00+00:00",
+      "EndsAt": "2026-01-31T08:30:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=MONTHLY;BYMONTHDAY=31"
+    },
+    "At": "2026-08-31T08:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2026-01-31T08:00:00+00:00",
+      "EndsAt": "2026-01-31T08:30:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=MONTHLY;BYMONTHDAY=31;UNTIL=20260731T080000Z"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2026-08-31T08:00:00+00:00",
+      "EndsAt": "2026-08-31T08:30:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=MONTHLY;BYMONTHDAY=31"
+    },
+    "SourceKey": "split-monthly-31st",
+    "ContinuationId": "d3ce8713-d939-3a6c-3ff0-24b9dbe80c63",
+    "ParticipationId": "64113661-a42e-6773-f9a3-5c30c279b61b",
+    "ContinuedParticipationId": "6c2a52e3-95f9-6e9d-e1d4-f31895a9d32f"
+  },
+  {
+    "Name": "yearly-feb-29",
+    "Item": {
+      "IsAllDay": false,
+      "StartsAt": "2024-02-29T09:00:00+00:00",
+      "EndsAt": "2024-02-29T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=YEARLY"
+    },
+    "At": "2032-02-29T09:00:00+00:00",
+    "Earlier": {
+      "IsAllDay": false,
+      "StartsAt": "2024-02-29T09:00:00+00:00",
+      "EndsAt": "2024-02-29T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=YEARLY;UNTIL=20280229T090000Z"
+    },
+    "Following": {
+      "IsAllDay": false,
+      "StartsAt": "2032-02-29T09:00:00+00:00",
+      "EndsAt": "2032-02-29T10:00:00+00:00",
+      "StartTimezone": "UTC",
+      "RecurrenceRule": "FREQ=YEARLY"
+    },
+    "SourceKey": "split-yearly-feb-29",
+    "ContinuationId": "90b05418-3004-dd54-e5d1-72ace47ddf84",
+    "ParticipationId": "6c9e6cc3-0c68-7b47-f1c3-d862e640c08c",
+    "ContinuedParticipationId": "cfe013e0-9944-38b8-c4c3-bd76051228dc"
   }
 ]

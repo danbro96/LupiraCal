@@ -119,15 +119,22 @@ export function expandRecurrence(
   const startMs = Math.floor(start.getTime() / 1000) * 1000;
   const anchor = new Date(zone ? toWallMs(startMs, zone) : startMs);
 
+  const windowStartMs = windowStart.getTime();
+  const windowEndMs = windowEnd.getTime();
+  // Wall clock and instant differ by under a day, so far below the window and a UTC UNTIL the zone lookup is skipped.
+  const instantNear = (wall: number): number | null =>
+    wall < windowStartMs - DAY_MS && !(rule.until?.utc && wall >= rule.until.ms - DAY_MS) ? null : toInstant(wall);
+
   const out: Date[] = [];
   let produced = 0;
-  const consider = (wall: number): 'emitted' | 'skipped' | 'done' => {
-    const t = toInstant(wall);
-    if (rule.until !== null && (rule.until.utc ? t : wall) > rule.until.ms) return 'done';
+  const consider = (wall: number): 'skipped' | 'done' => {
+    const t = instantNear(wall);
+    if (rule.until !== null && (rule.until.utc ? (t ?? wall) : wall) > rule.until.ms) return 'done';
     produced++;
     if (rule.count !== null && produced > rule.count) return 'done';
-    if (t >= windowEnd.getTime()) return 'done';
-    if (t >= windowStart.getTime()) {
+    if (t === null) return 'skipped';
+    if (t >= windowEndMs) return 'done';
+    if (t >= windowStartMs) {
       out.push(new Date(t));
       if (out.length >= maxOccurrences) return 'done';
     }
@@ -136,8 +143,9 @@ export function expandRecurrence(
 
   const anchorMs = anchor.getTime();
   const timeOfDay = anchorMs - utcMidnight(anchor);
-  const maxPeriods = 5_000;
-  for (let period = 0; period < maxPeriods; period++) {
+  const firstPeriod = rule.count === null ? periodNear(rule, anchor, Math.max(anchorMs, windowStartMs - DAY_MS)) : 0;
+  const endPeriod = rule.count === null ? firstPeriod + 5_000 : 1_000_000;
+  for (let period = firstPeriod; period < endPeriod; period++) {
     const candidates = periodCandidates(rule, anchor, period).filter((t) => t + timeOfDay >= anchorMs);
     candidates.sort((a, b) => a - b);
     for (const day of candidates) {
@@ -146,9 +154,24 @@ export function expandRecurrence(
     }
     // Past the window with nothing left to count — stop walking periods.
     const periodFloor = candidates.length > 0 ? candidates[0] : null;
-    if (periodFloor !== null && toInstant(periodFloor + timeOfDay) >= windowEnd.getTime() && rule.count === null) return out;
+    if (periodFloor !== null && toInstant(periodFloor + timeOfDay) >= windowEndMs && rule.count === null) return out;
   }
   return out;
+}
+
+/// The period whose days start at or before `wall`; none of the periods before it reaches `wall`.
+function periodNear(rule: RecurrenceRule, start: Date, wall: number): number {
+  const at = new Date(wall);
+  switch (rule.freq) {
+    case 'DAILY':
+      return Math.floor((wall - utcMidnight(start)) / (rule.interval * DAY_MS));
+    case 'WEEKLY':
+      return Math.floor((wall - weekStart(utcMidnight(start), rule.wkst)) / (rule.interval * 7 * DAY_MS));
+    case 'MONTHLY':
+      return Math.floor(((at.getUTCFullYear() - start.getUTCFullYear()) * 12 + at.getUTCMonth() - start.getUTCMonth()) / rule.interval);
+    case 'YEARLY':
+      return Math.floor((at.getUTCFullYear() - start.getUTCFullYear()) / rule.interval);
+  }
 }
 
 /// Candidate day-instants (UTC midnight ms) for one period of the rule, unfiltered by DTSTART/window.

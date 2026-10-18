@@ -101,6 +101,8 @@ export function instantList(values: readonly unknown[] | null | undefined): stri
 }
 
 const MIN_MS = -8.64e15;
+const MAX_MS = 8.64e15;
+const DAY_MS = 86_400_000;
 
 const ms = (iso: string) => Date.parse(iso);
 const msList = (values: readonly string[] | null | undefined) => (values ?? []).map(ms);
@@ -115,16 +117,28 @@ function anchorOf(s: SeriesShape): Anchor | null {
   return { at: ms(s.startsAt), zone: isValidTimeZone(s.startTimezone) && s.startTimezone !== 'UTC' ? s.startTimezone : null };
 }
 
-function starts(s: SeriesShape, from: number, to: number): number[] {
+function starts(s: SeriesShape, from: number, to: number, limit?: number): number[] {
   const anchor = anchorOf(s);
   if (!anchor) return [];
   const anchorOnly = anchor.at >= from && anchor.at < to ? [anchor.at] : [];
   if (!recurs(s)) return anchorOnly;
-  const expanded = expandRecurrence(s.recurrenceRule!, new Date(anchor.at), new Date(from), new Date(to), anchor.zone);
+  const expanded = expandRecurrence(s.recurrenceRule!, new Date(anchor.at), new Date(from), new Date(to), anchor.zone, limit);
   return expanded ? expanded.map((d) => d.getTime()) : anchorOnly;
 }
 
 const generates = (s: SeriesShape, t: number) => starts(s, t, t + 1).length > 0;
+
+const firstStart = (s: SeriesShape): number | null => starts(s, MIN_MS, MAX_MS, 1)[0] ?? null;
+
+function lastStartBefore(s: SeriesShape, at: number): number | null {
+  const anchor = anchorOf(s);
+  if (!anchor) return null;
+  for (let span = DAY_MS; ; span *= 2) {
+    const found = starts(s, at - span, at);
+    if (found.length > 0) return found[found.length - 1];
+    if (at - span <= anchor.at) return null;
+  }
+}
 
 function changesOf(s: SeriesShape): Map<number, OccurrenceChange> {
   const changes = new Map<number, OccurrenceChange>();
@@ -170,7 +184,7 @@ export function overrideFor(item: SeriesShape, originalStart: string): Occurrenc
 /** Whether `originalStart` is the first of the series' rule occurrences — where "this and following" is the whole series. */
 export function isFirstOccurrence(item: SeriesShape, originalStart: string): boolean {
   const at = ms(originalStart);
-  return recurs(item) && generates(item, at) && starts(item, MIN_MS, at).length === 0;
+  return recurs(item) && generates(item, at) && firstStart(item) === at;
 }
 
 /** The scopes an edit of this occurrence can take: "this and following" only from a later rule occurrence. */
@@ -363,14 +377,15 @@ function shiftedRule(rule: string, shift: Shift): string {
  *  rest. Null unless `originalStart` is one of the rule's occurrences after its first. */
 export function capRule(item: SeriesShape, originalStart: string): { earlier: string; following: string } | null {
   const at = ms(originalStart);
-  if (!recurs(item) || !generates(item, at)) return null;
-  const earlierStarts = starts(item, MIN_MS, at);
-  if (earlierStarts.length === 0) return null;
+  if (!recurs(item) || !generates(item, at) || isFirstOccurrence(item, originalStart)) return null;
   const rule = item.recurrenceRule!;
   const count = ruleCount(rule);
-  if (count !== null)
-    return { earlier: withPart(rule, 'COUNT', String(earlierStarts.length)), following: withPart(rule, 'COUNT', String(count - earlierStarts.length)) };
-  const last = earlierStarts[earlierStarts.length - 1];
+  if (count !== null) {
+    const earlier = starts(item, MIN_MS, at, count).length;
+    return { earlier: withPart(rule, 'COUNT', String(earlier)), following: withPart(rule, 'COUNT', String(count - earlier)) };
+  }
+  const last = lastStartBefore(item, at);
+  if (last === null) return null;
   const roundedUp = Math.ceil(last / 1000) * 1000;
   return { earlier: withPart(rule, 'UNTIL', item.isAllDay ? formatDate(last) : `${formatWall(roundedUp)}Z`), following: rule };
 }
