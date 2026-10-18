@@ -1,6 +1,6 @@
 import { describeRrule } from '@lupira/cal-domain/rrule';
 import {
-  followingSeriesOf, occurrenceEdit, occurrenceKey, occurrenceScopes, occurrenceView, seriesDeviationRows,
+  occurrenceEdit, occurrenceKey, occurrenceScopes, occurrenceView, seriesDeviationRows,
   type OccurrenceEdit, type OccurrenceScope, type SeriesDeviationRow, type SeriesItem,
 } from '@lupira/cal-domain/seriesOccurrences';
 import { fmtWhen, ymd } from '@danbro96/lupira-domain-core/time';
@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { calendarLabel } from '@lupira/cal-domain/calendars';
 import { attendeeName } from '@danbro96/lupira-domain-contacts/contactNames';
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
+import { cancelPlan } from '../../domain/cancelPlan';
 import type { CalendarMembership, ItemDoc } from '../../domain/docTypes';
 import { coreOfDoc, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
 import { copyText } from '@danbro96/lupira-expo-feedback/copy';
@@ -43,6 +44,8 @@ import { useCalendarColors } from '../hooks/palette';
 import { EventPhotosRow } from '../photos/EventPhotosRow';
 import type { RootStackParamList } from '../navigation/types';
 import { spacing, useColors } from '../theme';
+
+const NOTHING_CANCELLED = 'This event is no longer part of the series — nothing cancelled';
 
 export function ItemDetailScreen() {
   const c = useColors();
@@ -114,17 +117,27 @@ export function ItemDetailScreen() {
   };
 
   const cancelIn = (scope: OccurrenceScope) => {
-    const following = scope === 'following' && key ? followingSeriesOf(doc, key) : null;
-    if (scope === 'this' && key) editOccurrence(occurrenceEdit(doc as SeriesItem, key, { status: 'Cancelled' }), 'Event cancelled');
-    else if (following && key) {
-      void splitItem(itemId, key, { ...coreOfDoc(following), status: 'Cancelled' }).then((outcome) => {
-        if (outcome.kind === 'stale') toast('This event is no longer part of the series — nothing cancelled');
-        else {
-          toast('Following events cancelled');
-          navigation.replace('ItemDetail', { itemId: outcome.itemId, occurrence: key });
-        }
-      });
-    } else setStatus('Cancelled', 'Event cancelled');
+    const plan = cancelPlan(doc, scope, key);
+    switch (plan.kind) {
+      case 'gone':
+        toast(NOTHING_CANCELLED);
+        break;
+      case 'series':
+        setStatus('Cancelled', 'Event cancelled');
+        break;
+      case 'occurrence':
+        if (key) editOccurrence(occurrenceEdit(doc as SeriesItem, key, { status: 'Cancelled' }), 'Event cancelled');
+        break;
+      case 'following':
+        if (!key) break;
+        void splitItem(itemId, key, plan.core).then((outcome) => {
+          if (outcome.kind === 'stale') toast(NOTHING_CANCELLED);
+          else {
+            toast('Following events cancelled');
+            navigation.replace('ItemDetail', { itemId: outcome.itemId, occurrence: key });
+          }
+        });
+    }
   };
 
   const scoped = (run: (scope: OccurrenceScope) => void, destructive = false) =>
