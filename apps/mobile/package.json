@@ -26,7 +26,7 @@
     "@danbro96/lupira-expo-paper": "0.8.0",
     "@danbro96/lupira-expo-query": "0.1.1",
     "@danbro96/lupira-expo-sqlite": "0.4.1",
-    "@danbro96/lupira-http": "0.2.0",
+    "@danbro96/lupira-http": "0.2.1",
     "@danbro96/lupira-sync-core": "0.1.0",
     "@danbro96/lupira-sync-engine": "0.1.2",
     "@danbro96/lupira-tokens-calendar": "0.1.0",
