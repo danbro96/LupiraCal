@@ -1,4 +1,3 @@
-import { toast } from '@danbro96/lupira-expo-feedback/toast';
 import { useOnline } from '@danbro96/lupira-expo-query/online';
 import { SyncStatusView } from '@danbro96/lupira-expo-paper/components/SyncStatusView';
 import type { OpBase } from '@danbro96/lupira-sync-engine/types';
@@ -18,15 +17,12 @@ export function SyncIssuesScreen() {
 
   return (
     <SyncStatusView
-      status={online ? status : { ...status, phase: 'idle', progress: null }}
+      status={status}
       parked={parked}
       opLabel={labelOf}
       online={online}
       progressLabels={AGGREGATE_LABELS}
-      onSync={() => {
-        if (online) void engine.sync();
-        else toast('Offline — changes sync when you reconnect');
-      }}
+      onSync={() => void engine.sync()}
       onRetry={(commandId) => void engine.retry(commandId)}
       onDiscard={(commandId) => void engine.discard(commandId)}
     />
