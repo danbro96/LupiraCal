@@ -91,6 +91,12 @@ describe('calItem module', () => {
     ]);
   });
 
+  it('keeps when an attendee left', () => {
+    const change = serverChange('Party', 0);
+    Object.assign(change.item, { attendees: [{ participationId: 'p-bo', contactId: 'bo', role: 'RequiredParticipant', status: 'Declined', leftAt: '2026-08-05T10:00:00Z' }] });
+    expect(calItemModule.feed.fromWire(change).state.doc.attendees?.[0].leftAt).toBe('2026-08-05T10:00:00Z');
+  });
+
   it('drops a deleted item from every index table', async () => {
     const e = engine();
     pages.push({ changed: [serverChange('Server', 0)], deleted: [] });

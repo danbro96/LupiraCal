@@ -164,17 +164,20 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
   }
 }
 
-/** The series a split at `originalStart` starts, as cal-api builds it: the original's fields, calendars, attendees (each
- *  participation under its continued id) and payloads over the following part, revised with `core`, every section
- *  stamped with the split. Null when there is nothing before `originalStart` to split from. */
+/** The series a split at `originalStart` starts, as cal-api builds it: the original's fields, calendars, attendees who
+ *  haven't left (each participation under its continued id) and payloads over the following part, revised with
+ *  `core`, every section stamped with the split. Null when there is nothing before `originalStart` to split from. */
 export function continuationOf(original: MirrorItem, newItemId: string, originalStart: string, core: ItemCore, split: SectionGuard): MirrorItem | null {
   const parts = splitSeries(original.doc, originalStart);
   if (!parts) return null;
   const continued = (participationId: string) => (participationId ? continuedParticipationId(newItemId, participationId) : '');
   const calendars = original.doc.calendars.filter((m) => m.status !== 'Removed');
-  const attendees = original.doc.attendees?.map((a) => ({ ...a, participationId: continued(a.participationId) }));
-  const reminders = original.guards.reminders
-    && Object.fromEntries(Object.entries(original.guards.reminders).map(([id, g]) => [continued(id), g]));
+  const staying = original.doc.attendees?.filter((a) => !a.leftAt);
+  const attendees = staying?.map((a) => ({ ...a, participationId: continued(a.participationId) }));
+  const stayingIds = new Set(staying?.map((a) => a.participationId));
+  const reminders = original.guards.reminders && Object.fromEntries(
+    Object.entries(original.guards.reminders).filter(([id]) => stayingIds.has(id)).map(([id, g]) => [continued(id), g]),
+  );
   const doc: ItemDoc = {
     ...original.doc, ...parts.following, id: newItemId, continuesItemId: original.doc.id, calendars, ...(attendees ? { attendees } : {}),
   };

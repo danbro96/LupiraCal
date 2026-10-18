@@ -31,8 +31,10 @@ export type ReminderMode = 'Default' | 'Off' | 'Before';
 export type ParticipantReminder = { mode: ReminderMode; minutesBefore: number | null };
 
 /** `participationId` is '' until the server has minted one for an invite still in the outbox. `reminder` null or
- *  absent = the default. */
-export type ItemAttendee = { participationId: string; contactId: string; role: string; status: string; reminder?: ParticipantReminder | null };
+ *  absent = the default. `leftAt` set = withdrawn. */
+export type ItemAttendee = {
+  participationId: string; contactId: string; role: string; status: string; reminder?: ParticipantReminder | null; leftAt?: string | null;
+};
 
 export type ItemDoc = {
   id: string;

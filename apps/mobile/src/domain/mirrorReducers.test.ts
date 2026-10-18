@@ -339,6 +339,19 @@ describe('series occurrences', () => {
     expect(continuationOf(original, 'item-2', '2026-08-03T17:00:00Z', core, { ts: T(5), cmd: cmd(5) })).toBeNull();
   });
 
+  it('the continuing series leaves out attendees who left, with their reminders', () => {
+    const original = weekly({
+      attendees: [
+        { participationId: 'p-anna', contactId: 'anna', role: 'RequiredParticipant', status: 'Accepted' },
+        { participationId: 'p-bo', contactId: 'bo', role: 'RequiredParticipant', status: 'Declined', leftAt: '2026-08-05T10:00:00Z' },
+      ],
+    });
+    original.guards.reminders = { 'p-anna': { ts: T(1), cmd: cmd(1) }, 'p-bo': { ts: T(2), cmd: cmd(2) } };
+    const next = continuationOf(original, 'item-2', '2026-08-17T17:00:00Z', { title: 'Later', isAllDay: false }, { ts: T(5), cmd: cmd(5) })!;
+    expect(next.doc.attendees?.map((a) => a.contactId)).toEqual(['anna']);
+    expect(Object.values(next.guards.reminders ?? {})).toEqual([{ ts: T(1), cmd: cmd(1) }]);
+  });
+
   it('moving the series carries its changed occurrences and its end along', () => {
     const bounded = weekly({ recurrenceRule: 'FREQ=WEEKLY;UNTIL=20260824T170000Z', occurrenceOverrides: [change] });
     const moved = applyItemOp(bounded, {
