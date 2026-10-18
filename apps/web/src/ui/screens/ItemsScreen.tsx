@@ -15,7 +15,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useGetItem } from '@lupira/cal-api/query/cal';
 import { useGetContact } from '@lupira/cal-api/query/contact';
-import { ItemCategory, ItemStatus, OriginKind, type CalendarItemOccurrenceDto, type ContainerDto } from '@lupira/cal-api/models';
+import { ItemStatus, OriginKind, type CalendarItemOccurrenceDto, type ContainerDto } from '@lupira/cal-api/models';
 import { groupOccurrences } from '@lupira/cal-domain/itemTree';
 import { occurrenceKey } from '@lupira/cal-domain/seriesOccurrences';
 import { statusBadge, displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
@@ -27,6 +27,7 @@ import { SEARCH_PAGE_SIZE, useItemSearch } from '../../state/useItemSearch';
 import { errText } from '../errText';
 import { calendarColor } from '../theme/kinds';
 import { CategoryIcon } from '../components/KindIcon';
+import { CategorySelect } from '../components/CategorySelect';
 import { useIsPhone } from '../hooks/useIsPhone';
 import { PageHead } from '../components/Page';
 import { Row, RowName } from '../components/Rows';
@@ -119,19 +120,7 @@ export function ItemsScreen() {
           </MenuItem>
         ))}
       </TextField>
-      <TextField
-        select
-        value={filters.category}
-        onChange={(e) => setParam('category', e.target.value || null)}
-        slotProps={{ htmlInput: { 'aria-label': 'Category' }, select: { displayEmpty: true } }}
-      >
-        <MenuItem value="">Any category</MenuItem>
-        {Object.values(ItemCategory).map((c) => (
-          <MenuItem key={c} value={c}>
-            <CategoryIcon category={c} sx={{ verticalAlign: -5, mr: 0.5 }} />{c}
-          </MenuItem>
-        ))}
-      </TextField>
+      <CategorySelect any value={filters.category} onChange={(c) => setParam('category', c || null)} />
       <TextField
         select
         value={filters.status}

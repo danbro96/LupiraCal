@@ -19,7 +19,8 @@ import { NO_REPEAT, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { ymd } from '@danbro96/lupira-domain-core/time';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import { defaultCalendarIds, isSelectableCalendar } from '@lupira/cal-domain/calendars';
-import { emptyItemForm, parseList, scheduleFromForm, withSchedule, type ItemForm } from '@lupira/cal-domain/itemForm';
+import { categoryAllDayDefault, emptyItemForm, parseList, scheduleFromForm, withAllDay, withSchedule, type ItemForm } from '@lupira/cal-domain/itemForm';
+import { isItemCategory } from '@lupira/cal-domain/itemCategory';
 import type { PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { calendarLabel, useContainers } from '../../state/useContainers';
 import { useInvalidateItems } from '../../state/useInvalidate';
@@ -31,10 +32,12 @@ import { errText } from '../errText';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { useIsPhone } from '../hooks/useIsPhone';
 import { WrapRow } from './WrapRow';
+import { CategorySelect } from './CategorySelect';
 
 type FormValues = {
   title: string;
   calendarId: string;
+  category: string;
   isAllDay: boolean;
   start: string;
   end: string;
@@ -49,7 +52,7 @@ type FormValues = {
 
 const LAST_CALENDAR = 'newItem.calendarId';
 
-/** Quick-create: title, calendar, when (timed or all-day), place, recurrence, tags — and you, already going,
+/** Quick-create: title, calendar, category, when (timed or all-day), place, recurrence, tags — and you, already going,
  *  unless unticked. Starts on the calendar the last event went to. Availability has its own form. */
 export function NewItemModal({ onClose }: { onClose: () => void }) {
   const isPhone = useIsPhone();
@@ -84,6 +87,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
     defaultValues: {
       title: '',
       calendarId: defaultCalendarIds(calendars, remembered ? [remembered] : [])[0] ?? '',
+      category: 'General',
       isAllDay: false,
       start: `${initial.startDay}T${initial.startTime}`,
       end: `${initial.endDay}T${initial.endTime}`,
@@ -100,9 +104,12 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
   const startDate = useWatch({ control, name: 'startDate' });
   const start = useWatch({ control, name: 'start' });
   const attending = useWatch({ control, name: 'attending' });
+  const category = useWatch({ control, name: 'category' });
+  const [scheduleTouched, setScheduleTouched] = useState(false);
 
   // Moving the start carries the end along, as on the phone (`@lupira/cal-domain/itemForm`).
   const moveStart = (field: 'start' | 'startDate', value: string) => {
+    setScheduleTouched(true);
     const form = toItemForm(getValues());
     const moved = field === 'startDate'
       ? withSchedule(form, 'startDay', value)
@@ -110,6 +117,22 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
     setValue(field, value);
     if (form.isAllDay) setValue('endDate', moved.endDay);
     else if (moved.endDay) setValue('end', `${moved.endDay}T${moved.endTime}`);
+  };
+
+  // As on the phone: a category steers all-day vs timed until the schedule is touched.
+  const pickCategory = (value: string) => {
+    setValue('category', value);
+    const allDay = scheduleTouched ? null : categoryAllDayDefault(value);
+    if (allDay === null) return;
+    const next = withAllDay(toItemForm(getValues()), allDay);
+    setValue('isAllDay', next.isAllDay);
+    if (next.isAllDay) {
+      setValue('startDate', next.startDay);
+      setValue('endDate', next.endDay);
+    } else {
+      setValue('start', next.startDay ? `${next.startDay}T${next.startTime}` : '');
+      setValue('end', next.endDay ? `${next.endDay}T${next.endTime}` : '');
+    }
   };
 
   const submit = handleSubmit((v) => {
@@ -123,6 +146,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       calendarId: v.calendarId || null,
       title: v.title || null,
       description: v.description || null,
+      category: v.category,
       placeId: v.place?.placeId ?? null,
       ...schedule.value,
       recurrenceRule: v.rrule || null,
@@ -174,12 +198,22 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
               </TextField>
             )}
           />
+          <CategorySelect label="Category" value={category} onChange={pickCategory} />
           <Controller
             name="isAllDay"
             control={control}
             render={({ field }) => (
               <FormControlLabel
-                control={<Checkbox size="small" checked={field.value} onChange={(e) => field.onChange(e.target.checked)} />}
+                control={(
+                  <Checkbox
+                    size="small"
+                    checked={field.value}
+                    onChange={(e) => {
+                      setScheduleTouched(true);
+                      field.onChange(e.target.checked);
+                    }}
+                  />
+                )}
                 label="All day"
               />
             )}
@@ -196,7 +230,17 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
             <Controller
               name="endDate"
               control={control}
-              render={({ field }) => <TextField type="date" {...field} slotProps={{ htmlInput: { min: startDate } }} />}
+              render={({ field }) => (
+                <TextField
+                  type="date"
+                  {...field}
+                  onChange={(e) => {
+                    setScheduleTouched(true);
+                    field.onChange(e);
+                  }}
+                  slotProps={{ htmlInput: { min: startDate } }}
+                />
+              )}
             />
           </WrapRow>
         ) : (
@@ -207,7 +251,20 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
               render={({ field }) => <TextField type="datetime-local" {...field} onChange={(e) => moveStart('start', e.target.value)} required />}
             />
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>→</Typography>
-            <Controller name="end" control={control} render={({ field }) => <TextField type="datetime-local" {...field} />} />
+            <Controller
+              name="end"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  type="datetime-local"
+                  {...field}
+                  onChange={(e) => {
+                    setScheduleTouched(true);
+                    field.onChange(e);
+                  }}
+                />
+              )}
+            />
           </WrapRow>
         )}
         <WrapRow>
@@ -251,7 +308,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
               label="Place"
               value={field.value}
               onChange={field.onChange}
-              context={{ kind: 'event', category: 'General', attendeeIds: [], day: (isAllDay ? startDate : start.slice(0, 10)) || initial.startDay }}
+              context={{ kind: 'event', category: isItemCategory(category) ? category : 'General', attendeeIds: [], day: (isAllDay ? startDate : start.slice(0, 10)) || initial.startDay }}
             />
           )}
         />
