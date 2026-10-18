@@ -1,6 +1,6 @@
 import { residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import {
-  allDayKey, hasSeriesOccurrence, occurrenceEdit, occurrenceKey, overrideFor, type OccurrenceChange, type OccurrenceEdit, type OccurrencePatch,
+  allDayKey, hasSeriesOccurrence, occurrenceEdit, occurrenceKey, occurrenceView, overrideFor, type OccurrenceChange, type OccurrenceEdit, type OccurrencePatch,
   type SeriesItem,
 } from '@lupira/cal-domain/seriesOccurrences';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
@@ -106,8 +106,9 @@ export type OccurrenceTranslation =
 const PROVIDER_CANCELLED = 2;
 const DAY_MS = 86_400_000;
 
-/** A captured row for one occurrence of a series → its change. Deleting or cancelling it there excludes it; per-occurrence
- *  places don't exist, so its location is not read. What the mirror already holds is an echo. */
+/** A captured row for one occurrence of a series → its change. Deleting it there excludes it, and so does cancelling it
+ *  (the stock app's "delete this instance") unless the mirror already has it cancelled; per-occurrence places don't
+ *  exist, so its location is not read. What the mirror already holds is an echo. */
 export function translateOccurrenceRow(row: ParsedOccurrenceRow, existing: ItemDoc | null): OccurrenceTranslation {
   if (!existing) return { kind: 'skip', reason: 'series not in the mirror' };
   if (!hasSeriesOccurrence(existing, row.originalStart)) return { kind: 'skip', reason: 'no such occurrence in the series' };
@@ -115,7 +116,8 @@ export function translateOccurrenceRow(row: ParsedOccurrenceRow, existing: ItemD
   const excluded = (existing.excludedOccurrences ?? []).some((x) => Date.parse(x) === at);
   const target = { itemId: row.itemId, originalStart: occurrenceKey(at), occurredAt: row.occurredAt };
   const p = row.payload;
-  if (row.deleted || p.status === PROVIDER_CANCELLED) {
+  const cancelledThere = p.status === PROVIDER_CANCELLED && occurrenceView(existing as SeriesItem, target.originalStart)?.status !== 'Cancelled';
+  if (row.deleted || cancelledThere) {
     return excluded ? { kind: 'skip', reason: 'echo' } : { kind: 'occurrence', ...target, edit: { kind: 'exclude' } };
   }
   if (p.dtstart === null) return { kind: 'skip', reason: 'captured row has no start' };

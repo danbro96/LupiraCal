@@ -371,6 +371,19 @@ describe('occurrences captured from the stock calendar', () => {
     expect(translateOccurrenceRow(occurrence({}, { deleted: true }), excluded)).toEqual({ kind: 'skip', reason: 'echo' });
   });
 
+  it('a cancelled row of an occurrence the mirror already cancelled is an edit, not a delete', () => {
+    const cancelled: ItemDoc = {
+      ...weekly,
+      occurrenceOverrides: [{ originalStart: '2026-08-10T16:00:00Z', startsAt: null, endsAt: null, title: null, description: null, status: 'Cancelled', locationLabel: null }],
+    };
+    expect(translateOccurrenceRow(occurrence({ status: 2, description: 'Moved indoors' }), cancelled)).toMatchObject({
+      kind: 'occurrence', edit: { kind: 'change', change: { description: 'Moved indoors', status: 'Cancelled' } },
+    });
+    expect(translateOccurrenceRow(occurrence({ status: 2 }), cancelled)).toEqual({ kind: 'skip', reason: 'echo' });
+    expect(translateOccurrenceRow(occurrence({ status: 2 }), { ...weekly, status: 'Cancelled' })).toEqual({ kind: 'skip', reason: 'echo' });
+    expect(translateOccurrenceRow(occurrence({}, { deleted: true }), cancelled)).toMatchObject({ kind: 'occurrence', edit: { kind: 'exclude' } });
+  });
+
   it('suppresses what the mirror already holds, and restores an occurrence set back to the series', () => {
     expect(translateOccurrenceRow(occurrence({}), weekly)).toEqual({ kind: 'skip', reason: 'echo' });
     const changed: ItemDoc = {
