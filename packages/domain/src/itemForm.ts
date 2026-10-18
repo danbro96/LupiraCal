@@ -95,6 +95,13 @@ export function withAllDay<F extends ItemForm>(form: F, isAllDay: boolean): F {
   return { ...form, isAllDay, startTime: '09:00', endDay: end.day, endTime: end.time };
 }
 
+/** A category flipping a new event's all-day: turned timed again, it gets back the slot it was opened on. */
+export function withCategoryAllDay<F extends ItemForm>(form: F, isAllDay: boolean, initial: ItemForm): F {
+  if (isAllDay || form.isAllDay === isAllDay || !initial.startTime) return withAllDay(form, isAllDay);
+  const { startDay, startTime, endDay, endTime } = initial;
+  return { ...form, isAllDay, startDay, startTime, endDay, endTime };
+}
+
 /** A new event's sensible all-day default from its category: some categories are day-scoped, some timed.
  *  null = no opinion, leave the form alone. */
 export function categoryAllDayDefault(category: string): boolean | null {

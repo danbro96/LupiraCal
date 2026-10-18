@@ -13,7 +13,7 @@ import { calendarLabel, defaultCalendarIds } from '@lupira/cal-domain/calendars'
 import { attendeeName } from '@danbro96/lupira-domain-contacts/contactNames';
 import { NO_ATTENDEES } from '@lupira/cal-domain/participation';
 import {
-  categoryAllDayDefault, emptyItemForm, withAllDay, withSchedule, type ItemForm, type ScheduleField,
+  categoryAllDayDefault, emptyItemForm, withAllDay, withCategoryAllDay, withSchedule, type ItemForm, type ScheduleField,
 } from '@lupira/cal-domain/itemForm';
 import {
   acceptedCalendarIds, attendeeChanges, filingChanges, itemCoreFromForm, itemFormFromDoc, itemFormFromDraft,
@@ -72,7 +72,8 @@ export function ItemEditScreen() {
   const pickable = selectableCalendars(calendars);
   const draft = itemId ? null : (route.params?.draft ?? itemDraftFromLink(route.params ?? {}));
 
-  const [form, setForm] = useState<ItemForm>(() => (draft ? itemFormFromDraft(draft) : emptyItemForm(route.params?.day, route.params?.time)));
+  const [openedForm] = useState<ItemForm>(() => (draft ? itemFormFromDraft(draft) : emptyItemForm(route.params?.day, route.params?.time)));
+  const [form, setForm] = useState(openedForm);
   const [calendarIds, setCalendarIds] = useState<string[]>([]);
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
   const [scheduleTouched, setScheduleTouched] = useState(false);
@@ -161,7 +162,7 @@ export function ItemEditScreen() {
     setForm((f) => {
       const next = { ...f, category };
       const allDay = itemId || scheduleTouched ? null : categoryAllDayDefault(category);
-      return allDay === null ? next : withAllDay(next, allDay);
+      return allDay === null ? next : withCategoryAllDay(next, allDay, openedForm);
     });
   };
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  categoryAllDayDefault, defaultStartTime, emptyItemForm, movedEnd, parseList, scheduleFromForm, withAllDay, withSchedule,
+  categoryAllDayDefault, defaultStartTime, emptyItemForm, movedEnd, parseList, scheduleFromForm, withAllDay, withCategoryAllDay, withSchedule,
 } from './itemForm';
 
 describe('slot-created form', () => {
@@ -95,6 +95,22 @@ describe('withAllDay', () => {
   it('a range turned timed starts at 09:00 for an hour', () => {
     const range = { ...emptyItemForm(), isAllDay: true, startDay: '2026-10-02', endDay: '2026-10-04' };
     expect(withAllDay(range, false)).toMatchObject({ startTime: '09:00', endDay: '2026-10-02', endTime: '10:00' });
+  });
+});
+
+describe('withCategoryAllDay', () => {
+  it('Trip then Meeting returns the slot the event was opened on', () => {
+    const opened = emptyItemForm('2026-10-02', '14:30');
+    const trip = withCategoryAllDay(opened, true, opened);
+    expect(trip).toMatchObject({ isAllDay: true, startTime: '' });
+    expect(withCategoryAllDay(trip, false, opened)).toMatchObject({
+      isAllDay: false, startDay: '2026-10-02', startTime: '14:30', endDay: '2026-10-02', endTime: '15:30',
+    });
+  });
+
+  it('an event opened all-day turns timed at 09:00', () => {
+    const opened = { ...emptyItemForm(), isAllDay: true, startDay: '2026-10-02' };
+    expect(withCategoryAllDay(opened, false, opened)).toMatchObject({ startTime: '09:00', endTime: '10:00' });
   });
 });
 
