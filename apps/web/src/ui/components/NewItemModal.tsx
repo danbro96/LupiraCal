@@ -19,7 +19,7 @@ import { NO_REPEAT, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { ymd } from '@danbro96/lupira-domain-core/time';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import { defaultCalendarIds, isSelectableCalendar } from '@lupira/cal-domain/calendars';
-import { categoryAllDayDefault, emptyItemForm, parseList, scheduleFromForm, withAllDay, withSchedule, type ItemForm } from '@lupira/cal-domain/itemForm';
+import { categoryAllDayDefault, emptyItemForm, parseList, scheduleFromForm, withCategoryAllDay, withSchedule, type ItemForm } from '@lupira/cal-domain/itemForm';
 import { isItemCategory } from '@lupira/cal-domain/itemCategory';
 import type { PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { calendarLabel, useContainers } from '../../state/useContainers';
@@ -124,7 +124,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
     setValue('category', value);
     const allDay = scheduleTouched ? null : categoryAllDayDefault(value);
     if (allDay === null) return;
-    const next = withAllDay(toItemForm(getValues()), allDay);
+    const next = withCategoryAllDay(toItemForm(getValues()), allDay, initial);
     setValue('isAllDay', next.isAllDay);
     if (next.isAllDay) {
       setValue('startDate', next.startDay);
