@@ -101,8 +101,10 @@ export function ItemDetailScreen() {
   const editOccurrence = (edit: OccurrenceEdit, message: string) => {
     if (!key) return;
     const before: OccurrenceEdit = view?.change ? { kind: 'change', change: view.change } : { kind: 'restore' };
-    void changeOccurrence(itemId, key, edit).then(() =>
-      toast(message, { action: { label: 'Undo', onPress: () => void changeOccurrence(itemId, key, before) } }));
+    void changeOccurrence(itemId, key, edit).then((changed) =>
+      changed
+        ? toast(message, { action: { label: 'Undo', onPress: () => void changeOccurrence(itemId, key, before) } })
+        : toast('This event is no longer part of the series'));
   };
 
   const deleteIn = (scope: OccurrenceScope) => {
@@ -115,9 +117,12 @@ export function ItemDetailScreen() {
     const following = scope === 'following' && key ? followingSeriesOf(doc, key) : null;
     if (scope === 'this' && key) editOccurrence(occurrenceEdit(doc as SeriesItem, key, { status: 'Cancelled' }), 'Event cancelled');
     else if (following && key) {
-      void splitItem(state, key, { ...coreOfDoc(following), status: 'Cancelled' }).then((id) => {
-        toast('Following events cancelled');
-        navigation.replace('ItemDetail', { itemId: id, occurrence: key });
+      void splitItem(itemId, key, { ...coreOfDoc(following), status: 'Cancelled' }).then((outcome) => {
+        if (outcome.kind === 'stale') toast('This event is no longer part of the series — nothing cancelled');
+        else {
+          toast('Following events cancelled');
+          navigation.replace('ItemDetail', { itemId: outcome.itemId, occurrence: key });
+        }
       });
     } else setStatus('Cancelled', 'Event cancelled');
   };

@@ -15,6 +15,11 @@ type Options = {
 export function useUnsavedGuard(dirty: boolean, opts: Options = {}): { leave: () => void } {
   const navigation = useNavigation();
   const bypass = useRef(false);
+  // The alert outlives the render that opened it; Save must persist the form as it is when pressed.
+  const save = useRef(opts.onSave);
+  useEffect(() => {
+    save.current = opts.onSave;
+  });
   const confirmLeave = useEffectEvent((proceed: () => void) => {
     const { message = 'Discard your changes?', onSave } = opts;
     Alert.alert('Unsaved changes', message, [
@@ -24,7 +29,7 @@ export function useUnsavedGuard(dirty: boolean, opts: Options = {}): { leave: ()
         ? [{
           text: 'Save',
           onPress: () => {
-            void onSave().then((saved) => {
+            void save.current?.().then((saved) => {
               if (saved) proceed();
             });
           },

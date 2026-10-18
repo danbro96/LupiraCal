@@ -6,7 +6,7 @@ import { deterministicIdFor } from '../data/ids';
 import { lineageRoot } from '../data/queries/itemLineage';
 import type { ResidencyChange } from '../domain/addressRows';
 import { Aggregate } from '../domain/aggregates';
-import type { ParticipantReminder, ReachChannel, SocialProfile } from '../domain/docTypes';
+import type { ItemDoc, ItemGuards, ParticipantReminder, ReachChannel, SocialProfile } from '../domain/docTypes';
 import { residencyStreamKey } from '../domain/ids';
 import { continuationOf, type MirrorItem } from '../domain/mirrorReducers';
 import type { ClientOp, ContactCore, ItemCore, RsvpStatus } from '../domain/ops';
@@ -120,21 +120,28 @@ export async function setReminder(itemId: string, contactId: string, reminder: P
   await submit({ kind: 'item.reminder', itemId, contactId, reminder, ...item(itemId) });
 }
 
-/** Excludes or changes one occurrence; a change that leaves nothing different from the series restores it. */
-export async function changeOccurrence(itemId: string, originalStart: string, edit: OccurrenceEdit): Promise<void> {
+/** Excludes or changes one occurrence; a change that leaves nothing different from the series restores it. False when
+ *  the series no longer has that occurrence. */
+export async function changeOccurrence(itemId: string, originalStart: string, edit: OccurrenceEdit): Promise<boolean> {
   const key = occurrenceKey(originalStart);
+  const doc = (await engine.doc<ItemDoc, ItemGuards>(Aggregate.item, itemId))?.doc;
+  if (!doc || !hasSeriesOccurrence(doc, key)) return false;
   if (edit.kind === 'restore') await restoreOccurrence(itemId, key);
   else await submit({ kind: 'item.occurrence', itemId, originalStart: key, edit, ...item(itemId) });
+  return true;
 }
 
 export async function restoreOccurrence(itemId: string, originalStart: string): Promise<void> {
   await submit({ kind: 'item.occurrence.restore', itemId, originalStart: occurrenceKey(originalStart), ...item(itemId) });
 }
 
+export type SplitOutcome = { kind: 'split' | 'whole'; itemId: string } | { kind: 'stale' };
+
 /** "This and following": the series ends before `originalStart` and a new one, known by id offline, continues it as
- *  `core`. From the first occurrence it is the whole series. Returns the series now holding `originalStart`. */
-export async function splitItem(state: MirrorItem, originalStart: string, core: ItemCore): Promise<string> {
-  const itemId = state.doc.id;
+ *  `core`. From the first occurrence it is the whole series; stale when the series no longer splits there. */
+export async function splitItem(itemId: string, originalStart: string, core: ItemCore): Promise<SplitOutcome> {
+  const state = await engine.doc<ItemDoc, ItemGuards>(Aggregate.item, itemId);
+  if (!state) return { kind: 'stale' };
   const key = occurrenceKey(originalStart);
   const sourceKey = uuidv7();
   const newItemId = continuationId(sourceKey);
@@ -142,14 +149,15 @@ export async function splitItem(state: MirrorItem, originalStart: string, core: 
   const split: ClientOp = { kind: 'item.split', itemId, originalStart: key, newItemId, sourceKey, core, ...item(itemId), holdKey };
   const continuation = continuationOf(state, newItemId, key, core, { ts: split.occurredAt, cmd: split.commandId });
   if (!continuation) {
-    if (isFirstOccurrence(state.doc, key)) await reviseItem(itemId, core);
-    return itemId;
+    if (!isFirstOccurrence(state.doc, key)) return { kind: 'stale' };
+    await reviseItem(itemId, core);
+    return { kind: 'whole', itemId };
   }
   await submit([
     split,
     { kind: 'item.continue', itemId: newItemId, continuesItemId: itemId, state: continuation, ...stamp(Aggregate.item, newItemId, split.occurredAt), holdKey },
   ]);
-  return newItemId;
+  return { kind: 'split', itemId: newItemId };
 }
 
 /** Deletes `originalStart` and every occurrence after it; from the first occurrence that is the whole series. */

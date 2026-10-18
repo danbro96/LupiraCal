@@ -61,8 +61,10 @@ export function ItemEditScreen() {
   const occurrence = route.params?.occurrence;
   const key = occurrence && !Number.isNaN(Date.parse(occurrence)) ? occurrenceKey(occurrence) : null;
   const following = state && key && route.params?.scope === 'following' ? followingSeriesOf(state.doc, key) : null;
-  const scope: OccurrenceScope = state && key && route.params?.scope && occurrenceScopes(state.doc, key).includes(route.params.scope)
+  const liveScope: OccurrenceScope = state && key && route.params?.scope && occurrenceScopes(state.doc, key).includes(route.params.scope)
     && (route.params.scope !== 'following' || following) ? route.params.scope : 'series';
+  const [pinnedScope, setPinnedScope] = useState<OccurrenceScope | null>(null);
+  const scope = pinnedScope ?? liveScope;
   const base = following ?? state?.doc;
   const continued = useRef<{ itemId: string; occurrence: string } | null>(null);
   const { data: calendars } = useCalendars();
@@ -94,6 +96,7 @@ export function ItemEditScreen() {
     setBaseline({
       form: JSON.stringify(seededForm), calendars: JSON.stringify(seededCalendars), people: JSON.stringify(seededPeople),
     });
+    setPinnedScope(liveScope);
     setSeeded(true);
   }
   // A new event has you on it, already accepted; taking yourself off is the opt-out.
@@ -163,8 +166,12 @@ export function ItemEditScreen() {
   };
 
   /** Persists without navigating; false = validation failed, so the guard keeps the user here. */
+  const stale = () => {
+    setError('This series changed while you were editing — reopen it');
+    return false;
+  };
   const submit = async (): Promise<boolean> => {
-    if (scope === 'this' && state && key) return saveOccurrence(state.doc, key);
+    if (scope === 'this' && key) return state ? saveOccurrence(state.doc, key) : stale();
     const r = itemCoreFromForm(form, base, unresolvedLabel);
     if (!r.ok) {
       setError(r.error);
@@ -179,10 +186,12 @@ export function ItemEditScreen() {
       return false;
     }
     setError(null);
-    if (scope === 'following' && state && key) {
+    if (scope === 'following' && itemId && key) {
       const core = r.value;
       const first = core.isAllDay ? (core.startDate ? allDayKey(core.startDate) : key) : (core.startsAt ? occurrenceKey(core.startsAt) : key);
-      continued.current = { itemId: await splitItem(state, key, core), occurrence: first };
+      const outcome = await splitItem(itemId, key, core);
+      if (outcome.kind === 'stale') return stale();
+      continued.current = { itemId: outcome.itemId, occurrence: first };
       return true;
     }
     const ownReminder = me && reminderChanged && reminder ? { contactId: me, reminder } : undefined;
@@ -195,8 +204,7 @@ export function ItemEditScreen() {
       return false;
     }
     setError(null);
-    await changeOccurrence(doc.id, originalStart, occurrenceEdit(doc as SeriesItem, originalStart, r.value));
-    return true;
+    return await changeOccurrence(doc.id, originalStart, occurrenceEdit(doc as SeriesItem, originalStart, r.value)) || stale();
   };
   const guard = useUnsavedGuard(dirty, {
     message: 'Save this event before leaving?',
