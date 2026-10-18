@@ -68,6 +68,13 @@ object ContactsPublisher {
     Log.i(Bridge.TAG, "contacts publish: $inserted new, $updated updated, $removed removed of ${contacts.size}")
   }
 
+  fun purge(context: Context) {
+    val removed = context.contentResolver.delete(
+      rawContactsUri(), "${ContactsContract.RawContacts.ACCOUNT_TYPE} = ?", arrayOf(Bridge.ACCOUNT_TYPE),
+    )
+    Log.i(Bridge.TAG, "contacts purge: $removed raw contacts")
+  }
+
   /// The next publish rewrites these contacts whole, restoring rows the stock app deleted.
   fun invalidate(context: Context, contactIds: List<String>) {
     val forget = android.content.ContentValues().apply { putNull(ContactsContract.RawContacts.SYNC1) }

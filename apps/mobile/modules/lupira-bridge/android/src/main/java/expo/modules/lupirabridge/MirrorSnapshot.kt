@@ -9,18 +9,29 @@ import java.io.File
 object MirrorSnapshot {
   private const val NAME = "bridge-mirror.json"
 
-  fun write(context: Context, json: String) {
-    val tmp = File(context.filesDir, "$NAME.tmp")
+  fun write(context: Context, json: String) = write(context.filesDir, json)
+
+  fun read(context: Context): JSONObject? = read(context.filesDir, Bridge.generation(context))
+
+  fun clear(context: Context) = clear(context.filesDir)
+
+  fun write(dir: File, json: String) {
+    val tmp = File(dir, "$NAME.tmp")
     tmp.writeText(json)
-    if (!tmp.renameTo(File(context.filesDir, NAME))) throw IllegalStateException("could not replace $NAME")
+    if (!tmp.renameTo(File(dir, NAME))) throw IllegalStateException("could not replace $NAME")
   }
 
-  fun read(context: Context): JSONObject? {
-    val file = File(context.filesDir, NAME)
-    return if (file.exists()) JSONObject(file.readText()) else null
+  /// Only the generation native holds; a file from before generations reads while native holds none.
+  fun read(dir: File, generation: String?): JSONObject? {
+    val file = File(dir, NAME)
+    if (!file.exists()) return null
+    val json = JSONObject(file.readText())
+    val own = if (json.isNull("generation")) null else json.getString("generation")
+    return if (own == generation) json else null
   }
 
-  fun clear(context: Context) {
-    File(context.filesDir, NAME).delete()
+  fun clear(dir: File) {
+    File(dir, NAME).delete()
+    File(dir, "$NAME.tmp").delete()
   }
 }

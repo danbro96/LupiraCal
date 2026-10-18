@@ -41,15 +41,20 @@ export type AddressHint = {
   country: string | null;
 };
 
+/// 'stale': native holds another generation and ignored the call; 'snapshotNeeded': it has no snapshot of this one.
+export type BridgeSyncResult = 'ok' | 'stale' | 'snapshotNeeded';
+
 type LupiraBridgeNative = {
-  ensureAccount(): Promise<boolean>;
-  removeAccount(): Promise<boolean>;
+  /// Adopts `generation` when native holds none.
+  ensureAccount(generation: string): Promise<'ok' | 'stale'>;
+  /// Rotates to `generation`, then deletes the published rows, the account, the snapshot, the inbox and the hints.
+  removeAccount(generation: string): Promise<boolean>;
   requestSync(): Promise<void>;
   getBridgeState(): Promise<BridgeState>;
   canScheduleExactAlarms(): Promise<boolean>;
-  /// Stores the mirror snapshot (JSON of BridgeSnapshot), then runs capture → publish in-process (same body as
-  /// onPerformSync), immediately.
-  bridgeSyncNow(snapshot: string): Promise<void>;
+  /// Stores the mirror snapshot (JSON of BridgeSnapshot plus `generation`; null keeps the stored one), then runs
+  /// capture → publish in-process (same body as onPerformSync), immediately.
+  bridgeSyncNow(snapshot: string | null, generation: string): Promise<BridgeSyncResult>;
   /// Reads inbox rows WITHOUT consuming them — deletion happens via ackInbox after the ops are enqueued.
   drainInbox(): Promise<BridgeInboxRow[]>;
   ackInbox(ids: number[]): Promise<void>;

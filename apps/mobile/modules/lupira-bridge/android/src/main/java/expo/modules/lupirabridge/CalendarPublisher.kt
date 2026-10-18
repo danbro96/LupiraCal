@@ -31,6 +31,15 @@ object CalendarPublisher {
     Log.i(Bridge.TAG, "publish: ${calendars.size} calendars, ${items.size} items (${holdBack.size} held back)")
   }
 
+  /// The provider drops a calendar's events with it.
+  fun purge(context: Context) {
+    val removed = context.contentResolver.delete(
+      asSyncAdapter(CalendarContract.Calendars.CONTENT_URI),
+      "${CalendarContract.Calendars.ACCOUNT_TYPE} = ?", arrayOf(Bridge.ACCOUNT_TYPE),
+    )
+    Log.i(Bridge.TAG, "purge: $removed calendars")
+  }
+
   private fun upsertCalendars(resolver: ContentResolver, calendars: List<MirrorCalendar>): Map<String, Long> {
     val existing = mutableMapOf<String, Long>()
     resolver.query(

@@ -1,5 +1,5 @@
 import { migrate } from '@danbro96/lupira-expo-sqlite/migrate';
-import type { Db } from '@danbro96/lupira-expo-sqlite/types';
+import type { Db, Tx } from '@danbro96/lupira-expo-sqlite/types';
 import { getMeta, setMeta } from '@danbro96/lupira-sync-engine/metaStore';
 import { KERNEL_MIGRATIONS } from '@danbro96/lupira-sync-engine/schema';
 import { getDb } from '../data/db/expoDb';
@@ -19,4 +19,8 @@ export async function readMeta(key: string): Promise<string | null> {
 export async function writeMeta(key: string, value: string): Promise<void> {
   const db = await metaDb();
   await db.exclusive((tx) => setMeta(tx, key, value));
+}
+
+export async function metaExclusive<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return (await metaDb()).exclusive(fn);
 }

@@ -10,6 +10,7 @@ import android.os.Process
 import android.os.SystemClock
 import android.provider.CalendarContract
 import android.provider.ContactsContract
+import android.util.Log
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -25,29 +26,40 @@ class LupiraBridgeModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("LupiraBridge")
 
-    AsyncFunction("ensureAccount") {
-      val am = AccountManager.get(context)
-      val existed = am.getAccountsByType(Bridge.ACCOUNT_TYPE).isNotEmpty()
-      if (!existed && !am.addAccountExplicitly(Bridge.account, null, null))
-        throw CodedException("ERR_ACCOUNT", "addAccountExplicitly returned false", null)
-      // Idempotent on purpose: a failed first run must be repairable by tapping again.
-      for (authority in listOf(Bridge.CALENDAR_AUTHORITY, Bridge.CONTACTS_AUTHORITY)) {
-        ContentResolver.setIsSyncable(Bridge.account, authority, 1)
-        // Auto-sync makes the framework schedule an upload sync when provider rows go dirty —
-        // that's the near-immediate stock-app-edit capture. The hourly periodic sync is the backstop.
-        ContentResolver.setSyncAutomatically(Bridge.account, authority, true)
-        ContentResolver.addPeriodicSync(Bridge.account, authority, android.os.Bundle.EMPTY, 3600L)
+    AsyncFunction("ensureAccount") { generation: String ->
+      synchronized(BridgeLock) {
+        val stored = Bridge.generation(context)
+        if (!Bridge.accepts(stored, generation)) return@synchronized "stale"
+        if (stored == null) Bridge.setGeneration(context, generation)
+        val am = AccountManager.get(context)
+        if (am.getAccountsByType(Bridge.ACCOUNT_TYPE).isEmpty() && !am.addAccountExplicitly(Bridge.account, null, null))
+          throw CodedException("ERR_ACCOUNT", "addAccountExplicitly returned false", null)
+        // Idempotent on purpose: a failed first run must be repairable by tapping again.
+        for (authority in listOf(Bridge.CALENDAR_AUTHORITY, Bridge.CONTACTS_AUTHORITY)) {
+          ContentResolver.setIsSyncable(Bridge.account, authority, 1)
+          // Auto-sync makes the framework schedule an upload sync when provider rows go dirty —
+          // that's the near-immediate stock-app-edit capture. The hourly periodic sync is the backstop.
+          ContentResolver.setSyncAutomatically(Bridge.account, authority, true)
+          ContentResolver.addPeriodicSync(Bridge.account, authority, android.os.Bundle.EMPTY, 3600L)
+        }
+        "ok"
       }
-      existed
     }
 
-    AsyncFunction("removeAccount") {
-      val am = AccountManager.get(context)
-      val accounts = am.getAccountsByType(Bridge.ACCOUNT_TYPE)
-      for (a in accounts) am.removeAccountExplicitly(a)
-      BridgeDb.clearAddressHints(context)
-      MirrorSnapshot.clear(context)
-      accounts.isNotEmpty()
+    AsyncFunction("removeAccount") { generation: String ->
+      synchronized(BridgeLock) {
+        Bridge.setGeneration(context, generation)
+        // The provider's own cleanup after removeAccountExplicitly is asynchronous and would race an immediate re-add.
+        purge("calendar") { CalendarPublisher.purge(context) }
+        purge("contacts") { ContactsPublisher.purge(context) }
+        val am = AccountManager.get(context)
+        val accounts = am.getAccountsByType(Bridge.ACCOUNT_TYPE)
+        for (a in accounts) am.removeAccountExplicitly(a)
+        BridgeDb.clearAddressHints(context)
+        BridgeDb.clearInbox(context)
+        MirrorSnapshot.clear(context)
+        accounts.isNotEmpty()
+      }
     }
 
     AsyncFunction("requestSync") {
@@ -82,13 +94,19 @@ class LupiraBridgeModule : Module() {
 
     /// Runs the sync body in-process, immediately — the deterministic path for tests and the spike
     /// screen. requestSync stays for verifying OS scheduling.
-    AsyncFunction("bridgeSyncNow") { snapshot: String ->
-      MirrorSnapshot.write(context, snapshot)
-      CalendarCapturer.capture(context)
-      CalendarPublisher.publish(context)
-      ContactsCapturer.capture(context)
-      ContactsPublisher.publish(context)
-      Bridge.prefs(context).edit().putLong(Bridge.PREF_LAST_SYNC, System.currentTimeMillis()).apply()
+    AsyncFunction("bridgeSyncNow") { snapshot: String?, generation: String ->
+      synchronized(BridgeLock) {
+        val stored = Bridge.generation(context)
+        if (!Bridge.accepts(stored, generation)) return@synchronized "stale"
+        if (stored == null) Bridge.setGeneration(context, generation)
+        if (snapshot != null) MirrorSnapshot.write(context, snapshot)
+        CalendarCapturer.capture(context)
+        CalendarPublisher.publish(context)
+        ContactsCapturer.capture(context)
+        ContactsPublisher.publish(context)
+        Bridge.prefs(context).edit().putLong(Bridge.PREF_LAST_SYNC, System.currentTimeMillis()).apply()
+        if (MirrorSnapshot.read(context) == null) "snapshotNeeded" else "ok"
+      }
     }
 
     AsyncFunction("drainInbox") {
@@ -210,6 +228,15 @@ class LupiraBridgeModule : Module() {
   }
 
   private fun asSyncAdapter(uri: Uri): Uri = CalendarPublisher.asSyncAdapter(uri)
+
+  /// Without the runtime permission the rows can't be deleted here; the account removal still drops them later.
+  private fun purge(what: String, body: () -> Unit) {
+    try {
+      body()
+    } catch (e: SecurityException) {
+      Log.w(Bridge.TAG, "$what purge skipped: ${e.message}")
+    }
+  }
 
   private fun findCalendarId(): Long? =
     resolver.query(

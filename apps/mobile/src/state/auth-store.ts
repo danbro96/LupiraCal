@@ -4,6 +4,7 @@ import { createAuthStore } from '@danbro96/lupira-expo-oidc/authStore';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { DEFAULT_API_URL, DEFAULT_AUTH_MODE } from '../config';
 import { oidc } from '../data/auth/oidc';
+import { resetBridge } from '../sync/bridge';
 import { engine, notifications } from '../sync/engine';
 import { queryClient } from '../sync/queryClient';
 
@@ -29,7 +30,11 @@ export const useAuth = createAuthStore({
   onAccountChange: async () => {
     await notifications.cancelAll();
     await engine.wipe();
+    await resetBridge();
     queryClient.clear();
+  },
+  beforeSignOut: async (reason) => {
+    if (reason !== 'expired') await resetBridge();
   },
 });
 

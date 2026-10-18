@@ -18,14 +18,16 @@ class ContactsSyncAdapter(context: Context) : AbstractThreadedSyncAdapter(contex
     account: Account, extras: Bundle, authority: String, provider: ContentProviderClient, syncResult: SyncResult,
   ) {
     Log.i(Bridge.TAG, "onPerformSync: account=${account.name} authority=$authority")
-    try {
-      ContactsCapturer.capture(context)
-      ContactsPublisher.publish(context)
-    } catch (e: Exception) {
-      Log.e(Bridge.TAG, "contacts onPerformSync failed", e)
-      syncResult.stats.numIoExceptions++
+    synchronized(BridgeLock) {
+      try {
+        ContactsCapturer.capture(context)
+        ContactsPublisher.publish(context)
+      } catch (e: Exception) {
+        Log.e(Bridge.TAG, "contacts onPerformSync failed", e)
+        syncResult.stats.numIoExceptions++
+      }
+      Bridge.prefs(context).edit().putLong(Bridge.PREF_LAST_SYNC, System.currentTimeMillis()).apply()
     }
-    Bridge.prefs(context).edit().putLong(Bridge.PREF_LAST_SYNC, System.currentTimeMillis()).apply()
   }
 }
 

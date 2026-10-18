@@ -6,7 +6,7 @@ import { getDb } from '../data/db/expoDb';
 import { expoNotificationPort } from '../data/notifications/port';
 import { residencyPlaceIds } from '../data/queries/residencies';
 import { Aggregate } from '../domain/aggregates';
-import { bridgePublish, drainBridgeInbox } from './bridge';
+import { bridgePublish, drainBridgeInbox, markBridgeDirty } from './bridge';
 import { maintainHorizon } from './horizon';
 import { addressBookModule } from './modules/addressBook';
 import { calendarModule } from './modules/calendar';
@@ -35,6 +35,8 @@ const DERIVED_ROOTS = {
 
 /** What reminders, summaries and RSVP prompts are planned from. */
 const NOTIFY_SOURCES = new Set<string>([Aggregate.item, Aggregate.calendar, Aggregate.contact, Aggregate.me]);
+/** What the bridge snapshot is read from. */
+const BRIDGE_SOURCES = new Set<string>([Aggregate.calendar, Aggregate.item, Aggregate.contact, Aggregate.residency, Aggregate.residencyPlace]);
 const invalidate = invalidateOnChange(queryClient, DERIVED_ROOTS);
 
 export const engine = createSyncEngine({
@@ -60,6 +62,7 @@ export const engine = createSyncEngine({
   onChange: (event) => {
     invalidate(event);
     if (NOTIFY_SOURCES.has(event.aggregate)) notifications.schedule();
+    if (BRIDGE_SOURCES.has(event.aggregate)) markBridgeDirty();
   },
 });
 

@@ -17,15 +17,25 @@ vi.mock('@sentry/react-native', () => ({ setUser: vi.fn() }));
 vi.mock('expo-crypto', () => ({ CryptoDigestAlgorithm: { SHA256: 'SHA-256' }, digestStringAsync: vi.fn(() => Promise.resolve('hash')) }));
 vi.mock('../data/auth/oidc', () => ({ oidc: { refreshTokens: vi.fn() } }));
 vi.mock('@danbro96/lupira-expo-oidc/oidc', () => ({ decodeJwt: (t: string) => ({ email: t }) }));
-const wipe = vi.hoisted(() => vi.fn());
-vi.mock('../sync/engine', () => ({ engine: { wipe }, notifications: { cancelAll: vi.fn() } }));
-vi.mock('../sync/queryClient', () => ({ queryClient: { clear: vi.fn() } }));
+const { order, wipe, resetBridge, cancelAll, clear } = vi.hoisted(() => {
+  const order: string[] = [];
+  const step = (name: string) => vi.fn(() => {
+    order.push(name);
+    return Promise.resolve();
+  });
+  return { order, wipe: step('wipe'), resetBridge: step('resetBridge'), cancelAll: step('cancelAll'), clear: step('clear') };
+});
+vi.mock('../sync/engine', () => ({ engine: { wipe }, notifications: { cancelAll } }));
+vi.mock('../sync/bridge', () => ({ resetBridge }));
+vi.mock('../sync/queryClient', () => ({ queryClient: { clear } }));
 
 const { useAuth } = await import('./auth-store');
 
 beforeEach(async () => {
   store.clear();
-  wipe.mockReset();
+  wipe.mockClear();
+  resetBridge.mockClear();
+  order.length = 0;
   await useAuth.getState().load();
 });
 
@@ -42,5 +52,22 @@ describe('auth store', () => {
     await useAuth.getState().clearSession();
     await useAuth.getState().setSession({ accessToken: 'bo@test', expiresIn: 3600 });
     expect(wipe).toHaveBeenCalledTimes(2);
+  });
+
+  it('empties the stock apps after the mirror and before the cache on an account change', async () => {
+    await useAuth.getState().setSession({ accessToken: 'anna@test', expiresIn: 3600 });
+    expect(order).toEqual(['cancelAll', 'wipe', 'resetBridge', 'clear']);
+  });
+
+  it('empties the stock apps on sign-out but not when the session expires', async () => {
+    await useAuth.getState().setSession({ accessToken: 'anna@test', expiresIn: 3600 });
+    resetBridge.mockClear();
+
+    await useAuth.getState().clearSession({ reason: 'expired' });
+    expect(resetBridge).not.toHaveBeenCalled();
+
+    await useAuth.getState().setSession({ accessToken: 'anna@test', expiresIn: 3600 });
+    await useAuth.getState().clearSession();
+    expect(resetBridge).toHaveBeenCalledTimes(1);
   });
 });

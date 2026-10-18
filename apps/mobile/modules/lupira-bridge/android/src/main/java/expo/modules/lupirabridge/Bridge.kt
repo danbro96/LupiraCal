@@ -14,10 +14,22 @@ object Bridge {
   const val TAG = "LupiraBridge"
   const val PREFS = "lupira-bridge"
   const val PREF_LAST_SYNC = "last_sync_at"
+  const val PREF_GENERATION = "generation"
 
-  val account = Account(ACCOUNT_NAME, ACCOUNT_TYPE)
+  /// Lazy so JVM tests can touch Bridge without the android.jar Account stub.
+  val account by lazy { Account(ACCOUNT_NAME, ACCOUNT_TYPE) }
 
   fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+  fun generation(context: Context): String? = prefs(context).getString(PREF_GENERATION, null)
+
+  /// commit, not apply: the rotation must be on disk before the purge it guards.
+  fun setGeneration(context: Context, generation: String) {
+    if (!prefs(context).edit().putString(PREF_GENERATION, generation).commit()) throw IllegalStateException("could not store the generation")
+  }
+
+  /// An install that never stored one adopts the app's.
+  fun accepts(stored: String?, incoming: String) = stored == null || stored == incoming
 
   /// Files other apps shared, copied by IntentRouterActivity until the app reads them.
   fun importsDir(context: Context) = File(context.cacheDir, "imports")

@@ -1,7 +1,9 @@
+import type { Tx } from '@danbro96/lupira-expo-sqlite/types';
 import type { SyncEngine } from '@danbro96/lupira-sync-engine/engine';
+import { getMeta, setMeta } from '@danbro96/lupira-sync-engine/metaStore';
 import { occurrenceKey } from '@lupira/cal-domain/seriesOccurrences';
 import { v7 as uuidv7 } from 'uuid';
-import type { AddressHint, BridgeInboxRow } from '../../modules/lupira-bridge/src';
+import type { AddressHint, BridgeInboxRow, BridgeSyncResult } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
 import { getDb } from '../data/db/expoDb';
 import { bridgeSnapshot } from '../data/queries/bridgeSnapshot';
@@ -16,10 +18,11 @@ import type { ContactDoc, ItemDoc, PlaceDoc, ResidencyDoc } from '../domain/docT
 import { stamp, type ClientOp } from '../domain/ops';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
 import { withHoldKeys } from './holdKeys';
-import { readMeta } from './meta';
+import { metaExclusive, readMeta, writeMeta } from './meta';
 import { queryClient } from './queryClient';
 
 export const BRIDGE_ENABLED_KEY = 'bridge.enabled';
+export const BRIDGE_GENERATION_KEY = 'bridge.generation';
 
 export const ADDRESS_HINTS_KEY = [Aggregate.contact, 'addressHints'] as const;
 
@@ -29,6 +32,7 @@ export const ADDRESS_HINTS_KEY = [Aggregate.contact, 'addressHints'] as const;
  *  deterministic sourceKey and revises converge via LWW. */
 export async function drainBridgeInbox(engine: SyncEngine): Promise<number> {
   if (!(await bridgeEnabled())) return 0;
+  const generation = await readMeta(BRIDGE_GENERATION_KEY);
   let rows: BridgeInboxRow[];
   try {
     rows = await LupiraBridge.drainInbox();
@@ -94,6 +98,10 @@ export async function drainBridgeInbox(engine: SyncEngine): Promise<number> {
   }
 
   const kept = withoutOccurrencesOfDeleted(ops);
+  if ((await readMeta(BRIDGE_GENERATION_KEY)) !== generation) {
+    logDebug('bridge', 'drain skipped: the bridge was reset meanwhile');
+    return 0;
+  }
   if (kept.length > 0) await engine.enqueue(await withHoldKeys(await getDb(), kept));
   for (const a of assignments) await LupiraBridge.assignEventSyncId(a.marker, a.syncId);
   await LupiraBridge.ackInbox(ackIds);
@@ -112,9 +120,68 @@ export async function bridgePublish(): Promise<void> {
   }
 }
 
-/** Capture → publish now, handing the native side the mirror rows it publishes (also on later OS-scheduled syncs). */
+let snapshotOwed = true;
+
+export function markBridgeDirty(): void {
+  snapshotOwed = true;
+}
+
+/** Capture → publish now. The native side keeps the last snapshot for OS-scheduled syncs, so one goes only when the
+ *  mirror changed or native lost it; the generation is read in the snapshot's transaction so a reset can tell it stale. */
 export async function publishToBridge(): Promise<void> {
-  await LupiraBridge.bridgeSyncNow(JSON.stringify(await bridgeSnapshot(await getDb())));
+  const { generation, snapshot } = await metaExclusive(async (tx) => {
+    const generation = await generationIn(tx);
+    const snapshot = snapshotOwed ? await bridgeSnapshot(tx) : null;
+    snapshotOwed = false;
+    return { generation, snapshot };
+  });
+  let result: BridgeSyncResult;
+  try {
+    result = await LupiraBridge.bridgeSyncNow(snapshot && JSON.stringify({ generation, ...snapshot }), generation);
+  } catch (e) {
+    if (snapshot) markBridgeDirty();
+    throw e;
+  }
+  if (result === 'ok') {
+    logDebug('bridge', snapshot ? 'snapshot sent' : 'snapshot kept');
+    return;
+  }
+  markBridgeDirty();
+  if (result === 'snapshotNeeded') return publishToBridge();
+  if ((await readMeta(BRIDGE_GENERATION_KEY)) === generation && (await bridgeEnabled())) await ensureBridgeAccount();
+}
+
+/** Adds the Lupira account under this install's generation; one native kept from elsewhere is reset first. */
+export async function ensureBridgeAccount(): Promise<void> {
+  if ((await LupiraBridge.ensureAccount(await metaExclusive(generationIn))) === 'ok') return;
+  await removeBridgeAccount();
+  await LupiraBridge.ensureAccount(await metaExclusive(generationIn));
+}
+
+/** Removes the account and everything published under it; native rotates first so an in-flight publish is stale. */
+export async function removeBridgeAccount(): Promise<void> {
+  const generation = uuidv7();
+  await LupiraBridge.removeAccount(generation);
+  await writeMeta(BRIDGE_GENERATION_KEY, generation);
+  markBridgeDirty();
+}
+
+/** Empties the stock apps for a sign-out or another account; the integration stays as the user set it. */
+export async function resetBridge(): Promise<void> {
+  if (await bridgeEnabled()) {
+    await removeBridgeAccount();
+    await ensureBridgeAccount();
+  } else {
+    await writeMeta(BRIDGE_GENERATION_KEY, uuidv7());
+  }
+}
+
+async function generationIn(tx: Tx): Promise<string> {
+  const stored = await getMeta(tx, BRIDGE_GENERATION_KEY);
+  if (stored) return stored;
+  const generation = uuidv7();
+  await setMeta(tx, BRIDGE_GENERATION_KEY, generation);
+  return generation;
 }
 
 /** A contact's phone-typed addresses; none while the integration is off. */

@@ -113,4 +113,8 @@ object BridgeDb {
   fun clearAddressHints(context: Context) {
     open(context).use { it.execSQL("DELETE FROM contact_address_hint") }
   }
+
+  fun clearInbox(context: Context) {
+    open(context).use { it.execSQL("DELETE FROM bridge_inbox") }
+  }
 }

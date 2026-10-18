@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import type { BridgeState } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
-import { BRIDGE_ENABLED_KEY, publishToBridge } from '../sync/bridge';
+import { BRIDGE_ENABLED_KEY, ensureBridgeAccount, publishToBridge, removeBridgeAccount } from '../sync/bridge';
 import { engine } from '../sync/engine';
 import { readMeta, writeMeta } from '../sync/meta';
 
@@ -34,7 +34,7 @@ type BridgeActions = {
   refreshStatus(): Promise<void>;
   /** Request permissions → ensure account → first publish. Returns false when permissions were denied. */
   enable(): Promise<boolean>;
-  /** Removes the Android account — the OS purges the published calendar + contacts. */
+  /** Removes the Android account with the calendar and contacts published under it. */
   disable(): Promise<void>;
   markPrompted(): Promise<void>;
 };
@@ -56,7 +56,7 @@ export const useBridge = create<BridgePref & BridgeActions>((set, get) => ({
         set({ permissionsOk: granted });
         if (granted) {
           try {
-            await LupiraBridge.ensureAccount();
+            await ensureBridgeAccount();
           } catch (e) {
             logDebug('bridge', `account repair failed: ${String(e)}`);
           }
@@ -85,7 +85,7 @@ export const useBridge = create<BridgePref & BridgeActions>((set, get) => ({
       await get().markPrompted();
       return false;
     }
-    await LupiraBridge.ensureAccount();
+    await ensureBridgeAccount();
     // Publishing a mirror that hasn't finished its first sync would remove every published contact and event.
     if (engine.status.getSnapshot().lastSyncAt !== null) await publishToBridge();
     else void engine.sync();
@@ -98,12 +98,13 @@ export const useBridge = create<BridgePref & BridgeActions>((set, get) => ({
   },
 
   disable: async () => {
+    // Flag first: a publish that turns out stale re-adds the account only while the integration is on.
+    await persistFlag(BRIDGE_ENABLED_KEY, false);
     try {
-      await LupiraBridge.removeAccount();
+      await removeBridgeAccount();
     } catch (e) {
       logDebug('bridge', `removeAccount failed: ${String(e)}`);
     }
-    await persistFlag(BRIDGE_ENABLED_KEY, false);
     set({ enabled: false });
     await get().refreshStatus();
     logDebug('bridge', 'integration disabled — account removed');
