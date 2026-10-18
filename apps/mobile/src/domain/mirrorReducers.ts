@@ -1,6 +1,6 @@
 import { wins } from '@danbro96/lupira-sync-core/lww';
 import {
-  applyOccurrenceChange, continuedParticipationId, followDeviations, hasSeriesOccurrence, overrideFor, splitSeries,
+  applyOccurrenceChange, continuedParticipationId, followDeviations, hasSeriesOccurrence, isFirstOccurrence, overrideFor, splitSeries,
 } from '@lupira/cal-domain/seriesOccurrences';
 import type {
   ContactDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, ResidencyDoc, SectionGuard, SocialProfile,
@@ -150,8 +150,9 @@ export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem 
       if (!state) return state;
       const g = state.guards.core;
       if (!wins(op.occurredAt, op.commandId, g.ts, g.cmd)) return state;
-      const guards = { ...state.guards, core: { ts: op.occurredAt, cmd: op.commandId } };
       const split = splitSeries(state.doc, op.originalStart);
+      if (!split && !isFirstOccurrence(state.doc, op.originalStart)) return state;
+      const guards = { ...state.guards, core: { ts: op.occurredAt, cmd: op.commandId } };
       if (!split) return op.core ? { doc: mergeItemCore(state.doc, op.core), guards } : null;
       const { recurrenceRule, excludedOccurrences, extraOccurrences, occurrenceOverrides } = split.earlier;
       return { doc: { ...state.doc, recurrenceRule, excludedOccurrences, extraOccurrences, occurrenceOverrides }, guards };

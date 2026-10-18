@@ -142,7 +142,7 @@ export async function splitItem(state: MirrorItem, originalStart: string, core: 
   const split: ClientOp = { kind: 'item.split', itemId, originalStart: key, newItemId, sourceKey, core, ...item(itemId), holdKey };
   const continuation = continuationOf(state, newItemId, key, core, { ts: split.occurredAt, cmd: split.commandId });
   if (!continuation) {
-    await reviseItem(itemId, core);
+    if (isFirstOccurrence(state.doc, key)) await reviseItem(itemId, core);
     return itemId;
   }
   await submit([

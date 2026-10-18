@@ -310,6 +310,15 @@ describe('series occurrences', () => {
     expect(applyItemOp({ ...weekly(), guards: { ...emptyItemGuards(), core: { ts: T(9), cmd: cmd(9) } } }, { ...first, core: null })).not.toBeNull();
   });
 
+  it('a split at a stale key or an extra occurrence leaves the series and its guard alone', () => {
+    const series = weekly({ extraOccurrences: ['2026-08-05T17:00:00Z'] });
+    const split = (originalStart: string) =>
+      ({ ...op(1, 1), kind: 'item.split', originalStart, newItemId: null, sourceKey: null, core: { title: 'All', isAllDay: false } } as const);
+    expect(applyItemOp(series, split('2026-08-12T17:00:00Z'))).toBe(series);
+    expect(applyItemOp(series, split('2026-08-05T17:00:00Z'))).toBe(series);
+    expect(applyItemOp(series, { ...split('2026-08-12T17:00:00Z'), core: null })).toBe(series);
+  });
+
   it('the continuing series copies the original over the following part, re-keying participations', () => {
     const original = weekly({
       attendees: [{ participationId: '6f1c1b1e-1c55-4c9a-9b3b-1b2d3c4d5e6f', contactId: 'anna', role: 'RequiredParticipant', status: 'Accepted' }],
