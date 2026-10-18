@@ -213,6 +213,18 @@ describe('occurrence replay', () => {
     await expect(replayOp({ ...at, kind: 'item.occurrence', edit: { kind: 'exclude' } })).rejects.toMatchObject({ status: 409 });
   });
 
+  it('an occurrence the series no longer has is done; any other 400 parks, and so does a split', async () => {
+    const notInSeries = () => new ApiError(400, 'not in series', { type: 'https://cal.lupira.com/problems/occurrence-not-in-series' });
+    cal.changeOccurrence.mockRejectedValueOnce(notInSeries());
+    await expect(replayOp({ ...at, kind: 'item.occurrence', edit: { kind: 'exclude' } })).resolves.toBeUndefined();
+
+    cal.changeOccurrence.mockRejectedValueOnce(new ApiError(400, 'invalid'));
+    await expect(replayOp({ ...at, kind: 'item.occurrence', edit: { kind: 'exclude' } })).rejects.toMatchObject({ status: 400 });
+
+    cal.changeFollowingOccurrences.mockRejectedValueOnce(notInSeries());
+    await expect(replayOp({ ...at, kind: 'item.split', newItemId: null, sourceKey: null, core: null })).rejects.toMatchObject({ status: 400 });
+  });
+
   it('splits with the whole new series and its source key, or deletes the following occurrences', async () => {
     const core = { title: 'Later', isAllDay: false, startsAt: '2026-10-07T18:00:00Z', recurrenceRule: 'FREQ=WEEKLY;COUNT=2' };
     await replayOp({ ...at, kind: 'item.split', newItemId: 'item-2', sourceKey: 'k', core });

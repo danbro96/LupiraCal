@@ -188,12 +188,14 @@ async function removeResidencyIfPresent(id: string, idem: { headers: Record<stri
   }
 }
 
+const OCCURRENCE_NOT_IN_SERIES = 'https://cal.lupira.com/problems/occurrence-not-in-series';
+
 /** A series that is gone, or no longer has the occurrence, has nothing left to change. */
 async function unlessGone(call: () => Promise<unknown>): Promise<void> {
   try {
     await call();
   } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return;
+    if (e instanceof ApiError && (e.status === 404 || (e.status === 400 && e.type === OCCURRENCE_NOT_IN_SERIES))) return;
     throw e;
   }
 }
