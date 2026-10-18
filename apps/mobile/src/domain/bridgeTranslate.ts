@@ -5,7 +5,7 @@ import {
 } from '@lupira/cal-domain/seriesOccurrences';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import type { ContactDoc, ItemDoc, PartialDateDto, ReachChannel, ResidencyDoc } from './docTypes';
-import type { ContactCore, ItemCore } from './ops';
+import type { ClientOp, ContactCore, ItemCore } from './ops';
 
 /** Pure half of the bridge write-back: a captured provider edit → the op the engine should enqueue.
  *  The impure half (id resolution, mirror lookup, enqueue, ack) lives in sync/bridge.ts. Warts are
@@ -139,6 +139,12 @@ function sameChange(a: OccurrenceChange, b: OccurrenceChange): boolean {
   const instant = (v?: string | null) => (v ? Date.parse(v) : null);
   return instant(a.startsAt) === instant(b.startsAt) && instant(a.endsAt) === instant(b.endsAt)
     && (a.title ?? null) === (b.title ?? null) && (a.description ?? null) === (b.description ?? null) && (a.status ?? null) === (b.status ?? null);
+}
+
+/** Deleting a series in the stock app also hands over its exception rows; their occurrence ops would 404 behind the delete. */
+export function withoutOccurrencesOfDeleted(ops: readonly ClientOp[]): ClientOp[] {
+  const deleted = new Set(ops.flatMap((o) => (o.kind === 'item.delete' ? [o.itemId] : [])));
+  return ops.filter((o) => !((o.kind === 'item.occurrence' || o.kind === 'item.occurrence.restore') && deleted.has(o.itemId)));
 }
 
 /** The exclusions the user changed on a series row: against what was published, never the mirror, so an exclusion

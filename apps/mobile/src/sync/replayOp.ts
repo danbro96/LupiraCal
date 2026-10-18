@@ -83,7 +83,7 @@ export async function replayOp(op: ClientOp): Promise<void> {
       return;
     case 'item.occurrence': {
       const change = op.edit.kind === 'change' ? op.edit.change : null;
-      await changeOccurrence(op.itemId, op.originalStart, {
+      await unlessGone(() => changeOccurrence(op.itemId, op.originalStart, {
         excluded: op.edit.kind === 'exclude',
         startsAt: change?.startsAt ?? null,
         endsAt: change?.endsAt ?? null,
@@ -91,11 +91,11 @@ export async function replayOp(op: ClientOp): Promise<void> {
         description: change?.description ?? null,
         status: change?.status ?? null,
         occurredAt: op.occurredAt,
-      }, idem);
+      }, idem));
       return;
     }
     case 'item.occurrence.restore':
-      await restoreOccurrence(op.itemId, op.originalStart, { occurredAt: op.occurredAt }, idem);
+      await unlessGone(() => restoreOccurrence(op.itemId, op.originalStart, { occurredAt: op.occurredAt }, idem));
       return;
     case 'item.split':
       await changeFollowingOccurrences(op.itemId, op.originalStart, {
@@ -182,6 +182,16 @@ function residencyRequest(r: ResidencyFields): ResidencyRequest {
 async function removeResidencyIfPresent(id: string, idem: { headers: Record<string, string> }): Promise<void> {
   try {
     await removeResidency(id, idem);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return;
+    throw e;
+  }
+}
+
+/** A series that is gone, or no longer has the occurrence, has nothing left to change. */
+async function unlessGone(call: () => Promise<unknown>): Promise<void> {
+  try {
+    await call();
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return;
     throw e;

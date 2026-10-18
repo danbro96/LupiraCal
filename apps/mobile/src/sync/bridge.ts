@@ -10,7 +10,7 @@ import { Aggregate } from '../domain/aggregates';
 import type { CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow, PostalCapture } from '../domain/bridgeTranslate';
 import {
   PENDING_PREFIX, contactReviseIsEcho, exclusionChanges, mergeChannelTypes, postalHints, publishedAddresses, sourceKeyOfPendingMarker, translateCalRow,
-  translateContactRow, translateOccurrenceRow,
+  translateContactRow, translateOccurrenceRow, withoutOccurrencesOfDeleted,
 } from '../domain/bridgeTranslate';
 import type { ContactDoc, ItemDoc, PlaceDoc, ResidencyDoc } from '../domain/docTypes';
 import { stamp, type ClientOp } from '../domain/ops';
@@ -93,11 +93,12 @@ export async function drainBridgeInbox(engine: SyncEngine): Promise<number> {
     ackIds.push(row.id);
   }
 
-  if (ops.length > 0) await engine.enqueue(await withHoldKeys(await getDb(), ops));
+  const kept = withoutOccurrencesOfDeleted(ops);
+  if (kept.length > 0) await engine.enqueue(await withHoldKeys(await getDb(), kept));
   for (const a of assignments) await LupiraBridge.assignEventSyncId(a.marker, a.syncId);
   await LupiraBridge.ackInbox(ackIds);
-  logDebug('bridge', `drained ${rows.length} inbox rows → ${ops.length} ops`);
-  return ops.length;
+  logDebug('bridge', `drained ${rows.length} inbox rows → ${kept.length} ops`);
+  return kept.length;
 }
 
 /** Mirror → provider refresh at the end of an engine sync (fresh pull state lands in the stock apps

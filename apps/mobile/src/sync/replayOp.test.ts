@@ -203,6 +203,16 @@ describe('occurrence replay', () => {
     expect(cal.restoreOccurrence.mock.calls[0].slice(1, 3)).toEqual([at.originalStart, { occurredAt: at.occurredAt }]);
   });
 
+  it('an occurrence of a series that is gone is done, not parked', async () => {
+    cal.changeOccurrence.mockRejectedValueOnce(new ApiError(404, 'gone'));
+    cal.restoreOccurrence.mockRejectedValueOnce(new ApiError(404, 'gone'));
+    await expect(replayOp({ ...at, kind: 'item.occurrence', edit: { kind: 'exclude' } })).resolves.toBeUndefined();
+    await expect(replayOp({ ...at, kind: 'item.occurrence.restore' })).resolves.toBeUndefined();
+
+    cal.changeOccurrence.mockRejectedValueOnce(new ApiError(409, 'conflict'));
+    await expect(replayOp({ ...at, kind: 'item.occurrence', edit: { kind: 'exclude' } })).rejects.toMatchObject({ status: 409 });
+  });
+
   it('splits with the whole new series and its source key, or deletes the following occurrences', async () => {
     const core = { title: 'Later', isAllDay: false, startsAt: '2026-10-07T18:00:00Z', recurrenceRule: 'FREQ=WEEKLY;COUNT=2' };
     await replayOp({ ...at, kind: 'item.split', newItemId: 'item-2', sourceKey: 'k', core });

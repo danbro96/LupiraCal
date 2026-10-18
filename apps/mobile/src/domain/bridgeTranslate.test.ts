@@ -3,8 +3,9 @@ import type { ContactDoc, ItemDoc, ResidencyDoc } from './docTypes';
 import type { AddressHint, CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow, PostalCapture, PublishedAddress } from './bridgeTranslate';
 import {
   contactReviseIsEcho, exclusionChanges, mergeChannelTypes, parseProviderBirthday, parseRfc2445Duration, postalHints, publishedAddresses,
-  sourceKeyOfPendingMarker, translateCalRow, translateContactRow, translateOccurrenceRow, type ParsedOccurrenceRow,
+  sourceKeyOfPendingMarker, translateCalRow, translateContactRow, translateOccurrenceRow, withoutOccurrencesOfDeleted, type ParsedOccurrenceRow,
 } from './bridgeTranslate';
+import type { ClientOp } from './ops';
 
 const payload = (over: Partial<CalCapturePayload> = {}): CalCapturePayload => ({
   title: 'From stock app', description: null, location: null,
@@ -391,6 +392,17 @@ describe('occurrences captured from the stock calendar', () => {
   it('ignores a series or occurrence the mirror does not have', () => {
     expect(translateOccurrenceRow(occurrence({}), null).kind).toBe('skip');
     expect(translateOccurrenceRow(occurrence({}, { originalStart: '2026-08-11T16:00:00Z' }), weekly).kind).toBe('skip');
+  });
+
+  it('a series deleted in the same drain takes its exception rows\' occurrence ops with it', () => {
+    const stamp = (itemId: string, n: number) => ({ aggregate: 'cal.item', aggregateId: itemId, itemId, occurredAt: '2026-08-04T09:00:00.000Z', commandId: `c${n}` } as const);
+    const ops: ClientOp[] = [
+      { kind: 'item.occurrence', originalStart: '2026-08-10T16:00:00Z', edit: { kind: 'exclude' }, ...stamp('item-1', 1) },
+      { kind: 'item.occurrence.restore', originalStart: '2026-08-17T16:00:00Z', ...stamp('item-1', 2) },
+      { kind: 'item.delete', ...stamp('item-1', 3) },
+      { kind: 'item.occurrence', originalStart: '2026-08-10T16:00:00Z', edit: { kind: 'exclude' }, ...stamp('item-2', 4) },
+    ];
+    expect(withoutOccurrencesOfDeleted(ops).map((o) => o.commandId)).toEqual(['c3', 'c4']);
   });
 
   it('exclusions edited on the series row diff against what was published, not the mirror', () => {
