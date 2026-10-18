@@ -4,7 +4,7 @@ import { spacing } from '../theme';
 import { List, Text } from 'react-native-paper';
 import type { BridgeState, ContactsSampleRow } from '../../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../../modules/lupira-bridge/src';
-import { drainBridgeInbox } from '../../sync/bridge';
+import { drainBridgeInbox, publishToBridge } from '../../sync/bridge';
 import { engine } from '../../sync/engine';
 import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
@@ -62,7 +62,7 @@ export function BridgeDiagnosticsScreen() {
       <View style={styles.buttons}>
         <Button title="Request permissions" onPress={() => void requestPermissions()} />
         <Button title="Ensure account" onPress={run('ensureAccount', () => LupiraBridge.ensureAccount())} />
-        <Button title="Bridge sync now (capture + publish)" onPress={run('bridgeSyncNow', () => LupiraBridge.bridgeSyncNow())} />
+        <Button title="Bridge sync now (capture + publish)" onPress={run('bridgeSyncNow', publishToBridge)} />
         <Button
           title="Drain inbox → outbox + full sync"
           onPress={run('drain', async () => {

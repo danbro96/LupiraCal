@@ -1,12 +1,11 @@
 package expo.modules.lupirabridge
 
-import android.database.sqlite.SQLiteDatabase
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
 
-/// Read-side projection of the RN mirror for the publisher, over the bridge_* views the app's sync modules
-/// define. Each `state` is the kernel's stored doc state; the doc itself sits under its "doc" key.
+/// Read-side projection of the RN mirror for the publisher, over the snapshot of the bridge_* views the app's sync
+/// modules define. Each `state` is the kernel's stored doc state; the doc itself sits under its "doc" key.
 
 data class MirrorCalendar(val id: String, val displayName: String, val color: Int)
 
@@ -58,87 +57,77 @@ data class MirrorItem(
 )
 
 object MirrorReader {
-  fun calendars(db: SQLiteDatabase): List<MirrorCalendar> =
-    db.rawQuery("SELECT id, state FROM bridge_calendars", null).use { c ->
-      val out = mutableListOf<MirrorCalendar>()
-      while (c.moveToNext()) {
-        val doc = docOf(c.getString(1))
-        out.add(
-          MirrorCalendar(
-            id = c.getString(0),
-            displayName = doc.optString("displayName").ifEmpty { c.getString(0) },
-            color = parseColor(doc.optString("color")),
-          ),
-        )
-      }
-      out
+  fun calendars(snapshot: JSONObject): List<MirrorCalendar> =
+    rows(snapshot, "calendars").map { row ->
+      val id = row.getString("id")
+      val doc = docOf(row.getString("state"))
+      MirrorCalendar(
+        id = id,
+        displayName = doc.optString("displayName").ifEmpty { id },
+        color = parseColor(doc.optString("color")),
+      )
     }
 
-  fun items(db: SQLiteDatabase): List<MirrorItem> =
-    db.rawQuery("SELECT id, state FROM bridge_items", null).use { c ->
-      val out = mutableListOf<MirrorItem>()
-      while (c.moveToNext()) {
-        // One malformed doc must never kill the whole publish.
-        val item = try {
-          fromDoc(c.getString(0), docOf(c.getString(1)))
-        } catch (e: Exception) {
-          android.util.Log.w(Bridge.TAG, "skipping item ${c.getString(0)}: ${e.message}")
-          null
-        } ?: continue
-        out.add(item)
+  fun items(snapshot: JSONObject): List<MirrorItem> =
+    rows(snapshot, "items").mapNotNull { row ->
+      // One malformed doc must never kill the whole publish.
+      try {
+        fromDoc(row.getString("id"), docOf(row.getString("state")))
+      } catch (e: Exception) {
+        android.util.Log.w(Bridge.TAG, "skipping item ${row.optString("id")}: ${e.message}")
+        null
       }
-      out
     }
 
-  fun contacts(db: SQLiteDatabase): List<MirrorContact> {
-    val addresses = addresses(db)
-    return db.rawQuery("SELECT id, display_name, state FROM bridge_contacts", null).use { c ->
-      val out = mutableListOf<MirrorContact>()
-      while (c.moveToNext()) {
-        val doc = docOf(c.getString(2))
-        val channels = mutableListOf<MirrorChannel>()
-        doc.optJSONArray("channels")?.let { arr ->
-          for (i in 0 until arr.length()) {
-            val ch = arr.optJSONObject(i) ?: continue
-            val value = ch.optString("value").trim()
-            if (value.isEmpty()) continue
-            channels.add(MirrorChannel(ch.optString("medium"), value, ch.optStringOrNull("type"), ch.optBoolean("preferred")))
-          }
+  fun contacts(snapshot: JSONObject): List<MirrorContact> {
+    val addresses = addresses(snapshot)
+    return rows(snapshot, "contacts").map { row ->
+      val id = row.getString("id")
+      val doc = docOf(row.getString("state"))
+      val channels = mutableListOf<MirrorChannel>()
+      doc.optJSONArray("channels")?.let { arr ->
+        for (i in 0 until arr.length()) {
+          val ch = arr.optJSONObject(i) ?: continue
+          val value = ch.optString("value").trim()
+          if (value.isEmpty()) continue
+          channels.add(MirrorChannel(ch.optString("medium"), value, ch.optStringOrNull("type"), ch.optBoolean("preferred")))
         }
-        out.add(
-          MirrorContact(
-            id = c.getString(0),
-            displayName = c.getString(1),
-            givenName = doc.optStringOrNull("givenName"),
-            middleName = doc.optStringOrNull("middleName"),
-            familyName = doc.optStringOrNull("familyName"),
-            nickname = doc.optStringOrNull("nickname"),
-            channels = channels,
-            birthday = birthdayString(doc.optJSONObject("birthday")),
-            notes = doc.optStringOrNull("notes"),
-            addresses = addresses[c.getString(0)].orEmpty(),
-          ),
-        )
       }
-      out
+      MirrorContact(
+        id = id,
+        displayName = row.getString("display_name"),
+        givenName = doc.optStringOrNull("givenName"),
+        middleName = doc.optStringOrNull("middleName"),
+        familyName = doc.optStringOrNull("familyName"),
+        nickname = doc.optStringOrNull("nickname"),
+        channels = channels,
+        birthday = birthdayString(doc.optJSONObject("birthday")),
+        notes = doc.optStringOrNull("notes"),
+        addresses = addresses[id].orEmpty(),
+      )
     }
   }
 
   /// Current residencies by contact id. Residencies whose place hasn't been looked up yet stay out until it has.
-  fun addresses(db: SQLiteDatabase, today: LocalDate = LocalDate.now()): Map<String, List<MirrorAddress>> {
+  fun addresses(snapshot: JSONObject, today: LocalDate = LocalDate.now()): Map<String, List<MirrorAddress>> {
     val out = mutableMapOf<String, MutableList<MirrorAddress>>()
-    db.rawQuery("SELECT id, contact_id, state, place FROM bridge_residencies ORDER BY id", null).use { c ->
-      while (c.moveToNext()) {
-        val address = try {
-          addressOf(c.getString(0), docOf(c.getString(2)), c.getString(3)?.let { docOf(it) }, today)
-        } catch (e: Exception) {
-          android.util.Log.w(Bridge.TAG, "skipping residency ${c.getString(0)}: ${e.message}")
-          null
-        } ?: continue
-        out.getOrPut(c.getString(1)) { mutableListOf() }.add(address)
-      }
+    for (row in rows(snapshot, "residencies")) {
+      val address = try {
+        val place = if (row.isNull("place")) null else docOf(row.getString("place"))
+        addressOf(row.getString("id"), docOf(row.getString("state")), place, today)
+      } catch (e: Exception) {
+        android.util.Log.w(Bridge.TAG, "skipping residency ${row.optString("id")}: ${e.message}")
+        null
+      } ?: continue
+      out.getOrPut(row.getString("contact_id")) { mutableListOf() }.add(address)
     }
     return out
+  }
+
+  /// getJSONArray, not opt: a missing section must fail the publish, never read as empty and unpublish everything.
+  private fun rows(snapshot: JSONObject, key: String): List<JSONObject> {
+    val arr = snapshot.getJSONArray(key)
+    return (0 until arr.length()).map { arr.getJSONObject(it) }
   }
 
   private fun addressOf(id: String, residency: JSONObject, place: JSONObject?, today: LocalDate): MirrorAddress? {

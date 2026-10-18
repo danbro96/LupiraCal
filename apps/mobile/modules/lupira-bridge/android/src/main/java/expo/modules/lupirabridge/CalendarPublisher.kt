@@ -20,17 +20,15 @@ import java.security.MessageDigest
 object CalendarPublisher {
 
   fun publish(context: Context) {
-    val mirror = BridgeDb.openMirror(context) ?: return
+    val mirror = MirrorSnapshot.read(context) ?: return
     val resolver = context.contentResolver
-    mirror.use {
-      val calendars = MirrorReader.calendars(mirror)
-      val items = MirrorReader.items(mirror)
-      val holdBack = BridgeDb.pendingSyncIds(context)
+    val calendars = MirrorReader.calendars(mirror)
+    val items = MirrorReader.items(mirror)
+    val holdBack = BridgeDb.pendingSyncIds(context)
 
-      val calendarRowIds = upsertCalendars(resolver, calendars)
-      upsertEvents(resolver, items, calendarRowIds, holdBack)
-      Log.i(Bridge.TAG, "publish: ${calendars.size} calendars, ${items.size} items (${holdBack.size} held back)")
-    }
+    val calendarRowIds = upsertCalendars(resolver, calendars)
+    upsertEvents(resolver, items, calendarRowIds, holdBack)
+    Log.i(Bridge.TAG, "publish: ${calendars.size} calendars, ${items.size} items (${holdBack.size} held back)")
   }
 
   private fun upsertCalendars(resolver: ContentResolver, calendars: List<MirrorCalendar>): Map<String, Long> {

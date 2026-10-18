@@ -3,6 +3,7 @@ import type { Db } from '@danbro96/lupira-expo-sqlite/types';
 import { createSyncEngine } from '@danbro96/lupira-sync-engine/engine';
 import type { AggregateModule } from '@danbro96/lupira-sync-engine/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { bridgeSnapshot } from '../../data/queries/bridgeSnapshot';
 import { emptyContactGuards, emptyItemGuards } from '../../domain/docTypes';
 import { calendarModule } from './calendar';
 import { calItemModule } from './calItem';
@@ -12,7 +13,7 @@ import { residencyPlaceModule } from './residencyPlace';
 
 vi.mock('@danbro96/lupira-expo-diagnostics/log', () => ({ logDebug: vi.fn() }));
 
-/** The contract MirrorReader.kt reads: these view columns, and the doc fields under `$.doc` of `state`. */
+/** The contract MirrorReader.kt reads from the bridge snapshot: these view columns, and the doc fields under `$.doc` of `state`. */
 
 const snapshotOf = <M extends AggregateModule>(module: M, changed: unknown[]): M =>
   ({ ...module, feed: { ...module.feed, fetch: async () => ({ cursor: '', hasMore: false, reset: true, changed, deleted: [] }) } });
@@ -62,18 +63,23 @@ describe('bridge views', () => {
   });
 
   it('carry each doc under $.doc with the fields the publishers read', async () => {
-    const [calendar] = await db.all<{ id: string; state: string }>('SELECT id, state FROM bridge_calendars');
+    const snapshot = await bridgeSnapshot(db);
+    expect(Object.keys(snapshot)).toEqual(['calendars', 'items', 'contacts', 'residencies']);
+
+    const [calendar] = snapshot.calendars;
+    expect(Object.keys(calendar)).toEqual(['id', 'state']);
     expect(docOf(calendar.state)).toMatchObject({ displayName: 'Family', color: '#4457C2' });
 
-    const [item] = await db.all<{ id: string; state: string }>('SELECT id, state FROM bridge_items');
+    const [item] = snapshot.items;
     expect(docOf(item.state)).toMatchObject({ title: 'Picnic', isAllDay: false, startsAt: '2026-08-10T09:00:00Z', calendars: [{ status: 'Accepted' }] });
 
-    const [contact] = await db.all<{ id: string; display_name: string; state: string }>('SELECT id, display_name, state FROM bridge_contacts');
+    const [contact] = snapshot.contacts;
+    expect(Object.keys(contact)).toEqual(['id', 'display_name', 'state']);
     expect(contact.display_name).toBe('Anna');
     expect(docOf(contact.state)).toMatchObject({ givenName: 'Anna', channels: [{ medium: 'Phone', value: '070' }] });
 
-    const residencies = await db.all<{ id: string; contact_id: string; state: string; place: string | null }>(
-      'SELECT id, contact_id, state, place FROM bridge_residencies ORDER BY id');
+    const { residencies } = snapshot;
+    expect(Object.keys(residencies[0])).toEqual(['id', 'contact_id', 'state', 'place']);
     expect(residencies.map((r) => [r.id, r.contact_id])).toEqual([['r1', 'c1'], ['r2', 'c1']]);
     expect(docOf(residencies[0].state)).toMatchObject({ type: 'Home', movedIn: { year: 2020 }, movedOut: null });
     expect(docOf(residencies[0].place!)).toMatchObject({ name: 'Hemma', formattedAddress: 'Storgatan 1, Ljungby' });

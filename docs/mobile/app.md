@@ -57,7 +57,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 - Prefs and bridge flags are kernel meta keys (`sync/meta.ts`). Signing in as a different account wipes the engine and the query cache (`state/auth-store.ts`, `onAccountChange`).
 - Triggers: `startSyncTriggers` (foreground, reconnect, sign-in) from `App.tsx`; the 15-minute background task is defined in `index.ts` and loads the auth session first. The Android bridge drains its inbox before each push and republishes after each pull (`hooks`).
 - `SyncBanner` is expo-paper's `StatusBanner` over `bannerState` (tap → Sync issues); `SyncIssuesScreen` is its `SyncStatusView` over the engine's `parked()`/`sync`/`retry`/`discard` (offline it shows no progress and Sync now only says so). Both, and Settings, read the kernel's status store (`state/useSyncStatus`); none shows a sync in progress while the device is offline. Non-network sync failures go to Sentry (`SENTRY_DSN` in `config/`, empty = off; user id = SHA-256 of the email).
-- `MirrorReader.kt` reads only the `bridge_*` views (`id`, `display_name` for contacts, `contact_id` + `place` for residencies, `state` = the stored `{doc, guards}` JSON); `sync/modules/bridgeViews.test.ts` pins that contract.
+- The bridge never opens the app's SQLite file (a second SQLite copy in the process breaks expo-sqlite's locks and WAL). Each publish hands it `data/queries/bridgeSnapshot` — the `bridge_*` view rows as JSON (`id`, `display_name` for contacts, `contact_id` + `place` for residencies, `state` = the stored `{doc, guards}` JSON); it keeps the last one in `bridge-mirror.json` for OS-scheduled syncs, and `MirrorReader.kt` reads that. `sync/modules/bridgeViews.test.ts` pins the contract.
 
 ## Android bridge
 

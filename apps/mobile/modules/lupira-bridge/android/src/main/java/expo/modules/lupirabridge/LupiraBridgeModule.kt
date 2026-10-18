@@ -46,6 +46,7 @@ class LupiraBridgeModule : Module() {
       val accounts = am.getAccountsByType(Bridge.ACCOUNT_TYPE)
       for (a in accounts) am.removeAccountExplicitly(a)
       BridgeDb.clearAddressHints(context)
+      MirrorSnapshot.clear(context)
       accounts.isNotEmpty()
     }
 
@@ -81,7 +82,8 @@ class LupiraBridgeModule : Module() {
 
     /// Runs the sync body in-process, immediately — the deterministic path for tests and the spike
     /// screen. requestSync stays for verifying OS scheduling.
-    AsyncFunction("bridgeSyncNow") {
+    AsyncFunction("bridgeSyncNow") { snapshot: String ->
+      MirrorSnapshot.write(context, snapshot)
       CalendarCapturer.capture(context)
       CalendarPublisher.publish(context)
       ContactsCapturer.capture(context)

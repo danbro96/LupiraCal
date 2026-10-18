@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import type { BridgeState } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
 import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
-import { BRIDGE_ENABLED_KEY } from '../sync/bridge';
+import { BRIDGE_ENABLED_KEY, publishToBridge } from '../sync/bridge';
 import { engine } from '../sync/engine';
 import { readMeta, writeMeta } from '../sync/meta';
 
@@ -87,7 +87,7 @@ export const useBridge = create<BridgePref & BridgeActions>((set, get) => ({
     }
     await LupiraBridge.ensureAccount();
     // Publishing a mirror that hasn't finished its first sync would remove every published contact and event.
-    if (engine.status.getSnapshot().lastSyncAt !== null) await LupiraBridge.bridgeSyncNow();
+    if (engine.status.getSnapshot().lastSyncAt !== null) await publishToBridge();
     else void engine.sync();
     await persistFlag(BRIDGE_ENABLED_KEY, true);
     set({ enabled: true, permissionsOk: true, prompted: true });

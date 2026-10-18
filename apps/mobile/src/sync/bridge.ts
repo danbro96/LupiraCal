@@ -4,6 +4,7 @@ import { v7 as uuidv7 } from 'uuid';
 import type { AddressHint, BridgeInboxRow } from '../../modules/lupira-bridge/src';
 import { LupiraBridge } from '../../modules/lupira-bridge/src';
 import { getDb } from '../data/db/expoDb';
+import { bridgeSnapshot } from '../data/queries/bridgeSnapshot';
 import { deterministicIdFor } from '../data/ids';
 import { Aggregate } from '../domain/aggregates';
 import type { CalCapturePayload, ContactCapturePayload, ParsedCalRow, ParsedContactRow, PostalCapture } from '../domain/bridgeTranslate';
@@ -104,10 +105,15 @@ export async function drainBridgeInbox(engine: SyncEngine): Promise<number> {
 export async function bridgePublish(): Promise<void> {
   if (!(await bridgeEnabled())) return;
   try {
-    await LupiraBridge.bridgeSyncNow();
+    await publishToBridge();
   } catch (e) {
     logDebug('bridge', `publish failed: ${String(e)}`);
   }
+}
+
+/** Capture → publish now, handing the native side the mirror rows it publishes (also on later OS-scheduled syncs). */
+export async function publishToBridge(): Promise<void> {
+  await LupiraBridge.bridgeSyncNow(JSON.stringify(await bridgeSnapshot(await getDb())));
 }
 
 /** A contact's phone-typed addresses; none while the integration is off. */

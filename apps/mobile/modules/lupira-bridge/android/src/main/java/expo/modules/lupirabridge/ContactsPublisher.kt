@@ -19,55 +19,53 @@ object ContactsPublisher {
   const val OPEN_IN_MIMETYPE = "vnd.android.cursor.item/vnd.com.lupira.calendar.contact"
 
   fun publish(context: Context) {
-    val mirror = BridgeDb.openMirror(context) ?: return
+    val mirror = MirrorSnapshot.read(context) ?: return
     val resolver = context.contentResolver
-    mirror.use {
-      val contacts = MirrorReader.contacts(mirror)
-      val hints = BridgeDb.addressHints(context).groupBy { it.contactId }
+    val contacts = MirrorReader.contacts(mirror)
+    val hints = BridgeDb.addressHints(context).groupBy { it.contactId }
 
-      data class Row(val rawId: Long, val hash: String?, val dirty: Boolean, val deleted: Boolean)
-      val existing = mutableMapOf<String, Row>()
-      resolver.query(
-        rawContactsUri(),
-        arrayOf(
-          ContactsContract.RawContacts._ID, ContactsContract.RawContacts.SOURCE_ID,
-          ContactsContract.RawContacts.SYNC1, ContactsContract.RawContacts.DIRTY, ContactsContract.RawContacts.DELETED,
-        ),
-        "${ContactsContract.RawContacts.ACCOUNT_TYPE} = ?", arrayOf(Bridge.ACCOUNT_TYPE), null,
-      )?.use { c ->
-        while (c.moveToNext()) c.getString(1)?.let {
-          existing[it] = Row(c.getLong(0), c.getString(2), c.getInt(3) == 1, c.getInt(4) == 1)
-        }
+    data class Row(val rawId: Long, val hash: String?, val dirty: Boolean, val deleted: Boolean)
+    val existing = mutableMapOf<String, Row>()
+    resolver.query(
+      rawContactsUri(),
+      arrayOf(
+        ContactsContract.RawContacts._ID, ContactsContract.RawContacts.SOURCE_ID,
+        ContactsContract.RawContacts.SYNC1, ContactsContract.RawContacts.DIRTY, ContactsContract.RawContacts.DELETED,
+      ),
+      "${ContactsContract.RawContacts.ACCOUNT_TYPE} = ?", arrayOf(Bridge.ACCOUNT_TYPE), null,
+    )?.use { c ->
+      while (c.moveToNext()) c.getString(1)?.let {
+        existing[it] = Row(c.getLong(0), c.getString(2), c.getInt(3) == 1, c.getInt(4) == 1)
       }
-
-      var inserted = 0
-      var updated = 0
-      val desired = mutableSetOf<String>()
-      for (contact in contacts) {
-        desired.add(contact.id)
-        val current = existing[contact.id]
-        if (current?.dirty == true || current?.deleted == true) continue   // S4's capturer owns these
-        val contactHints = hints[contact.id].orEmpty()
-        val hash = hashOf(contact, contactHints)
-        if (current?.hash == hash) continue
-
-        if (current == null) {
-          insert(resolver, contact, contactHints, hash)
-          inserted++
-        } else {
-          replaceData(resolver, current.rawId, contact, contactHints, hash)
-          updated++
-        }
-      }
-
-      var removed = 0
-      for ((sourceId, row) in existing) {
-        if (desired.contains(sourceId) || row.dirty || row.deleted) continue
-        resolver.delete(rawContactsUri(), "${ContactsContract.RawContacts._ID} = ?", arrayOf(row.rawId.toString()))
-        removed++
-      }
-      Log.i(Bridge.TAG, "contacts publish: $inserted new, $updated updated, $removed removed of ${contacts.size}")
     }
+
+    var inserted = 0
+    var updated = 0
+    val desired = mutableSetOf<String>()
+    for (contact in contacts) {
+      desired.add(contact.id)
+      val current = existing[contact.id]
+      if (current?.dirty == true || current?.deleted == true) continue   // S4's capturer owns these
+      val contactHints = hints[contact.id].orEmpty()
+      val hash = hashOf(contact, contactHints)
+      if (current?.hash == hash) continue
+
+      if (current == null) {
+        insert(resolver, contact, contactHints, hash)
+        inserted++
+      } else {
+        replaceData(resolver, current.rawId, contact, contactHints, hash)
+        updated++
+      }
+    }
+
+    var removed = 0
+    for ((sourceId, row) in existing) {
+      if (desired.contains(sourceId) || row.dirty || row.deleted) continue
+      resolver.delete(rawContactsUri(), "${ContactsContract.RawContacts._ID} = ?", arrayOf(row.rawId.toString()))
+      removed++
+    }
+    Log.i(Bridge.TAG, "contacts publish: $inserted new, $updated updated, $removed removed of ${contacts.size}")
   }
 
   /// The next publish rewrites these contacts whole, restoring rows the stock app deleted.
