@@ -46,6 +46,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { spacing, useColors } from '../theme';
 
 const NOTHING_CANCELLED = 'This event is no longer part of the series — nothing cancelled';
+const NOTHING_DELETED = 'This event is no longer part of the series — nothing deleted';
 
 export function ItemDetailScreen() {
   const c = useColors();
@@ -96,8 +97,11 @@ export function ItemDetailScreen() {
       destructive: true,
     }).then(async (ok) => {
       if (!ok) return;
-      if (scope === 'following' && key) await deleteFollowing(state, key);
-      else await deleteItem(itemId);
+      if (scope !== 'following' || !key) await deleteItem(itemId);
+      else if (await deleteFollowing(itemId, key) === 'gone') {
+        toast(NOTHING_DELETED);
+        return;
+      }
       navigation.goBack();
     }).catch(() => toastError('Could not delete the event.'));
   };

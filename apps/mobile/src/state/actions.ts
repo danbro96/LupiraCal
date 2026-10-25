@@ -1,5 +1,5 @@
 import {
-  continuationId, hasSeriesOccurrence, isFirstOccurrence, occurrenceKey, type OccurrenceEdit,
+  continuationId, hasSeriesOccurrence, isFirstOccurrence, occurrenceKey, splitSeries, type OccurrenceEdit,
 } from '@lupira/cal-domain/seriesOccurrences';
 import { v7 as uuidv7 } from 'uuid';
 import { deterministicIdFor } from '../data/ids';
@@ -8,7 +8,7 @@ import type { ResidencyChange } from '../domain/addressRows';
 import { Aggregate } from '../domain/aggregates';
 import type { ItemDoc, ItemGuards, ParticipantReminder, ReachChannel, SocialProfile } from '../domain/docTypes';
 import { residencyStreamKey } from '../domain/ids';
-import { continuationOf, type MirrorItem } from '../domain/mirrorReducers';
+import { continuationOf } from '../domain/mirrorReducers';
 import type { ClientOp, ContactCore, ItemCore, RsvpStatus } from '../domain/ops';
 import { stamp } from '../domain/ops';
 import { engine, readyDb } from '../sync/engine';
@@ -161,15 +161,21 @@ export async function splitItem(itemId: string, originalStart: string, core: Ite
   return { kind: 'split', itemId: newItemId };
 }
 
-/** Deletes `originalStart` and every occurrence after it; from the first occurrence that is the whole series. */
-export async function deleteFollowing(state: MirrorItem, originalStart: string): Promise<void> {
-  const itemId = state.doc.id;
-  if (!hasSeriesOccurrence(state.doc, originalStart)) return;
-  if (isFirstOccurrence(state.doc, originalStart)) {
+export type DeleteFollowingOutcome = 'deleted' | 'whole' | 'gone';
+
+/** Deletes `originalStart` and every occurrence after it; from the first occurrence that is the whole series. Gone when
+ *  the series no longer has it as a rule occurrence. */
+export async function deleteFollowing(itemId: string, originalStart: string): Promise<DeleteFollowingOutcome> {
+  const doc = (await engine.doc<ItemDoc, ItemGuards>(Aggregate.item, itemId))?.doc;
+  if (!doc) return 'gone';
+  const key = occurrenceKey(originalStart);
+  if (isFirstOccurrence(doc, key)) {
     await deleteItem(itemId);
-    return;
+    return 'whole';
   }
-  await submit({ kind: 'item.split', itemId, originalStart: occurrenceKey(originalStart), newItemId: null, sourceKey: null, core: null, ...item(itemId) });
+  if (!splitSeries(doc, key)) return 'gone';
+  await submit({ kind: 'item.split', itemId, originalStart: key, newItemId: null, sourceKey: null, core: null, ...item(itemId) });
+  return 'deleted';
 }
 
 export async function createContact(addressBookId: string, core: ContactCore): Promise<string> {

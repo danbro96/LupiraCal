@@ -9,7 +9,7 @@ vi.mock('../sync/holdKeys', () => ({ withHoldKeys: async (_db: unknown, ops: Cli
 vi.mock('../data/queries/itemLineage', () => ({ lineageRoot: async (_db: unknown, id: string) => id }));
 vi.mock('../data/ids', () => ({ deterministicIdFor: async (key: string) => `id-${key}` }));
 
-const { addToGroup, changeOccurrence, removeFromGroup, splitItem } = await import('./actions');
+const { addToGroup, changeOccurrence, deleteFollowing, removeFromGroup, splitItem } = await import('./actions');
 
 const weekly: MirrorItem = {
   doc: {
@@ -69,6 +69,28 @@ describe('changeOccurrence', () => {
     expect(await changeOccurrence('item-1', '2026-08-31T17:00:00Z', { kind: 'exclude' })).toBe(false);
     fx.doc.mockResolvedValue(null);
     expect(await changeOccurrence('item-1', '2026-08-10T17:00:00Z', { kind: 'restore' })).toBe(false);
+    expect(fx.enqueue).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteFollowing', () => {
+  it('ends the series before a later occurrence', async () => {
+    expect(await deleteFollowing('item-1', '2026-08-17T17:00:00Z')).toBe('deleted');
+    const [split] = fx.enqueue.mock.calls.flatMap(([ops]) => ops as ClientOp[]);
+    expect(split).toMatchObject({ kind: 'item.split', itemId: 'item-1', originalStart: '2026-08-17T17:00:00Z', core: null });
+  });
+
+  it('deletes the whole series from the first occurrence', async () => {
+    expect(await deleteFollowing('item-1', '2026-08-03T17:00:00Z')).toBe('whole');
+    expect(enqueued()).toEqual(['item.delete']);
+  });
+
+  it('deletes nothing at an occurrence the series no longer has', async () => {
+    fx.doc.mockResolvedValue({ ...weekly, doc: { ...weekly.doc, recurrenceRule: 'FREQ=WEEKLY;COUNT=2' } });
+    expect(await deleteFollowing('item-1', '2026-08-17T17:00:00Z')).toBe('gone');
+    expect(await deleteFollowing('item-1', '2026-08-05T17:00:00Z')).toBe('gone');
+    fx.doc.mockResolvedValue(null);
+    expect(await deleteFollowing('item-1', '2026-08-17T17:00:00Z')).toBe('gone');
     expect(fx.enqueue).not.toHaveBeenCalled();
   });
 });
