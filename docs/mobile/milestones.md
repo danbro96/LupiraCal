@@ -212,14 +212,14 @@ and completing stay in Lupira Tasks.
 - [x] Render merges: MonthView bars, WeekView all-day strip, day-sheet agenda — muted outline chips, ⏰ prefix, danger when overdue; `CalRow = GridRow | TaskDeadlineRow` union at the seams
 - [x] Tap → read-only `TaskDetailScreen` (`{listId, itemId}`, from the mirror): due/status/priority/notes/assignee + "Open in Lupira Tasks ↗" deep link (`lupiratasks://task/<listId>/<itemId>`, fire-and-catch — no canOpenURL, keeps the `<queries>` manifest out)
 - [x] `showTaskDeadlines` pref (kernel meta, default on) + Settings switch under Calendars
-- [x] `TaskCreateScreen` from the calendar overflow ("New task") and ItemDetail ("Add task"): list (writable, unarchived `tasks.list` docs; last one in `prefs.lastTaskListId`), title, optional due day. Online-only: `POST /tasks-api/lists/{listId}/items` with a top-of-list sort key from `GET /tasks-api/lists/{listId}/items`; from an event, `POST /api/items/{id}/relations` (`TASK_RELATION`); then `engine.sync()` pulls the task in
+- [x] New task from the new-event editor's Event | Task switch and `TaskCreateScreen` from ItemDetail ("Add task"): list (writable, unarchived `tasks.list` docs; last one in `prefs.lastTaskListId`), title, optional due day. Online-only: `POST /tasks-api/lists/{listId}/items` with a top-of-list sort key from `GET /tasks-api/lists/{listId}/items`; from an event, `POST /api/items/{id}/relations` (`TASK_RELATION`); then `engine.sync()` pulls the task in
 
 ### Exit criteria
 - [x] Root `npm run typecheck` / `lint` / `test` green (taskRows tests ride the mobile vitest gate)
 - [ ] Device: task due this month shows in month bar + week all-day chip + day agenda on its local due day; past-due renders danger + `overdue` tag
 - [ ] Device: Settings toggle removes/restores chips without restart; airplane mode → deadlines still render from the mirror
 - [ ] Device: tap → TaskDetail shows the task; "Open in Lupira Tasks" lands on the task in LupiraTasksMobile
-- [ ] Device: New task from the overflow and from an event lands in Lupira Tasks; a dated one shows as a deadline after the sync; offline the screen says it needs a connection
+- [ ] Device: New task from the editor's Task switch (slot tap → due that day; title survives switching) and from an event lands in Lupira Tasks; a dated one shows as a deadline after the sync; offline the screen says it needs a connection
 
 ### Manual steps
 - [x] Authentik: `lupira-tasks-aud` on the `lupira-cal-mobile` provider (DevOps blueprint `Identity/authentik/blueprints/40-apps-lupira-cal-mobile.yaml`)

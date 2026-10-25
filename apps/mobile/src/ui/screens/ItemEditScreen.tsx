@@ -26,11 +26,14 @@ import type { ItemCore } from '../../domain/ops';
 import { changeOccurrence, saveItem, splitItem, type ItemSave } from '../../state/actions';
 import { usePrefs } from '../../state/prefs-store';
 import { useContactList } from '../../state/useContactList';
+import { useTaskComposer } from '../../state/useNewTask';
 import { selectableCalendars, useCalendars } from '../../state/useContainers';
 import { useItemState } from '../../state/useItemState';
 import { useMyContactId } from '../../state/useMe';
 import { useEventPlaceContext } from '../../state/usePlacePredictions';
 import { DateField } from '../components/DateField';
+import { TaskFields } from '../components/TaskFields';
+import { SegmentedPicker } from '@danbro96/lupira-expo-paper/components/SegmentedPicker';
 import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
 import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { TimeField } from '../components/TimeField';
@@ -49,10 +52,12 @@ import { PlaceSearchSheet } from '../places/PlaceSearchSheet';
 import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
 import { spacing, useColors } from '../theme';
-import { toastError } from '@danbro96/lupira-expo-feedback/toast';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { detach } from '@danbro96/lupira-expo-diagnostics/log';
 
 type SheetName = 'calendars' | 'category' | 'color' | 'repeat' | 'zone' | 'place' | 'people' | 'reminder';
+type NewKind = 'event' | 'task';
+const NEW_KINDS: readonly NewKind[] = ['event', 'task'];
 
 /** Title, when, where and notes up front; everything used rarely is one row each under More, opening a sheet. A
  *  series' occurrence edits as "this event" (its own times, title, notes, status) or "this and following" (a new series). */
@@ -77,6 +82,11 @@ export function ItemEditScreen() {
   const pickable = selectableCalendars(calendars);
   const draft = itemId ? null : (route.params?.draft ?? itemDraftFromLink(route.params ?? {}));
 
+  const canBeTask = !itemId && !draft;
+  const [kind, setKind] = useState<NewKind>('event');
+  const isTask = canBeTask && kind === 'task';
+  const task = useTaskComposer(route.params?.day ?? '');
+  const [taskSaving, setTaskSaving] = useState(false);
   const [openedForm] = useState<ItemForm>(() => (draft ? itemFormFromDraft(draft) : emptyItemForm(route.params?.day, route.params?.time)));
   const [form, setForm] = useState(openedForm);
   const [calendarIds, setCalendarIds] = useState<string[]>([]);
@@ -212,26 +222,44 @@ export function ItemEditScreen() {
     setError(null);
     return await changeOccurrence(doc.id, originalStart, occurrenceEdit(doc as SeriesItem, originalStart, r.value)) || stale();
   };
-  const guard = useUnsavedGuard(dirty, {
-    message: 'Save this event before leaving?',
-    onSave: submit,
-  });
+  const saveTask = async (): Promise<boolean> => {
+    if (!form.title.trim() || task.blocker) return false;
+    setTaskSaving(true);
+    try {
+      await task.save(form.title);
+    } catch (e) {
+      setTaskSaving(false);
+      toastError(e instanceof Error ? e.message : 'Could not add the task.');
+      return false;
+    }
+    toast('Task added');
+    return true;
+  };
+  const guard = useUnsavedGuard(dirty, isTask
+    ? { message: 'Add this task before leaving?', onSave: saveTask }
+    : { message: 'Save this event before leaving?', onSave: submit });
 
   const saveAndLeave = () => {
-    submit().then((saved) => {
+    (isTask ? saveTask() : submit()).then((saved) => {
       if (!saved) return;
       guard.leave();
       if (continued.current) navigation.popTo('ItemDetail', continued.current);
       else leaveScreen(navigation);
-    }).catch(() => toastError('Could not save the event.'));
+    }).catch(() => toastError(isTask ? 'Could not add the task.' : 'Could not save the event.'));
   };
 
   // Save lives in the header (dimmed until something changes); leaving unsaved is guarded, so there
   // is no Cancel button. Dependency-free on purpose: saveAndLeave closes over live form state.
   useLayoutEffect(() => {
     navigation.setOptions({
+      ...(canBeTask && { title: isTask ? 'New task' : 'New event' }),
       headerRight: () => (
-        <Button mode="text" compact disabled={!dirty} onPress={saveAndLeave}>
+        <Button
+          mode="text"
+          compact
+          disabled={isTask ? !form.title.trim() || !!task.blocker || taskSaving : !dirty}
+          onPress={saveAndLeave}
+        >
           Save
         </Button>
       ),
@@ -243,6 +271,29 @@ export function ItemEditScreen() {
       <View style={styles.centered}>
         <Text style={[styles.muted, { color: c.textMuted }]}>Loading…</Text>
       </View>
+    );
+  }
+
+  const kindPicker = canBeTask && (
+    <SegmentedPicker
+      options={NEW_KINDS}
+      selected={kind}
+      onSelect={setKind}
+      getLabel={(k) => (k === 'event' ? 'Event' : 'Task')}
+      style={fieldGap}
+    />
+  );
+  const titleField = (
+    <TextField label="Title" autoFocus={!itemId} style={[fieldGap, styles.title]} value={form.title} onChangeText={(v) => set('title', v)} />
+  );
+
+  if (isTask) {
+    return (
+      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: spacing.xxl }]} keyboardShouldPersistTaps="handled">
+        {kindPicker}
+        {titleField}
+        {task.blocker ? <Text style={[styles.muted, { color: c.textMuted }]}>{task.blocker}</Text> : <TaskFields composer={task} />}
+      </ScrollView>
     );
   }
 
@@ -278,7 +329,8 @@ export function ItemEditScreen() {
             {scope === 'this' ? 'Changes only this event' : 'Changes this and every later event'}
           </Text>
         )}
-        <TextField label="Title" autoFocus={!itemId} style={[fieldGap, styles.title]} value={form.title} onChangeText={(v) => set('title', v)} />
+        {kindPicker}
+        {titleField}
 
         {seriesFields && (
           <List.Item
