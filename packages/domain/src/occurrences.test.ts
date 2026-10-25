@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clampToDay, compareDayEntries, foldLanes, hiddenPerColumn, isDayLong, layoutColumns, packLanes } from './occurrences';
+import { clampToDay, compareDayEntries, foldLanes, hiddenPerColumn, isDayLong, layoutColumns, packLanes, pickShown } from './occurrences';
 
 const day = new Date(2026, 6, 7);
 
@@ -98,6 +98,17 @@ describe('packLanes', () => {
       { id: 'sat', startCol: 5, endCol: 5 },
     ])).toEqual({ 'mon-fri': 0, mon: 1, tue: 1, sat: 0 });
   });
+
+  it('packs demoted bars below the rest, into the gaps they leave', () => {
+    const bars = [
+      { id: 'bday-mon', startCol: 0, endCol: 0 },
+      { id: 'mon-tue', startCol: 0, endCol: 1 },
+      { id: 'mon', startCol: 0, endCol: 0 },
+      { id: 'bday-thu', startCol: 3, endCol: 3 },
+    ];
+    const laned = packLanes(bars, (b) => b.id.startsWith('bday'));
+    expect(Object.fromEntries(laned.map((b) => [b.id, b.lane]))).toEqual({ 'mon-tue': 0, mon: 1, 'bday-mon': 2, 'bday-thu': 0 });
+  });
 });
 
 describe('isDayLong', () => {
@@ -134,5 +145,27 @@ describe('compareDayEntries', () => {
   it('puts all-day entries first, then orders by start', () => {
     const rows = [{ allDay: false, start: 9 }, { allDay: true, start: 12 }, { allDay: false, start: 8 }];
     expect(rows.sort(compareDayEntries)).toEqual([{ allDay: true, start: 12 }, { allDay: false, start: 8 }, { allDay: false, start: 9 }]);
+  });
+});
+
+describe('pickShown', () => {
+  const birthday = (e: string) => e.startsWith('bday');
+
+  it('keeps every entry that fits', () => {
+    expect(pickShown(['bday', 'a', 'b'], 3, birthday)).toEqual(['bday', 'a', 'b']);
+  });
+
+  it('leaves birthdays out first, keeping day order', () => {
+    expect(pickShown(['bday', 'a', 'b', 'c'], 3, birthday)).toEqual(['a', 'b', 'c']);
+    expect(pickShown(['bday', 'a', 'b'], 2, birthday)).toEqual(['a', 'b']);
+  });
+
+  it('fills spare slots with birthdays', () => {
+    expect(pickShown(['bday1', 'a', 'bday2', 'b'], 3, birthday)).toEqual(['bday1', 'a', 'b']);
+  });
+
+  it('shows nothing under a zero or negative cap', () => {
+    expect(pickShown(['a', 'b'], 0, birthday)).toEqual([]);
+    expect(pickShown(['a', 'b'], -1, birthday)).toEqual([]);
   });
 });

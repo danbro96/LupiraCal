@@ -6,13 +6,13 @@ import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import type { AvailabilitySegment } from '../../state/useAvailability';
 import { familyKey } from '@lupira/cal-domain/family';
-import { compareDayEntries } from '@lupira/cal-domain/occurrences';
+import { compareDayEntries, pickShown } from '@lupira/cal-domain/occurrences';
 import { fmtTime, isToday, weekdayNames } from '@danbro96/lupira-domain-core/time';
 import { availabilityColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { EMPHASIS, TENTATIVE } from '@lupira/cal-tokens/color';
 import { familyAccent } from '../theme/kinds';
 import { isTentative, tentativeFill, tentativeSx } from '../theme/tentative';
-import { coversDay, segmentSpan, type GridEntry } from '../entries';
+import { coversDay, isBirthday, segmentSpan, type GridEntry } from '../entries';
 
 const MAX_PER_CELL = 4;
 const WEEKDAYS = weekdayNames();
@@ -109,7 +109,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
         const dayEntries = entries
           .filter((e) => coversDay(e, day))
           .sort((a, b) => compareDayEntries(orderKey(a), orderKey(b)));
-        const shown = dayEntries.slice(0, MAX_PER_CELL);
+        const shown = pickShown(dayEntries, MAX_PER_CELL, isBirthday);
         const daySegments = segments.filter((s) => coversDay(segmentSpan(s), day));
         const otherMonth = day.getMonth() !== date.getMonth();
         const cellSx = {

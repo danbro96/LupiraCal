@@ -67,14 +67,16 @@ export interface ColumnRange {
 }
 
 /** Stack multi-day bars into rows: each bar takes the first row free across its whole range. Sorted by
- *  start then longest first, which is optimal for intervals — no row is added that a reorder could avoid. */
-export function packLanes<T extends ColumnRange>(bars: T[]): Array<T & { lane: number }> {
-  const sorted = [...bars].sort((a, b) => a.startCol - b.startCol || b.endCol - a.endCol);
-  const laneEnds: number[] = [];
+ *  start then longest first, which is optimal for intervals; `demoted` bars (birthdays) pack after the rest,
+ *  into the gaps they leave, so a folded strip hides them first. */
+export function packLanes<T extends ColumnRange>(bars: T[], demoted: (bar: T) => boolean = () => false): Array<T & { lane: number }> {
+  const sorted = [...bars].sort((a, b) => Number(demoted(a)) - Number(demoted(b)) || a.startCol - b.startCol || b.endCol - a.endCol);
+  const taken: Array<Set<number>> = [];
   return sorted.map((bar) => {
-    let lane = laneEnds.findIndex((end) => end < bar.startCol);
-    if (lane === -1) lane = laneEnds.length;
-    laneEnds[lane] = bar.endCol;
+    const cols = Array.from({ length: bar.endCol - bar.startCol + 1 }, (_, i) => bar.startCol + i);
+    let lane = taken.findIndex((t) => cols.every((col) => !t.has(col)));
+    if (lane === -1) lane = taken.push(new Set()) - 1;
+    for (const col of cols) taken[lane].add(col);
     return { ...bar, lane };
   });
 }
@@ -129,4 +131,11 @@ export function hiddenPerColumn(bars: Array<ColumnRange & { lane: number }>, dra
 /** Order within a day: all-day first, then by start — the month cells and day lists of both apps. */
 export function compareDayEntries(a: { allDay: boolean; start: number }, b: { allDay: boolean; start: number }): number {
   return Number(b.allDay) - Number(a.allDay) || a.start - b.start;
+}
+
+/** The entries a capped day cell draws, in day order: up to `max`, `demoted` ones (birthdays) left out first. */
+export function pickShown<T>(entries: T[], max: number, demoted: (e: T) => boolean): T[] {
+  if (entries.length <= max) return entries;
+  const kept = new Set([...entries.filter((e) => !demoted(e)), ...entries.filter(demoted)].slice(0, Math.max(max, 0)));
+  return entries.filter((e) => kept.has(e));
 }

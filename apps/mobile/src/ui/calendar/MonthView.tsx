@@ -1,8 +1,8 @@
-import { compareDayEntries } from '@lupira/cal-domain/occurrences';
+import { compareDayEntries, pickShown } from '@lupira/cal-domain/occurrences';
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { isToday, monthMatrix, parseYmd, weekdayNames, ymd } from '@danbro96/lupira-domain-core/time';
 import { textOn } from '@danbro96/lupira-tokens-core/contrast';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
 import { lastDayOf } from '@lupira/cal-domain/occurrences';
@@ -19,9 +19,24 @@ import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 const BAR_GLYPH = 9;
 const WEEKDAYS = weekdayNames();
 const orderKey = (r: CalRow) => ({ allDay: r.all_day === 1, start: Date.parse(r.start_utc) });
+const isBirthday = (r: CalRow) => r.source === 'birthday';
+
+// Slot heights from the styles below: a bar's tallest form (tentative: line + dashed border) and the
+// "+N" line, each with the cell's gap; the chrome is the selected border, padding and day badge.
+const BAR_SLOT = 15;
+const MORE_SLOT = 12;
+const AVAIL_SLOT = 5;
+const CELL_CHROME = 23;
+const UNMEASURED_BARS = 3;
+
+/** How many bars a cell draws: every entry when they all fit, else as many as leave room for "+N". */
+function barsThatFit(cellH: number, total: number, hasAvail: boolean): number {
+  const room = cellH - CELL_CHROME - (hasAvail ? AVAIL_SLOT : 0);
+  return total * BAR_SLOT <= room ? total : Math.floor((room - MORE_SLOT) / BAR_SLOT);
+}
 
 /** Month grid straight off the mirror: monthMatrix (domain) for the day layout, one occurrence query per
- *  touched month bucket, up to three title bars per cell. A multi-day item — and an availability range —
+ *  touched month bucket, as many title bars as a cell fits, birthdays left out first. A multi-day item — and an availability range —
  *  marks every day it covers, as on the web. Day selection drives the agenda in MonthPane.
  *  `monthKey` ('yyyy-MM') rather than a Date, so the memo holds for the pages a swipe keeps. */
 export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSelectDay }: {
@@ -36,6 +51,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
   const { rows } = useOverlappingOccurrences(dayKeys);
   const taskRows = useTaskDeadlines(dayKeys);
   const colorOf = useCalendarColors();
+  const [rowH, setRowH] = useState<number | null>(null);
 
   const fillOf = (r: CalRow) => colorOf(r.calendar_id, r.source);
   const byDay = new Map<string, CalRow[]>();
@@ -65,10 +81,19 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
         ))}
       </View>
       {weeks.map((week, wi) => (
-        <View key={wi} style={styles.weekRow}>
+        <View
+          key={wi}
+          style={styles.weekRow}
+          onLayout={wi === 0 ? (e) => setRowH(e.nativeEvent.layout.height) : undefined}
+        >
           {week.map((d) => {
             const key = ymd(d);
             const dayRows = byDay.get(key) ?? [];
+            const shown = pickShown(
+              dayRows,
+              rowH === null ? UNMEASURED_BARS : barsThatFit(rowH, dayRows.length, availByDay.has(key)),
+              isBirthday,
+            );
             const inMonth = d.getMonth() === anchor.getMonth();
             const selected = key === selectedDay;
             const today = isToday(d);
@@ -96,7 +121,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                     {d.getDate()}
                   </Text>
                 </View>
-                {dayRows.slice(0, 3).map((r) =>
+                {shown.map((r) =>
                   isTaskRow(r) ? (
                     <View
                       key={`${r.source}-${r.source_id}-${r.start_utc}`}
@@ -124,7 +149,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                     </View>
                   ),
                 )}
-                {dayRows.length > 3 && <Text style={[styles.more, { color: c.textMuted }]}>+{dayRows.length - 3}</Text>}
+                {dayRows.length > shown.length && <Text style={[styles.more, { color: c.textMuted }]}>+{dayRows.length - shown.length}</Text>}
               </Pressable>
             );
           })}
@@ -155,5 +180,5 @@ const styles = StyleSheet.create({
   taskBar: { borderRadius: 3, paddingHorizontal: 2, paddingVertical: 0.5, borderWidth: 0.5 },
   taskBarText: { fontSize: 8.5, lineHeight: 11, includeFontPadding: false },
   tentativeBar: { paddingHorizontal: 0.5, paddingVertical: 0 },
-  more: { fontSize: 9, paddingLeft: 2 },
+  more: { fontSize: 9, lineHeight: 11, includeFontPadding: false, paddingLeft: 2 },
 });

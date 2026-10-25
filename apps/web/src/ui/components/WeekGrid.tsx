@@ -12,7 +12,7 @@ import { availabilityColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { EMPHASIS, TENTATIVE } from '@lupira/cal-tokens/color';
 import { familyAccent } from '../theme/kinds';
 import { isTentative, tentativeFill, tentativeSx } from '../theme/tentative';
-import { coversDay, segmentSpan, type GridEntry } from '../entries';
+import { coversDay, isBirthday, segmentSpan, type GridEntry } from '../entries';
 import { ExpandIcon, ExpandLessIcon } from '@danbro96/lupira-web-mui/icons';
 
 const HOUR_PX = 48;
@@ -163,7 +163,7 @@ function AllDayStrip({
         before: coversDay(entry, addDays(first, -1)),
         after: coversDay(entry, addDays(last, 1)),
       }];
-    }));
+    }), (bar) => isBirthday(bar.entry));
   }, [entries, days]);
   const laneCount = bars.reduce((n, b) => Math.max(n, b.lane + 1), 0);
   const { drawn, rows, folded } = foldLanes(laneCount, expanded ? Infinity : MAX_ALL_DAY_ROWS);

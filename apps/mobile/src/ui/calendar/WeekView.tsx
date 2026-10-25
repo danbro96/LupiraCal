@@ -317,7 +317,7 @@ function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
   const c = useColors();
   const maxHeight = Math.round(useWindowDimensions().height * MAX_STRIP_SHARE);
   const [expanded, setExpanded] = useState(false);
-  const laned = weeks.map((bars) => packLanes(bars));
+  const laned = weeks.map((bars) => packLanes(bars, (b) => b.row.source === 'birthday'));
   const laneCount = (w: number) => laned[w].reduce((n, b) => Math.max(n, b.lane + 1), 0);
   const rowsPref = usePrefs((p) => p.allDayRows);
   const limit = rowsPref === 'all' ? Infinity : Number(rowsPref);

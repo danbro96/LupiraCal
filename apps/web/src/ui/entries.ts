@@ -1,4 +1,4 @@
-import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto, ItemStatus, OccurrenceOrigin } from '@lupira/cal-api/models';
+import { OriginKind, type CalendarItemDto, type CalendarItemOccurrenceDto, type ContainerDto, type ItemStatus, type OccurrenceOrigin } from '@lupira/cal-api/models';
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { lastDayOf } from '@lupira/cal-domain/occurrences';
 import { occurrenceKey } from '@lupira/cal-domain/seriesOccurrences';
@@ -34,6 +34,8 @@ export interface GridEntry {
   /** LupiraTasks provenance (not a cal item; generated OriginKind can't carry it) — routes the click to the TaskCard. */
   task?: { listId: string; itemId: string; dueAt: Date; overdue: boolean };
 }
+
+export const isBirthday = (e: GridEntry) => e.origin?.kind === OriginKind.Birthday;
 
 export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: ContainerDto): GridEntry {
   return {
