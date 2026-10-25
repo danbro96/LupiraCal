@@ -8,7 +8,7 @@ import { CALENDAR_DDL, writeCalendarIndex } from '../indexes/calendars';
 import { CONTACT_DDL, writeContactIndex } from '../indexes/contacts';
 import { ITEM_DDL, writeItemIndex } from '../indexes/items';
 import {
-  birthdaysBetween, calendarsForVisibility, myContactIdOf, myOccurrences, pendingInvites, shownOccurrences,
+  birthdaysBetween, calendarsForVisibility, myContactIdOf, myOccurrences, myShownOccurrences, pendingInvites,
 } from './notificationSources';
 import { DOCS_DDL, putDoc } from './testDocs';
 
@@ -31,8 +31,8 @@ const item = (id: string, startsAt: string, attendees: ItemAttendee[], over: Par
     guards: emptyItemGuards(),
   }, writeItemIndex));
 
-const calendar = (id: string, kind: string, cls = 'Agenda') =>
-  db.exclusive((tx) => putDoc(tx, Aggregate.calendar, id, { doc: { id, kind, class: cls }, guards: null }, writeCalendarIndex));
+const calendar = (id: string, kind: string, cls = 'Agenda', access = 'Owner') =>
+  db.exclusive((tx) => putDoc(tx, Aggregate.calendar, id, { doc: { id, kind, class: cls, access }, guards: null }, writeCalendarIndex));
 
 const contact = (id: string, givenName: string, over: Record<string, unknown> = {}) =>
   db.exclusive((tx) => putDoc(tx, Aggregate.contact, id, { doc: { id, addressBookId: 'ab', givenName, ...over }, guards: emptyContactGuards() }, writeContactIndex));
@@ -74,6 +74,11 @@ describe('notification sources', () => {
     ]);
   });
 
+  it('leaves out an occurrence you have left', async () => {
+    await item('a', '2026-10-14T09:00:00.000Z', [on('me', { leftAt: '2026-10-12T09:00:00Z' })]);
+    expect(await myOccurrences(db, 'me', '2026-10-13', '2026-10-28')).toEqual([]);
+  });
+
   it('lists shown calendars only, never availability, with your RSVP where you are on it', async () => {
     await calendar('personal', 'Personal');
     await calendar('avail', 'Availability');
@@ -82,8 +87,24 @@ describe('notification sources', () => {
     await item('away', '2026-10-14T00:00:00.000Z', [], { calendars: [{ calendarId: 'personal', status: 'Accepted' }, { calendarId: 'avail', status: 'Accepted' }] });
     await item('hidden', '2026-10-14T11:00:00.000Z', [], { calendars: [{ calendarId: 'work', status: 'Accepted' }] });
 
-    const rows = await shownOccurrences(db, '2026-10-13', '2026-10-28', ['personal', 'avail'], 'me');
+    const rows = await myShownOccurrences(db, '2026-10-13', '2026-10-28', ['personal', 'avail'], 'me');
     expect(rows.map((r) => [r.itemId, r.rsvp])).toEqual([['mine', 'Declined'], ['other', null]]);
+  });
+
+  it('lists only your events in a shared calendar, and your own calendar\'s events you are not on', async () => {
+    await calendar('personal', 'Personal');
+    await calendar('family', 'Shared', 'Agenda', 'ReadWrite');
+    const family = { calendars: [{ calendarId: 'family', status: 'Accepted' }] };
+    await item('own', '2026-10-14T09:00:00.000Z', [on('anna')]);
+    await item('others', '2026-10-14T10:00:00.000Z', [on('anna')], family);
+    await item('going', '2026-10-14T11:00:00.000Z', [on('me'), on('anna')], family);
+    await item('left', '2026-10-14T12:00:00.000Z', [on('me', { leftAt: '2026-10-12T09:00:00Z' })], family);
+    await item('leftOwn', '2026-10-14T13:00:00.000Z', [on('me', { leftAt: '2026-10-12T09:00:00Z' })]);
+    await item('declined', '2026-10-14T14:00:00.000Z', [on('me', { status: 'Declined' })], family);
+    await item('pending', '2026-10-14T15:00:00.000Z', [], { calendars: [{ calendarId: 'personal', status: 'NeedsAction' }, { calendarId: 'family', status: 'Accepted' }] });
+
+    const rows = await myShownOccurrences(db, '2026-10-13', '2026-10-28', ['personal', 'family'], 'me');
+    expect(rows.map((r) => [r.itemId, r.rsvp])).toEqual([['own', null], ['going', 'Accepted'], ['declined', 'Declined']]);
   });
 
   it('lists birthdays with the birth year, leaving out those who have died', async () => {

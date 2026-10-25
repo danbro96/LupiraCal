@@ -53,9 +53,10 @@ export function NotificationSettingsScreen() {
           />
         </View>
       )}
+      <SettingsNote>Only events you’re on.</SettingsNote>
 
       <List.Subheader>Every day</List.Subheader>
-      {toggle('morningSummary', 'Morning summary', 'What’s on today, trips included')}
+      {toggle('morningSummary', 'Morning summary', 'Today’s events you’re going to or that are in your calendars')}
       {notify.morningSummary && <TimeRow value={notify.morningTime} onChange={(v) => void set('morningTime', v)} />}
       {toggle('birthdays', 'Birthdays')}
       {notify.birthdays && <TimeRow value={notify.birthdayTime} onChange={(v) => void set('birthdayTime', v)} />}

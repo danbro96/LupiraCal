@@ -47,6 +47,7 @@ export const ITEM_DDL = `
     status TEXT NOT NULL,
     reminder_mode TEXT,
     reminder_minutes INTEGER,
+    left_at TEXT,
     PRIMARY KEY (item_id, contact_id)
   );
   CREATE INDEX item_attendees_contact ON item_attendees (contact_id);
@@ -78,8 +79,8 @@ export async function writeItemIndex(tx: Tx, id: string, state: MirrorItem | nul
     d.calendars.map((m) => [id, m.calendarId, m.status]));
   await insertChunked(tx, 'INSERT INTO item_occurrences (item_id, original_start, start_utc, end_utc, start_day, all_day, title, status)', 8,
     occurrenceRowsForItem(d, currentHorizon()).map((r) => [id, r.originalStart, r.startUtc, r.endUtc, r.startDay, r.allDay ? 1 : 0, r.title, r.status]));
-  await insertChunked(tx, 'INSERT OR REPLACE INTO item_attendees (item_id, contact_id, status, reminder_mode, reminder_minutes)', 5,
-    (d.attendees ?? []).map((a) => [id, a.contactId, a.status, a.reminder?.mode ?? null, a.reminder?.minutesBefore ?? null]));
+  await insertChunked(tx, 'INSERT OR REPLACE INTO item_attendees (item_id, contact_id, status, reminder_mode, reminder_minutes, left_at)', 6,
+    (d.attendees ?? []).map((a) => [id, a.contactId, a.status, a.reminder?.mode ?? null, a.reminder?.minutesBefore ?? null, a.leftAt ?? null]));
   await insertChunked(tx, 'INSERT INTO item_places (item_id, place_id, label)', 3,
     placeRefsOf(d).map((r) => [id, r.placeId, r.label]));
 }

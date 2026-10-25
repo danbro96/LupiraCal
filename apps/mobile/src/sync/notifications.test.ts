@@ -70,7 +70,7 @@ beforeEach(async () => {
   os = fakeOs();
   await db.exclusive(async (tx) => {
     await tx.run('INSERT INTO docs (aggregate, id, local) VALUES (?, ?, ?)', [Aggregate.me, 'me', JSON.stringify({ doc: { contactId: 'me' } })]);
-    await putDoc(tx, Aggregate.calendar, 'personal', { doc: { id: 'personal', kind: 'Personal', class: 'Agenda' }, guards: null }, writeCalendarIndex);
+    await putDoc(tx, Aggregate.calendar, 'personal', { doc: { id: 'personal', kind: 'Personal', class: 'Agenda', access: 'Owner' }, guards: null }, writeCalendarIndex);
     await putDoc(tx, Aggregate.contact, 'anna', {
       doc: { id: 'anna', addressBookId: 'ab', givenName: 'Anna', birthday: { year: 1986, month: 10, day: 15 } }, guards: emptyContactGuards(),
     }, writeContactIndex);

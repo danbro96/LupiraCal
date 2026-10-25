@@ -4,7 +4,7 @@ import { isCalendarShown } from '@lupira/cal-domain/calendars';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
 import type { NotificationPort } from '../data/notifications/port';
 import {
-  birthdaysBetween, calendarsForVisibility, myContactIdOf, myOccurrences, pendingInvites, shownOccurrences,
+  birthdaysBetween, calendarsForVisibility, myContactIdOf, myOccurrences, myShownOccurrences, pendingInvites,
 } from '../data/queries/notificationSources';
 import { isManaged, planNotifications } from '../domain/notificationPlan';
 import { NOTIFY_PREFIX, notifyPrefsFrom } from '../domain/notificationPrefs';
@@ -127,7 +127,7 @@ async function reconcileOnce({ db: openDb, port, now: clock, zone: zoneOf }: Not
   const shownIds = (await calendarsForVisibility(db)).filter((c) => isCalendarShown(c, choices)).map((c) => c.id);
   const desired = desiredReminders({
     mine: me ? await myOccurrences(db, me, addDays(today, -1), toDay) : [],
-    shown: prefs.morningSummary ? await shownOccurrences(db, addDays(today, -SPAN_LOOKBACK_DAYS), toDay, shownIds, me) : [],
+    shown: prefs.morningSummary ? await myShownOccurrences(db, addDays(today, -SPAN_LOOKBACK_DAYS), toDay, shownIds, me) : [],
     birthdays: prefs.birthdays ? await birthdaysBetween(db, addDays(today, -1), toDay) : [],
   }, ctx);
 

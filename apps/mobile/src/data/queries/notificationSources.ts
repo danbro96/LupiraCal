@@ -36,7 +36,7 @@ export async function myOccurrences(tx: Tx, contactId: string, fromDay: string, 
   const rows = await tx.all<OccurrenceRow & { place: string | null; rsvp: string; reminder_mode: string | null; reminder_minutes: number | null }>(
     `SELECT ${OCCURRENCE}, i.location_label AS place, a.status AS rsvp, a.reminder_mode, a.reminder_minutes
      FROM item_occurrences o
-     JOIN item_attendees a ON a.item_id = o.item_id AND a.contact_id = ?
+     JOIN item_attendees a ON a.item_id = o.item_id AND a.contact_id = ? AND a.left_at IS NULL
      JOIN item_index i ON i.id = o.item_id
      WHERE o.start_day >= ? AND o.start_day <= ?`,
     [contactId, fromDay, toDay],
@@ -49,16 +49,22 @@ export async function myOccurrences(tx: Tx, contactId: string, fromDay: string, 
   }));
 }
 
-/** Occurrences in shown calendars that start in the range, never availability entries; `rsvp` is yours. */
-export async function shownOccurrences(tx: Tx, fromDay: string, toDay: string, calendarIds: string[], contactId: string | null): Promise<ShownOccurrence[]> {
+/** Occurrences in shown calendars that start in the range, never availability entries: the ones you're on (not left),
+ *  and, where you have no attendee row, those accepted into a calendar you own. `rsvp` is yours. */
+export async function myShownOccurrences(tx: Tx, fromDay: string, toDay: string, calendarIds: string[], contactId: string | null): Promise<ShownOccurrence[]> {
   const rows = await tx.all<OccurrenceRow & { rsvp: string | null }>(
-    `SELECT ${OCCURRENCE},
-            (SELECT a.status FROM item_attendees a WHERE a.item_id = o.item_id AND a.contact_id = ?) AS rsvp
+    `SELECT ${OCCURRENCE}, a.status AS rsvp
      FROM item_occurrences o
      JOIN item_index i ON i.id = o.item_id
+     LEFT JOIN item_attendees a ON a.item_id = o.item_id AND a.contact_id = ?
      WHERE o.start_day >= ? AND o.start_day <= ? AND ${inShownCalendars('o.item_id')}
        AND NOT EXISTS (SELECT 1 FROM item_calendars ia JOIN calendar_index ca ON ca.id = ia.calendar_id
-                       WHERE ia.item_id = o.item_id AND ca.kind = 'Availability')`,
+                       WHERE ia.item_id = o.item_id AND ca.kind = 'Availability')
+       AND CASE WHEN a.item_id IS NULL
+             THEN EXISTS (SELECT 1 FROM item_calendars io
+                          JOIN docs dc ON dc.aggregate = '${Aggregate.calendar}' AND dc.id = io.calendar_id AND dc.local IS NOT NULL
+                          WHERE io.item_id = o.item_id AND io.status = 'Accepted' AND json_extract(dc.local, '$.doc.access') = 'Owner')
+             ELSE a.left_at IS NULL END`,
     [contactId, fromDay, toDay, JSON.stringify(calendarIds)],
   );
   return rows.map((r) => ({ ...occurrenceOf(r), rsvp: r.rsvp }));
@@ -86,7 +92,7 @@ export async function pendingInvites(tx: Tx, contactId: string, today: string, n
      FROM item_attendees a
      JOIN item_index i ON i.id = a.item_id
      JOIN docs d ON d.aggregate = '${Aggregate.item}' AND d.id = i.id AND d.local IS NOT NULL
-     WHERE a.contact_id = ? AND a.status = 'NeedsAction'`,
+     WHERE a.contact_id = ? AND a.status = 'NeedsAction' AND a.left_at IS NULL`,
     [today, nowIso, contactId],
   );
   const docs = rows.map((r) => (JSON.parse(r.local) as { doc: ItemDoc }).doc);

@@ -25,7 +25,7 @@ export type MyOccurrence = {
   reminder: ParticipantReminder | null;
 };
 
-/** One occurrence in a shown calendar; `rsvp` is yours, null when you're not on it. */
+/** One occurrence in a shown calendar; `rsvp` is yours, null in a calendar you own when you're not on it. */
 export type ShownOccurrence = {
   itemId: string;
   title: string | null;
