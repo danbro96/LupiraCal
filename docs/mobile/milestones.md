@@ -274,21 +274,21 @@ Grids (MonthView/WeekView), the PanResponder day-sheet, and the sync engine are 
 ## M15 — Native 1.2.0   [status: in-progress]
 
 Local notifications, stock-app location and address capture, Sentry symbolication; Expo 57.0.27. Ships as one
-EAS build (1.2.0) to Play internal.
+EAS build (1.2.0) to Play internal. Released.
 
 ### Scope
-- [ ] cal-api: per-participant reminder (`Default` / `Off` / `Before` n min) on attendees, `PUT /items/{id}/participants/{pid}/reminder`, synced via `/sync/items`; `LocationUnresolved` on create/update stores the label without a place. BFF exposes the PUT
+- [x] cal-api: per-participant reminder (`Default` / `Off` / `Before` n min) on attendees, `PUT /items/{id}/participants/{pid}/reminder`, synced via `/sync/items`; `LocationUnresolved` on create/update stores the label without a place. BFF exposes the PUT
 - [x] Expo 57.0.27 SDK pins + `expo-notifications`; version 1.2.0
 - [x] Sentry config plugin (de.sentry.io) + `getSentryExpoConfig` metro; EAS build profiles name their environment (SENTRY_AUTH_TOKEN); mobile-ota uploads source maps
 - [x] `USE_EXACT_ALARM` (Android 13+) + `SCHEDULE_EXACT_ALARM` capped at API 32; bridge `canScheduleExactAlarms()` on Bridge diagnostics
-- [ ] Notifications: per-event reminders, default reminder (Accepted/Tentative timed), morning-of digest, birthdays digest, RSVP ask-when-invited + remind-to-reply with Going/Maybe/Not going actions; 14-day horizon, cap 100; Settings toggles (all on after update)
-- [ ] Reminder op `item.reminder` + Reminder row in the event editor
+- [x] Notifications: per-event reminders, default reminder (Accepted/Tentative timed), morning-of digest, birthdays digest, RSVP ask-when-invited + remind-to-reply with Going/Maybe/Not going actions; 14-day horizon, cap 100; Settings toggles (all on after update)
+- [x] Reminder op `item.reminder` + Reminder row in the event editor
 - [x] Bridge: stock-calendar location edits captured as unresolved labels; editor keeps an unresolved label and offers it as the place search seed
 - [x] Bridge: contact postal addresses published per current residency; phone-side edits kept as local address hints ("From your phone")
-- [ ] Reconciler re-arms fires due within 2 h whenever exact alarms are unavailable
+- [x] Reconciler re-arms fires due within 2 h whenever exact alarms are unavailable
 
 ### Exit criteria
-- [ ] Root `npm run typecheck` / `lint` / `test` green; cal-api unit + integration green
+- [x] Root `npm run typecheck` / `lint` / `test` green; cal-api unit + integration green
 - [ ] `npx expo export --platform android` bundles; clean-tree fingerprint differs from 1.1.0's runtime
 - [ ] Device: notifications fire foreground / background / killed / after reboot / after package replace / under Doze, exact on and off; permission denied shows the settings row; account switch cancels all
 - [ ] Device: RSVP action buttons answer from a killed app and offline (replayed on reconnect)
