@@ -40,3 +40,21 @@ describe('unsupported rules degrade to null (caller renders first occurrence + f
     expect(expandRecurrence('FREQ=WEEKLY;BYDAY=2TU', d, d, new Date('2026-03-01T00:00:00Z'))).toBeNull();
   });
 });
+
+describe('rules that can never match', () => {
+  it.each([
+    'FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=30;COUNT=3',
+    'FREQ=MONTHLY;BYMONTH=2;BYMONTHDAY=31;COUNT=3',
+    'FREQ=MONTHLY;BYDAY=6MO;COUNT=3',
+    'FREQ=YEARLY;INTERVAL=3;BYMONTH=2;BYMONTHDAY=30',
+  ])('%s expands to nothing', (rule) => {
+    const d = new Date('2026-01-30T09:00:00Z');
+    expect(expandRecurrence(rule, d, d, new Date('2100-01-01T00:00:00Z'))).toEqual([]);
+  });
+
+  it('still finds a leap day on a three-yearly rule', () => {
+    const d = new Date('2026-02-28T09:00:00Z');
+    const leap = expandRecurrence('FREQ=YEARLY;INTERVAL=3;BYMONTH=2;BYMONTHDAY=29;COUNT=1', d, d, new Date('2100-01-01T00:00:00Z'));
+    expect(leap?.map((x) => x.toISOString())).toEqual(['2032-02-29T09:00:00.000Z']);
+  });
+});

@@ -145,8 +145,14 @@ export function expandRecurrence(
   const timeOfDay = anchorMs - utcMidnight(anchor);
   const firstPeriod = rule.count === null ? periodNear(rule, anchor, Math.max(anchorMs, windowStartMs - DAY_MS)) : 0;
   const endPeriod = rule.count === null ? firstPeriod + 5_000 : 1_000_000;
+  let emptyRun = 0;
   for (let period = firstPeriod; period < endPeriod; period++) {
     const candidates = periodCandidates(rule, anchor, period).filter((t) => t + timeOfDay >= anchorMs);
+    if (candidates.length === 0) {
+      if (++emptyRun >= CYCLE_PERIODS[rule.freq]) return out;
+      continue;
+    }
+    emptyRun = 0;
     candidates.sort((a, b) => a - b);
     for (const day of candidates) {
       const status = consider(day + timeOfDay);
@@ -236,6 +242,8 @@ function monthDays(rule: RecurrenceRule, year: number, month: number, fallbackDa
 }
 
 const DAY_MS = 86_400_000;
+// The Gregorian calendar, weekdays included, repeats every 400 years: a rule with no day in one full cycle never matches.
+const CYCLE_PERIODS: Record<RecurrenceRule['freq'], number> = { DAILY: 146_097, WEEKLY: 20_871, MONTHLY: 4_800, YEARLY: 400 };
 
 const utcMidnight = (d: Date): number => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 
