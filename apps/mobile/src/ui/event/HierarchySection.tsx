@@ -46,7 +46,7 @@ function HierarchyItem({ row, title, description, onOpen }: {
       title={title}
       description={description}
       style={styles.dense}
-      left={() => <View style={[styles.dot, { backgroundColor: colorOf(row.calendar_id) }]} />}
+      left={() => <View style={[styles.dot, { backgroundColor: colorOf(row.calendar_id, 'item', row.color) }]} />}
     />
   );
 }

@@ -54,7 +54,7 @@ function EventRow({ row, onOpen }: { row: ContactEventRow; onOpen: (itemId: stri
       title={displayTitle(row.title)}
       description={[when ? fmtWhen(when, row.is_all_day === 1) : 'No date', rsvpLabel(row.rsvp)].join(' · ')}
       style={styles.dense}
-      left={() => <View style={[styles.dot, { backgroundColor: colorOf(row.calendar_id) }]} />}
+      left={() => <View style={[styles.dot, { backgroundColor: colorOf(row.calendar_id, 'item', row.color) }]} />}
     />
   );
 }

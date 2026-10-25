@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { CalendarItemOccurrenceDto, ContainerDto } from '@lupira/cal-api/models';
-import { fromOccurrence } from './entries';
+import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto } from '@lupira/cal-api/models';
+import { ITEM_COLORS } from '@lupira/cal-tokens/itemColors';
+import { fromOccurrence, fromProposed } from './entries';
 
-const calendar: ContainerDto = { id: 'cal-1', type: 'calendar', slug: 'family', access: 'Owner' };
+const calendar: ContainerDto = { id: 'cal-1', type: 'calendar', slug: 'family', access: 'Owner', color: '#123456' };
 
 const occurrence = (o: Partial<CalendarItemOccurrenceDto>): CalendarItemOccurrenceDto => ({
   id: 'item-1',
@@ -32,5 +33,19 @@ describe('fromOccurrence', () => {
 
   it('has no identity for an item that does not recur', () => {
     expect(fromOccurrence(occurrence({}), calendar).originalStart).toBeNull();
+  });
+});
+
+describe('entry colour', () => {
+  it('draws an occurrence in its item colour, else its calendar colour', () => {
+    expect(fromOccurrence(occurrence({ color: 'Red' }), calendar).color).toBe(ITEM_COLORS.Red);
+    expect(fromOccurrence(occurrence({ color: null }), calendar).color).toBe('#123456');
+    expect(fromOccurrence(occurrence({}), calendar).color).toBe('#123456');
+  });
+
+  it('draws a proposed item in its item colour, else its calendar colour', () => {
+    const item = { id: 'item-2', title: 'Offer', isAllDay: false, startsAt: '2026-07-13T09:00:00+00:00' } as CalendarItemDto;
+    expect(fromProposed({ ...item, color: 'Teal' }, calendar)?.color).toBe(ITEM_COLORS.Teal);
+    expect(fromProposed(item, calendar)?.color).toBe('#123456');
   });
 });

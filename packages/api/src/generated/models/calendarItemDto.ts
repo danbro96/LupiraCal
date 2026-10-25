@@ -10,6 +10,7 @@ import type { DatePrecision } from './datePrecision';
 import type { ItemAction } from './itemAction';
 import type { ItemAttendeeDto } from './itemAttendeeDto';
 import type { ItemCategory } from './itemCategory';
+import type { ItemColor } from './itemColor';
 import type { ItemDetails } from './itemDetails';
 import type { ItemPrompt } from './itemPrompt';
 import type { ItemStatus } from './itemStatus';
@@ -55,6 +56,7 @@ export interface CalendarItemDto {
      */
   occurrenceOverrides?: OccurrenceOverride[] | null;
   category?: null | ItemCategory;
+  color?: null | ItemColor;
   details?: null | ItemDetails;
   /** @nullable */
   placeId?: string | null;

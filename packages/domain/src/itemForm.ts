@@ -13,6 +13,7 @@ export type ItemForm = {
   status: string;          // '' = keep unset
   category: string;
   tagsCsv: string;
+  color: string;           // '' = the calendar's colour
   isAllDay: boolean;
   startDay: string;        // 'yyyy-MM-dd', '' = none
   startTime: string;       // 'HH:MM' (timed only)
@@ -33,7 +34,7 @@ export type EditResult<T> = { ok: true; value: T } | { ok: false; error: string 
  *  event defaults to one hour, and the end may roll past midnight. */
 export function emptyItemForm(day?: string, time?: string, now: Date = new Date()): ItemForm {
   const form: ItemForm = {
-    title: '', description: '', status: '', category: '', tagsCsv: '', isAllDay: false,
+    title: '', description: '', status: '', category: '', tagsCsv: '', color: '', isAllDay: false,
     startDay: '', startTime: '', endDay: '', endTime: '', recurrenceRule: '',
     timeZone: deviceTimeZone() ?? '', place: null,
   };

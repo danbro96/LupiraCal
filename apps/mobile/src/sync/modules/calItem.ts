@@ -24,7 +24,7 @@ export const calItemModule: AggregateModule<ItemDoc, ItemGuards, ClientOp, ItemS
   reduce: applyItemOp,
   replay: replayOp,
   holdKeyOf: (op) => op.holdKey ?? op.aggregateId,
-  index: { version: 8, tables: ITEM_TABLES, ddl: ITEM_DDL + BRIDGE_VIEW, write: writeItemIndex },
+  index: { version: 9, tables: ITEM_TABLES, ddl: ITEM_DDL + BRIDGE_VIEW, write: writeItemIndex },
 };
 
 /** Occurrence identities arrive as any ISO offset; the mirror keeps them as occurrence keys. */

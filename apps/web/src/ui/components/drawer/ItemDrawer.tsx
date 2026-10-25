@@ -43,7 +43,11 @@ import { movedEnd } from '@lupira/cal-domain/itemForm';
 import { UNTITLED } from '@danbro96/lupira-domain-events/itemLabels';
 import { isItemCategory } from '@lupira/cal-domain/itemCategory';
 import { fromStored } from '@lupira/cal-domain/placeSelection';
+import { isItemColor } from '@lupira/cal-tokens/itemColors';
+import { useContainers } from '../../../state/useContainers';
 import { useInvalidateItems } from '../../../state/useInvalidate';
+import { calendarColor } from '../../theme/kinds';
+import { ColorSwatches } from '../ColorSwatches';
 import { CategoryIcon } from '../KindIcon';
 import { AttendeesPanel } from './AttendeesPanel';
 import { CalendarsPanel } from './CalendarsPanel';
@@ -120,6 +124,7 @@ function DrawerBody({
   onClose: () => void;
 }) {
   const [, setSearchParams] = useSearchParams();
+  const { calendars } = useContainers();
   const invalidate = useInvalidateItems();
   const showSnack = useSnackbar();
   const onError = (e: unknown) => showSnack(errText(e) ?? 'Request failed.');
@@ -191,6 +196,10 @@ function DrawerBody({
   const deleting = del.isPending || exclude.isPending || deleteFollowing.isPending;
   const [deleteMenu, setDeleteMenu] = useState<HTMLElement | null>(null);
   const deviations = item.recurrenceRule ? seriesDeviationRows(item) : [];
+  const memberCalendars = item.calendars
+    .filter((m) => m.status !== 'Removed')
+    .flatMap((m) => calendars.filter((c) => c.id === m.calendarId));
+  const banded = memberCalendars.some((c) => c.kind === 'Availability');
 
   const zone = eventZone(item.startTimezone);
   const zoneAt = shown.startsAt ? new Date(shown.startsAt) : undefined;
@@ -296,6 +305,16 @@ function DrawerBody({
           </TextField>
         )}
       </WrapRow>
+
+      {!seriesOnly && !banded && (
+        <DrawerSection title="Colour">
+          <ColorSwatches
+            value={isItemColor(base.color) ? base.color : null}
+            calendarFill={memberCalendars[0] ? calendarColor(memberCalendars[0]) : 'var(--mui-palette-border)'}
+            onChange={(color) => patch({ color, colorProvided: true })}
+          />
+        </DrawerSection>
+      )}
 
       <DrawerSection title="When">
         {item.isAllDay ? (

@@ -10,6 +10,7 @@ export type ItemDraft = {
   description?: string | null;
   status?: string | null;
   category?: string | null;
+  color?: string | null;
   isAllDay: boolean;
   startsAt?: string | null;
   endsAt?: string | null;

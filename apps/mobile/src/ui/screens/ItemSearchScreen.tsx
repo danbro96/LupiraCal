@@ -72,7 +72,7 @@ const ResultRow = memo(function ResultRow({ row, onOpen }: { row: ItemSearchRow;
   const when = row.next_utc ?? row.last_utc;
   return (
     <Pressable style={styles.row} android_ripple={{ color: c.divider }} onPress={() => onOpen(row)}>
-      <View style={[styles.dot, { backgroundColor: colorOf(row.calendar_id) }]} />
+      <View style={[styles.dot, { backgroundColor: colorOf(row.calendar_id, 'item', row.color) }]} />
       <View style={styles.rowText}>
         <Text variant="bodyLarge" numberOfLines={1} style={{ color: c.text }}>{displayTitle(row.title)}</Text>
         <Text variant="bodyMedium" numberOfLines={1} style={{ color: c.textMuted }}>

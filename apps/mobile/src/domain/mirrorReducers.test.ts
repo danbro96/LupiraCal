@@ -189,6 +189,33 @@ describe('places', () => {
   });
 });
 
+describe('colour', () => {
+  const withColor = (color: string | null | undefined, n: number): ClientOp => ({
+    aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.revise', itemId: 'item-1', occurredAt: T(n), commandId: cmd(n),
+    core: { title: null, isAllDay: false, startsAt: '2026-08-01T09:00:00Z', color },
+  });
+
+  it('sets the colour; null clears it to the calendar\'s, undefined keeps it', () => {
+    const red = applyItemOp(baseItem(), withColor('Red', 1))!;
+    expect(red.doc.color).toBe('Red');
+    expect(applyItemOp(red, withColor(undefined, 2))!.doc.color).toBe('Red');
+    expect(applyItemOp(red, withColor(null, 3))!.doc.color).toBeNull();
+  });
+
+  it('a stale colour loses to the guard', () => {
+    const red = applyItemOp(baseItem(), withColor('Red', 5))!;
+    expect(applyItemOp(red, withColor('Blue', 2))!.doc.color).toBe('Red');
+  });
+
+  it('a create carries the colour', () => {
+    const create: ClientOp = {
+      aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.create', itemId: 'item-2', sourceKey: 'sk', calendarId: 'cal-1', occurredAt: T(1), commandId: cmd(1),
+      core: { title: 'Picnic', isAllDay: false, color: 'Teal' },
+    };
+    expect(applyItemOp(null, create)!.doc.color).toBe('Teal');
+  });
+});
+
 describe('attendees', () => {
   const invite = (contactIds: string[], n: number): ClientOp => ({ aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.invite', itemId: 'item-1', contactIds, occurredAt: T(n), commandId: cmd(n) });
   const uninvite = (contactId: string, n: number): ClientOp => ({ aggregate: 'cal.item', aggregateId: 'item-1', kind: 'item.uninvite', itemId: 'item-1', contactId, occurredAt: T(n), commandId: cmd(n) });
@@ -337,6 +364,14 @@ describe('series occurrences', () => {
     expect(next.guards.reminders).toEqual({ [anna.participationId]: { ts: T(1), cmd: cmd(1) } });
     expect(next.guards.filing).toEqual({ 'cal-1': { ts: T(5), cmd: cmd(5) } });
     expect(continuationOf(original, 'item-2', '2026-08-03T17:00:00Z', core, { ts: T(5), cmd: cmd(5) })).toBeNull();
+  });
+
+  it('the continuing series keeps the original\'s colour unless the split sets one', () => {
+    const original = weekly({ color: 'Purple' });
+    const at = '2026-08-17T17:00:00Z';
+    expect(continuationOf(original, 'item-2', at, { title: 'Later', isAllDay: false }, { ts: T(5), cmd: cmd(5) })!.doc.color).toBe('Purple');
+    expect(continuationOf(original, 'item-2', at, { title: 'Later', isAllDay: false, color: null }, { ts: T(5), cmd: cmd(5) })!.doc.color).toBeNull();
+    expect(continuationOf(original, 'item-2', at, { title: 'Later', isAllDay: false, color: 'Green' }, { ts: T(5), cmd: cmd(5) })!.doc.color).toBe('Green');
   });
 
   it('the continuing series leaves out attendees who left, with their reminders', () => {

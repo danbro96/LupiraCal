@@ -63,6 +63,45 @@ describe('unresolved location replay', () => {
   });
 });
 
+describe('colour replay', () => {
+  const at = { aggregate: 'cal.item', aggregateId: 'item-1', itemId: 'item-1', occurredAt: '2026-09-30T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000030' } as const;
+  const core = { title: 'Picnic', isAllDay: false, startsAt: '2026-10-01T09:00:00Z' };
+
+  beforeEach(() => {
+    cal.createItem.mockReset().mockResolvedValue(undefined);
+    cal.updateItem.mockReset().mockResolvedValue(undefined);
+    cal.changeFollowingOccurrences.mockReset().mockResolvedValue({});
+  });
+
+  it('a create sends the colour it has', async () => {
+    await replayOp({ ...at, kind: 'item.create', sourceKey: 'k', calendarId: 'cal-1', core: { ...core, color: 'Red' } });
+    await replayOp({ ...at, kind: 'item.create', sourceKey: 'k2', calendarId: 'cal-1', core: { ...core, color: null } });
+
+    const [[red], [plain]] = cal.createItem.mock.calls;
+    expect(red.color).toBe('Red');
+    expect(plain.color).toBeUndefined();
+  });
+
+  it('a revise sets or clears the colour under its sentinel, and keeps it when the op has none', async () => {
+    await replayOp({ ...at, kind: 'item.revise', core: { ...core, color: 'Red' } });
+    await replayOp({ ...at, kind: 'item.revise', core: { ...core, color: null } });
+    await replayOp({ ...at, kind: 'item.revise', core });
+
+    const [[, set], [, clear], [, keep]] = cal.updateItem.mock.calls;
+    expect(set).toMatchObject({ color: 'Red', colorProvided: true });
+    expect(clear).toMatchObject({ color: null, colorProvided: true });
+    expect(keep).not.toHaveProperty('color');
+    expect(keep).not.toHaveProperty('colorProvided');
+  });
+
+  it('a split carries the colour in its changes', async () => {
+    await replayOp({ ...at, kind: 'item.split', originalStart: '2026-10-07T09:00:00Z', newItemId: 'item-2', sourceKey: 'k', core: { ...core, color: 'Teal' } });
+
+    const [[, , split]] = cal.changeFollowingOccurrences.mock.calls;
+    expect(split.changes).toMatchObject({ color: 'Teal', colorProvided: true });
+  });
+});
+
 describe('item.invite replay', () => {
   beforeEach(() => {
     cal.inviteParticipant.mockReset().mockImplementation(async (_id: string, p: { contactId: string }) => invited(p.contactId));

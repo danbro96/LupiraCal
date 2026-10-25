@@ -5,6 +5,7 @@
  * OpenAPI spec version: v1
  */
 import type { ItemCategory } from './itemCategory';
+import type { ItemColor } from './itemColor';
 import type { ItemStatus } from './itemStatus';
 
 /**
@@ -19,6 +20,7 @@ export interface ItemDraftDto {
   description?: string | null;
   status?: null | ItemStatus;
   category?: null | ItemCategory;
+  color?: null | ItemColor;
   isAllDay: boolean;
   /** @nullable */
   startsAt?: string | null;

@@ -58,6 +58,18 @@ describe('calItem module', () => {
     expect(await db.all('SELECT start_day FROM item_occurrences')).toEqual([{ start_day: '2026-08-10' }]);
   });
 
+  it('indexes the item\'s colour, null when it has none', async () => {
+    const e = engine();
+    pages.push({ changed: [serverChange('Server', 0)], deleted: [] });
+    await e.sync();
+    expect(await db.all('SELECT color FROM item_index')).toEqual([{ color: null }]);
+
+    const red: ClientOp = { kind: 'item.revise', itemId: 'a', core: { ...core('Mine'), color: 'Red' }, ...at(5) };
+    await e.enqueue(red);
+    await e.push();
+    expect(await db.all('SELECT color FROM item_index')).toEqual([{ color: 'Red' }]);
+  });
+
   it('rebases a pulled server doc under a newer pending revise and keeps it across pulls', async () => {
     const e = engine();
     pages.push({ changed: [serverChange('Server', 0)], deleted: [] });

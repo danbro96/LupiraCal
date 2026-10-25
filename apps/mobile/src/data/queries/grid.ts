@@ -18,6 +18,8 @@ export type GridRow = {
   is_availability: number | null;
   avail_status: string | null;
   place_id: string | null;
+  /** The item's own colour name; null for the calendar's, and for birthdays. */
+  color: string | null;
 };
 
 /** The grids' one read: item occurrences and birthdays joined with just enough display data (title, status, a
@@ -40,7 +42,8 @@ export async function gridRowsBetween(tx: Tx, fromDay: string, toDay: string, fi
             (SELECT 1 FROM item_calendars ia JOIN calendar_index ca ON ca.id = ia.calendar_id
              WHERE ia.item_id = o.source_id AND ca.kind = 'Availability' LIMIT 1) AS is_availability,
             i.avail_status AS avail_status,
-            i.place_id AS place_id
+            i.place_id AS place_id,
+            i.color AS color
      FROM o
      LEFT JOIN item_index i ON o.source = 'item' AND i.id = o.source_id
      LEFT JOIN contact_index c ON o.source = 'birthday' AND c.id = o.source_id${shownFilter}

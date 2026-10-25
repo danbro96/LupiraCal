@@ -24,7 +24,7 @@ const save = (id: string, day: string, fields: Partial<ItemDoc> = {}) =>
 
 describe('itemHierarchy', () => {
   it('reads the parent and the direct children earliest first', async () => {
-    await save('trip', '2026-10-01');
+    await save('trip', '2026-10-01', { color: 'Teal' });
     await save('hotel', '2026-10-03', { parentItemId: 'trip' });
     await save('flight', '2026-10-01', { parentItemId: 'trip' });
     await save('dinner', '2026-10-02', { parentItemId: 'hotel' });
@@ -36,7 +36,8 @@ describe('itemHierarchy', () => {
     ]);
 
     const hotel = await itemHierarchy(db, 'hotel', 'trip');
-    expect(hotel.parent).toMatchObject({ id: 'trip', title: 'trip', calendar_id: 'cal-a' });
+    expect(hotel.parent).toMatchObject({ id: 'trip', title: 'trip', calendar_id: 'cal-a', color: 'Teal' });
+    expect(trip.children.map((r) => r.color)).toEqual([null, null]);
     expect(hotel.children.map((r) => r.id)).toEqual(['dinner']);
   });
 

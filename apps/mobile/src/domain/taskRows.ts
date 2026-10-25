@@ -16,6 +16,7 @@ export type TaskDeadlineRow = {
   calendar_id: null;
   is_availability: 0;
   avail_status: null;
+  color: null;
   task: { listId: string; itemId: string; dueAt: string; overdue: boolean };
 };
 
@@ -32,6 +33,7 @@ export function taskDeadlineRows(items: TaskLike[], now: Date): TaskDeadlineRow[
     calendar_id: null,
     is_availability: 0 as const,
     avail_status: null,
+    color: null,
     task: { listId: t.listId, itemId: t.id, dueAt: t.dueAt, overdue: isOverdue(t.dueAt, now) },
   }));
 }

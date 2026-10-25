@@ -34,7 +34,7 @@ describe('contactEvents', () => {
 
     const rows = await contactEvents(db, 'anna', '2026-09-29');
     expect(rows.map((r) => [r.id, r.rsvp])).toEqual([['soon', 'NeedsAction'], ['later', 'Accepted'], ['recent', 'NeedsAction'], ['old', 'Declined']]);
-    expect(rows[0]).toMatchObject({ next_utc: '2026-10-01T09:00:00.000Z', calendar_id: 'cal-a' });
+    expect(rows[0]).toMatchObject({ next_utc: '2026-10-01T09:00:00.000Z', calendar_id: 'cal-a', color: null });
   });
 
   it('drops an attendance with its item, and one the item no longer lists', async () => {

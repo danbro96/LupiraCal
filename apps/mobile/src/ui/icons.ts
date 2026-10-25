@@ -61,6 +61,7 @@ export const ICONS = {
   more: 'more-horiz',
   notes: 'notes',
   notifications: 'notifications',
+  palette: 'palette',
   person: 'person',
   phone: 'phone-android',
   personAdd: 'person-add',

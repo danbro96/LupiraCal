@@ -36,10 +36,12 @@ import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { TimeField } from '../components/TimeField';
 import { CalendarsSheet } from '../event/CalendarsSheet';
 import { CategorySheet, categoryIcon } from '../event/CategorySheet';
+import { ColorSheet } from '../event/ColorSheet';
 import { PeopleSheet } from '../event/PeopleSheet';
 import { ReminderSheet } from '../event/ReminderSheet';
 import { RepeatSheet } from '../event/RepeatSheet';
 import { TimeZoneSheet, zoneSummary } from '../event/TimeZoneSheet';
+import { useCalendarColors } from '../hooks/palette';
 import { ICONS } from '../icons';
 import type { PickedPlace, RootStackParamList } from '../navigation/types';
 import { PlaceChipsRow } from '../places/PlaceChipsRow';
@@ -48,7 +50,7 @@ import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
 import { spacing, useColors } from '../theme';
 
-type SheetName = 'calendars' | 'category' | 'repeat' | 'zone' | 'place' | 'people' | 'reminder';
+type SheetName = 'calendars' | 'category' | 'color' | 'repeat' | 'zone' | 'place' | 'people' | 'reminder';
 
 /** Title, when, where and notes up front; everything used rarely is one row each under More, opening a sheet. A
  *  series' occurrence edits as "this event" (its own times, title, notes, status) or "this and following" (a new series). */
@@ -68,6 +70,7 @@ export function ItemEditScreen() {
   const base = following ?? state?.doc;
   const continued = useRef<{ itemId: string; occurrence: string } | null>(null);
   const { data: calendars } = useCalendars();
+  const colorOf = useCalendarColors();
   const { data: contacts } = useContactList();
   const pickable = selectableCalendars(calendars);
   const draft = itemId ? null : (route.params?.draft ?? itemDraftFromLink(route.params ?? {}));
@@ -257,6 +260,7 @@ export function ItemEditScreen() {
   const defaultMinutes = notify.defaultReminder && !form.isAllDay ? notify.defaultMinutes : null;
   const seriesFields = scope !== 'this';
   const sharedFields = scope === 'series';
+  const banded = calendarIds.some((id) => calendars?.find((x) => x.id === id)?.kind === 'Availability');
 
   return (
     <>
@@ -352,6 +356,9 @@ export function ItemEditScreen() {
             onPress={() => setSheet('category')}
           />
         )}
+        {seriesFields && !banded && (
+          <MoreRow icon={ICONS.palette} title="Colour" value={form.color || 'Calendar colour'} onPress={() => setSheet('color')} />
+        )}
         {seriesFields && (
           <MoreRow
             icon={ICONS.repeat}
@@ -394,6 +401,14 @@ export function ItemEditScreen() {
         />
       )}
       {sheet === 'category' && <CategorySheet value={form.category} onPick={pickCategory} onDismiss={() => setSheet(null)} />}
+      {sheet === 'color' && (
+        <ColorSheet
+          value={form.color}
+          calendarFill={colorOf(calendarIds[0] ?? null)}
+          onPick={(v) => set('color', v)}
+          onDismiss={() => setSheet(null)}
+        />
+      )}
       {sheet === 'repeat' && (
         <RepeatSheet value={form.recurrenceRule} onPick={(v) => set('recurrenceRule', v)} onDismiss={() => setSheet(null)} />
       )}

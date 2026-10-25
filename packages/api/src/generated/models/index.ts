@@ -99,6 +99,7 @@ export * from './inviteParticipantParams';
 export * from './itemAction';
 export * from './itemAttendeeDto';
 export * from './itemCategory';
+export * from './itemColor';
 export * from './itemDetails';
 export * from './itemDetailsRequest';
 export * from './itemDraftDto';

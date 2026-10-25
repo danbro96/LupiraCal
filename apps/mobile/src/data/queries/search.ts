@@ -8,6 +8,7 @@ export type ItemSearchRow = {
   is_all_day: number;
   recurrence_rule: string | null;
   calendar_id: string | null;
+  color: string | null;
   /** First occurrence on or after `today`; null when the item has none left in the mirror's window. */
   next_utc: string | null;
   /** Last occurrence before `today`, else the item's own start (it may predate the window). */
@@ -19,6 +20,7 @@ export type ItemSearchRow = {
 /** An item's row as of `today`: its next occurrence (title and status as that occurrence reads), else its last. Binds `today` twice. */
 export const OCCURRENCE_COLUMNS = `i.id, COALESCE(n.title, i.title) AS title, COALESCE(n.status, i.status) AS status, i.is_all_day, i.recurrence_rule,
             ${preferredCalendar('i.id')} AS calendar_id,
+            i.color,
             n.start_utc AS next_utc,
             COALESCE(l.start_utc, i.start_utc) AS last_utc,
             COALESCE(n.original_start, l.original_start) AS occurrence`;

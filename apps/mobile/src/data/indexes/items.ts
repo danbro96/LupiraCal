@@ -16,6 +16,7 @@ export const ITEM_DDL = `
     place_id TEXT,
     location_label TEXT,
     category TEXT,
+    color TEXT,
     avail_status TEXT,
     parent_item_id TEXT,
     search_text TEXT NOT NULL
@@ -69,11 +70,11 @@ export async function writeItemIndex(tx: Tx, id: string, state: MirrorItem | nul
   if (!state) return;
   const d = state.doc;
   await tx.run(
-    `INSERT INTO item_index (id, title, status, is_all_day, start_utc, recurrence_rule, place_id, location_label, category, avail_status,
-       parent_item_id, search_text)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO item_index (id, title, status, is_all_day, start_utc, recurrence_rule, place_id, location_label, category, color,
+       avail_status, parent_item_id, search_text)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [id, d.title ?? null, d.status ?? null, d.isAllDay ? 1 : 0, d.startsAt ?? null, d.recurrenceRule ?? null,
-      d.placeId ?? null, d.locationLabel ?? null, d.category ?? null, presenceStatusOf(d.details), d.parentItemId ?? null, searchTextOf([d.title, d.description, d.category, ...(d.tags ?? [])])],
+      d.placeId ?? null, d.locationLabel ?? null, d.category ?? null, d.color ?? null, presenceStatusOf(d.details), d.parentItemId ?? null, searchTextOf([d.title, d.description, d.category, ...(d.tags ?? [])])],
   );
   await insertChunked(tx, 'INSERT OR REPLACE INTO item_calendars (item_id, calendar_id, status)', 3,
     d.calendars.map((m) => [id, m.calendarId, m.status]));

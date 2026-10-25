@@ -61,6 +61,15 @@ describe('gridRowsBetween', () => {
     ]);
   });
 
+  it('carries the item\'s own colour; birthdays and uncoloured items have none', async () => {
+    await db.exclusive((tx) => writeItemIndex(tx, 'meet', {
+      doc: { id: 'meet', title: 'Meeting', isAllDay: false, startsAt: '2026-08-10T09:00:00.000Z', color: 'Red', calendars: [{ calendarId: 'cal-a', status: 'Accepted' }] },
+      guards: emptyItemGuards(),
+    }));
+    const rows = await gridRowsBetween(db, '2026-08-01', '2026-08-31');
+    expect(rows.map((r) => [r.source_id, r.color])).toEqual([['meet', 'Red'], ['anna', null], ['trip', null]]);
+  });
+
   it('drops hidden calendars and, when asked, birthdays', async () => {
     const rows = await gridRowsBetween(db, '2026-08-01', '2026-08-31', { calendarIds: ['cal-a'], birthdays: false });
     expect(rows.map((r) => r.source_id)).toEqual(['meet']);

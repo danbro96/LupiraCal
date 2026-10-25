@@ -137,7 +137,7 @@ export const getGetParticipationSummaryUrl = (params?: GetParticipationSummaryPa
 }
 
 /**
- * @summary Per-contact participation across your readable calendars (contactId, item count, most recent occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Optional from/to restricts the window. A ranking signal for contact pickers/resolvers.
+ * @summary Per-contact participation across your readable calendars (contactId, count of items with a started occurrence, latest started occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Declined and withdrawn participations and cancelled items don't count. Optional from/to restricts the occurrences considered. A ranking signal for contact pickers/resolvers.
  */
 export const getParticipationSummary = async (params?: GetParticipationSummaryParams, options?: Parameters<typeof apiRequest>[1]): Promise<ParticipationSummaryEntry[]> => {
 

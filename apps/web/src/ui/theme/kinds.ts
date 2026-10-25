@@ -1,4 +1,4 @@
-import type { AvailabilityStatus, CalendarKind, ContainerDto, ItemCategory, ParticipationStatus } from '@lupira/cal-api/models';
+import type { AvailabilityStatus, CalendarKind, ContainerDto, ItemCategory, ItemColor, ParticipationStatus } from '@lupira/cal-api/models';
 import {
   AVAILABILITY_COLORS as TOKEN_AVAILABILITY_COLORS,
   FAMILY_ACCENTS,
@@ -11,6 +11,7 @@ import {
   ITEM_CATEGORY_ICONS as TOKEN_ITEM_CATEGORY_ICONS,
   type IconName,
 } from '@lupira/cal-tokens/icons';
+import { ITEM_COLORS as TOKEN_ITEM_COLORS } from '@lupira/cal-tokens/itemColors';
 import type { SvgIconComponent } from '@mui/icons-material';
 import { RSVP_LABELS } from '@lupira/cal-domain/participation';
 import * as Icons from '@danbro96/lupira-web-mui/icons';
@@ -21,6 +22,7 @@ import { HeadingIcon, LocateFixedIcon, LocateIcon, PinDropIcon, TodayIcon, ViewM
 export const KIND_COLORS: Record<CalendarKind, string> = TOKEN_KIND_COLORS;
 export const CALENDAR_KIND_ICONS: Record<CalendarKind, IconName> = TOKEN_CALENDAR_KIND_ICONS;
 export const ITEM_CATEGORY_ICONS: Record<ItemCategory, IconName> = TOKEN_ITEM_CATEGORY_ICONS;
+export const ITEM_COLORS: Record<ItemColor, string> = TOKEN_ITEM_COLORS;
 
 // The second half of the tripwire: a concept named in tokens that nothing here resolves is a
 // compile error, not a glyph that silently fails to render.

@@ -15,10 +15,10 @@ type Base = { commandId: string; occurredAt: string; aggregate: OpAggregate; agg
 /** Desired core-section state for a calendar item (whole-section write — PUT with every sentinel set).
  *  null on title/description/status/category/tags means "keep" (the REST contract has no clear for those).
  *  `placeId` undefined = keep (writers that can't see places, like the calendar bridge), null = clear;
- *  `location` is the label stored with it. */
+ *  `location` is the label stored with it. `color` the same: undefined = keep, null = the calendar's colour. */
 export type ItemCore = Pick<ItemDoc,
   'title' | 'description' | 'status' | 'isAllDay' | 'startsAt' | 'endsAt' | 'startDate' | 'endDate'
-  | 'startTimezone' | 'endTimezone' | 'recurrenceRule' | 'category' | 'tags' | 'parentItemId'> & {
+  | 'startTimezone' | 'endTimezone' | 'recurrenceRule' | 'category' | 'color' | 'tags' | 'parentItemId'> & {
   /** Create-only: availability-calendar entries carry their presence status (details.presence.status
    *  server-side). Ignored by revise — details have their own endpoints. */
   availability?: string | null;

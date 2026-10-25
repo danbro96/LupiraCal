@@ -6,6 +6,7 @@ import { isOverdue } from '@lupira/cal-domain/tasks';
 import { parseYmd, sameDay, ymd } from '@danbro96/lupira-domain-core/time';
 import type { OpenTask } from '../state/useTaskDeadlines';
 import type { IconName } from '@lupira/cal-tokens/icons';
+import { itemColor } from '@lupira/cal-tokens/itemColors';
 import { CALENDAR_KIND_ICONS, calendarColor } from './theme/kinds';
 
 /** One renderable occurrence on a grid — accepted occurrences, ghosted proposed items, task deadlines. */
@@ -47,7 +48,7 @@ export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: Container
     end: o.end ? new Date(o.end) : null,
     isAllDay: o.isAllDay,
     dayRange: o.isAllDay ? isoDayRange(o.start, o.end) : undefined,
-    color: calendarColor(calendar),
+    color: itemColor(o.color, calendarColor(calendar)),
     icon: calendar.class === 'System' && calendar.kind ? CALENDAR_KIND_ICONS[calendar.kind] : undefined,
     status: o.status,
     place: o.locationLabel,
@@ -93,7 +94,7 @@ export function fromProposed(item: CalendarItemDto, calendar: ContainerDto): Gri
     end,
     isAllDay: item.isAllDay,
     dayRange: item.isAllDay && item.startDate ? { first: item.startDate, last: item.endDate ?? item.startDate } : undefined,
-    color: calendarColor(calendar),
+    color: itemColor(item.color, calendarColor(calendar)),
     ghost: true,
     parentItemId: item.parentItemId ?? null,
     childCount: 0,

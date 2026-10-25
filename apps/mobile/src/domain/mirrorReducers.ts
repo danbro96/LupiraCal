@@ -215,6 +215,7 @@ function mergeItemCore(doc: ItemDoc, core: ItemCore): ItemDoc {
     startTimezone: core.startTimezone,
     endTimezone: core.endTimezone,
     recurrenceRule: core.recurrenceRule,
+    ...(core.color === undefined ? {} : { color: core.color }),
     ...(core.locationUnresolved ? { placeId: null, locationLabel: core.location?.trim() || null } : core.placeId === undefined ? {} : {
       placeId: core.placeId,
       // The server keeps the label when the place is unchanged and nothing new is sent.

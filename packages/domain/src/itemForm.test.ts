@@ -13,6 +13,11 @@ describe('slot-created form', () => {
     const form = emptyItemForm('2026-08-03', '23:30');
     expect(form).toMatchObject({ endDay: '2026-08-04', endTime: '00:30' });
   });
+
+  it('draws in the calendar colour', () => {
+    expect(emptyItemForm().color).toBe('');
+    expect(emptyItemForm('2026-08-03', '14:00').color).toBe('');
+  });
 });
 
 describe('categoryAllDayDefault', () => {

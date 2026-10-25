@@ -56,6 +56,8 @@ export type ItemDoc = {
   /** The series this one continues from a "this and following" change. */
   continuesItemId?: string | null;
   category?: string | null;
+  /** An `ItemColor` name; absent or null = the calendar's colour. */
+  color?: string | null;
   tags?: string[] | null;
   parentItemId?: string | null;
   placeId?: string | null;

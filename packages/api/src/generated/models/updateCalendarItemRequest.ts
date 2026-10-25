@@ -6,6 +6,7 @@
  */
 import type { AvailabilityStatus } from './availabilityStatus';
 import type { DatePrecision } from './datePrecision';
+import type { ItemColor } from './itemColor';
 import type { ItemDetailsRequest } from './itemDetailsRequest';
 
 /**
@@ -87,6 +88,8 @@ export interface UpdateCalendarItemRequest {
   category?: string | null;
   /** @nullable */
   tags?: string[] | null;
+  color?: null | ItemColor;
+  colorProvided?: boolean;
   availability?: null | AvailabilityStatus;
   details?: null | ItemDetailsRequest;
   /**

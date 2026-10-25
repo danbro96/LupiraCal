@@ -6,6 +6,7 @@
  */
 import type { CompletenessScore } from './completenessScore';
 import type { ItemCategory } from './itemCategory';
+import type { ItemColor } from './itemColor';
 import type { ItemStatus } from './itemStatus';
 import type { OccurrenceOrigin } from './occurrenceOrigin';
 
@@ -35,6 +36,7 @@ export interface CalendarItemOccurrenceDto {
   /** Accepted calendar memberships, limited to calendars the caller can read. */
   calendarIds: string[];
   category?: null | ItemCategory;
+  color?: null | ItemColor;
   status?: null | ItemStatus;
   /** @nullable */
   tags?: string[] | null;

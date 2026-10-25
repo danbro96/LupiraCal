@@ -32,6 +32,12 @@ describe('searchItems', () => {
     expect(await searchItems(db, '   ', '2026-09-29')).toEqual([]);
   });
 
+  it('carries the item\'s own colour', async () => {
+    await save('red', { title: 'Party', color: 'Red' }, '2026-10-01');
+    await save('plain', { title: 'Party' }, '2026-10-02');
+    expect((await searchItems(db, 'party', '2026-09-29')).map((r) => [r.id, r.color])).toEqual([['red', 'Red'], ['plain', null]]);
+  });
+
   it('treats LIKE wildcards in the query literally', async () => {
     await save('pct', { title: '50% off' }, '2026-10-01');
     await save('plain', { title: '500 off' }, '2026-10-01');

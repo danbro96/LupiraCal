@@ -33,6 +33,13 @@ describe('translateCalRow', () => {
     expect(t.occurredAt).toBe('2026-08-03T12:30:00.000Z');
   });
 
+  it('leaves the colour alone: the stock app can\'t set one', () => {
+    for (const t of [translateCalRow(row('revised'), { ...existing, color: 'Red' }), translateCalRow(row('created', {}, { sourceKey: 'bridge:u1' }), null)]) {
+      if (t.kind !== 'revise' && t.kind !== 'create') throw new Error(t.kind);
+      expect(t.core.color).toBeUndefined();
+    }
+  });
+
   it('revise without mirror context keeps unknown sections null (= keep server-side)', () => {
     const t = translateCalRow(row('revised'), null);
     if (t.kind !== 'revise') throw new Error(t.kind);

@@ -6,6 +6,7 @@
  */
 import type { AvailabilityStatus } from './availabilityStatus';
 import type { DatePrecision } from './datePrecision';
+import type { ItemColor } from './itemColor';
 import type { ItemDetailsRequest } from './itemDetailsRequest';
 import type { JsonObject } from './jsonObject';
 
@@ -79,6 +80,7 @@ export interface CreateCalendarItemRequest {
   category?: string | null;
   /** @nullable */
   tags?: string[] | null;
+  color?: null | ItemColor;
   startPrecision?: null | DatePrecision;
   endPrecision?: null | DatePrecision;
   metadata?: null | JsonObject;

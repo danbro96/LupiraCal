@@ -136,7 +136,7 @@ export function WeekView({ weekStart, jump, onStep, onPressOccurrence, onCreateS
     }
   }
   const places = usePlaceCoords(timed.map((r) => r.place_id));
-  const rowColor = (r: CalRow) => colorOf(r.calendar_id, r.source);
+  const rowColor = (r: CalRow) => colorOf(r.calendar_id, r.source, r.color);
 
   return (
     <GestureDetector gesture={pager.gesture}>
@@ -263,7 +263,7 @@ const DayColumn = memo(function DayColumn({ dayKey, col, rows, places, avail, sl
         <EventBlock
           key={`${p.item.row.source_id}-${p.item.row.start_utc}`}
           placed={p}
-          color={colorOf(p.item.row.calendar_id, p.item.row.source)}
+          color={colorOf(p.item.row.calendar_id, p.item.row.source, p.item.row.color)}
           placeName={placeNameOf(places, p.item.row)}
           onPress={onPressOccurrence}
         />

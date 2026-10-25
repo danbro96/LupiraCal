@@ -3,7 +3,7 @@ import {
   respondToInvitation, restoreOccurrence, setParticipantReminder, updateItem,
 } from '@lupira/cal-api/fetch/cal';
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
-import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
+import type { ItemColor, UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import {
   addContactGroupMember, addResidency, createContact, deleteContact, moveOutOfResidency, removeContactGroupMember, removeResidency, reviseContact,
   reviseResidency, setContactChannels, setContactProfiles, setContactTags,
@@ -28,6 +28,7 @@ export async function replayOp(op: ClientOp): Promise<void> {
         description: op.core.description ?? undefined,
         status: op.core.status ?? undefined,
         category: op.core.category ?? undefined,
+        color: (op.core.color ?? undefined) as ItemColor | undefined,
         isAllDay: op.core.isAllDay ?? false,
         startsAt: op.core.startsAt ?? undefined,
         endsAt: op.core.endsAt ?? undefined,
@@ -267,6 +268,7 @@ function totalizedPut(core: ItemCore, occurredAt: string): UpdateCalendarItemReq
     endTimezoneProvided: true,
     recurrenceRule: core.recurrenceRule ?? null,
     recurrenceRuleProvided: true,
+    ...(core.color === undefined ? {} : { color: core.color as ItemColor | null, colorProvided: true }),
     ...(core.locationUnresolved ? { location: core.location ?? null, locationUnresolved: true } : core.placeId === undefined ? {} : {
       placeId: core.placeId,
       placeIdProvided: true,

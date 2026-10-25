@@ -28,6 +28,7 @@ export function itemFormFromDoc(doc: ItemDoc): ItemForm {
     status: doc.status ?? '',
     category: doc.category ?? '',
     tagsCsv: (doc.tags ?? []).join(', '),
+    color: doc.color ?? '',
     isAllDay: allDay,
     startDay: allDay ? (doc.startDate ?? '') : start.day,
     startTime: start.time,
@@ -75,6 +76,7 @@ export function itemFormFromDraft(draft: ItemDraft): ItemForm {
     description: draft.description ?? '',
     status: draft.status ?? '',
     category: draft.category ?? '',
+    color: draft.color ?? '',
     recurrenceRule: draft.recurrenceRule ?? '',
     place: draft.placeId ? fromStored(draft.placeId, draft.location) : null,
   };
@@ -114,6 +116,7 @@ export function itemCoreFromForm(form: ItemForm, base?: ItemDoc, unresolvedLabel
       description: form.description.trim() || null,
       status: form.status || null,
       category: form.category || null,
+      color: form.color || null,
       tags: parseList(form.tagsCsv),
       parentItemId: base?.parentItemId ?? null,
       ...when,

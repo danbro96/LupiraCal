@@ -14,7 +14,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import { useCreateItem } from '@lupira/cal-api/query/cal';
-import type { CreateCalendarItemRequest } from '@lupira/cal-api/models';
+import type { CreateCalendarItemRequest, ItemColor } from '@lupira/cal-api/models';
 import { NO_REPEAT, RRULE_PRESETS } from '@lupira/cal-domain/rrule';
 import { ymd } from '@danbro96/lupira-domain-core/time';
 import { deviceTimeZone } from '@lupira/cal-domain/zonedTime';
@@ -33,6 +33,8 @@ import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { useIsPhone } from '../hooks/useIsPhone';
 import { WrapRow } from './WrapRow';
 import { CategorySelect } from './CategorySelect';
+import { ColorSwatches } from './ColorSwatches';
+import { calendarColor } from '../theme/kinds';
 
 type FormValues = {
   title: string;
@@ -45,6 +47,7 @@ type FormValues = {
   endDate: string;
   place: PlaceSelection | null;
   rrule: string;
+  color: ItemColor | '';
   attending: boolean;
   tags: string;
   description: string;
@@ -95,6 +98,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       endDate: '',
       place: null,
       rrule: '',
+      color: '',
       attending: true,
       tags: '',
       description: '',
@@ -105,6 +109,8 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
   const start = useWatch({ control, name: 'start' });
   const attending = useWatch({ control, name: 'attending' });
   const category = useWatch({ control, name: 'category' });
+  const calendarId = useWatch({ control, name: 'calendarId' });
+  const calendar = calendars.find((c) => c.id === calendarId);
   const [scheduleTouched, setScheduleTouched] = useState(false);
 
   // Moving the start carries the end along, as on the phone (`@lupira/cal-domain/itemForm`).
@@ -151,6 +157,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       ...schedule.value,
       recurrenceRule: v.rrule || null,
       tags: tags.length ? tags : null,
+      color: v.color || undefined,
     };
     create.mutate({ data: body });
   });
@@ -300,6 +307,17 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
             />
           )}
         </WrapRow>
+        <Controller
+          name="color"
+          control={control}
+          render={({ field }) => (
+            <ColorSwatches
+              value={field.value || null}
+              calendarFill={calendar ? calendarColor(calendar) : 'var(--mui-palette-border)'}
+              onChange={(color) => field.onChange(color ?? '')}
+            />
+          )}
+        />
         <Controller
           name="place"
           control={control}

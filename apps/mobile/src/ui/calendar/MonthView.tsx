@@ -53,7 +53,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
   const colorOf = useCalendarColors();
   const [rowH, setRowH] = useState<number | null>(null);
 
-  const fillOf = (r: CalRow) => colorOf(r.calendar_id, r.source);
+  const fillOf = (r: CalRow) => colorOf(r.calendar_id, r.source, r.color);
   const byDay = new Map<string, CalRow[]>();
   const availByDay = new Map<string, (string | null)[]>();
   const merged: CalRow[] = [...rows, ...taskRows].sort((a, b) => compareDayEntries(orderKey(a), orderKey(b)));

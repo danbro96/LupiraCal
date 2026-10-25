@@ -171,6 +171,37 @@ describe('time zones', () => {
   });
 });
 
+describe('colour', () => {
+  it('round-trips an item colour, and the calendar colour as \'\' ↔ null', () => {
+    const red = itemFormFromDoc({ ...timedDoc, color: 'Red' });
+    expect(red.color).toBe('Red');
+    const r = itemCoreFromForm(red, timedDoc);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value.color).toBe('Red');
+
+    const plain = itemFormFromDoc(timedDoc);
+    expect(plain.color).toBe('');
+    const cleared = itemCoreFromForm(plain, timedDoc);
+    if (!cleared.ok) throw new Error(cleared.error);
+    expect(cleared.value.color).toBeNull();
+  });
+
+  it('an occurrence change carries no colour', () => {
+    const r = occurrencePatchFromForm(itemFormFromDoc({ ...timedDoc, color: 'Red' }), timedDoc);
+    if (!r.ok) throw new Error(r.error);
+    expect(r.value).not.toHaveProperty('color');
+  });
+
+  it('a one-field write keeps the colour', () => {
+    expect(coreOfDoc({ ...timedDoc, color: 'Red' }).color).toBeUndefined();
+  });
+
+  it('a draft opens in its colour', () => {
+    expect(itemFormFromDraft({ ...timedDraft, color: 'Blue' }).color).toBe('Blue');
+    expect(itemFormFromDraft(timedDraft).color).toBe('');
+  });
+});
+
 describe('place', () => {
   it('round-trips the place and its label', () => {
     const doc: ItemDoc = { ...timedDoc, placeId: 'p1', locationLabel: 'Folkets Park' };

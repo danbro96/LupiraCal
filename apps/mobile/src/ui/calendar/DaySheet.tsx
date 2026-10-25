@@ -115,7 +115,7 @@ function DayAgenda({ day, onPress }: { day: string; onPress: (row: CalRow) => vo
             </Pressable>
           );
         }
-        const dot = isTaskRow(r) ? (r.task.overdue ? c.danger : c.textMuted) : colorOf(r.calendar_id, r.source);
+        const dot = isTaskRow(r) ? (r.task.overdue ? c.danger : c.textMuted) : colorOf(r.calendar_id, r.source, r.color);
         return (
           <Pressable key={key} style={styles.row} onPress={() => onPress(r)}>
             <View style={[styles.dot, { backgroundColor: dot }]} />
