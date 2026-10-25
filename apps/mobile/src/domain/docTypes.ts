@@ -120,8 +120,11 @@ export type TaskDoc = {
   dueAt?: string | null;
 };
 
-/** A contact group or organization with its current members, read-only. */
-export type ContactGroupDoc = { id: string; addressBookId: string; kind: string; name: string; members: { contactId: string }[] };
+/** A contact group or organization with its current members. */
+export type ContactGroupDoc = {
+  id: string; addressBookId: string; kind: string; name: string;
+  members: { contactId: string; role?: string | null; since?: string | null; until?: string | null }[];
+};
 
 /** The signed-in user as contact-api knows them; `contactId` is the card linked as "me". */
 export type MeDoc = { contactId?: string | null };

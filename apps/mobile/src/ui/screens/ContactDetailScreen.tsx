@@ -32,7 +32,7 @@ import { spacing, useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 
-/** Read-only overview — ALL editing lives on the edit screen. Shows everything the mirror doc carries:
+/** Overview — the contact's own fields are edited on the edit screen; groups and events are joined here. Shows everything the mirror doc carries:
  *  names, kind, pronouns, birthday+age, deceased, unified reach (channels + profiles), addresses (current
  *  ones as place tiles; past and future folded away), notes, emergency contacts, relations with names
  *  resolved from the mirror, and — least prominent — tags and metadata. */
@@ -112,7 +112,7 @@ export function ContactDetailScreen() {
         </View>
       </View>
 
-      <ContactGroupChips contactId={contactId} />
+      <ContactGroupChips contactId={contactId} addressBookId={doc.addressBookId} />
 
       {doc.birthday != null && <BirthdayRow birthday={doc.birthday} deceased={deceased} />}
       {deceased && (

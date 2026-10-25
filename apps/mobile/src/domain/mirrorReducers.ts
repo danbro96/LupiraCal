@@ -3,7 +3,7 @@ import {
   applyOccurrenceChange, continuedParticipationId, followDeviations, hasSeriesOccurrence, isFirstOccurrence, overrideFor, splitSeries,
 } from '@lupira/cal-domain/seriesOccurrences';
 import type {
-  ContactDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, ResidencyDoc, SectionGuard, SocialProfile,
+  ContactDoc, ContactGroupDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, ResidencyDoc, SectionGuard, SocialProfile,
 } from './docTypes';
 import { emptyContactGuards, emptyItemGuards, ZERO_GUARD } from './docTypes';
 import type { ClientOp, ContactCore, ItemCore, ResidencyFields } from './ops';
@@ -18,6 +18,7 @@ import type { ClientOp, ContactCore, ItemCore, ResidencyFields } from './ops';
 export type MirrorItem = { doc: ItemDoc; guards: ItemGuards };
 export type MirrorContact = { doc: ContactDoc; guards: ContactGuards };
 export type MirrorResidency = { doc: ResidencyDoc; guards: null };
+export type MirrorContactGroup = { doc: ContactGroupDoc; guards: null };
 
 export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem | null {
   switch (op.kind) {
@@ -296,6 +297,21 @@ export function applyResidencyOp(state: MirrorResidency | null, op: ClientOp): M
       return { ...state, doc: { ...state.doc, movedOut: op.movedOut } };
     case 'contact.residency.remove':
       return null;
+    default:
+      return state;
+  }
+}
+
+/** Membership has no guard: adds and removes apply in outbox order, as the server takes them. */
+export function applyContactGroupOp(state: MirrorContactGroup | null, op: ClientOp): MirrorContactGroup | null {
+  if (!state) return state;
+  const { members } = state.doc;
+  switch (op.kind) {
+    case 'contact.group.addMember':
+      if (members.some((m) => m.contactId === op.contactId)) return state;
+      return { ...state, doc: { ...state.doc, members: [...members, { contactId: op.contactId, role: null, since: null, until: null }] } };
+    case 'contact.group.removeMember':
+      return { ...state, doc: { ...state.doc, members: members.filter((m) => m.contactId !== op.contactId) } };
     default:
       return state;
   }

@@ -5,7 +5,8 @@ import {
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import {
-  addResidency, createContact, deleteContact, moveOutOfResidency, removeResidency, reviseContact, reviseResidency, setContactChannels, setContactProfiles, setContactTags,
+  addContactGroupMember, addResidency, createContact, deleteContact, moveOutOfResidency, removeContactGroupMember, removeResidency, reviseContact,
+  reviseResidency, setContactChannels, setContactProfiles, setContactTags,
 } from '@lupira/cal-api/fetch/contact';
 import type { ContactAddressType, ContactReachChannel, ResidencyRequest } from '@lupira/cal-api/models';
 import { participationIdOf } from '@lupira/cal-domain/participation';
@@ -164,7 +165,14 @@ export async function replayOp(op: ClientOp): Promise<void> {
       await moveOutOfResidency(op.residencyId, { movedOut: op.movedOut }, idem);
       return;
     case 'contact.residency.remove':
-      await removeResidencyIfPresent(op.residencyId, idem);
+      await unlessNotFound(() => removeResidency(op.residencyId, idem));
+      return;
+    // A missing group or contact parks the add; for a remove it leaves nothing to remove.
+    case 'contact.group.addMember':
+      await addContactGroupMember(op.groupId, { contactId: op.contactId }, idem);
+      return;
+    case 'contact.group.removeMember':
+      await unlessNotFound(() => removeContactGroupMember(op.groupId, op.contactId, idem));
       return;
   }
 }
@@ -179,9 +187,9 @@ function residencyRequest(r: ResidencyFields): ResidencyRequest {
   };
 }
 
-async function removeResidencyIfPresent(id: string, idem: { headers: Record<string, string> }): Promise<void> {
+async function unlessNotFound(call: () => Promise<unknown>): Promise<void> {
   try {
-    await removeResidency(id, idem);
+    await call();
   } catch (e) {
     if (e instanceof ApiError && e.status === 404) return;
     throw e;

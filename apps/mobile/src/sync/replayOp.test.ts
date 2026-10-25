@@ -17,6 +17,8 @@ const contact = vi.hoisted(() => ({
   moveOutOfResidency: vi.fn(),
   reviseResidency: vi.fn(),
   removeResidency: vi.fn(),
+  addContactGroupMember: vi.fn(),
+  removeContactGroupMember: vi.fn(),
 }));
 vi.mock('@lupira/cal-api/fetch/contact', () => contact);
 
@@ -240,5 +242,28 @@ describe('occurrence replay', () => {
     cal.getItem.mockRejectedValueOnce(new ApiError(404, 'gone'));
     const continuation = { ...at, kind: 'item.continue', itemId: 'item-2', aggregateId: 'item-2', continuesItemId: 'item-1', state: { doc: { id: 'item-2', isAllDay: false, calendars: [] }, guards: {} } } as const;
     await expect(replayOp(continuation as never)).rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe('group membership replay', () => {
+  const at = { aggregate: 'contact.group', aggregateId: 'g-1', groupId: 'g-1', contactId: 'c-1', occurredAt: '2026-10-25T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000020' } as const;
+
+  beforeEach(() => {
+    contact.addContactGroupMember.mockReset().mockResolvedValue({});
+    contact.removeContactGroupMember.mockReset().mockResolvedValue({});
+  });
+
+  it('adds and removes the member under the command id', async () => {
+    await replayOp({ ...at, kind: 'contact.group.addMember' });
+    await replayOp({ ...at, kind: 'contact.group.removeMember' });
+    expect(contact.addContactGroupMember).toHaveBeenCalledWith('g-1', { contactId: 'c-1' }, { headers: { 'Idempotency-Key': at.commandId } });
+    expect(contact.removeContactGroupMember).toHaveBeenCalledWith('g-1', 'c-1', { headers: { 'Idempotency-Key': at.commandId } });
+  });
+
+  it('a remove from a group or of a member already gone is done; an add parks', async () => {
+    contact.removeContactGroupMember.mockRejectedValue(new ApiError(404, 'gone'));
+    contact.addContactGroupMember.mockRejectedValue(new ApiError(404, 'gone'));
+    await expect(replayOp({ ...at, kind: 'contact.group.removeMember' })).resolves.toBeUndefined();
+    await expect(replayOp({ ...at, kind: 'contact.group.addMember' })).rejects.toMatchObject({ status: 404 });
   });
 });

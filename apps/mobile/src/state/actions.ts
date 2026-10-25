@@ -21,6 +21,7 @@ import { withHoldKeys } from '../sync/holdKeys';
 const item = (itemId: string) => stamp(Aggregate.item, itemId);
 const contact = (contactId: string) => stamp(Aggregate.contact, contactId);
 const residency = (residencyId: string) => stamp(Aggregate.residency, residencyId);
+const group = (groupId: string) => stamp(Aggregate.contactGroup, groupId);
 
 async function submit(ops: ClientOp | ClientOp[]): Promise<void> {
   await engine.enqueue(await withHoldKeys(await readyDb(), [ops].flat()));
@@ -230,4 +231,12 @@ export async function saveResidencies(contactId: string, changes: ResidencyChang
     }
   }
   if (ops.length > 0) await engine.enqueue(ops);
+}
+
+export async function addToGroup(groupId: string, contactId: string): Promise<void> {
+  await submit({ kind: 'contact.group.addMember', groupId, contactId, ...group(groupId) });
+}
+
+export async function removeFromGroup(groupId: string, contactId: string): Promise<void> {
+  await submit({ kind: 'contact.group.removeMember', groupId, contactId, ...group(groupId) });
 }

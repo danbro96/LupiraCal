@@ -13,6 +13,7 @@ import { ContactEditScreen } from '../screens/ContactEditScreen';
 import { ContactsScreen } from '../screens/ContactsScreen';
 import { DebugLogScreen } from '@danbro96/lupira-expo-diagnostics/DebugLogScreen';
 import { DeveloperScreen } from '../screens/DeveloperScreen';
+import { GroupDetailScreen } from '../screens/GroupDetailScreen';
 import { ItemDetailScreen } from '../screens/ItemDetailScreen';
 import { ItemSearchScreen } from '../screens/ItemSearchScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
@@ -73,6 +74,7 @@ export function RootStack() {
       />
       <Stack.Screen name="ContactDetail" component={ContactDetailScreen} options={{ title: 'Contact' }} />
       <Stack.Screen name="ContactEdit" component={ContactEditScreen} options={{ title: 'Edit contact' }} />
+      <Stack.Screen name="GroupDetail" component={GroupDetailScreen} options={{ title: 'Group' }} />
       <Stack.Screen name="PinPlace" component={PinPlaceScreen} options={{ title: 'Pick on map', contentStyle: { paddingBottom: 0 } }} />
       <Stack.Screen name="Developer" component={DeveloperScreen} options={{ title: 'Developer' }} />
       <Stack.Screen name="BridgeDiagnostics" component={BridgeDiagnosticsScreen} options={{ title: 'Bridge diagnostics' }} />

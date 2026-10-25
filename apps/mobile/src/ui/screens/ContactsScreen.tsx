@@ -103,6 +103,7 @@ export function ContactsScreen() {
               showSelectedOverlay
               icon={g.kind === 'Organization' ? ICONS.work : ICONS.group}
               onPress={() => setGroupId((id) => (id === g.id ? null : g.id))}
+              onLongPress={() => navigation.navigate('GroupDetail', { groupId: g.id })}
             >
               {g.name}
             </Chip>

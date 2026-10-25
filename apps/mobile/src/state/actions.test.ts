@@ -9,7 +9,7 @@ vi.mock('../sync/holdKeys', () => ({ withHoldKeys: async (_db: unknown, ops: Cli
 vi.mock('../data/queries/itemLineage', () => ({ lineageRoot: async (_db: unknown, id: string) => id }));
 vi.mock('../data/ids', () => ({ deterministicIdFor: async (key: string) => `id-${key}` }));
 
-const { changeOccurrence, splitItem } = await import('./actions');
+const { addToGroup, changeOccurrence, removeFromGroup, splitItem } = await import('./actions');
 
 const weekly: MirrorItem = {
   doc: {
@@ -70,5 +70,17 @@ describe('changeOccurrence', () => {
     fx.doc.mockResolvedValue(null);
     expect(await changeOccurrence('item-1', '2026-08-10T17:00:00Z', { kind: 'restore' })).toBe(false);
     expect(fx.enqueue).not.toHaveBeenCalled();
+  });
+});
+
+describe('group membership', () => {
+  it('queues an add and a remove on the group', async () => {
+    await addToGroup('g-1', 'c-1');
+    await removeFromGroup('g-1', 'c-1');
+    const ops = fx.enqueue.mock.calls.flatMap(([ops]) => ops as ClientOp[]);
+    expect(ops).toMatchObject([
+      { kind: 'contact.group.addMember', aggregate: 'contact.group', aggregateId: 'g-1', groupId: 'g-1', contactId: 'c-1' },
+      { kind: 'contact.group.removeMember', aggregate: 'contact.group', aggregateId: 'g-1', groupId: 'g-1', contactId: 'c-1' },
+    ]);
   });
 });

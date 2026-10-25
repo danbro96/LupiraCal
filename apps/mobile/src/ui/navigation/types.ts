@@ -29,6 +29,7 @@ export type RootStackParamList = {
     itemId?: string; occurrence?: string; scope?: OccurrenceScope; day?: string; time?: string; draft?: ItemDraft; pickedPlace?: PickedPlace;
   } & ItemDraftLink) | undefined;
   ContactDetail: { contactId: string };
+  GroupDetail: { groupId: string };
   ContactEdit: ({ contactId?: string; draft?: ContactDraft; pickedPlace?: PickedPlace } & ContactDraftLink) | undefined;
   /** Pans a map under a pin and returns the place made there to `origin` as `pickedPlace`; `target` names the
    *  origin's field (an address row). */

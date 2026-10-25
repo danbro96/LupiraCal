@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ContactDoc, ItemDoc } from './docTypes';
 import { emptyContactGuards, emptyItemGuards } from './docTypes';
 import type { MirrorContact, MirrorItem } from './mirrorReducers';
-import { applyContactOp, applyItemOp, applyResidencyOp, continuationOf } from './mirrorReducers';
+import { applyContactGroupOp, applyContactOp, applyItemOp, applyResidencyOp, continuationOf } from './mirrorReducers';
 import type { ClientOp } from './ops';
 
 const T = (m: number) => `2026-07-01T12:${String(m).padStart(2, '0')}:00.000Z`;
@@ -383,5 +383,24 @@ describe('applyResidencyOp', () => {
     expect(moved.doc).toMatchObject({ placeId: 'p-2', movedOut: { year: 2026, month: 10, day: 12 } });
 
     expect(applyResidencyOp(moved, { ...at, kind: 'contact.residency.remove', commandId: cmd(4) })).toBeNull();
+  });
+});
+
+describe('applyContactGroupOp', () => {
+  const at = { aggregate: 'contact.group', aggregateId: 'g-1', groupId: 'g-1', occurredAt: T(1) } as const;
+  const family = { doc: { id: 'g-1', addressBookId: 'ab', kind: 'Group', name: 'Family', members: [{ contactId: 'anna', role: null, since: null, until: null }] }, guards: null };
+  const add = (contactId: string, n: number): ClientOp => ({ ...at, kind: 'contact.group.addMember', contactId, commandId: cmd(n) });
+  const remove = (contactId: string, n: number): ClientOp => ({ ...at, kind: 'contact.group.removeMember', contactId, commandId: cmd(n) });
+
+  it('adds a member once and removes one', () => {
+    const added = applyContactGroupOp(family, add('bo', 1))!;
+    expect(added.doc.members.map((m) => m.contactId)).toEqual(['anna', 'bo']);
+    expect(applyContactGroupOp(added, add('bo', 2))).toBe(added);
+    expect(applyContactGroupOp(added, remove('anna', 3))!.doc.members.map((m) => m.contactId)).toEqual(['bo']);
+  });
+
+  it('leaves a missing group missing', () => {
+    expect(applyContactGroupOp(null, add('bo', 1))).toBeNull();
+    expect(applyContactGroupOp(null, remove('anna', 2))).toBeNull();
   });
 });
