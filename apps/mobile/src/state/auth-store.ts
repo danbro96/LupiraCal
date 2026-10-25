@@ -33,8 +33,15 @@ export const useAuth = createAuthStore({
     await resetBridge();
     queryClient.clear();
   },
+  // A throw here aborts sign-out, and a broken bridge must not keep the user signed in.
   beforeSignOut: async (reason) => {
-    if (reason !== 'expired') await resetBridge();
+    if (reason === 'expired') return;
+    try {
+      await resetBridge();
+    } catch (e) {
+      logDebug('bridge', `reset on sign-out failed: ${String(e)}`);
+      Sentry.captureException(e, { tags: { area: 'bridge' } });
+    }
   },
 });
 
