@@ -80,7 +80,7 @@ export function createNotifier(deps: NotifierDeps): Notifier {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         timer = null;
-        void reconcile();
+        reconcile().catch((e: unknown) => deps.onError?.(e));
       }, deps.debounceMs ?? DEBOUNCE_MS);
     },
     async prepare() {

@@ -13,7 +13,7 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@danbro96/lupira-config-eslint": "0.2.0"
+    "@danbro96/lupira-config-eslint": "0.4.1"
   },
   "dependencies": {
     "@danbro96/lupira-domain-contacts": "0.2.0",

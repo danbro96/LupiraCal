@@ -87,7 +87,7 @@ function TaskForm({ lists, event, onClose }: { lists: ListDto[]; event?: TaskEve
   }
 
   return (
-    <form onSubmit={submit}>
+    <form onSubmit={(e) => void submit(e).catch((err: unknown) => showSnack(errText(err) ?? 'Request failed.'))}>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 0 }}>
         {event && <Typography variant="caption" sx={{ color: 'text.secondary' }}>Linked to “{event.title}”</Typography>}
         <Controller

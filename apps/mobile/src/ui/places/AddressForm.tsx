@@ -62,14 +62,14 @@ export function AddressForm({ row, seed, household, onChange, onRemove, onUseExi
       onRemove();
       return;
     }
-    void confirm({
+    confirm({
       title: 'Remove this address?',
       message: 'Only for an address entered by mistake — a move is a moved-out date.',
       confirmLabel: 'Remove',
       destructive: true,
     }).then((ok) => {
       if (ok) onRemove();
-    });
+    }).catch(() => toastError('Could not remove the address.'));
   };
   const today = new Date();
   const moveOut = () => onChange({ ...row, movedOut: { year: today.getFullYear(), month: today.getMonth() + 1, day: today.getDate() } });
@@ -121,7 +121,7 @@ export function AddressForm({ row, seed, household, onChange, onRemove, onUseExi
               titleNumberOfLines={2}
               left={(p) => <List.Icon {...p} icon={ICONS.place} />}
               disabled={resolving}
-              onPress={() => void resolveHit(hit, row, onChange, setResolving)}
+              onPress={() => void resolveHit(hit, row, onChange, setResolving).catch(() => toastError('Could not look up the address.'))}
             />
           ))}
           {drafting && lookup.data?.length === 0 && <Text style={[styles.muted, { color: c.textMuted }]}>No address matches — pick it on the map.</Text>}

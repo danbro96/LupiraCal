@@ -14,7 +14,7 @@ import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useMatch, useNavigate, useSearchParams } from 'react-router-dom';
+import { useMatch, useSearchParams } from 'react-router-dom';
 import {
   useCreateAddressBook,
   useCreateContactGroup,
@@ -29,6 +29,7 @@ import { AddressBookManage } from './AddressBookManage';
 import { WrapRow } from '../WrapRow';
 import { SidePane } from './panes';
 import { BusinessIcon, ContactsIcon, GroupIcon, PersonIcon } from '@danbro96/lupira-web-mui/icons';
+import { useGo } from '../../navigation/useGo';
 
 const COUNT_SX = { flex: 'none', fontSize: 12, color: 'text.subtle', fontVariantNumeric: 'tabular-nums' } as const;
 // Forms and the add buttons align with the group rows, one caret-width in.
@@ -37,7 +38,7 @@ const ADD_SX = { display: 'flex', flexDirection: 'column', gap: '4px', p: '4px 3
 /** Left rail: address books → their groups/orgs, with contact and member counts.
  *  Book click filters the list (?book); group click opens the group pane + lists its members from every book. */
 export function ContactsTree() {
-  const navigate = useNavigate();
+  const go = useGo();
   const [params] = useSearchParams();
   const activeBookId = params.get('book') ?? '';
   const activeGroupId = useMatch('/contacts/groups/:groupId')?.params.groupId ?? '';
@@ -54,7 +55,7 @@ export function ContactsTree() {
       {me?.contactId ? (
         <ListItemButton
           selected={openContactId === me.contactId}
-          onClick={() => navigate(`/contacts/${me.contactId}`)}
+          onClick={() => go(`/contacts/${me.contactId}`)}
           sx={{ borderBottom: 1, borderColor: 'border', mb: 0.5, fontWeight: 600 }}
         >
           <ListItemText primary={<><PersonIcon fontSize="small" sx={{ verticalAlign: -5, mr: 0.75 }} />{me.displayName || 'You'}</>} slotProps={{ primary: { noWrap: true } }} />
@@ -71,7 +72,7 @@ export function ContactsTree() {
       <Typography variant="overline" component="div" sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, pt: 2, pb: 1, color: 'text.subtle' }}>Address books</Typography>
       <ListItemButton
         selected={!activeBookId && !activeGroupId}
-        onClick={() => navigate('/contacts?pane=list')}
+        onClick={() => go('/contacts?pane=list')}
         sx={{ pl: '36px' }}
       >
         <ListItemText primary="All contacts" slotProps={{ primary: { noWrap: true } }} />
@@ -112,7 +113,7 @@ function BookNode({
   activeBookId: string;
   activeGroupId: string;
 }) {
-  const navigate = useNavigate();
+  const go = useGo();
   const isActive = activeBookId === book.id;
   const [expanded, setExpanded] = useState(() => isActive);
   const [adding, setAdding] = useState(false);
@@ -130,7 +131,7 @@ function BookNode({
         >
           {expanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
         </IconButton>
-        <ListItemButton selected={isActive} onClick={() => navigate(`/contacts?book=${book.id}`)}>
+        <ListItemButton selected={isActive} onClick={() => go(`/contacts?book=${book.id}`)}>
           <ListItemText primary={<><ContactsIcon fontSize="small" sx={{ verticalAlign: -5, mr: 0.75 }} />{addressBookLabel(book)}</>} slotProps={{ primary: { noWrap: true } }} />
         </ListItemButton>
         {book.access === 'Owner' && (
@@ -146,7 +147,7 @@ function BookNode({
           book={book}
           onDeleted={() => {
             setManaging(false);
-            navigate('/contacts');
+            go('/contacts');
           }}
         />
       )}
@@ -157,7 +158,7 @@ function BookNode({
             <ListItemButton
               key={g.id}
               selected={activeGroupId === g.id}
-              onClick={() => navigate(`/contacts/groups/${g.id}`)}
+              onClick={() => go(`/contacts/groups/${g.id}`)}
               sx={{ pl: '36px' }}
             >
               <ListItemText
@@ -184,7 +185,7 @@ function BookNode({
 
 function NewGroupForm({ addressBookId, onDone }: { addressBookId: string; onDone: () => void }) {
   const invalidate = useInvalidateContacts();
-  const create = useCreateContactGroup({ mutation: { onSuccess: () => { invalidate(); onDone(); } } });
+  const create = useCreateContactGroup({ mutation: { onSuccess: () => { onDone(); return invalidate(); } } });
   const [name, setName] = useState('');
   const [kind, setKind] = useState('group');
 
@@ -216,7 +217,7 @@ function NewGroupForm({ addressBookId, onDone }: { addressBookId: string; onDone
 
 function NewBookForm({ onDone }: { onDone: () => void }) {
   const invalidate = useInvalidateAddressBooks();
-  const create = useCreateAddressBook({ mutation: { onSuccess: () => { invalidate(); onDone(); } } });
+  const create = useCreateAddressBook({ mutation: { onSuccess: () => { onDone(); return invalidate(); } } });
   const [slug, setSlug] = useState('');
   const [displayName, setDisplayName] = useState('');
 

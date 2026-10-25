@@ -7,7 +7,6 @@ import { fallbackStyle } from '../../data/mapStyle';
 import { useMapStyle } from '../../state/useMapStyle';
 import { ICONS } from '../icons';
 import { radii, useColors } from '../theme';
-import { useMapAuthHeader } from './useMapAuthHeader';
 
 const PIN = 22;
 
@@ -18,7 +17,6 @@ const PIN = 22;
 export function MiniMap({ point, size, spanM }: { point: { lat: number; lon: number } | null; size: number; spanM: number }) {
   const c = useColors();
   const theme: MapTheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  useMapAuthHeader();
   const { style, degraded } = useMapStyle(theme);
   const mapStyle = style ?? (degraded ? fallbackStyle(theme) : undefined);
   const box = { width: size, height: size, borderRadius: radii.md, backgroundColor: c.surface };

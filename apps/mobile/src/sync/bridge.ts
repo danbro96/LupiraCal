@@ -16,7 +16,7 @@ import {
 } from '../domain/bridgeTranslate';
 import type { ContactDoc, ItemDoc, PlaceDoc, ResidencyDoc } from '../domain/docTypes';
 import { stamp, type ClientOp } from '../domain/ops';
-import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
+import { logDebug, detach } from '@danbro96/lupira-expo-diagnostics/log';
 import { withHoldKeys } from './holdKeys';
 import { metaExclusive, readMeta, writeMeta } from './meta';
 import { queryClient } from './queryClient';
@@ -204,7 +204,7 @@ export async function dismissAddressHints(ids: string[]): Promise<void> {
     return;
   }
   await queryClient.invalidateQueries({ queryKey: ADDRESS_HINTS_KEY });
-  void bridgePublish();
+  detach(bridgePublish(), 'bridge:publish');
 }
 
 /** The user preference lives in the kernel meta so this layer can read it (boundaries: sync ↛ state). */

@@ -14,6 +14,7 @@ import { Field } from '../components/Field';
 import { AVAILABILITY_COLORS } from '../hooks/palette';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors, spacing } from '../theme';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
 const STATUS_OPTIONS = Object.keys(AVAILABILITY_COLORS);
 
@@ -37,12 +38,12 @@ export function AvailabilityEditScreen() {
     const entry = availabilityEntry({ status, startDay, endDay });
     if (!entry.ok) return setError(entry.error);
     setError(null);
-    void createItem(availabilityCal.id, {
+    createItem(availabilityCal.id, {
       ...entry.value,
       description: null, status: null, category: null, tags: null, parentItemId: null,
       startsAt: null, endsAt: null,
       startTimezone: null, endTimezone: null, recurrenceRule: null,
-    }).then(() => navigation.goBack());
+    }).then(() => navigation.goBack()).catch(() => toastError('Could not save the availability.'));
   };
 
   return (

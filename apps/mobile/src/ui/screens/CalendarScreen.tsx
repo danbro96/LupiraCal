@@ -14,6 +14,7 @@ import { BridgePrompt } from '../components/BridgePrompt';
 import { SyncBanner } from '../components/SyncBanner';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors } from '../theme';
+import { detach } from '@danbro96/lupira-expo-diagnostics/log';
 
 /** Owns what the two modes share — the mode, the anchor date and jumps — and routes taps; each pane owns
  *  its own paging and selection. Month: MonthPane (grid + day sheet). Week: timed lanes with
@@ -46,7 +47,7 @@ export function CalendarScreen() {
     onToday: () => jumpTo(new Date(), { toNow: true }),
     onPickDate: (d: Date) => jumpTo(d, { select: true }),
     onToggleMode: () => {
-      void usePrefs.getState().setCalendarMode(usePrefs.getState().calendarMode === 'month' ? 'week' : 'month');
+      detach(usePrefs.getState().setCalendarMode(usePrefs.getState().calendarMode === 'month' ? 'week' : 'month'), 'prefs:calendarMode');
     },
   });
 

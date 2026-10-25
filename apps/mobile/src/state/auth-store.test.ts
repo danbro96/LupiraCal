@@ -12,7 +12,8 @@ vi.mock('expo-secure-store', () => ({
     return Promise.resolve();
   }),
 }));
-vi.mock('@danbro96/lupira-expo-diagnostics/log', () => ({ logDebug: vi.fn() }));
+vi.mock('@danbro96/lupira-expo-diagnostics/log', () => ({ logDebug: vi.fn(), detach: vi.fn() }));
+vi.mock('react-native', () => ({ AppState: { currentState: 'active', addEventListener: vi.fn(() => ({ remove: vi.fn() })) } }));
 vi.mock('@sentry/react-native', () => ({ setUser: vi.fn() }));
 vi.mock('expo-crypto', () => ({ CryptoDigestAlgorithm: { SHA256: 'SHA-256' }, digestStringAsync: vi.fn(() => Promise.resolve('hash')) }));
 vi.mock('../data/auth/oidc', () => ({ oidc: { refreshTokens: vi.fn() } }));

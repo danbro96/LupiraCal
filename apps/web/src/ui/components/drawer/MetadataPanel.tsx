@@ -30,8 +30,8 @@ export function MetadataPanel({ itemId, metadata }: { itemId: string; metadata: 
   const merge = useMergeItemMetadata({
     mutation: {
       onSuccess: () => {
-        invalidate();
         setPatch('');
+        return invalidate();
       },
     },
   });

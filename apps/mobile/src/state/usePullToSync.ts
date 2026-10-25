@@ -1,6 +1,7 @@
 import { useOnline } from '@danbro96/lupira-expo-query/online';
 import { useState } from 'react';
 import { engine } from '../sync/engine';
+import { detach } from '@danbro96/lupira-expo-diagnostics/log';
 
 /** Pull-to-refresh over the engine. The spinner follows the pulled sync's promise, not `phase`: the engine sets
  *  `phase` only after opening the kernel, so the spinner would drop and come back. Background syncs keep to the banner. */
@@ -9,7 +10,7 @@ export function usePullToSync() {
   const [pulled, setPulled] = useState(false);
   const onRefresh = () => {
     setPulled(true);
-    void engine.sync().finally(() => setPulled(false));
+    detach(engine.sync().finally(() => setPulled(false)), 'sync:pull');
   };
   return { enabled: online, refreshing: online && pulled, onRefresh };
 }

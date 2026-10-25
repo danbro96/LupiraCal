@@ -29,7 +29,9 @@ export function ItemPhotosPanel({ itemId, item }: { itemId: string; item: PhotoW
     create.mutate(
       { id: itemId, data: { ...PHOTO_LINK, toRef: photoId } },
       {
-        onSuccess: () => void queryClient.invalidateQueries({ queryKey: getListRelationEdgesQueryKey({ toKind: PHOTO_LINK.toKind }) }),
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListRelationEdgesQueryKey({ toKind: PHOTO_LINK.toKind }) });
+        },
         onError: (e) => showSnack(e instanceof Error ? e.message : 'Could not link the photo'),
       },
     );

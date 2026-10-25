@@ -159,8 +159,8 @@ function PromptForm({ item, onDone }: { item: CalendarItemDto; onDone: () => voi
   const set = useSetItemPrompt({
     mutation: {
       onSuccess: () => {
-        invalidate();
         onDone();
+        return invalidate();
       },
       onError: (e) => showSnack(errText(e) ?? 'Request failed.'),
     },
@@ -193,7 +193,7 @@ function PromptForm({ item, onDone }: { item: CalendarItemDto; onDone: () => voi
   });
 
   return (
-    <Paper component="form" onSubmit={submit} variant="outlined" sx={{ p: '8px 12px', borderStyle: 'dashed' }}>
+    <Paper component="form" onSubmit={(e) => void submit(e).catch((err: unknown) => showSnack(errText(err) ?? 'Request failed.'))} variant="outlined" sx={{ p: '8px 12px', borderStyle: 'dashed' }}>
       <WrapRow>
         <Controller
           name="intent"
@@ -308,8 +308,8 @@ function ActionForm({ item, onDone }: { item: CalendarItemDto; onDone: () => voi
   const set = useSetItemAction({
     mutation: {
       onSuccess: () => {
-        invalidate();
         onDone();
+        return invalidate();
       },
       onError: (e) => showSnack(errText(e) ?? 'Request failed.'),
     },
@@ -338,7 +338,7 @@ function ActionForm({ item, onDone }: { item: CalendarItemDto; onDone: () => voi
   });
 
   return (
-    <Paper component="form" onSubmit={submit} variant="outlined" sx={{ p: '8px 12px', borderStyle: 'dashed' }}>
+    <Paper component="form" onSubmit={(e) => void submit(e).catch((err: unknown) => showSnack(errText(err) ?? 'Request failed.'))} variant="outlined" sx={{ p: '8px 12px', borderStyle: 'dashed' }}>
       <WrapRow>
         <Controller
           name="kind"

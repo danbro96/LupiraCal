@@ -8,6 +8,7 @@ import { drainBridgeInbox, ensureBridgeAccount, markBridgeDirty, publishToBridge
 import { engine } from '../../sync/engine';
 import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
+import { detach } from '@danbro96/lupira-expo-diagnostics/log';
 
 /** Manual halves of the automated bridge flows, for diagnosis and repair: capture/publish (Kotlin),
  *  inbox drain (JS→outbox), the OS scheduler, and account lifecycle. Reached via Settings → Developer. */
@@ -29,10 +30,10 @@ export function BridgeDiagnosticsScreen() {
     .catch((e: unknown) => append(String(e))), []);
 
   useEffect(() => {
-    void refresh();
+    detach(refresh(), 'bridge:refresh');
   }, [refresh]);
 
-  const run = (label: string, fn: () => Promise<unknown>) => () => runLogged(label, fn, append, refresh);
+  const run = (label: string, fn: () => Promise<unknown>) => () => detach(runLogged(label, fn, append, refresh), `bridge:${label}`);
 
   const requestPermissions = run('permissions', () =>
     PermissionsAndroid.requestMultiple([
@@ -60,7 +61,7 @@ export function BridgeDiagnosticsScreen() {
 
       <List.Subheader style={styles.subheader}>Actions</List.Subheader>
       <View style={styles.buttons}>
-        <Button title="Request permissions" onPress={() => void requestPermissions()} />
+        <Button title="Request permissions" onPress={requestPermissions} />
         <Button title="Ensure account" onPress={run('ensureAccount', ensureBridgeAccount)} />
         <Button
           title="Bridge sync now (capture + publish)"
@@ -73,12 +74,12 @@ export function BridgeDiagnosticsScreen() {
           title="Drain inbox → outbox + full sync"
           onPress={run('drain', async () => {
             const ops = await drainBridgeInbox(engine);
-            void engine.sync();
+            engine.sync();
             return `${ops} ops enqueued`;
           })}
         />
         <Button title="Request OS sync" onPress={run('requestSync', () => LupiraBridge.requestSync())} />
-        <Button title="Read contacts sample" onPress={() => void readContacts()} />
+        <Button title="Read contacts sample" onPress={readContacts} />
         <Button
           title="Remove account"
           variant="destructive"
@@ -89,8 +90,8 @@ export function BridgeDiagnosticsScreen() {
               confirmLabel: 'Remove',
               destructive: true,
             }).then((ok) => {
-              if (ok) void run('removeAccount', removeBridgeAccount)();
-            })
+              if (ok) run('removeAccount', removeBridgeAccount)();
+            }).catch((e: unknown) => append(String(e)))
           }
         />
       </View>

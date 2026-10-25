@@ -17,6 +17,7 @@ import { DateField } from '../components/DateField';
 import { Field } from '../components/Field';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors, spacing } from '../theme';
+import { detach } from '@danbro96/lupira-expo-diagnostics/log';
 
 /** A LupiraTasks task from the calendar: list, title, optional due day. Needs a connection — tasks are created
  *  server-side, not queued. */
@@ -47,7 +48,7 @@ function TaskForm({ lists }: { lists: TaskListLike[] }) {
     setSaving(true);
     createTask({ listId, title, dueDay: dueDay || null, eventId: event?.id })
       .then(() => {
-        void setLastTaskListId(listId);
+        detach(setLastTaskListId(listId), 'prefs:lastTaskList');
         toast('Task added');
         navigation.goBack();
       })

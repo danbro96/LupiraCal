@@ -49,7 +49,7 @@ function TopicList({ contactId }: { contactId: string }) {
       ))}
 
       {hasNextPage && (
-        <Button variant="text" disabled={isFetchingNextPage} onClick={() => void fetchNextPage()} sx={{ mt: 1 }}>
+        <Button variant="text" disabled={isFetchingNextPage} onClick={() => void fetchNextPage().catch(reportError)} sx={{ mt: 1 }}>
           {isFetchingNextPage ? 'Loading…' : 'Load older'}
         </Button>
       )}

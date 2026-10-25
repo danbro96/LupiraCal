@@ -6,6 +6,7 @@ import { OP_LABELS, type OpKind } from '../../domain/ops';
 import { engine } from '../../sync/engine';
 import { useParkedOps } from '../../state/useParkedOps';
 import { useSyncStatus } from '../../state/useSyncStatus';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
 const labelOf = (op: OpBase) => OP_LABELS[op.kind as OpKind] ?? op.kind;
 
@@ -22,9 +23,11 @@ export function SyncIssuesScreen() {
       opLabel={labelOf}
       online={online}
       progressLabels={AGGREGATE_LABELS}
-      onSync={() => void engine.sync()}
-      onRetry={(commandId) => void engine.retry(commandId)}
-      onDiscard={(commandId) => void engine.discard(commandId)}
+      onSync={() => {
+        engine.sync();
+      }}
+      onRetry={(commandId) => void engine.retry(commandId).catch(() => toastError('Could not retry the change.'))}
+      onDiscard={(commandId) => void engine.discard(commandId).catch(() => toastError('Could not discard the change.'))}
     />
   );
 }

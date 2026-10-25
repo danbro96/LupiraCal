@@ -68,9 +68,9 @@ export function ContactDetailPane() {
   const onError = (e: unknown) => showSnack(errText(e) ?? 'Request failed.');
   const addMember = useAddContactGroupMember({ mutation: { onSuccess: invalidate, onError } });
   const removeMember = useRemoveContactGroupMember({ mutation: { onSuccess: invalidate, onError } });
-  const del = useDeleteContact({ mutation: { onSuccess: () => { invalidate(); navigate('/contacts'); }, onError } });
+  const del = useDeleteContact({ mutation: { onSuccess: () => Promise.all([invalidate(), navigate('/contacts')]), onError } });
   const [relinking, setRelinking] = useState(false);
-  const setMe = useSetMyContact({ mutation: { onSuccess: () => { invalidate(); setRelinking(false); }, onError } });
+  const setMe = useSetMyContact({ mutation: { onSuccess: () => { setRelinking(false); return invalidate(); }, onError } });
   const { addressBooks } = useAddressBooks();
   const myContactId = useMyContactLink();
   // The server refuses to delete anyone's own contact; yours is the one this page can know.
@@ -78,10 +78,10 @@ export function ContactDetailPane() {
   const { data: linked } = useGetContact(myContactId ?? '', { query: { enabled: relinking && !!myContactId } });
   const move = useMoveContact({
     mutation: {
-      onSuccess: (moved) => {
-        invalidate();
-        navigate({ pathname: `/contacts/${moved.id}`, search: `?book=${moved.addressBookId}` });
-      },
+      onSuccess: (moved) => Promise.all([
+        invalidate(),
+        navigate({ pathname: `/contacts/${moved.id}`, search: `?book=${moved.addressBookId}` }),
+      ]),
       onError,
     },
   });

@@ -22,10 +22,11 @@ export function TaskDetailScreen() {
 
   const now = new Date();
   const overdue = isTaskOverdue(task, now);
-  const openInTasks = () =>
+  const openInTasks = () => {
     Linking.openURL(taskDeepLink(task.listId, task.id)).catch(() =>
       toastError('Lupira Tasks is not installed — task details live in that app.'),
     );
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

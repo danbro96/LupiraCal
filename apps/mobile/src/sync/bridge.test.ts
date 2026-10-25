@@ -17,7 +17,7 @@ vi.mock('../data/queries/bridgeSnapshot', () => ({
 }));
 vi.mock('../data/ids', () => ({ deterministicIdFor: vi.fn() }));
 vi.mock('./queryClient', () => ({ queryClient: { invalidateQueries: vi.fn() } }));
-vi.mock('@danbro96/lupira-expo-diagnostics/log', () => ({ logDebug: vi.fn() }));
+vi.mock('@danbro96/lupira-expo-diagnostics/log', () => ({ logDebug: vi.fn(), detach: vi.fn() }));
 
 type Bridge = typeof import('./bridge');
 type Meta = typeof import('./meta');

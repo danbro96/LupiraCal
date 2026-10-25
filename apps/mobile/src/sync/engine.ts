@@ -7,6 +7,7 @@ import { expoNotificationPort } from '../data/notifications/port';
 import { residencyPlaceIds } from '../data/queries/residencies';
 import { Aggregate } from '../domain/aggregates';
 import { bridgePublish, drainBridgeInbox, markBridgeDirty } from './bridge';
+import { createSyncFailureReporter } from './failureReporter';
 import { maintainHorizon } from './horizon';
 import { addressBookModule } from './modules/addressBook';
 import { calendarModule } from './modules/calendar';
@@ -64,22 +65,13 @@ export const engine = createSyncEngine({
     if (NOTIFY_SOURCES.has(event.aggregate)) notifications.schedule();
     if (BRIDGE_SOURCES.has(event.aggregate)) markBridgeDirty();
   },
+  onFailure: createSyncFailureReporter(),
 });
 
 export const notifications = createNotifier({
   db: readyDb,
   port: expoNotificationPort,
   onError: (e) => Sentry.captureException(e, { tags: { area: 'notifications' } }),
-});
-
-// Offline is expected; any other sync failure is invisible off the phone without this. Once per session per
-// message: a failure that recurs between successful syncs would otherwise drain the Sentry quota.
-const reportedErrors = new Set<string>();
-engine.status.subscribe(() => {
-  const { lastError, serverReachable } = engine.status.getSnapshot();
-  if (!lastError || !serverReachable || reportedErrors.has(lastError)) return;
-  reportedErrors.add(lastError);
-  Sentry.captureMessage(lastError, { tags: { area: 'sync' } });
 });
 
 /** The database once the kernel has created its tables and the modules' index tables. */

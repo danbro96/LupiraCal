@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react-native';
 import * as Crypto from 'expo-crypto';
 import { createAuthStore } from '@danbro96/lupira-expo-oidc/authStore';
-import { logDebug } from '@danbro96/lupira-expo-diagnostics/log';
+import { logDebug, detach } from '@danbro96/lupira-expo-diagnostics/log';
 import { DEFAULT_API_URL, DEFAULT_AUTH_MODE } from '../config';
 import { oidc } from '../data/auth/oidc';
 import { resetBridge } from '../sync/bridge';
@@ -39,5 +39,5 @@ export const useAuth = createAuthStore({
 });
 
 useAuth.subscribe((s, prev) => {
-  if (s.user?.sub !== prev.user?.sub) void setSentryUser(s.user?.sub ?? null);
+  if (s.user?.sub !== prev.user?.sub) detach(setSentryUser(s.user?.sub ?? null), 'sentry:user');
 });

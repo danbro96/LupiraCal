@@ -1,6 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useEffectEvent, useRef } from 'react';
 import { Alert } from 'react-native';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
 type Options = {
   message?: string;
@@ -29,9 +30,11 @@ export function useUnsavedGuard(dirty: boolean, opts: Options = {}): { leave: ()
         ? [{
           text: 'Save',
           onPress: () => {
-            void save.current?.().then((saved) => {
-              if (saved) proceed();
-            });
+            save.current?.()
+              .then((saved) => {
+                if (saved) proceed();
+              })
+              .catch(() => toastError('Could not save.'));
           },
         }]
         : []),

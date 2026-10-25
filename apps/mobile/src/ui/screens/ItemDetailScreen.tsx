@@ -19,7 +19,7 @@ import { cancelPlan } from '../../domain/cancelPlan';
 import type { CalendarMembership, ItemDoc } from '../../domain/docTypes';
 import { coreOfDoc, metadataInputOf, metadataValueFromInput } from '../../domain/editors';
 import { copyText } from '@danbro96/lupira-expo-feedback/copy';
-import { toast } from '@danbro96/lupira-expo-feedback/toast';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import {
   changeOccurrence, deleteFollowing, deleteItem, fileItem, joinItem, mergeItemMetadata, restoreOccurrence, reviseItem, setRsvp, splitItem, unfileItem,
 } from '../../state/actions';
@@ -83,35 +83,38 @@ export function ItemDetailScreen() {
     if (contacts?.some((row) => row.id === contactId)) navigation.navigate('ContactDetail', { contactId });
   };
   const join = me && !attendees.some((a) => a.contactId === me)
-    ? () => void joinItem(itemId, me).then(() => toast('You joined this event'))
+    ? () => void joinItem(itemId, me).then(() => toast('You joined this event')).catch(() => toastError('Could not join the event.'))
     : undefined;
 
-  const confirmDelete = async (scope: OccurrenceScope = 'series') => {
-    const ok = await confirm({
+  const confirmDelete = (scope: OccurrenceScope = 'series') => {
+    confirm({
       title: scope === 'following' ? 'Delete following events' : 'Delete event',
       message: scope === 'following'
         ? `Delete this and every later “${title ?? 'event'}”? It syncs to everyone.`
         : `Delete “${doc.title ?? 'this event'}”${doc.recurrenceRule ? ' and all its events' : ''}? It syncs to everyone.`,
       confirmLabel: 'Delete',
       destructive: true,
-    });
-    if (!ok) return;
-    if (scope === 'following' && key) void deleteFollowing(state, key).then(() => navigation.goBack());
-    else void deleteItem(itemId).then(() => navigation.goBack());
+    }).then(async (ok) => {
+      if (!ok) return;
+      if (scope === 'following' && key) await deleteFollowing(state, key);
+      else await deleteItem(itemId);
+      navigation.goBack();
+    }).catch(() => toastError('Could not delete the event.'));
   };
 
   // A deleted or cancelled occurrence is one Revert away, so Undo instead of a confirm.
   const editOccurrence = (edit: OccurrenceEdit, message: string) => {
     if (!key) return;
     const before: OccurrenceEdit = view?.change ? { kind: 'change', change: view.change } : { kind: 'restore' };
-    void changeOccurrence(itemId, key, edit).then((changed) =>
+    changeOccurrence(itemId, key, edit).then((changed) =>
       changed
-        ? toast(message, { action: { label: 'Undo', onPress: () => void changeOccurrence(itemId, key, before) } })
-        : toast('This event is no longer part of the series'));
+        ? toast(message, { action: { label: 'Undo', onPress: () => void changeOccurrence(itemId, key, before).catch(() => toastError('Could not undo.')) } })
+        : toast('This event is no longer part of the series'))
+      .catch(() => toastError('Could not change the event.'));
   };
 
   const deleteIn = (scope: OccurrenceScope) => {
-    if (scope !== 'this' || !key) return void confirmDelete(scope);
+    if (scope !== 'this' || !key) return confirmDelete(scope);
     editOccurrence({ kind: 'exclude' }, 'Event deleted');
     navigation.goBack();
   };
@@ -130,13 +133,13 @@ export function ItemDetailScreen() {
         break;
       case 'following':
         if (!key) break;
-        void splitItem(itemId, key, plan.core).then((outcome) => {
+        splitItem(itemId, key, plan.core).then((outcome) => {
           if (outcome.kind === 'stale') toast(NOTHING_CANCELLED);
           else {
             toast('Following events cancelled');
             navigation.replace('ItemDetail', { itemId: outcome.itemId, occurrence: key });
           }
-        });
+        }).catch(() => toastError('Could not cancel the following events.'));
     }
   };
 
@@ -151,10 +154,11 @@ export function ItemDetailScreen() {
   // The REST contract can't clear a status, so undoing on a never-set one lands on Confirmed.
   const setStatus = (status: string, message: string) => {
     const before = coreOfDoc(doc);
-    void reviseItem(itemId, { ...before, status }).then(() =>
+    reviseItem(itemId, { ...before, status }).then(() =>
       toast(message, {
-        action: { label: 'Undo', onPress: () => void reviseItem(itemId, { ...before, status: before.status ?? 'Confirmed' }) },
-      }));
+        action: { label: 'Undo', onPress: () => void reviseItem(itemId, { ...before, status: before.status ?? 'Confirmed' }).catch(() => toastError('Could not undo.')) },
+      }))
+      .catch(() => toastError('Could not update the event.'));
   };
 
   return (
@@ -181,7 +185,7 @@ export function ItemDetailScreen() {
               <Text style={[styles.note, styles.changedText, { color: c.textMuted }]}>
                 {view.excluded ? 'Deleted from the series' : 'Changed from the series'}
               </Text>
-              <Button title="Revert" variant="text" onPress={() => void restoreOccurrence(itemId, view.originalStart)} />
+              <Button title="Revert" variant="text" onPress={() => void restoreOccurrence(itemId, view.originalStart).catch(() => toastError('Could not revert the event.'))} />
             </View>
           )}
         </View>
@@ -207,7 +211,7 @@ export function ItemDetailScreen() {
             nameOf={contactName}
             onJoin={join}
             onOpen={openContact}
-            onRespond={(contactId, status) => void setRsvp(itemId, contactId, status)}
+            onRespond={(contactId, status) => void setRsvp(itemId, contactId, status).catch(() => toastError('Could not save the reply.'))}
           />
         )}
 
@@ -222,7 +226,7 @@ export function ItemDetailScreen() {
         <ChangedOccurrences
           doc={doc}
           onOpen={(originalStart) => navigation.push('ItemDetail', { itemId, occurrence: originalStart })}
-          onRevert={(originalStart) => void restoreOccurrence(itemId, originalStart)}
+          onRevert={(originalStart) => void restoreOccurrence(itemId, originalStart).catch(() => toastError('Could not revert the event.'))}
         />
         <HierarchySection
           itemId={itemId}
@@ -239,7 +243,7 @@ export function ItemDetailScreen() {
         style={[styles.actionBar, { backgroundColor: c.bg, borderTopColor: c.divider, paddingBottom: spacing.sm }]}
         onLayout={(e) => setActionBarHeight(e.nativeEvent.layout.height)}
       >
-        <Button title="Delete" variant="destructive" onPress={withScope('delete', () => void confirmDelete())} />
+        <Button title="Delete" variant="destructive" onPress={withScope('delete', () => confirmDelete())} />
         {occurrenceCancelled
           ? <Button title="Restore" variant="secondary" onPress={() => editOccurrence(occurrenceEdit(doc as SeriesItem, key!, { status: null }), 'Event restored')} />
           : cancelled
@@ -330,8 +334,8 @@ function CalendarsPanel({ itemId, memberships }: { itemId: string; memberships: 
         <View key={m.calendarId} style={styles.proposal}>
           <View style={[styles.calDot, { backgroundColor: colorOf(m.calendarId) }]} />
           <Text style={[styles.proposalText, { color: c.text }]}>Proposed for {nameOf(m.calendarId)}</Text>
-          <Button title="Accept" variant="text" onPress={() => void fileItem(itemId, m.calendarId, 'accepted')} />
-          <Button title="Dismiss" variant="text" onPress={() => void unfileItem(itemId, m.calendarId)} />
+          <Button title="Accept" variant="text" onPress={() => void fileItem(itemId, m.calendarId, 'accepted').catch(() => toastError('Could not accept the proposal.'))} />
+          <Button title="Dismiss" variant="text" onPress={() => void unfileItem(itemId, m.calendarId).catch(() => toastError('Could not dismiss the proposal.'))} />
         </View>
       ))}
     </View>
@@ -361,7 +365,7 @@ function MetadataPanel({ itemId, metadata, editable }: {
       return;
     }
     setError(null);
-    void mergeItemMetadata(itemId, { [k]: r.value });
+    mergeItemMetadata(itemId, { [k]: r.value }).catch(() => toastError('Could not save the metadata.'));
     setKey('');
     setValue('');
   };

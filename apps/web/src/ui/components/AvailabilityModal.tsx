@@ -37,8 +37,8 @@ export function AvailabilityModal({ onClose }: { onClose: () => void }) {
   const create = useCreateItem({
     mutation: {
       onSuccess: () => {
-        invalidate();
         onClose();
+        return invalidate();
       },
       onError: (e) => showSnack(errText(e) ?? 'Request failed.'),
     },
@@ -69,7 +69,7 @@ export function AvailabilityModal({ onClose }: { onClose: () => void }) {
           <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
-      <form onSubmit={submit}>
+      <form onSubmit={(e) => void submit(e).catch((err: unknown) => showSnack(errText(err) ?? 'Request failed.'))}>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 0 }}>
           {!calendar && <Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">No availability calendar — bootstrap the standard set first.</Typography>}
         <WrapRow>

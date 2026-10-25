@@ -7,6 +7,7 @@ import { SegmentedPicker } from '@danbro96/lupira-expo-paper/components/Segmente
 import { SettingsNote } from '@danbro96/lupira-expo-paper/components/SettingsNote';
 import { useCalendarColors } from '../hooks/palette';
 import { spacing } from '../theme';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
 const ACCESS_LABELS: Record<string, string> = { Owner: 'Owner', ReadWrite: 'Can edit', Read: 'View only' };
 
@@ -23,7 +24,7 @@ export function CalendarSettingsScreen() {
         right={() => (
           <Switch
             value={prefs.showTaskDeadlines}
-            onValueChange={(v) => void usePrefs.getState().setShowTaskDeadlines(v)}
+            onValueChange={(v) => void usePrefs.getState().setShowTaskDeadlines(v).catch(() => toastError('Could not save the setting.'))}
             disabled={!prefs.loaded}
           />
         )}
@@ -34,7 +35,7 @@ export function CalendarSettingsScreen() {
         <SegmentedPicker
           options={ALL_DAY_ROW_OPTIONS}
           selected={prefs.allDayRows}
-          onSelect={(v) => void usePrefs.getState().setAllDayRows(v)}
+          onSelect={(v) => void usePrefs.getState().setAllDayRows(v).catch(() => toastError('Could not save the setting.'))}
           getLabel={(v) => (v === 'all' ? 'All' : v)}
         />
       </View>
@@ -63,7 +64,7 @@ function CalendarGroup({ title, calendars }: { title: string; calendars: Calenda
           right={() => (
             <Switch
               value={isCalendarShown(c, choices)}
-              onValueChange={(v) => void usePrefs.getState().setCalendarShown(c.id, v)}
+              onValueChange={(v) => void usePrefs.getState().setCalendarShown(c.id, v).catch(() => toastError('Could not save the setting.'))}
               disabled={!loaded}
             />
           )}

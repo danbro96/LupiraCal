@@ -228,8 +228,8 @@ function NewContainerForm({ onDone }: { onDone: () => void }) {
   const invalidateBooks = useInvalidateAddressBooks();
   const showSnack = useSnackbar();
   const onError = (e: unknown) => showSnack(errText(e) ?? 'Request failed.');
-  const createCal = useCreateCalendar({ mutation: { onSuccess: () => { invalidateContainers(); onDone(); }, onError } });
-  const createBook = useCreateAddressBook({ mutation: { onSuccess: () => { invalidateBooks(); onDone(); }, onError } });
+  const createCal = useCreateCalendar({ mutation: { onSuccess: () => { onDone(); return invalidateContainers(); }, onError } });
+  const createBook = useCreateAddressBook({ mutation: { onSuccess: () => { onDone(); return invalidateBooks(); }, onError } });
   const [form, setForm] = useState({
     type: 'calendar',
     slug: '',

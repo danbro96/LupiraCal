@@ -11,6 +11,7 @@ import {
 } from '@lupira/cal-domain/placeSearchMachine';
 import type { PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { resolvePlaceRequest } from './placeCommands';
+import { detach } from '@danbro96/lupira-expo-diagnostics/log';
 
 /** Runs `@lupira/cal-domain/placeSearchMachine`: events in, its commands executed against geo-api, their answers fed
  *  back under the token they were issued with. `pin` starts it already pinning. */
@@ -36,7 +37,7 @@ export function usePlaceSearchMachine({ pinNameRequired, seed = '', pin, near, o
     const t = placeSearchTransition(current.current, event);
     current.current = t.state;
     setState(t.state);
-    for (const command of t.commands) void run(command);
+    for (const command of t.commands) detach(run(command), 'places:search');
   };
 
   const run = async (command: PlaceSearchCommand) => {

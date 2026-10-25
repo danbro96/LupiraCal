@@ -8,7 +8,7 @@ import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import CloseFullscreenIcon from '@mui/icons-material/CloseFullscreen';
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { Background, Controls, Handle, MarkerType, Panel, Position, ReactFlow } from '@xyflow/react';
 import type { Edge, Node, NodeProps } from '@xyflow/react';
@@ -19,6 +19,7 @@ import { buildRelationGraph } from '@lupira/cal-domain/contactRelations';
 import { matchesTerms, searchTerms } from '@danbro96/lupira-domain-core/textSearch';
 import type { RelationCategory } from '@lupira/cal-domain/contactRelations';
 import { useIsPhone } from '../../hooks/useIsPhone';
+import { useGo } from '../../navigation/useGo';
 
 // The node border reads the category accent directly; only the xyflow edge (which has no element
 // to hang sx on) still needs a class. Written out per category because Tailwind scans for literals.
@@ -144,13 +145,13 @@ export function ContactRelationGraph({
   selectedId: string | null;
   onSelect: (id: string | null) => void;
 }) {
-  const navigate = useNavigate();
+  const go = useGo();
   const location = useLocation();
   const isPhone = useIsPhone();
   const [expandedIds, setExpandedIds] = useState<string[]>([centerId]);
   const [fullscreen, setFullscreen] = useState(false);
   const expand = (id: string) => setExpandedIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
-  const open = (id: string) => navigate({ pathname: `/contacts/${id}`, search: location.search });
+  const open = (id: string) => go({ pathname: `/contacts/${id}`, search: location.search });
 
   const results = useQueries({
     queries: expandedIds.map((id) => {

@@ -8,6 +8,7 @@ import { usePrefs } from '../../state/prefs-store';
 import { allowNotifications, useNotificationAccess } from '../../state/useNotificationAccess';
 import { TimeField } from '../components/TimeField';
 import { spacing } from '../theme';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
 type Flag = { [K in keyof NotifyPrefs]: NotifyPrefs[K] extends boolean ? K : never }[keyof NotifyPrefs];
 
@@ -18,19 +19,22 @@ export function NotificationSettingsScreen() {
   const notify = usePrefs((p) => p.notify);
   const loaded = usePrefs((p) => p.loaded);
   const { data: access } = useNotificationAccess();
-  const set = usePrefs((p) => p.setNotify);
+  const setNotify = usePrefs((p) => p.setNotify);
+  const set = <K extends keyof NotifyPrefs>(key: K, value: NotifyPrefs[K]) => {
+    setNotify(key, value).catch(() => toastError('Could not save the setting.'));
+  };
 
   const toggle = (key: Flag, title: string, description?: string) => (
     <List.Item
       title={title}
       description={description}
-      right={() => <Switch value={notify[key]} onValueChange={(v) => void set(key, v)} disabled={!loaded} />}
+      right={() => <Switch value={notify[key]} onValueChange={(v) => set(key, v)} disabled={!loaded} />}
     />
   );
   const denied = !!access && access.permission !== 'granted';
   const allow = () => {
-    if (access && access.permission === 'undetermined' && access.canAskAgain) void allowNotifications();
-    else void Linking.openSettings();
+    if (access && access.permission === 'undetermined' && access.canAskAgain) allowNotifications().catch(() => toastError('Could not turn on notifications.'));
+    else Linking.openSettings().catch(() => toastError('Could not open the settings.'));
   };
 
   return (
@@ -48,7 +52,7 @@ export function NotificationSettingsScreen() {
           <SegmentedPicker
             options={minuteOptions}
             selected={String(notify.defaultMinutes)}
-            onSelect={(v) => void set('defaultMinutes', Number(v))}
+            onSelect={(v) => set('defaultMinutes', Number(v))}
             getLabel={(v) => leadLabel(Number(v))}
           />
         </View>
@@ -57,9 +61,9 @@ export function NotificationSettingsScreen() {
 
       <List.Subheader>Every day</List.Subheader>
       {toggle('morningSummary', 'Morning summary', 'Today’s events you’re going to or that are in your calendars')}
-      {notify.morningSummary && <TimeRow value={notify.morningTime} onChange={(v) => void set('morningTime', v)} />}
+      {notify.morningSummary && <TimeRow value={notify.morningTime} onChange={(v) => set('morningTime', v)} />}
       {toggle('birthdays', 'Birthdays')}
-      {notify.birthdays && <TimeRow value={notify.birthdayTime} onChange={(v) => void set('birthdayTime', v)} />}
+      {notify.birthdays && <TimeRow value={notify.birthdayTime} onChange={(v) => set('birthdayTime', v)} />}
       <SettingsNote>All-day events with a reminder of their own count back from the morning time.</SettingsNote>
 
       <List.Subheader>Invitations</List.Subheader>
@@ -70,7 +74,7 @@ export function NotificationSettingsScreen() {
           <SegmentedPicker
             options={replyOptions}
             selected={String(notify.replyLeadMinutes)}
-            onSelect={(v) => void set('replyLeadMinutes', Number(v))}
+            onSelect={(v) => set('replyLeadMinutes', Number(v))}
             getLabel={(v) => leadLabel(Number(v))}
           />
         </View>

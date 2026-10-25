@@ -71,7 +71,6 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       onSuccess: async (created, { data }) => {
         writePref(LAST_CALENDAR, data.calendarId ?? null);
         if (me && attending) await join(created.id, me).catch((e: unknown) => showSnack(errText(e) ?? 'Created, but could not add you.'));
-        invalidate();
         onClose();
         setSearchParams((prev) => {
           const next = new URLSearchParams(prev);
@@ -79,6 +78,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
           next.delete('occ');
           return next;
         });
+        return invalidate();
       },
       onError: (e) => showSnack(errText(e) ?? 'Request failed.'),
     },
@@ -169,7 +169,7 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
           <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
-      <form onSubmit={submit}>
+      <form onSubmit={(e) => void submit(e).catch((err: unknown) => showSnack(errText(err) ?? 'Request failed.'))}>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 0 }}>
         <Controller
           name="title"

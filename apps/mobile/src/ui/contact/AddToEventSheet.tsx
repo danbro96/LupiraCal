@@ -1,6 +1,6 @@
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { fmtWhen } from '@danbro96/lupira-domain-core/time';
-import { toast } from '@danbro96/lupira-expo-feedback/toast';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
 import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
@@ -29,7 +29,9 @@ export function AddToEventSheet({ contactId, attending, onDismiss }: {
 
   const add = (itemId: string, title: string | null) => {
     onDismiss();
-    void inviteToItem(itemId, contactId).then(() => toast(`Added to ${displayTitle(title)}`));
+    inviteToItem(itemId, contactId)
+      .then(() => toast(`Added to ${displayTitle(title)}`))
+      .catch(() => toastError('Could not add to the event.'));
   };
 
   return (

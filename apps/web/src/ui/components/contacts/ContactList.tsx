@@ -234,7 +234,7 @@ function NewContactForm({ defaultBookId, onDone }: { defaultBookId?: string; onD
   const invalidate = useInvalidateContacts();
   const showSnack = useSnackbar();
   const create = useCreateContact({
-    mutation: { onSuccess: () => { invalidate(); onDone(); }, onError: (e) => showSnack(errText(e) ?? 'Request failed.') },
+    mutation: { onSuccess: () => { onDone(); return invalidate(); }, onError: (e) => showSnack(errText(e) ?? 'Request failed.') },
   });
   const { addressBooks } = useAddressBooks();
   const [form, setForm] = useState({

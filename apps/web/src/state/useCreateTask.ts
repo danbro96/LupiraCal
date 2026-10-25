@@ -17,9 +17,6 @@ export function useCreateTask() {
       if (eventId) await createItemRelation(eventId, { ...TASK_RELATION, toRef: task.id });
       return task;
     },
-    onSettled: (_task, _error, { eventId }) => {
-      void invalidateTasks();
-      if (eventId) void invalidateItems();
-    },
+    onSettled: (_task, _error, { eventId }) => Promise.all([invalidateTasks(), eventId && invalidateItems()]),
   });
 }

@@ -31,11 +31,18 @@ import type { RootStackParamList } from './src/ui/navigation/types';
 import { paperSettings } from '@danbro96/lupira-expo-paper/theme/paperSettings';
 import { SENTRY_DSN } from './src/config';
 import { initSentry } from '@danbro96/lupira-expo-diagnostics/initSentry';
+import { detach } from '@danbro96/lupira-expo-diagnostics/log';
+import { installMapAuthHeader } from '@danbro96/lupira-expo-maplibre/mapAuthHeader';
 
 initSentry(SENTRY_DSN);
 connectOnlineManager();
 connectFocusManager();
 showNotificationsInForeground();
+installMapAuthHeader({
+  subscribeToken: (listener) => useAuth.subscribe(listener),
+  getToken: () => useAuth.getState().token,
+  apiUrl: () => useAuth.getState().apiUrl,
+});
 
 /** Shown when the boundary catches (and reports) a render crash. */
 function ErrorFallback() {
@@ -57,19 +64,21 @@ export default function App() {
   const authed = useAuth((s) => s.authMode === 'dev' || s.token !== null);
 
   useEffect(() => {
-    void useAuth.getState().load();
-    void clearImportFiles();
+    detach(useAuth.getState().load(), 'auth:load');
+    clearImportFiles();
   }, []);
+
+  useEffect(() => useAuth.getState().startAutoRefresh(), []);
 
   useEffect(() => {
     if (!loaded || !authed) return;
-    void useBridge.getState().init();   // hydrate the integration flag + self-repair account/permissions
-    void usePrefs.getState().init();
-    void notifications.prepare();
+    detach(useBridge.getState().init(), 'bridge:init');   // hydrate the integration flag + self-repair account/permissions
+    detach(usePrefs.getState().init(), 'prefs:init');
+    detach(notifications.prepare(), 'notifications:prepare');
     const active = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void notifications.reconcile();
+      if (state === 'active') detach(notifications.reconcile(), 'notifications:reconcile');
     });
-    const taps = Notifications.addNotificationResponseReceivedListener((r) => void respondToNotification(tapOf(r)));
+    const taps = Notifications.addNotificationResponseReceivedListener((r) => detach(respondToNotification(tapOf(r)), 'notifications:respond'));
     const stopSync = startSyncTriggers(engine, { backgroundTaskName: SYNC_TASK, registerBackgroundTask: !__DEV__ });
     return () => {
       active.remove();

@@ -41,6 +41,8 @@ import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
 import { useColors, spacing } from '../theme';
 import { ICONS } from '../icons';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
+import { detach } from '@danbro96/lupira-expo-diagnostics/log';
 
 const KIND_OPTIONS = [{ value: 'Individual', label: 'Person' }, { value: 'Organization', label: 'Organization' }];
 const NAME_FORMAT_OPTIONS = Object.entries(DISPLAY_NAME_FORMAT_LABELS).map(([value, label]) => ({ value, label }));
@@ -145,7 +147,7 @@ export function ContactEditScreen() {
     const tags = withPinPreserved(parseList(tagsCsv), contactId ? state?.doc.tags : null);
 
     const saved = await saveContact(contactId, bookId, r.value, cleanChannels, cleanProfiles, tags, residencyChanges(rows), state?.doc, setError);
-    if (saved) void dismissAddressHints(settledHintIds(rows));
+    if (saved) detach(dismissAddressHints(settledHintIds(rows)), 'bridge:hints');
     return saved;
   };
 
@@ -155,11 +157,11 @@ export function ContactEditScreen() {
   });
 
   const saveAndLeave = () => {
-    void submit().then((saved) => {
+    submit().then((saved) => {
       if (!saved) return;
       guard.leave();
       leaveScreen(navigation);
-    });
+    }).catch(() => toastError('Could not save the contact.'));
   };
 
   // Save lives in the header; leaving without saving is guarded instead of needing a Cancel button.
@@ -330,7 +332,7 @@ export function ContactEditScreen() {
                   mode="outlined"
                   icon={ICONS.place}
                   onPress={() => setAddresses((all) => [...(all ?? []), hintAddressRow(h, uuidv7())])}
-                  onClose={() => void dismissAddressHints([h.id])}
+                  onClose={() => void dismissAddressHints([h.id]).catch(() => toastError('Could not dismiss the suggestion.'))}
                 >
                   {h.text}
                 </Chip>

@@ -30,6 +30,7 @@ import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 import { useJump, type CalendarJump } from './jump';
 import { usePager } from './usePager';
 import { isTentative, tentativeStyle } from './tentative';
+import { detach } from '@danbro96/lupira-expo-diagnostics/log';
 
 const MIN_HOUR_H = 16;
 const MAX_HOUR_H = 160;
@@ -469,7 +470,7 @@ function useTimeZoom(initialHours: number) {
 
   // eslint-disable-next-line react-hooks/refs -- scrollRef is only used by the pinch worklet's scrollTo on the UI thread
   const [gestures] = useState(() => {
-    const save = (value: number) => void usePrefs.getState().setHourHeight(value);
+    const save = (value: number) => detach(usePrefs.getState().setHourHeight(value), 'prefs:hourHeight');
     const pinch = Gesture.Pinch()
       .onStart((e) => {
         startH.set(hourH.get());

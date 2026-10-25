@@ -88,7 +88,7 @@ export const useBridge = create<BridgePref & BridgeActions>((set, get) => ({
     await ensureBridgeAccount();
     // Publishing a mirror that hasn't finished its first sync would remove every published contact and event.
     if (engine.status.getSnapshot().lastSyncAt !== null) await publishToBridge();
-    else void engine.sync();
+    else engine.sync();
     await persistFlag(BRIDGE_ENABLED_KEY, true);
     set({ enabled: true, permissionsOk: true, prompted: true });
     await persistFlag(PROMPTED_KEY, true);

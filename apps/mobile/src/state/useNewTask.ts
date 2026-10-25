@@ -20,6 +20,6 @@ export function useWritableTaskLists() {
 export async function createTask({ listId, title, dueDay, eventId }: NewTask): Promise<ItemDto> {
   const task = await createListItem(listId, newTaskBody(uuidv7(), title, dueDay, await listListItems(listId)));
   if (eventId) await createItemRelation(eventId, { ...TASK_RELATION, toRef: task.id });
-  void engine.sync();
+  engine.sync();
   return task;
 }

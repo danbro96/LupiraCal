@@ -7,7 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Checkbox, List, Text } from 'react-native-paper';
-import { toast } from '@danbro96/lupira-expo-feedback/toast';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { Button } from '@danbro96/lupira-expo-paper/components/Button';
 import { ChoiceChips } from '@danbro96/lupira-expo-paper/components/ChoiceChips';
 import type { ContactDraft, ItemDraft } from '../../domain/drafts';
@@ -41,8 +41,9 @@ export function ImportScreen() {
   if (data?.kind === 'calendar' && data.drafts.length > 1) return <ItemChecklist drafts={data.drafts} onDone={leave} />;
   if (data?.kind === 'contacts' && data.drafts.length > 1) return <ContactChecklist drafts={data.drafts} onDone={leave} />;
   if (data) return <Notice text="Nothing to import in this file" onDismiss={leave} />;
-  if (!online) return <Notice text="Needs a connection to read this file" onRetry={() => void refetch()} onDismiss={leave} />;
-  if (error) return <Notice text={importErrorText(error)} onRetry={() => void refetch()} onDismiss={leave} />;
+  const retry = () => void refetch().catch(() => toastError('Could not read the file.'));
+  if (!online) return <Notice text="Needs a connection to read this file" onRetry={retry} onDismiss={leave} />;
+  if (error) return <Notice text={importErrorText(error)} onRetry={retry} onDismiss={leave} />;
   return <Notice text="Reading file…" />;
 }
 

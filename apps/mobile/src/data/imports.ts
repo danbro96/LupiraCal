@@ -26,8 +26,8 @@ export function readImportFile(name: string): Promise<string> {
   return text;
 }
 
-export function clearImportFiles(): Promise<void> {
-  return LupiraBridge.clearImports().catch(() => undefined);
+export function clearImportFiles(): void {
+  LupiraBridge.clearImports().catch(() => undefined);
 }
 
 /** The server reads the file and answers with the drafts it holds. */

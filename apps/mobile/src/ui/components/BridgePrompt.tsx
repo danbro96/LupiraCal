@@ -21,7 +21,7 @@ export function BridgePrompt() {
       </Card.Content>
       <Card.Actions>
         <Button title="Enable" onPress={() => void useBridge.getState().enable().catch(() => toastError('Could not set up the Android integration.'))} />
-        <Button title="Not now" variant="secondary" onPress={() => void useBridge.getState().markPrompted()} />
+        <Button title="Not now" variant="secondary" onPress={() => void useBridge.getState().markPrompted().catch(() => toastError('Could not save the choice.'))} />
       </Card.Actions>
     </Card>
   );

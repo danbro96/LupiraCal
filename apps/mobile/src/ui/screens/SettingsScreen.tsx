@@ -19,6 +19,7 @@ import { VersionLine } from '@danbro96/lupira-expo-diagnostics/VersionLine';
 import { ICONS } from '../icons';
 import type { RootStackParamList } from '../navigation/types';
 import { useColors } from '../theme';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
 const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(' · ');
 
@@ -71,7 +72,7 @@ export function SettingsScreen() {
         name={authMode === 'dev' ? 'Dev auto-auth' : user?.name ?? user?.sub ?? 'Signed out'}
         sub={authMode === 'dev' ? 'No sign-in' : user?.name ? user.sub : undefined}
       />
-      {authMode !== 'dev' && <SignOutButton onSignOut={() => void useAuth.getState().clearSession()} />}
+      {authMode !== 'dev' && <SignOutButton onSignOut={() => void useAuth.getState().clearSession().catch(() => toastError('Could not sign out.'))} />}
 
       <List.Subheader>Calendar</List.Subheader>
       <List.Item
@@ -103,7 +104,9 @@ export function SettingsScreen() {
         descriptionStyle={parked > 0 ? attention : undefined}
         left={icon(ICONS.sync)}
         right={() => (
-          <IconButton name={ICONS.sync} onPress={() => void engine.sync()} accessibilityLabel="Sync now" />
+          <IconButton name={ICONS.sync} onPress={() => {
+            engine.sync();
+          }} accessibilityLabel="Sync now" />
         )}
         onPress={() => navigation.navigate('SyncIssues')}
       />
@@ -116,7 +119,7 @@ export function SettingsScreen() {
         right={() => (
           <Switch
             value={prefs.debugEnabled}
-            onValueChange={(v) => void usePrefs.getState().setDebugEnabled(v)}
+            onValueChange={(v) => void usePrefs.getState().setDebugEnabled(v).catch(() => toastError('Could not save the setting.'))}
             accessibilityLabel="Enable debug"
           />
         )}

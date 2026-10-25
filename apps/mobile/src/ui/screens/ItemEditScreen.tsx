@@ -49,6 +49,8 @@ import { PlaceSearchSheet } from '../places/PlaceSearchSheet';
 import { leaveScreen } from '../navigation/leaveScreen';
 import { useUnsavedGuard } from '../navigation/useUnsavedGuard';
 import { spacing, useColors } from '../theme';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
+import { detach } from '@danbro96/lupira-expo-diagnostics/log';
 
 type SheetName = 'calendars' | 'category' | 'color' | 'repeat' | 'zone' | 'place' | 'people' | 'reminder';
 
@@ -216,12 +218,12 @@ export function ItemEditScreen() {
   });
 
   const saveAndLeave = () => {
-    void submit().then((saved) => {
+    submit().then((saved) => {
       if (!saved) return;
       guard.leave();
       if (continued.current) navigation.popTo('ItemDetail', continued.current);
       else leaveScreen(navigation);
-    });
+    }).catch(() => toastError('Could not save the event.'));
   };
 
   // Save lives in the header (dimmed until something changes); leaving unsaved is guarded, so there
@@ -465,7 +467,7 @@ async function persistItem(
   const attendees = attendeeChanges(doc?.attendees ?? [], attendeeIds);
   try {
     await saveItem(itemId, { core, ...filing, ...attendees, accept: me ? [me] : [], reminder });
-    if (!itemId) void usePrefs.getState().setLastCalendarIds(calendarIds);
+    if (!itemId) detach(usePrefs.getState().setLastCalendarIds(calendarIds), 'prefs:lastCalendars');
     return true;
   } catch (e) {
     setError(String(e));

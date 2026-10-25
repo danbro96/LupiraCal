@@ -244,7 +244,7 @@ export function ItemsScreen() {
         {error && <Typography component="p" sx={{ textAlign: 'center', color: 'text.subtle', mt: 6 }}>{errText(error) ?? 'Search failed.'}</Typography>}
       </Box>
       {hasNextPage && (
-        <Button variant="outlined" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+        <Button variant="outlined" onClick={() => void fetchNextPage().catch(reportError)} disabled={isFetchingNextPage}>
           {isFetchingNextPage ? 'Loading…' : `Load ${SEARCH_PAGE_SIZE} more`}
         </Button>
       )}

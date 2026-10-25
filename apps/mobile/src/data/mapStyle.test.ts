@@ -11,6 +11,7 @@ setAuthPort({
   getToken: () => 'tok',
   refresh: async () => 'tok',
   onSignIn: () => () => {},
+  onSignOut: () => () => {},
 });
 setApiTransport(createBearerMutator({ auth: authPort, timeoutMs: 1_000 }));
 

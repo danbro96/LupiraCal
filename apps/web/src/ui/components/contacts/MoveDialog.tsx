@@ -32,7 +32,7 @@ export function MoveDialog({ contact, rows, onClose }: { contact: ContactDto; ro
   const [when, setWhen] = useState('');
   const invalidate = useInvalidateContacts();
   const showSnack = useSnackbar();
-  const move = useRecordMove({ mutation: { onSuccess: () => { invalidate(); onClose(); }, onError: (e) => showSnack(errText(e) ?? 'Move failed.') } });
+  const move = useRecordMove({ mutation: { onSuccess: () => { onClose(); return invalidate(); }, onError: (e) => showSnack(errText(e) ?? 'Move failed.') } });
 
   const movedIn = when.trim() ? parseFuzzyInput(when) : null;
   const nameOf = (id: string) => contacts?.find((c) => c.id === id)?.displayName ?? id.slice(0, 8);

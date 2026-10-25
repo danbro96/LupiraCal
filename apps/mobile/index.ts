@@ -20,7 +20,10 @@ defineSyncTask(SYNC_TASK, {
     await engine.sync();
     await notifications.reconcile();
   },
-}, () => useAuth.getState().load());
+}, async () => {
+  await useAuth.getState().load();
+  return useAuth.getState().isAuthenticated();
+});
 
 // RSVP buttons tapped while the app is in the background or killed arrive here, not at App's listener.
 TaskManager.defineTask<Notifications.NotificationTaskPayload>(NOTIFICATION_TASK, async ({ data }) => {

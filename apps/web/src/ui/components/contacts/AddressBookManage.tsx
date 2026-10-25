@@ -33,7 +33,7 @@ export function AddressBookManage({ book, onDeleted }: { book: AddressBookDto; o
   const showSnack = useSnackbar();
   const onError = (e: unknown) => showSnack(errText(e) ?? 'Request failed.');
   const update = useUpdateAddressBook({ mutation: { onSuccess: invalidate, onError } });
-  const del = useDeleteAddressBook({ mutation: { onSuccess: () => { invalidate(); onDeleted(); }, onError } });
+  const del = useDeleteAddressBook({ mutation: { onSuccess: () => { onDeleted(); return invalidate(); }, onError } });
   const grant = useGrantAddressBookOwner({ mutation: { onSuccess: invalidate, onError } });
   const revoke = useRevokeAddressBookOwner({ mutation: { onSuccess: invalidate, onError } });
   const { data: owners } = useListAddressBookOwners(book.id);

@@ -39,7 +39,7 @@ export function GroupDetailPane() {
   const { data: readable } = useSearchContacts({});
 
   const rename = useRenameContactGroup({ mutation: { onSuccess: invalidate } });
-  const del = useDeleteContactGroup({ mutation: { onSuccess: () => { invalidate(); navigate('/contacts'); } } });
+  const del = useDeleteContactGroup({ mutation: { onSuccess: () => Promise.all([invalidate(), navigate('/contacts')]) } });
   const addMember = useAddContactGroupMember({ mutation: { onSuccess: invalidate } });
   const removeMember = useRemoveContactGroupMember({ mutation: { onSuccess: invalidate } });
   const [addKey, setAddKey] = useState(0);

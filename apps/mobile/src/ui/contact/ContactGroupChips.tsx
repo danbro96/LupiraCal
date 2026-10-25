@@ -1,4 +1,4 @@
-import { toast } from '@danbro96/lupira-expo-feedback/toast';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -24,7 +24,9 @@ export function ContactGroupChips({ contactId, addressBookId }: { contactId: str
 
   const join = (g: ContactGroupDoc) => {
     setAdding(false);
-    void addToGroup(g.id, contactId).then(() => toast(`Added to ${g.name}`));
+    addToGroup(g.id, contactId)
+      .then(() => toast(`Added to ${g.name}`))
+      .catch(() => toastError('Could not add to the group.'));
   };
 
   return (
@@ -36,7 +38,7 @@ export function ContactGroupChips({ contactId, addressBookId }: { contactId: str
           mode="outlined"
           icon={groupIcon(g)}
           closeIcon={ICONS.close}
-          onClose={editable.has(g.id) ? () => void removeFromGroup(g.id, contactId) : undefined}
+          onClose={editable.has(g.id) ? () => void removeFromGroup(g.id, contactId).catch(() => toastError('Could not remove from the group.')) : undefined}
           closeIconAccessibilityLabel={`Remove from ${g.name}`}
         >
           {g.name}

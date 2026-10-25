@@ -7,7 +7,7 @@ The map screen, movement history and GPS upload live in Lupira Maps (maps.lupira
 
 ## Basemap
 
-geo-api `/basemap/style.json?theme=` + pmtiles, proxied through the BFF's `static` group (GET-only file subtree). The style loader absolutizes URLs and falls back to a wash when assets are unprovisioned (`@danbro96/lupira-web-maplibre/mapStyle`, `@danbro96/lupira-domain-maps/mapStyle`); each app supplies only its transport — cookie on web, bearer on mobile. The mobile bearer for native tile/glyph/sprite requests rides `TransformRequestManager.addHeader` with a stable id and a `match` scoped to the BFF origin — never let that header reach presigned or third-party URLs.
+geo-api `/basemap/style.json?theme=` + pmtiles, proxied through the BFF's `static` group (GET-only file subtree). The style loader absolutizes URLs and falls back to a wash when assets are unprovisioned (`@danbro96/lupira-web-maplibre/mapStyle`, `@danbro96/lupira-domain-maps/mapStyle`); each app supplies only its transport — cookie on web, bearer on mobile. The mobile bearer for native tile/glyph/sprite requests is installed once at startup in `App.tsx` (`@danbro96/lupira-expo-maplibre/mapAuthHeader`), follows token changes and is scoped to the BFF origin — never let that header reach presigned or third-party URLs.
 
 ## maplibre-gl v6 worker (web)
 

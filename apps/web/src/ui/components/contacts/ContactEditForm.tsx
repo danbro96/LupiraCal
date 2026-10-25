@@ -262,15 +262,15 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
         revise, setChannels, setTags, addResidency, reviseResidency, moveOutOfResidency, removeResidency, setProfiles, setEmergency, markDeceased,
         clearDeceased,
       });
-      invalidate();
       onDone();
+      return invalidate();
     } catch (e) {
       showSnack(errText(e) ?? 'Save failed.');
     }
   });
 
   return (
-    <Box onSubmit={save} component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Box onSubmit={(e) => void save(e).catch((err: unknown) => showSnack(errText(err) ?? 'Request failed.'))} component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px', '& > label': { fontSize: 12, color: 'text.subtle' } }}>
         <Controller name="givenName" control={control} render={({ field }) => <TextField label="Given name" {...field} />} />
       </Box>

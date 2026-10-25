@@ -20,17 +20,17 @@ export function AndroidSettingsScreen() {
           message: 'Calendar and contacts permissions are required. Grant them in the system settings and try again.',
           confirmLabel: 'Open app settings',
         });
-        if (open) void Linking.openSettings();
+        if (open) await Linking.openSettings();
       }).catch(() => toastError('Could not set up the Android integration.'));
     } else {
-      void confirm({
+      confirm({
         title: 'Turn off Android integration',
         message: 'The Lupira calendar and contacts are removed from this phone (they stay in the app and on the server).',
         confirmLabel: 'Turn off',
         destructive: true,
-      }).then((ok) => {
-        if (ok) void useBridge.getState().disable();
-      });
+      }).then(async (ok) => {
+        if (ok) await useBridge.getState().disable();
+      }).catch(() => toastError('Could not turn off the Android integration.'));
     }
   };
 
@@ -48,7 +48,7 @@ export function AndroidSettingsScreen() {
         </SettingsNote>
       )}
       {!bridge.permissionsOk && (
-        <SettingsAction onPress={() => void Linking.openSettings()}>
+        <SettingsAction onPress={() => void Linking.openSettings().catch(() => toastError('Could not open the settings.'))}>
           Calendar/contacts permissions missing — tap to open app settings
         </SettingsAction>
       )}

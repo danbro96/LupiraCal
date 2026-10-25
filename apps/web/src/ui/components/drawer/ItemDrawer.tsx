@@ -130,8 +130,8 @@ function DrawerBody({
   const onError = (e: unknown) => showSnack(errText(e) ?? 'Request failed.');
   const closing = {
     onSuccess: () => {
-      invalidate();
       onClose();
+      return invalidate();
     },
     onError,
   };
@@ -157,8 +157,8 @@ function DrawerBody({
   const split = useChangeFollowingOccurrences({
     mutation: {
       onSuccess: (result) => {
-        invalidate();
         openContinuation(result);
+        return invalidate();
       },
       onError,
     },

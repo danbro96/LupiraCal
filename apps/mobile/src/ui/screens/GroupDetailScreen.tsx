@@ -1,5 +1,5 @@
 import { matchesTerms, searchTerms } from '@danbro96/lupira-domain-core/textSearch';
-import { toast } from '@danbro96/lupira-expo-feedback/toast';
+import { toast, toastError } from '@danbro96/lupira-expo-feedback/toast';
 import { Sheet } from '@danbro96/lupira-expo-paper/components/Sheet';
 import { TextField } from '@danbro96/lupira-expo-paper/components/TextField';
 import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
@@ -61,7 +61,7 @@ export function GroupDetailScreen() {
           style={styles.dense}
           left={(p) => <List.Icon {...p} icon={ICONS.person} />}
           right={() => (editable
-            ? <IconButton icon={ICONS.close} accessibilityLabel={`Remove ${m.displayName}`} onPress={() => void removeFromGroup(group.id, m.contactId)} />
+            ? <IconButton icon={ICONS.close} accessibilityLabel={`Remove ${m.displayName}`} onPress={() => void removeFromGroup(group.id, m.contactId).catch(() => toastError('Could not remove the member.'))} />
             : null)}
           onPress={() => navigation.push('ContactDetail', { contactId: m.contactId })}
         />
@@ -82,7 +82,9 @@ function AddMemberSheet({ group, contacts, onDismiss }: { group: ContactGroupDoc
 
   const add = (row: ContactListRow) => {
     onDismiss();
-    void addToGroup(group.id, row.id).then(() => toast(`Added ${row.displayName} to ${group.name}`));
+    addToGroup(group.id, row.id)
+      .then(() => toast(`Added ${row.displayName} to ${group.name}`))
+      .catch(() => toastError('Could not add the member.'));
   };
 
   return (

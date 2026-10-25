@@ -31,6 +31,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { spacing, useColors } from '../theme';
 import { ICONS } from '../icons';
 import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
+import { toastError } from '@danbro96/lupira-expo-feedback/toast';
 
 /** Overview — the contact's own fields are edited on the edit screen; groups and events are joined here. Shows everything the mirror doc carries:
  *  names, kind, pronouns, birthday+age, deceased, unified reach (channels + profiles), addresses (current
@@ -72,9 +73,11 @@ export function ContactDetailScreen() {
                   message: `Delete ${name || 'this contact'}? It syncs to everyone.`,
                   confirmLabel: 'Delete',
                   destructive: true,
-                }).then((ok) => {
-                  if (ok) void deleteContact(contactId).then(() => navigation.goBack());
-                })
+                }).then(async (ok) => {
+                  if (!ok) return;
+                  await deleteContact(contactId);
+                  navigation.goBack();
+                }).catch(() => toastError('Could not delete the contact.'))
               }
             >
               Delete
