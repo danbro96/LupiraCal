@@ -4,7 +4,7 @@ The photo library, trash, upload and camera-roll backup live in Lupira Photos (p
 
 ## Photo-event links
 
-Photo↔event links are cal-api `Relation`s with `toKind: 'photo'` (`GET /relations/edges?toKind=photo`). The strip lists them via photo-api `POST /photos/lookup`, and offers the photos taken while the event was happening (window: `@danbro96/lupira-domain-photos/photoWindow`, the same set Photos suggests). Linking a suggested photo is always confirmed, never automatic (`POST /items/{id}/relations`).
+Photo↔event links are cal-api `Relation`s with `toKind: 'photo'` (`GET /relations/edges?toKind=photo`). The strip lists them via photo-api `POST /photos/lookup`, and offers the photos taken while the event was happening (window: `@danbro96/lupira-domain-photos/photoWindow`, the same set Photos suggests). An event that hasn't begun has no window, so the strip stays hidden until it starts unless photos are already linked. Linking a suggested photo is always confirmed, never automatic (`POST /items/{id}/relations`).
 
 A thumbnail and "See all" open Lupira Photos on the event (`photosEventUrl`; mobile `lupiraphotos://event/{id}` with the https fallback).
 
