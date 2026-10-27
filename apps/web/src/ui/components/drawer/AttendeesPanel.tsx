@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactElement } from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -45,6 +45,12 @@ const ROLE_OPTIONS = [
   { value: 'non-participant', label: 'FYI' },
 ];
 
+const RSVP_CHOICES: { status: string; token: string; title: string; icon?: ReactElement; label?: string }[] = [
+  { status: 'Accepted', token: 'accepted', title: 'Accept', icon: <CheckIcon /> },
+  { status: 'Tentative', token: 'tentative', title: 'Tentative', label: '?' },
+  { status: 'Declined', token: 'declined', title: 'Decline', icon: <ClearIcon /> },
+];
+
 /** RSVP colour comes from the palette slots added for it, not a per-status class. */
 const TONE_COLOR: Record<Tone, string> = {
   success: 'success.main',
@@ -54,8 +60,8 @@ const TONE_COLOR: Record<Tone, string> = {
 };
 
 /** Invitees + RSVP state, with invite/respond/attend/leave/remove riding the participation events. A name
- *  opens that contact; you are never ranked among the invitable — while you're not on the event, Join and a
- *  pinned "You" put you on it, already going. */
+ *  opens that contact; you are never ranked among the invitable — while you're not on the event, Join puts you
+ *  on it already going and a pinned "You" invites you undecided. Clicking the current reply clears it. */
 export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
   const invalidate = useInvalidateItems();
   const me = useMyContactId();
@@ -124,19 +130,20 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', gap: '4px' }}>
-              {status === 'NeedsAction' && (
-                <>
-                  <Tooltip title="Accept">
-                    <Chip variant="outlined" icon={<CheckIcon />} onClick={() => respond.mutate({ id: item.id, participationId: pid, params: { status: 'accepted' } })} />
+              {RSVP_CHOICES.map((r) => {
+                const current = status === r.status;
+                return (
+                  <Tooltip key={r.token} title={current ? 'Clear reply' : r.title}>
+                    <Chip
+                      variant={current ? 'filled' : 'outlined'}
+                      icon={r.icon}
+                      label={r.label}
+                      sx={current ? { bgcolor: TONE_COLOR[rsvpTone(status)], color: 'common.white', '& .MuiChip-icon': { color: 'inherit' } } : undefined}
+                      onClick={() => respond.mutate({ id: item.id, participationId: pid, params: { status: current ? 'needs-action' : r.token } })}
+                    />
                   </Tooltip>
-                  <Tooltip title="Tentative">
-                    <Chip variant="outlined" label="?" onClick={() => respond.mutate({ id: item.id, participationId: pid, params: { status: 'tentative' } })} />
-                  </Tooltip>
-                  <Tooltip title="Decline">
-                    <Chip variant="outlined" icon={<ClearIcon />} onClick={() => respond.mutate({ id: item.id, participationId: pid, params: { status: 'declined' } })} />
-                  </Tooltip>
-                </>
-              )}
+                );
+              })}
               {status === 'Accepted' && !a.attendedAt && (
                 <Tooltip title="Confirm attendance">
                   <Chip variant="outlined" label="attended" onClick={() => attend.mutate({ id: item.id, participationId: pid })} />
@@ -177,8 +184,7 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
           variant="outlined"
           disabled={!contactId || invite.isPending}
           onClick={() => {
-            if (contactId === me) joinSelf();
-            else invite.mutate({ id: item.id, params: { contactId, role } });
+            invite.mutate({ id: item.id, params: { contactId, role } });
             setContactId('');
           }}
         >
