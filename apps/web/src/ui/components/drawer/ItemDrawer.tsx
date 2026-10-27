@@ -48,7 +48,7 @@ import { useContainers } from '../../../state/useContainers';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { calendarColor } from '../../theme/kinds';
 import { CategorySelect } from '../CategorySelect';
-import { ColorSwatches } from '../ColorSwatches';
+import { ColorDot } from '../ColorDot';
 import { CategoryIcon } from '../KindIcon';
 import { AttendeesPanel } from './AttendeesPanel';
 import { CalendarsPanel } from './CalendarsPanel';
@@ -239,6 +239,14 @@ function DrawerBody({
   return (
     <Box sx={{ px: 2, pb: 'calc(24px + env(safe-area-inset-bottom))' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {!banded && (
+          <ColorDot
+            value={isItemColor(base.color) ? base.color : null}
+            calendarFill={memberCalendars[0] ? calendarColor(memberCalendars[0]) : 'var(--mui-palette-border)'}
+            onChange={(color) => patch({ color, colorProvided: true })}
+            disabled={seriesOnly}
+          />
+        )}
         {item.category && item.category !== 'General' && (
           <Box component="span" title={item.category} sx={{ fontSize: 22 }}>
             <CategoryIcon category={item.category} />
@@ -309,16 +317,6 @@ function DrawerBody({
           </TextField>
         )}
       </WrapRow>
-
-      {!seriesOnly && !banded && (
-        <DrawerSection title="Colour">
-          <ColorSwatches
-            value={isItemColor(base.color) ? base.color : null}
-            calendarFill={memberCalendars[0] ? calendarColor(memberCalendars[0]) : 'var(--mui-palette-border)'}
-            onChange={(color) => patch({ color, colorProvided: true })}
-          />
-        </DrawerSection>
-      )}
 
       <DrawerSection title="When">
         {item.isAllDay ? (
@@ -429,7 +427,6 @@ function DrawerBody({
 
       <KindDetailsCard details={item.details} />
       <SeriesOnly locked={panelsLocked}>
-        <PayloadPanel item={item} />
         <AttendeesPanel item={item} />
         <CalendarsPanel item={item} />
       </SeriesOnly>
@@ -467,6 +464,7 @@ function DrawerBody({
       </DrawerSection>
 
       <SeriesOnly locked={panelsLocked}>
+        <PayloadPanel item={item} />
         <MetadataPanel itemId={item.id} metadata={item.metadata} />
       </SeriesOnly>
 

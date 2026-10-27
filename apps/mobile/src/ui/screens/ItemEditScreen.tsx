@@ -411,7 +411,13 @@ export function ItemEditScreen() {
           />
         )}
         {seriesFields && !banded && (
-          <MoreRow icon={ICONS.palette} title="Colour" value={form.color || 'Calendar colour'} onPress={() => setSheet('color')} />
+          <MoreRow
+            icon={ICONS.palette}
+            fill={colorOf(calendarIds[0] ?? null, undefined, form.color || null)}
+            title="Colour"
+            value={form.color || 'Calendar colour'}
+            onPress={() => setSheet('color')}
+          />
         )}
         {seriesFields && (
           <MoreRow
@@ -492,13 +498,16 @@ export function ItemEditScreen() {
   );
 }
 
-function MoreRow({ icon, title, value, onPress }: { icon: string; title: string; value: string; onPress: () => void }) {
+/** `fill` draws a swatch of that colour in place of the icon. */
+function MoreRow({ icon, fill, title, value, onPress }: { icon: string; fill?: string; title: string; value: string; onPress: () => void }) {
   return (
     <List.Item
       title={title}
       description={value}
       descriptionNumberOfLines={1}
-      left={(p) => <List.Icon {...p} icon={icon} />}
+      left={(p) => (fill
+        ? <View style={[p.style, styles.swatchSlot]}><View style={[styles.swatch, { backgroundColor: fill }]} /></View>
+        : <List.Icon {...p} icon={icon} />)}
       right={(p) => <List.Icon {...p} icon={ICONS.chevronRight} />}
       onPress={onPress}
     />
@@ -534,6 +543,8 @@ const styles = StyleSheet.create({
   notice: { fontSize: 13, fontWeight: '600' },
   title: { fontSize: 18 },
   row: { paddingHorizontal: 0 },
+  swatchSlot: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  swatch: { width: 20, height: 20, borderRadius: 10 },
   whenRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
   whenLabel: { width: 48, fontSize: 13 },
   day: { flex: 3 },

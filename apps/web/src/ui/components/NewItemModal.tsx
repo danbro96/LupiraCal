@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import Dialog from '@mui/material/Dialog';
@@ -33,7 +34,7 @@ import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { useIsPhone } from '../hooks/useIsPhone';
 import { WrapRow } from './WrapRow';
 import { CategorySelect } from './CategorySelect';
-import { ColorSwatches } from './ColorSwatches';
+import { ColorDot } from './ColorDot';
 import { calendarColor } from '../theme/kinds';
 
 type FormValues = {
@@ -171,20 +172,33 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
       </DialogTitle>
       <form onSubmit={(e) => void submit(e).catch((err: unknown) => showSnack(errText(err) ?? 'Request failed.'))}>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, pt: 0 }}>
-        <Controller
-          name="title"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              variant="standard"
-              fullWidth
-              slotProps={{ input: { sx: { fontSize: '1.35rem', fontWeight: 600 } } }}
-              placeholder="Title"
-              autoFocus
-              {...field}
-            />
-          )}
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Controller
+            name="color"
+            control={control}
+            render={({ field }) => (
+              <ColorDot
+                value={field.value || null}
+                calendarFill={calendar ? calendarColor(calendar) : 'var(--mui-palette-border)'}
+                onChange={(color) => field.onChange(color ?? '')}
+              />
+            )}
+          />
+          <Controller
+            name="title"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                variant="standard"
+                fullWidth
+                slotProps={{ input: { sx: { fontSize: '1.35rem', fontWeight: 600 } } }}
+                placeholder="Title"
+                autoFocus
+                {...field}
+              />
+            )}
+          />
+        </Box>
         <WrapRow>
           <Controller
             name="calendarId"
@@ -307,17 +321,6 @@ export function NewItemModal({ onClose }: { onClose: () => void }) {
             />
           )}
         </WrapRow>
-        <Controller
-          name="color"
-          control={control}
-          render={({ field }) => (
-            <ColorSwatches
-              value={field.value || null}
-              calendarFill={calendar ? calendarColor(calendar) : 'var(--mui-palette-border)'}
-              onChange={(color) => field.onChange(color ?? '')}
-            />
-          )}
-        />
         <Controller
           name="place"
           control={control}
