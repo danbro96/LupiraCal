@@ -8,7 +8,7 @@ import { ymd } from '@danbro96/lupira-domain-core/time';
 import { eventOrigin } from '@danbro96/lupira-domain-places/placeCandidates';
 import { isItemCategory } from '@lupira/cal-domain/itemCategory';
 import type { PlaceContext } from '@lupira/cal-domain/placeContext';
-import { predictPlaces, recentResidencies, type PlaceMeta, type PlacePrediction } from '@lupira/cal-domain/placePrediction';
+import { hotspotWindowFrom, predictPlaces, recentResidencies, type PlaceMeta, type PlacePrediction } from '@lupira/cal-domain/placePrediction';
 import { placedEventsBetween } from '../data/queries/places';
 import { placeUsageUpTo } from '../data/queries/placeUsage';
 import { Aggregate } from '../domain/aggregates';
@@ -23,7 +23,8 @@ export function useSavedPlaces() {
 }
 
 export function useHotspots() {
-  return useQuery(onlineQuery(['map', 'hotspots'], () => getHotspots())).data ?? [];
+  const from = hotspotWindowFrom(new Date());
+  return useQuery(onlineQuery(['map', 'hotspots', from], () => getHotspots({ from }))).data ?? [];
 }
 
 /** An event's place context; its origin is the middle of the day's other placed events. */

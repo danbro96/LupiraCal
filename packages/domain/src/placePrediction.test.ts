@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FuzzyDate } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import {
-  EVENT_PLACE_POLICY, PREDICTION_MAX, categoryAffinity, predictPlaces, predictionReasonText, recentResidencies,
+  EVENT_PLACE_POLICY, PREDICTION_MAX, categoryAffinity, hotspotWindowFrom, predictPlaces, predictionReasonText, recentResidencies,
   type PlaceMeta, type PredictionSources,
 } from './placePrediction';
 import { ITEM_CATEGORIES } from './itemCategory';
@@ -96,6 +96,21 @@ describe('predictPlaces for an event', () => {
     expect(result).toHaveLength(3);
   });
 
+  it("weighs a family home's visits by the kind of event, never your own home's", () => {
+    const visited = { activeDays: 18, lastDay: '2026-07-13' };
+    const src = sources({
+      placeMeta: meta({ parents: { label: 'Lillstugavägen 11' }, mine: { label: 'Hemma' } }),
+      householdHomes: [{ placeId: 'parents', contacts: [] }],
+      ownHomePlaceId: 'mine',
+      hotspots: [{ placeId: 'parents', ...visited }, { placeId: 'mine', ...visited }],
+    });
+    const general: PlaceContext = { kind: 'event', category: 'General', attendeeIds: [], day: '2026-10-12' };
+    const score = (ctx: PlaceContext, id: string) => predictPlaces(ctx, src, now).find((p) => p.placeId === id)!.score;
+    expect(score(general, 'parents')).toBeLessThan(1.5);
+    expect(score(general, 'mine')).toBeGreaterThan(1.5);
+    expect(score(meal(), 'parents')).toBeGreaterThan(score(general, 'mine'));
+  });
+
   it('marks places near the event origin', () => {
     const ctx: PlaceContext = { kind: 'event', category: 'Meal', attendeeIds: [], day: '2026-10-12', origin: { lat: 56.83, lon: 13.94 } };
     const result = predictPlaces(ctx, sources({
@@ -179,5 +194,11 @@ describe('predictionReasonText', () => {
     expect(predictionReasonText({ kind: 'recent', lastDay: '2026-10-01' }, nameOf)).toMatch(/^Last here /);
     expect(predictionReasonText({ kind: 'movedIn', contactId: 'a', movedIn: { year: 2025, month: 6 } }, nameOf)).toBe('Anna moved in Jun 2025');
     expect(predictionReasonText({ kind: 'nearby' }, nameOf)).toBe('Nearby');
+  });
+});
+
+describe('hotspotWindowFrom', () => {
+  it('starts 24 months back at the start of that month', () => {
+    expect(hotspotWindowFrom(new Date(2026, 9, 27, 15))).toBe(new Date(2024, 9, 1).toISOString());
   });
 });

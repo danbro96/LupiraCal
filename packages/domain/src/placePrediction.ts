@@ -2,7 +2,7 @@ import { haversineM } from '@danbro96/lupira-domain-places/geo';
 import { placeScore, rankPlaces, type PlaceCandidate, type PlaceRankContext } from '@danbro96/lupira-domain-places/placeRank';
 import { fmtFuzzyDate, residencyStatus, type FuzzyDate } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import type { HouseholdHome } from '@danbro96/lupira-domain-contacts/residents';
-import { fmtDate, parseYmd } from '@danbro96/lupira-domain-core/time';
+import { addMonths, fmtDate, parseYmd, startOfMonth } from '@danbro96/lupira-domain-core/time';
 import { plural } from '@danbro96/lupira-domain-core/wording';
 import type { ItemCategory } from './itemCategory';
 import type { PlaceContext } from './placeContext';
@@ -31,22 +31,24 @@ export interface EventPlacePolicy {
   placeCategories: string[];
   /** Weight of past use of a home for this kind of event. */
   homeAffinity: number;
+  /** Weight of someone else's home's all-kinds history (hotspot, overall use) for this kind of event. */
+  homeHistory: number;
   /** 0..1 — favour where you went last over where you go most. */
   recencyBias: number;
 }
 
 export const EVENT_PLACE_POLICY: Record<ItemCategory, EventPlacePolicy> = {
-  General: { placeCategories: [], homeAffinity: 1, recencyBias: 0 },
-  Meeting: { placeCategories: ['Office'], homeAffinity: 0.5, recencyBias: 0.3 },
-  Appointment: { placeCategories: ['Clinic', 'Hospital', 'Government'], homeAffinity: 0.2, recencyBias: 0.8 },
-  Meal: { placeCategories: ['Restaurant', 'Cafe', 'Bar'], homeAffinity: 1.5, recencyBias: 0.2 },
-  Occasion: { placeCategories: ['Restaurant', 'Worship', 'Landmark'], homeAffinity: 1.5, recencyBias: 0.2 },
-  Outing: { placeCategories: ['Gym', 'Park'], homeAffinity: 1, recencyBias: 0.3 },
-  Trip: { placeCategories: ['Hotel', 'Airport', 'Station'], homeAffinity: 1, recencyBias: 0.2 },
-  Stay: { placeCategories: ['Hotel', 'Airport', 'Station'], homeAffinity: 1, recencyBias: 0.2 },
-  Activity: { placeCategories: ['Gym', 'Park'], homeAffinity: 1, recencyBias: 0.3 },
-  Focus: { placeCategories: ['Office', 'University', 'School', 'Cafe'], homeAffinity: 1, recencyBias: 0.3 },
-  Chore: { placeCategories: ['Store', 'Grocery', 'Pharmacy'], homeAffinity: 0.5, recencyBias: 0.3 },
+  General: { placeCategories: [], homeAffinity: 1, homeHistory: 0.5, recencyBias: 0 },
+  Meeting: { placeCategories: ['Office'], homeAffinity: 0.5, homeHistory: 0.3, recencyBias: 0.3 },
+  Appointment: { placeCategories: ['Clinic', 'Hospital', 'Government'], homeAffinity: 0.2, homeHistory: 0.2, recencyBias: 0.8 },
+  Meal: { placeCategories: ['Restaurant', 'Cafe', 'Bar'], homeAffinity: 1.5, homeHistory: 1.5, recencyBias: 0.2 },
+  Occasion: { placeCategories: ['Restaurant', 'Worship', 'Landmark'], homeAffinity: 1.5, homeHistory: 1.5, recencyBias: 0.2 },
+  Outing: { placeCategories: ['Gym', 'Park'], homeAffinity: 1, homeHistory: 0.5, recencyBias: 0.3 },
+  Trip: { placeCategories: ['Hotel', 'Airport', 'Station'], homeAffinity: 1, homeHistory: 1, recencyBias: 0.2 },
+  Stay: { placeCategories: ['Hotel', 'Airport', 'Station'], homeAffinity: 1, homeHistory: 1, recencyBias: 0.2 },
+  Activity: { placeCategories: ['Gym', 'Park'], homeAffinity: 1, homeHistory: 0.5, recencyBias: 0.3 },
+  Focus: { placeCategories: ['Office', 'University', 'School', 'Cafe'], homeAffinity: 1, homeHistory: 0.5, recencyBias: 0.3 },
+  Chore: { placeCategories: ['Store', 'Grocery', 'Pharmacy'], homeAffinity: 0.5, homeHistory: 0.3, recencyBias: 0.3 },
 };
 
 const MATCHED_CATEGORY = 1.5;
@@ -78,6 +80,13 @@ export interface PredictionSources {
   placeMeta: ReadonlyMap<string, PlaceMeta>;
   /** Places recently given as someone's address, newest first (`recentResidencies`). */
   recentResidencies?: readonly RecentResidency[];
+}
+
+export const HOTSPOT_WINDOW_MONTHS = 24;
+
+/** Month-aligned so the hotspot query key (and mobile's offline cache) turns over monthly, not daily. */
+export function hotspotWindowFrom(today: Date): string {
+  return startOfMonth(addMonths(today, -HOTSPOT_WINDOW_MONTHS)).toISOString();
 }
 
 export const PREDICTION_MAX = 5;
@@ -161,6 +170,7 @@ function predictRanked(ctx: Exclude<PlaceContext, { kind: 'residency' }>, source
     origin: origin ?? null,
     categoryAffinity: policy ? categoryAffinity(policy) : undefined,
     recencyBias: policy?.recencyBias,
+    historyWeight: policy ? (c) => (c.isHome && c.placeId !== sources.ownHomePlaceId ? policy.homeHistory : 1) : undefined,
   };
   const scored = rankPlaces(candidates.filter((c) => c.label), rankCtx).map((c) => {
     const near = origin && c.point && haversineM(origin, c.point) <= NEARBY_M;
