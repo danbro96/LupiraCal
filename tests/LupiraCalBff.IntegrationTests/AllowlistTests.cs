@@ -117,6 +117,17 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
         Assert.Equal(upstreamPath, (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
     }
 
+    [Fact]
+    public async Task Holidays_snapshot_is_forwarded()
+    {
+        var client = Client();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", BffTestFactory.MintToken());
+
+        var resp = await client.GetAsync("/api/sync/holidays");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal("/sync/holidays", (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
+    }
+
     [Theory]
     [InlineData("/api/items/drafts?zone=Europe/Stockholm", "/items/drafts", "text/calendar")]
     [InlineData("/contact-api/contacts/drafts", "/contacts/drafts", "text/vcard")]

@@ -135,6 +135,15 @@ export type SubscribedEventDoc = {
   occurrences: { start: string; end?: string | null; originalStart?: string | null }[];
 };
 
+/** A computed holiday as the snapshot mirrors it, read-only; dates are all-day `YYYY-MM-DD`. */
+export type HolidayDoc = {
+  id: string;
+  name: string;
+  kind: string;
+  calendarIds: string[];
+  dates: string[];
+};
+
 /** A contact group or organization with its current members. */
 export type ContactGroupDoc = {
   id: string; addressBookId: string; kind: string; name: string;

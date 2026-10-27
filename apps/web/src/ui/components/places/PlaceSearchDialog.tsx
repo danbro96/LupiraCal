@@ -122,7 +122,7 @@ function Omnibox({ context, initialText, onClose, onPicked }: {
         <TextField
           autoFocus
           fullWidth
-          placeholder="Search places and addresses"
+          placeholder={PLACE_SEARCH_PROMPT}
           value={state.text}
           onChange={(e) => box.type(e.target.value)}
           onKeyDown={(e) => {

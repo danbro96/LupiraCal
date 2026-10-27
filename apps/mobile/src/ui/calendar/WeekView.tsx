@@ -1,3 +1,4 @@
+import { isRedDay } from '@lupira/cal-domain/holidays';
 import {
   clampToDay, drawnEnd, foldLanes, hiddenPerColumn, inAllDayStrip, lastDayOf, layoutColumns, packLanes, type Positioned,
 } from '@lupira/cal-domain/occurrences';
@@ -138,6 +139,7 @@ export function WeekView({ weekStart, jump, onStep, onPressOccurrence, onCreateS
   }
   const places = usePlaceCoords(timed.map((r) => r.place_id));
   const rowColor = (r: CalRow) => colorOf(r.calendar_id, r.source, r.color);
+  const redDays = new Set(rows.filter((r) => isRedDay({ holiday: r.holiday_kind })).map((r) => r.start_day));
 
   return (
     <GestureDetector gesture={pager.gesture}>
@@ -146,7 +148,7 @@ export function WeekView({ weekStart, jump, onStep, onPressOccurrence, onCreateS
           <SlidingDays slideStyle={pager.slideStyle} onClipLayout={pager.onPageLayout}>
             {days.map((d, i) => (
               <View key={dayKeys[i]} style={[styles.dayHeader, { left: colPct(firstCol + i), width: colPct(1) }]}>
-                <Text style={[styles.dayHeaderText, { color: isToday(d) ? c.primary : c.textMuted }, isToday(d) && styles.today]}>
+                <Text style={[styles.dayHeaderText, { color: isToday(d) ? c.primary : redDays.has(dayKeys[i]) ? c.danger : c.textMuted }, isToday(d) && styles.today]}>
                   {fmtDayShort(d)}
                 </Text>
                 {availByDay.has(dayKeys[i]) && <AvailStrip statuses={availByDay.get(dayKeys[i]) ?? []} style={styles.availStrip} />}
@@ -320,7 +322,7 @@ function AllDayStrip({ weeks, firstCol, slideStyle, rowColor, onPress }: {
   const c = useColors();
   const maxHeight = Math.round(useWindowDimensions().height * MAX_STRIP_SHARE);
   const [expanded, setExpanded] = useState(false);
-  const laned = weeks.map((bars) => packLanes(bars, (b) => b.row.source === 'birthday'));
+  const laned = weeks.map((bars) => packLanes(bars, (b) => b.row.source === 'birthday' || b.row.source === 'holiday'));
   const laneCount = (w: number) => laned[w].reduce((n, b) => Math.max(n, b.lane + 1), 0);
   const rowsPref = usePrefs((p) => p.allDayRows);
   const limit = rowsPref === 'all' ? Infinity : Number(rowsPref);
@@ -410,6 +412,7 @@ function StripBar({ bar, left, rowColor, onPress }: {
         {task ? <><Glyph name={ICONS.schedule} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
           : r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
           : r.source === 'subscribed' ? <><Glyph name={ICONS.subscribed} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
+          : r.source === 'holiday' ? <><Glyph name={ICONS.celebration} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
           : displayTitle(r.title)}
       </Text>
     </Pressable>

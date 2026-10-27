@@ -6,13 +6,14 @@ import IconButton from '@mui/material/IconButton';
 import type { AvailabilitySegment } from '../../state/useAvailability';
 import { clampToDay, drawnEnd, foldLanes, hiddenPerColumn, inAllDayStrip, layoutColumns, packLanes } from '@lupira/cal-domain/occurrences';
 import { type DayRail, familyKey, railsForDay } from '@lupira/cal-domain/family';
+import { isRedDay } from '@lupira/cal-domain/holidays';
 import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, ymd } from '@danbro96/lupira-domain-core/time';
 import { textOn } from '@danbro96/lupira-tokens-core/contrast';
 import { availabilityColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { EMPHASIS, TENTATIVE } from '@lupira/cal-tokens/color';
 import { familyAccent } from '../theme/kinds';
 import { isTentative, tentativeFill, tentativeSx } from '../theme/tentative';
-import { coversDay, isBirthday, segmentSpan, type GridEntry } from '../entries';
+import { coversDay, isBirthday, isHoliday, segmentSpan, type GridEntry } from '../entries';
 import { ExpandIcon, ExpandLessIcon } from '@danbro96/lupira-web-mui/icons';
 
 const HOUR_PX = 48;
@@ -85,7 +86,7 @@ export function WeekGrid({ days, entries, segments, onOpenItem, selectedFamilyKe
               fontWeight: 700,
               borderLeft: 1,
               borderColor: 'divider',
-              color: isToday(d) ? 'primary.main' : 'text.secondary',
+              color: isToday(d) ? 'primary.main' : allDay.some((e) => isRedDay(e) && coversDay(e, d)) ? 'error.main' : 'text.secondary',
             }}
           >
             {fmtDayShort(d)}
@@ -163,7 +164,7 @@ function AllDayStrip({
         before: coversDay(entry, addDays(first, -1)),
         after: coversDay(entry, addDays(last, 1)),
       }];
-    }), (bar) => isBirthday(bar.entry));
+    }), (bar) => isBirthday(bar.entry) || isHoliday(bar.entry));
   }, [entries, days]);
   const laneCount = bars.reduce((n, b) => Math.max(n, b.lane + 1), 0);
   const { drawn, rows, folded } = foldLanes(laneCount, expanded ? Infinity : MAX_ALL_DAY_ROWS);

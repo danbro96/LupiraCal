@@ -7,6 +7,8 @@ import type { PlacePrediction, PredictionReason } from './placePrediction';
 /** Matches domain-places' resident radius: a geocoder hit this close to a known place is that place. */
 export const KNOWN_PLACE_RADIUS_M = 30;
 
+export const PLACE_SEARCH_PROMPT = 'Search places or addresses';
+
 export interface OmniboxAddressHit {
   displayName: string;
   latitude: number;

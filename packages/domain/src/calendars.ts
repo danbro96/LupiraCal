@@ -9,9 +9,9 @@ export function canWriteCalendar(c: { access?: string | null }): boolean {
 }
 
 /** Calendars a user may deliberately put items into: writable, never System-class scaffolding, never the
- *  synthesized Birthdays calendar (the API refuses it), never Availability (its entries have their own form). */
+ *  computed Birthdays or Holidays calendars (the API refuses them), never Availability (its entries have their own form). */
 export function isSelectableCalendar(c: { access?: string | null; class?: string | null; kind?: string | null }): boolean {
-  return canWriteCalendar(c) && c.class !== 'System' && c.kind !== 'Birthdays' && c.kind !== 'Availability';
+  return canWriteCalendar(c) && c.class !== 'System' && c.kind !== 'Birthdays' && c.kind !== 'Holidays' && c.kind !== 'Availability';
 }
 
 /** Where a new item starts: the calendars the last one went to (those still selectable), else Personal, else the first. */

@@ -49,6 +49,14 @@ A calendar can show read-only events from published calendar feeds (cal-api fetc
 - `GET /items` returns their occurrences with origin `Subscription`; grid entries draw the `subscribed` glyph. A click opens `?subscribed=<calendarId>:<subscriptionId>:<eventId>&at=<start>` → `SubscribedEventCard`.
 - `CalendarToggles` nests a show/hide switch per subscription under its calendar, remembered per browser (`localPrefs` `subscriptions.hidden`).
 
+## Holidays
+
+Helgdagar is a standard Agenda calendar of Swedish public holidays and eves that cal-api computes (rules in `@lupira/cal-domain/holidays`).
+
+- `GET /items` returns them as all-day occurrences with origin `Holiday` and `holiday` = `PublicHoliday` | `Eve`; entries draw the `celebration` glyph and open nothing.
+- A day with a public holiday draws its number red (`MonthGrid` `DayNumber`, `WeekGrid` header); eves don't. Full cells and folded strips leave holidays out first, with birthdays.
+- Hidden with the calendar's own toggle, like any calendar.
+
 ## Recurring items
 
 Rules live in `@lupira/cal-domain/seriesOccurrences` (twin of cal-api's series rules, pinned by its fixtures).

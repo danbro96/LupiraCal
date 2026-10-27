@@ -71,6 +71,7 @@ import type {
   SubscribedEventDto,
   SubscriptionDto,
   SyncPageOfContainerDto,
+  SyncPageOfHolidaySyncDto,
   SyncPageOfItemSyncChange,
   SyncPageOfSubscribedEventSyncDto,
   UpdateCalendarItemRequest,
@@ -4289,6 +4290,106 @@ export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof get
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetSyncSubscribedEventsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetSyncHolidaysUrl = () => {
+
+
+
+
+  return `/api/sync/holidays`
+}
+
+/**
+ * @summary Snapshot of the computed holidays of the caller's Holidays calendars, each with its dates over the sync window: always reset with no cursor; replace the local set on each call.
+ */
+export const getSyncHolidays = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfHolidaySyncDto> => {
+
+  return apiRequest<SyncPageOfHolidaySyncDto>(getGetSyncHolidaysUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSyncHolidaysQueryKey = () => {
+    return [
+    `/api/sync/holidays`
+    ] as const;
+    }
+
+
+export const getGetSyncHolidaysQueryOptions = <TData = Awaited<ReturnType<typeof getSyncHolidays>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSyncHolidaysQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSyncHolidays>>> = ({ signal }) => getSyncHolidays({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSyncHolidaysQueryResult = NonNullable<Awaited<ReturnType<typeof getSyncHolidays>>>
+export type GetSyncHolidaysQueryError = ProblemDetails
+
+
+export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHolidays>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncHolidays>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncHolidays>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHolidays>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncHolidays>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncHolidays>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHolidays>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Snapshot of the computed holidays of the caller's Holidays calendars, each with its dates over the sync window: always reset with no cursor; replace the local set on each call.
+ */
+
+export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHolidays>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSyncHolidaysQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

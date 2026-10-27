@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canWriteCalendar, displayCalendarId, isCalendarShown } from './calendars';
+import { canWriteCalendar, displayCalendarId, isCalendarShown, isSelectableCalendar } from './calendars';
 
 describe('isCalendarShown', () => {
   it('shows Agenda and hides System until chosen otherwise', () => {
@@ -24,5 +24,15 @@ describe('displayCalendarId', () => {
     const shown = new Set(['b', 'c']);
     expect(displayCalendarId(['c', 'a', 'b'], (id) => shown.has(id))).toBe('b');
     expect(displayCalendarId(['a'], (id) => shown.has(id))).toBeUndefined();
+  });
+});
+
+describe('isSelectableCalendar', () => {
+  it('excludes the computed and special agenda calendars', () => {
+    expect(isSelectableCalendar({ access: 'Owner', class: 'Agenda', kind: 'Personal' })).toBe(true);
+    for (const kind of ['Birthdays', 'Holidays', 'Availability']) {
+      expect(isSelectableCalendar({ access: 'Owner', class: 'Agenda', kind })).toBe(false);
+    }
+    expect(isSelectableCalendar({ access: 'Owner', class: 'System', kind: 'Inbox' })).toBe(false);
   });
 });

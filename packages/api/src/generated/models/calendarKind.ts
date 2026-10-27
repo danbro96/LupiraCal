@@ -18,5 +18,6 @@ export const CalendarKind = {
   UserCheckIn: 'UserCheckIn',
   DevOps: 'DevOps',
   FoodPlan: 'FoodPlan',
+  Holidays: 'Holidays',
   Generic: 'Generic',
 } as const;

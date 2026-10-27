@@ -90,6 +90,8 @@ export function hotspotWindowFrom(today: Date): string {
 }
 
 export const PREDICTION_MAX = 5;
+/** Suggestions under an event's place search field; the search itself lists up to PREDICTION_MAX. */
+export const PREDICTION_CHIPS = 3;
 export const PREDICTION_MIN = 3;
 /** Below this a candidate is only a filler for the minimum: text match 1 plus half a point of signal. */
 const PREDICTION_FLOOR = 1.5;

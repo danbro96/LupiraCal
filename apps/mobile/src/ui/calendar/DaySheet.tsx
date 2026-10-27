@@ -120,7 +120,7 @@ function DayAgenda({ day, onPress }: { day: string; onPress: (row: CalRow) => vo
           <Pressable key={key} style={styles.row} onPress={() => onPress(r)}>
             <View style={[styles.dot, { backgroundColor: dot }]} />
             <Text style={[styles.time, { color: c.textMuted }]}>
-              {isTaskRow(r) ? <Glyph name={ICONS.schedule} /> : r.source === 'birthday' ? <Glyph name={ICONS.cake} /> : r.all_day === 1 ? 'all day' : fmtTime(new Date(r.start_utc))}
+              {isTaskRow(r) ? <Glyph name={ICONS.schedule} /> : r.source === 'birthday' ? <Glyph name={ICONS.cake} /> : r.source === 'holiday' ? <Glyph name={ICONS.celebration} /> : r.all_day === 1 ? 'all day' : fmtTime(new Date(r.start_utc))}
             </Text>
             <Text style={styles.text} numberOfLines={1}>
               {r.source === 'subscribed' ? <><Glyph name={ICONS.subscribed} /> {displayTitle(r.title)}</> : displayTitle(r.title)}

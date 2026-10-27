@@ -32,6 +32,7 @@ export const CALENDAR_KIND_ICONS: Record<CalendarKindName, IconName> = {
   UserCheckIn: 'checkBox',
   DevOps: 'tools',
   FoodPlan: 'restaurant',
+  Holidays: 'celebration',
   Generic: 'calendar',
 };
 

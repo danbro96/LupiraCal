@@ -6,13 +6,14 @@ import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import type { AvailabilitySegment } from '../../state/useAvailability';
 import { familyKey } from '@lupira/cal-domain/family';
+import { isRedDay } from '@lupira/cal-domain/holidays';
 import { compareDayEntries, pickShown } from '@lupira/cal-domain/occurrences';
 import { fmtTime, isToday, weekdayNames } from '@danbro96/lupira-domain-core/time';
 import { availabilityColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { EMPHASIS, TENTATIVE } from '@lupira/cal-tokens/color';
 import { familyAccent } from '../theme/kinds';
 import { isTentative, tentativeFill, tentativeSx } from '../theme/tentative';
-import { coversDay, isBirthday, segmentSpan, type GridEntry } from '../entries';
+import { coversDay, isBirthday, isHoliday, segmentSpan, type GridEntry } from '../entries';
 
 const MAX_PER_CELL = 4;
 const WEEKDAYS = weekdayNames();
@@ -109,7 +110,8 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
         const dayEntries = entries
           .filter((e) => coversDay(e, day))
           .sort((a, b) => compareDayEntries(orderKey(a), orderKey(b)));
-        const shown = pickShown(dayEntries, MAX_PER_CELL, isBirthday);
+        const shown = pickShown(dayEntries, MAX_PER_CELL, (e) => isBirthday(e) || isHoliday(e));
+        const redDay = dayEntries.some(isRedDay);
         const daySegments = segments.filter((s) => coversDay(segmentSpan(s), day));
         const otherMonth = day.getMonth() !== date.getMonth();
         const cellSx = {
@@ -129,7 +131,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
               onClick={() => onOpenDay(day)}
               sx={{ ...cellSx, alignItems: 'center', gap: '4px', p: '4px 2px 6px', minHeight: 52 }}
             >
-              <DayNumber day={day} />
+              <DayNumber day={day} red={redDay} />
               <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3px', minHeight: 7 }}>
                 {shown.map((e) => (
                   <Box
@@ -160,7 +162,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
         return (
           <Box key={day.toISOString()} sx={{ ...cellSx, gap: '2px', p: '2px 4px 6px', minHeight: 110 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <DayNumber day={day} onClick={() => onOpenDay(day)} />
+              <DayNumber day={day} red={redDay} onClick={() => onOpenDay(day)} />
               <AvailDots segments={daySegments} titled />
             </Box>
             {shown.map((e) => {
@@ -230,8 +232,8 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
   );
 }
 
-/** The date, circled when it's today. Grows on touch, where 26px is under the target size. */
-function DayNumber({ day, onClick }: { day: Date; onClick?: () => void }) {
+/** The date, circled when it's today and red on a public holiday. Grows on touch, where 26px is under the target size. */
+function DayNumber({ day, red, onClick }: { day: Date; red: boolean; onClick?: () => void }) {
   const today = isToday(day);
   return (
     <IconButton
@@ -243,7 +245,7 @@ function DayNumber({ day, onClick }: { day: Date; onClick?: () => void }) {
         height: 26,
         fontSize: 13,
         fontWeight: 600,
-        color: today ? 'primary.contrastText' : 'text.secondary',
+        color: today ? 'primary.contrastText' : red ? 'error.main' : 'text.secondary',
         ...(today && { bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.main' } }),
         '@media (pointer: coarse)': { width: 36, height: 36 },
       }}

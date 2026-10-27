@@ -5,6 +5,7 @@
  * OpenAPI spec version: v1
  */
 import type { CompletenessScore } from './completenessScore';
+import type { HolidayKind } from './holidayKind';
 import type { ItemCategory } from './itemCategory';
 import type { ItemColor } from './itemColor';
 import type { ItemStatus } from './itemStatus';
@@ -51,5 +52,6 @@ export interface CalendarItemOccurrenceDto {
   childCount: number;
   completeness?: null | CompletenessScore;
   origin?: null | OccurrenceOrigin;
+  holiday?: null | HolidayKind;
   etag: string;
 }

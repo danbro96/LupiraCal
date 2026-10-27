@@ -107,7 +107,7 @@ export function PlaceSearchSheet({ ctx, seed, hasPlace, onPick, onPickOnMap, onD
     <Sheet anchor="top" onDismiss={onDismiss}>
       <TextField
         style={fieldGap}
-        label="Search places or addresses"
+        label={PLACE_SEARCH_PROMPT}
         autoFocus
         value={state.text}
         onChangeText={(text) => dispatch({ type: 'TYPE', text })}

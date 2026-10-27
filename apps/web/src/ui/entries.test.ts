@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto } from '@lupira/cal-api/models';
 import { ITEM_COLORS } from '@lupira/cal-tokens/itemColors';
-import { fromOccurrence, fromProposed, isSubscribed } from './entries';
+import { fromOccurrence, fromProposed, isHoliday, isSubscribed } from './entries';
 
 const calendar: ContainerDto = { id: 'cal-1', type: 'calendar', slug: 'family', access: 'Owner', color: '#123456' };
 
@@ -70,5 +70,23 @@ describe('subscribed entries', () => {
   it('draws in the subscription colour, else the calendar colour', () => {
     expect(fromOccurrence({ ...subscribed, color: 'Green' }, calendar).color).toBe(ITEM_COLORS.Green);
     expect(fromOccurrence(subscribed, calendar).color).toBe('#123456');
+  });
+});
+
+describe('holiday entries', () => {
+  const midsommar = occurrence({ title: 'Midsommardagen', isAllDay: true, origin: { kind: 'Holiday', sourceId: 'h-1' }, holiday: 'PublicHoliday' });
+
+  it('carries the holiday kind and the holidays glyph', () => {
+    const entry = fromOccurrence(midsommar, calendar);
+    expect(isHoliday(entry)).toBe(true);
+    expect(entry.holiday).toBe('PublicHoliday');
+    expect(entry.icon).toBe('celebration');
+    expect(entry.subscription).toBeUndefined();
+  });
+
+  it('leaves stored items unmarked', () => {
+    const plain = fromOccurrence(occurrence({}), calendar);
+    expect(isHoliday(plain)).toBe(false);
+    expect(plain.holiday).toBeUndefined();
   });
 });

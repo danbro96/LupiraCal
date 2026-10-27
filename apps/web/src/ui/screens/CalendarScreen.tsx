@@ -22,7 +22,7 @@ import { useAvailabilitySegments } from '../../state/useAvailability';
 import { useTaskDeadlines } from '../../state/useTaskDeadlines';
 import { useCalendarVisibility } from '../components/CalendarVisibility';
 import { OriginKind } from '@lupira/cal-api/models';
-import { fromOccurrence, fromProposed, fromTask, type GridEntry } from '../entries';
+import { fromOccurrence, fromProposed, fromTask, isHoliday, type GridEntry } from '../entries';
 import { MiniMonthPicker } from '../components/MiniMonthPicker';
 import { MonthGrid } from '../components/MonthGrid';
 import { WeekGrid } from '../components/WeekGrid';
@@ -93,9 +93,11 @@ export function CalendarScreen() {
   // Birthdays are read-time contact projections, not stored items — route them to the read-only card
   // (the ?item= drawer would 404 on their synthetic id) instead of the editable item drawer.
   // Task deadlines likewise live in LupiraTasks, so they route to the TaskCard, and feed events to their read-only card.
+  // A holiday has nothing more to show than its chip.
   const openItem = (id: string, originalStart?: string | null) => {
     const e = entries.find((x) => x.itemId === id && (!originalStart || x.originalStart === originalStart))
       ?? entries.find((x) => x.itemId === id);
+    if (e && isHoliday(e)) return;
     if (e?.task) {
       const { listId, itemId } = e.task;
       setSearchParams((prev) => {

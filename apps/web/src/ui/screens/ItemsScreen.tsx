@@ -80,8 +80,10 @@ export function ItemsScreen() {
   const secondaryCount = [filters.tag, filters.cal, filters.category, filters.status].filter(Boolean).length;
 
   // Birthdays and feed events are read-time projections, not stored items — link to their read-only cards
-  // (their ids 404 the ?item= drawer); everything else opens the shared item drawer.
+  // (their ids 404 the ?item= drawer); a holiday's row says all there is, so it links nowhere new; everything
+  // else opens the shared item drawer.
   const occHref = (o: CalendarItemOccurrenceDto) => {
+    if (o.origin?.kind === OriginKind.Holiday) return `?${searchParams.toString()}`;
     const next = new URLSearchParams(searchParams);
     next.delete('item');
     next.delete('occ');
@@ -309,7 +311,9 @@ function ItemRow({
       )}
       {o.origin?.kind === OriginKind.Subscription
         ? <NamedIcon name="subscribed" sx={{ fontSize: 22 }} />
-        : <CategoryIcon category={o.category} sx={{ fontSize: 22 }} />}
+        : o.origin?.kind === OriginKind.Holiday
+          ? <NamedIcon name="celebration" sx={{ fontSize: 22 }} />
+          : <CategoryIcon category={o.category} sx={{ fontSize: 22 }} />}
       <RowName>{displayTitle(o.title)}</RowName>
       {!indent && o.parentItemId && !drilled && (
         <Chip

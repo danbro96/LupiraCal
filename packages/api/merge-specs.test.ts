@@ -46,6 +46,7 @@ describe('the exposed allowlist', () => {
   it('publishes every uniform sync feed under its cluster mount', () => {
     expect(paths.filter((p) => /\/sync\/[a-z-]+$/.test(p) && !/\/sync\/(changes|containers)$/.test(p)).sort()).toEqual([
       '/api/sync/calendars',
+      '/api/sync/holidays',
       '/api/sync/items',
       '/api/sync/subscribed-events',
       '/contact-api/sync/address-books',

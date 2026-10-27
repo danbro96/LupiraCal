@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyContactGuards, emptyItemGuards } from '../../domain/docTypes';
 import { CALENDAR_DDL, writeCalendarIndex } from '../indexes/calendars';
 import { CONTACT_DDL, writeContactIndex } from '../indexes/contacts';
+import { HOLIDAY_DDL, writeHolidayIndex } from '../indexes/holidays';
 import { ITEM_DDL, writeItemIndex } from '../indexes/items';
 import { SUBSCRIBED_DDL, writeSubscribedIndex } from '../indexes/subscriptions';
 import { gridRowsBetween } from './grid';
@@ -13,7 +14,7 @@ let db: Db;
 beforeEach(async () => {
   vi.useFakeTimers({ now: new Date('2026-08-01T00:00:00Z'), toFake: ['Date'] });
   db = openNodeDb();
-  await db.exec(ITEM_DDL + CONTACT_DDL + CALENDAR_DDL + SUBSCRIBED_DDL);
+  await db.exec(ITEM_DDL + CONTACT_DDL + CALENDAR_DDL + SUBSCRIBED_DDL + HOLIDAY_DDL);
   await db.exclusive(async (tx) => {
     await writeCalendarIndex(tx, 'away', { doc: { kind: 'Availability' } });
     await writeItemIndex(tx, 'meet', {
@@ -108,6 +109,23 @@ describe('gridRowsBetween', () => {
         .filter((r) => r.source === 'subscribed').map((r) => r.source_id))].sort();
     expect(await sources([])).toEqual(['holiday', 'match']);
     expect(await sources(['sub-a'])).toEqual(['holiday']);
+  });
+
+  it('merges holidays as all-day rows marked with their kind, under a shown holidays calendar', async () => {
+    await db.exclusive(async (tx) => {
+      await writeHolidayIndex(tx, 'nat', { doc: { id: 'nat', name: 'Sveriges nationaldag', kind: 'PublicHoliday', calendarIds: ['hol-b', 'hol-a'], dates: ['2026-06-06', '2026-08-06'] } });
+      await writeHolidayIndex(tx, 'eve', { doc: { id: 'eve', name: 'Valborgsmässoafton', kind: 'Eve', calendarIds: ['hol-a'], dates: ['2026-08-07'] } });
+    });
+    const holidays = async (calendarIds?: string[]) =>
+      (await gridRowsBetween(db, '2026-08-01', '2026-08-31', calendarIds && { calendarIds, birthdays: true }))
+        .filter((r) => r.source === 'holiday')
+        .map((r) => [r.source_id, r.start_day, r.all_day, r.title, r.holiday_kind, r.calendar_id]);
+    expect(await holidays()).toEqual([
+      ['nat', '2026-08-06', 1, 'Sveriges nationaldag', 'PublicHoliday', 'hol-a'],
+      ['eve', '2026-08-07', 1, 'Valborgsmässoafton', 'Eve', 'hol-a'],
+    ]);
+    expect(await holidays(['hol-b'])).toEqual([['nat', '2026-08-06', 1, 'Sveriges nationaldag', 'PublicHoliday', 'hol-b']]);
+    expect(await holidays(['cal-a'])).toEqual([]);
   });
 });
 

@@ -51,6 +51,7 @@ import type {
   SubscribedEventDto,
   SubscriptionDto,
   SyncPageOfContainerDto,
+  SyncPageOfHolidaySyncDto,
   SyncPageOfItemSyncChange,
   SyncPageOfSubscribedEventSyncDto,
   UpdateCalendarItemRequest,
@@ -1530,6 +1531,29 @@ export const getGetSyncSubscribedEventsUrl = () => {
 export const getSyncSubscribedEvents = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfSubscribedEventSyncDto> => {
 
   return apiRequest<SyncPageOfSubscribedEventSyncDto>(getGetSyncSubscribedEventsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getGetSyncHolidaysUrl = () => {
+
+
+
+
+  return `/api/sync/holidays`
+}
+
+/**
+ * @summary Snapshot of the computed holidays of the caller's Holidays calendars, each with its dates over the sync window: always reset with no cursor; replace the local set on each call.
+ */
+export const getSyncHolidays = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfHolidaySyncDto> => {
+
+  return apiRequest<SyncPageOfHolidaySyncDto>(getGetSyncHolidaysUrl(),
   {
     ...options,
     method: 'GET'

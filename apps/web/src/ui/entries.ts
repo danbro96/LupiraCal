@@ -1,4 +1,4 @@
-import { OriginKind, type CalendarItemDto, type CalendarItemOccurrenceDto, type ContainerDto, type ItemStatus, type OccurrenceOrigin } from '@lupira/cal-api/models';
+import { OriginKind, type CalendarItemDto, type CalendarItemOccurrenceDto, type ContainerDto, type HolidayKind, type ItemStatus, type OccurrenceOrigin } from '@lupira/cal-api/models';
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { lastDayOf } from '@lupira/cal-domain/occurrences';
 import { occurrenceKey } from '@lupira/cal-domain/seriesOccurrences';
@@ -37,10 +37,13 @@ export interface GridEntry {
   task?: { listId: string; itemId: string; dueAt: Date; overdue: boolean };
   /** Set for a subscribed feed's event — the read-only card addresses it calendar- and subscription-scoped. */
   subscription?: { calendarId: string; subscriptionId: string };
+  /** Set for a computed holiday: a red day or an eve. */
+  holiday?: HolidayKind | null;
 }
 
 export const isBirthday = (e: GridEntry) => e.origin?.kind === OriginKind.Birthday;
 export const isSubscribed = (e: GridEntry) => !!e.subscription;
+export const isHoliday = (e: GridEntry) => e.origin?.kind === OriginKind.Holiday;
 
 export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: ContainerDto): GridEntry {
   const subscribed = isSubscribedOrigin(o.origin);
@@ -54,7 +57,7 @@ export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: Container
     isAllDay: o.isAllDay,
     dayRange: o.isAllDay ? isoDayRange(o.start, o.end) : undefined,
     color: itemColor(o.color, calendarColor(calendar)),
-    icon: subscribed ? 'subscribed' : calendar.class === 'System' && calendar.kind ? CALENDAR_KIND_ICONS[calendar.kind] : undefined,
+    icon: subscribed ? 'subscribed' : o.holiday ? CALENDAR_KIND_ICONS.Holidays : calendar.class === 'System' && calendar.kind ? CALENDAR_KIND_ICONS[calendar.kind] : undefined,
     status: o.status,
     place: o.locationLabel,
     completeness: o.completeness ? o.completeness.score : null,
@@ -63,6 +66,7 @@ export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: Container
     childCount: o.childCount,
     origin: o.origin,
     subscription: subscribed && o.origin ? { calendarId: calendar.id, subscriptionId: o.origin.sourceId } : undefined,
+    holiday: o.holiday,
   };
 }
 

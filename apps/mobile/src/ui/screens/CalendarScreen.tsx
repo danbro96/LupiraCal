@@ -56,6 +56,8 @@ export function CalendarScreen() {
     if (isTaskRow(row)) navigation.navigate('TaskDetail', { listId: row.task.listId, itemId: row.task.itemId });
     else if (row.source === 'birthday') navigation.navigate('ContactDetail', { contactId: row.source_id });
     else if (row.source === 'subscribed') navigation.navigate('SubscribedEventDetail', { eventId: row.source_id, start: row.start_utc });
+    // A holiday has nothing more to show than its row.
+    else if (row.source === 'holiday') return;
     else navigation.navigate('ItemDetail', { itemId: row.source_id, occurrence: row.original_start ?? undefined });
   };
   const createSlot = (day: string, time: string) => {

@@ -1,3 +1,4 @@
+import { isRedDay } from '@lupira/cal-domain/holidays';
 import { compareDayEntries, pickShown } from '@lupira/cal-domain/occurrences';
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { isToday, monthMatrix, parseYmd, weekdayNames, ymd } from '@danbro96/lupira-domain-core/time';
@@ -19,7 +20,8 @@ import { Glyph } from '@danbro96/lupira-expo-paper/components/Glyph';
 const BAR_GLYPH = 9;
 const WEEKDAYS = weekdayNames();
 const orderKey = (r: CalRow) => ({ allDay: r.all_day === 1, start: Date.parse(r.start_utc) });
-const isBirthday = (r: CalRow) => r.source === 'birthday';
+const isProjected = (r: CalRow) => r.source === 'birthday' || r.source === 'holiday';
+const isRedDayRow = (r: CalRow) => !isTaskRow(r) && isRedDay({ holiday: r.holiday_kind });
 
 // Slot heights from the styles below: a bar's tallest form (tentative: line + dashed border) and the
 // "+N" line, each with the cell's gap; the chrome is the selected border, padding and day badge.
@@ -92,8 +94,9 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
             const shown = pickShown(
               dayRows,
               rowH === null ? UNMEASURED_BARS : barsThatFit(rowH, dayRows.length, availByDay.has(key)),
-              isBirthday,
+              isProjected,
             );
+            const redDay = dayRows.some(isRedDayRow);
             const inMonth = d.getMonth() === anchor.getMonth();
             const selected = key === selectedDay;
             const today = isToday(d);
@@ -114,7 +117,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                   <Text
                     style={[
                       styles.dayNum,
-                      { color: today ? c.onPrimary : inMonth ? c.text : c.textMuted },
+                      { color: today ? c.onPrimary : redDay ? c.danger : inMonth ? c.text : c.textMuted },
                       today && styles.dayNumToday,
                     ]}
                   >
@@ -146,6 +149,7 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                       <Text style={[styles.barText, { color: isTentative(r.status) ? c.text : textOn(fillOf(r)) }]} numberOfLines={1}>
                         {r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={BAR_GLYPH} /> {displayTitle(r.title)}</>
                           : r.source === 'subscribed' ? <><Glyph name={ICONS.subscribed} size={BAR_GLYPH} /> {displayTitle(r.title)}</>
+                          : r.source === 'holiday' ? <><Glyph name={ICONS.celebration} size={BAR_GLYPH} /> {displayTitle(r.title)}</>
                           : displayTitle(r.title)}
                       </Text>
                     </View>
