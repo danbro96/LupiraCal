@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto } from '@lupira/cal-api/models';
 import { ITEM_COLORS } from '@lupira/cal-tokens/itemColors';
-import { fromOccurrence, fromProposed } from './entries';
+import { fromOccurrence, fromProposed, isSubscribed } from './entries';
 
 const calendar: ContainerDto = { id: 'cal-1', type: 'calendar', slug: 'family', access: 'Owner', color: '#123456' };
 
@@ -47,5 +47,28 @@ describe('entry colour', () => {
     const item = { id: 'item-2', title: 'Offer', isAllDay: false, startsAt: '2026-07-13T09:00:00+00:00' } as CalendarItemDto;
     expect(fromProposed({ ...item, color: 'Teal' }, calendar)?.color).toBe(ITEM_COLORS.Teal);
     expect(fromProposed(item, calendar)?.color).toBe('#123456');
+  });
+});
+
+describe('subscribed entries', () => {
+  const subscribed = occurrence({ origin: { kind: 'Subscription', sourceId: 'sub-1' } });
+
+  it('marks a feed event with the subscribed glyph', () => {
+    const entry = fromOccurrence(subscribed, calendar);
+    expect(isSubscribed(entry)).toBe(true);
+    expect(entry.icon).toBe('subscribed');
+    expect(entry.subscription).toEqual({ calendarId: 'cal-1', subscriptionId: 'sub-1' });
+  });
+
+  it('leaves birthdays and stored items alone', () => {
+    expect(isSubscribed(fromOccurrence(occurrence({ origin: { kind: 'Birthday', sourceId: 'c-1' } }), calendar))).toBe(false);
+    const plain = fromOccurrence(occurrence({}), calendar);
+    expect(isSubscribed(plain)).toBe(false);
+    expect(plain.icon).toBeUndefined();
+  });
+
+  it('draws in the subscription colour, else the calendar colour', () => {
+    expect(fromOccurrence({ ...subscribed, color: 'Green' }, calendar).color).toBe(ITEM_COLORS.Green);
+    expect(fromOccurrence(subscribed, calendar).color).toBe('#123456');
   });
 });

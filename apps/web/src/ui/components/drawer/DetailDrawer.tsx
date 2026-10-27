@@ -5,7 +5,7 @@ import Box from '@mui/material/Box';
 import CloseIcon from '@mui/icons-material/Close';
 import { useIsPhone } from '../../hooks/useIsPhone';
 
-/** Shared shell for the ?item= / ?task= / birthday detail cards: right drawer on desktop, bottom sheet on phones. */
+/** Shared shell for the ?item= / ?task= / ?subscribed= / birthday detail cards: right drawer on desktop, bottom sheet on phones. */
 export function DetailDrawer({ onClose, header, children }: { onClose: () => void; header?: ReactNode; children: ReactNode }) {
   const isPhone = useIsPhone();
   return (

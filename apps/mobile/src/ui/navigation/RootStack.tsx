@@ -17,6 +17,7 @@ import { GroupDetailScreen } from '../screens/GroupDetailScreen';
 import { ItemDetailScreen } from '../screens/ItemDetailScreen';
 import { ItemSearchScreen } from '../screens/ItemSearchScreen';
 import { TaskDetailScreen } from '../screens/TaskDetailScreen';
+import { SubscribedEventDetailScreen } from '../screens/SubscribedEventDetailScreen';
 import { TaskCreateScreen } from '../screens/TaskCreateScreen';
 import { ItemEditScreen } from '../screens/ItemEditScreen';
 import { ImportScreen } from '../screens/ImportScreen';
@@ -25,6 +26,8 @@ import { PinPlaceScreen } from '../screens/PinPlaceScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AndroidSettingsScreen } from '../screens/AndroidSettingsScreen';
 import { CalendarSettingsScreen } from '../screens/CalendarSettingsScreen';
+import { CalendarSubscriptionsScreen } from '../screens/CalendarSubscriptionsScreen';
+import { SubscriptionFormScreen } from '../screens/SubscriptionFormScreen';
 import { NotificationSettingsScreen } from '../screens/NotificationSettingsScreen';
 import { SyncIssuesScreen } from '../screens/SyncIssuesScreen';
 import type { RootStackParamList, TabParamList } from './types';
@@ -59,6 +62,8 @@ export function RootStack() {
       )}
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
       <Stack.Screen name="CalendarSettings" component={CalendarSettingsScreen} options={{ title: 'Calendar' }} />
+      <Stack.Screen name="CalendarSubscriptions" component={CalendarSubscriptionsScreen} options={{ title: 'Subscriptions' }} />
+      <Stack.Screen name="SubscriptionForm" component={SubscriptionFormScreen} options={{ title: 'Subscription' }} />
       <Stack.Screen name="AndroidSettings" component={AndroidSettingsScreen} options={{ title: 'Android integration' }} />
       <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} options={{ title: 'Notifications' }} />
       <Stack.Screen name="SyncIssues" component={SyncIssuesScreen} options={{ title: 'Sync issues' }} />
@@ -66,6 +71,7 @@ export function RootStack() {
       <Stack.Screen name="ItemDetail" component={ItemDetailScreen} options={{ title: 'Event' }} />
       <Stack.Screen name="ItemSearch" component={ItemSearchScreen} options={{ title: 'Search events' }} />
       <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={{ title: 'Task' }} />
+      <Stack.Screen name="SubscribedEventDetail" component={SubscribedEventDetailScreen} options={{ title: 'Event' }} />
       <Stack.Screen name="TaskCreate" component={TaskCreateScreen} options={{ title: 'New task' }} />
       <Stack.Screen
         name="ItemEdit"

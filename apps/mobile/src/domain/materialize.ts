@@ -64,7 +64,7 @@ export function occurrenceRowsForItem(doc: ItemDoc, horizon: Horizon): Occurrenc
       endUtc: endMs !== null ? new Date(endMs).toISOString() : null,
       title: o.change?.title ?? null,
       status: o.change?.status ?? null,
-      startDay: allDay ? utcDayKey(s) : ymd(s),
+      startDay: occurrenceDay(s, allDay),
       allDay,
     };
   });
@@ -96,6 +96,8 @@ export function birthdayRows(contact: ContactDoc, horizon: Horizon): OccurrenceR
   }
   return rows;
 }
+
+export const occurrenceDay = (start: Date, allDay: boolean): string => (allDay ? utcDayKey(start) : ymd(start));
 
 function utcDayKey(d: Date): string {
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;

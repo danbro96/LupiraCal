@@ -20,3 +20,18 @@ export function writePref(key: string, value: string | null): void {
     // Not remembering is the fallback.
   }
 }
+
+const HIDDEN_SUBSCRIPTIONS = 'subscriptions.hidden';
+
+export function readHiddenSubscriptionIds(): Set<string> {
+  try {
+    const v: unknown = JSON.parse(readPref(HIDDEN_SUBSCRIPTIONS) ?? '[]');
+    return new Set(Array.isArray(v) ? v.filter((id): id is string => typeof id === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function writeHiddenSubscriptionIds(ids: ReadonlySet<string>): void {
+  writePref(HIDDEN_SUBSCRIPTIONS, ids.size > 0 ? JSON.stringify([...ids]) : null);
+}

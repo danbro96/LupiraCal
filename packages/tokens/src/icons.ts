@@ -20,7 +20,7 @@ export type ItemCategoryName =
  * mobile to `MaterialIcons`. Both resolvers are `Record<IconName, …>`, so adding a name here
  * fails their builds until they map it.
  */
-export type IconName = CoreIconName | 'pinDrop' | 'saved' | 'today' | 'viewMonth' | 'viewWeek';
+export type IconName = CoreIconName | 'pinDrop' | 'saved' | 'subscribed' | 'today' | 'viewMonth' | 'viewWeek';
 
 export const CALENDAR_KIND_ICONS: Record<CalendarKindName, IconName> = {
   Personal: 'person',

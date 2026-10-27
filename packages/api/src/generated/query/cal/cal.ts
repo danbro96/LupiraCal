@@ -37,6 +37,7 @@ import type {
   CreateCalendarItemRequest,
   CreateCalendarRequest,
   CreateRelationRequest,
+  CreateSubscriptionRequest,
   FileItemToCalendarParams,
   GetChangesParams,
   GetHotspotsParams,
@@ -67,9 +68,13 @@ import type {
   SetItemActionRequest,
   SetItemPromptRequest,
   SetParticipantReminderParams,
+  SubscribedEventDto,
+  SubscriptionDto,
   SyncPageOfContainerDto,
   SyncPageOfItemSyncChange,
-  UpdateCalendarItemRequest
+  SyncPageOfSubscribedEventSyncDto,
+  UpdateCalendarItemRequest,
+  UpdateSubscriptionRequest
 } from '../../models';
 
 import { apiRequest } from '../../../transport';
@@ -756,7 +761,551 @@ export const useRevokeCalendarOwner = <TError = ProblemDetails,
       > => {
       return useMutation(getRevokeCalendarOwnerMutationOptions(options), queryClient);
     }
-    export const getSearchItemsUrl = (params?: SearchItemsParams,) => {
+    export const getListSubscriptionsUrl = (calendarId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions`
+}
+
+/**
+ * @summary List the published calendar feeds shown in a calendar, with their sync status; any grant on the calendar. Only the feed's host is returned, never its address.
+ */
+export const listSubscriptions = async (calendarId: string, options?: Parameters<typeof apiRequest>[1]): Promise<SubscriptionDto[]> => {
+
+  return apiRequest<SubscriptionDto[]>(getListSubscriptionsUrl(calendarId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSubscriptionsQueryKey = (calendarId: string,) => {
+    return [
+    `/api/calendars/${calendarId}/subscriptions`
+    ] as const;
+    }
+
+
+export const getListSubscriptionsQueryOptions = <TData = Awaited<ReturnType<typeof listSubscriptions>>, TError = ProblemDetails>(calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSubscriptionsQueryKey(calendarId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSubscriptions>>> = ({ signal }) => listSubscriptions(calendarId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: calendarId !== null && calendarId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListSubscriptionsQueryResult = NonNullable<Awaited<ReturnType<typeof listSubscriptions>>>
+export type ListSubscriptionsQueryError = ProblemDetails
+
+
+export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubscriptions>>, TError = ProblemDetails>(
+ calendarId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSubscriptions>>,
+          TError,
+          Awaited<ReturnType<typeof listSubscriptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubscriptions>>, TError = ProblemDetails>(
+ calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSubscriptions>>,
+          TError,
+          Awaited<ReturnType<typeof listSubscriptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubscriptions>>, TError = ProblemDetails>(
+ calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List the published calendar feeds shown in a calendar, with their sync status; any grant on the calendar. Only the feed's host is returned, never its address.
+ */
+
+export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubscriptions>>, TError = ProblemDetails>(
+ calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListSubscriptionsQueryOptions(calendarId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getCreateSubscriptionUrl = (calendarId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions`
+}
+
+/**
+ * @summary Subscribe a calendar to a published calendar feed (http, https or webcal address); owner-only. Its events appear read-only in the calendar after the first sync.
+ */
+export const createSubscription = async (calendarId: string,
+    createSubscriptionRequest: CreateSubscriptionRequest, options?: Parameters<typeof apiRequest>[1]): Promise<SubscriptionDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<SubscriptionDto>(getCreateSubscriptionUrl(calendarId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createSubscriptionRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateSubscriptionMutationKey = () => ['createSubscription'] as const;
+
+export const getCreateSubscriptionMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,CreateSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,CreateSubscriptionMutationVariables, TContext> => {
+
+const mutationKey = getCreateSubscriptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSubscription>>, CreateSubscriptionMutationVariables> = (props) => {
+          const {calendarId,data} = props ?? {};
+
+          return  createSubscription(calendarId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof createSubscription>>>
+    export type CreateSubscriptionMutationBody = CreateSubscriptionRequest
+    export type CreateSubscriptionMutationError = ProblemDetails
+    export type CreateSubscriptionMutationVariables = {calendarId: string;data: CreateSubscriptionRequest}
+
+    /**
+ * @summary Subscribe a calendar to a published calendar feed (http, https or webcal address); owner-only. Its events appear read-only in the calendar after the first sync.
+ */
+export const useCreateSubscription = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,CreateSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSubscription>>,
+        TError,
+        CreateSubscriptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCreateSubscriptionMutationOptions(options), queryClient);
+    }
+    export const getUpdateSubscriptionUrl = (calendarId: string,
+    subscriptionId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions/${subscriptionId}`
+}
+
+/**
+ * @summary Rename or recolour a subscription, or point it at a new feed address (which restarts its sync); owner-only.
+ */
+export const updateSubscription = async (calendarId: string,
+    subscriptionId: string,
+    updateSubscriptionRequest: UpdateSubscriptionRequest, options?: Parameters<typeof apiRequest>[1]): Promise<SubscriptionDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<SubscriptionDto>(getUpdateSubscriptionUrl(calendarId,subscriptionId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateSubscriptionRequest)
+  }
+);}
+
+
+
+
+
+export const getUpdateSubscriptionMutationKey = () => ['updateSubscription'] as const;
+
+export const getUpdateSubscriptionMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubscription>>, TError,UpdateSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateSubscription>>, TError,UpdateSubscriptionMutationVariables, TContext> => {
+
+const mutationKey = getUpdateSubscriptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSubscription>>, UpdateSubscriptionMutationVariables> = (props) => {
+          const {calendarId,subscriptionId,data} = props ?? {};
+
+          return  updateSubscription(calendarId,subscriptionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof updateSubscription>>>
+    export type UpdateSubscriptionMutationBody = UpdateSubscriptionRequest
+    export type UpdateSubscriptionMutationError = ProblemDetails
+    export type UpdateSubscriptionMutationVariables = {calendarId: string;subscriptionId: string;data: UpdateSubscriptionRequest}
+
+    /**
+ * @summary Rename or recolour a subscription, or point it at a new feed address (which restarts its sync); owner-only.
+ */
+export const useUpdateSubscription = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubscription>>, TError,UpdateSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSubscription>>,
+        TError,
+        UpdateSubscriptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateSubscriptionMutationOptions(options), queryClient);
+    }
+    export const getDeleteSubscriptionUrl = (calendarId: string,
+    subscriptionId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions/${subscriptionId}`
+}
+
+/**
+ * @summary Remove a subscription and its events from the calendar; owner-only.
+ */
+export const deleteSubscription = async (calendarId: string,
+    subscriptionId: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
+
+  return apiRequest<void>(getDeleteSubscriptionUrl(calendarId,subscriptionId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteSubscriptionMutationKey = () => ['deleteSubscription'] as const;
+
+export const getDeleteSubscriptionMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSubscription>>, TError,DeleteSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteSubscription>>, TError,DeleteSubscriptionMutationVariables, TContext> => {
+
+const mutationKey = getDeleteSubscriptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteSubscription>>, DeleteSubscriptionMutationVariables> = (props) => {
+          const {calendarId,subscriptionId} = props ?? {};
+
+          return  deleteSubscription(calendarId,subscriptionId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof deleteSubscription>>>
+
+    export type DeleteSubscriptionMutationError = ProblemDetails
+    export type DeleteSubscriptionMutationVariables = {calendarId: string;subscriptionId: string}
+
+    /**
+ * @summary Remove a subscription and its events from the calendar; owner-only.
+ */
+export const useDeleteSubscription = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSubscription>>, TError,DeleteSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteSubscription>>,
+        TError,
+        DeleteSubscriptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteSubscriptionMutationOptions(options), queryClient);
+    }
+    export const getRefreshSubscriptionUrl = (calendarId: string,
+    subscriptionId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions/${subscriptionId}/refresh`
+}
+
+/**
+ * @summary Fetch the feed again soon; owner-only. Within a short cooldown of the last attempt nothing changes. Returns the current status.
+ */
+export const refreshSubscription = async (calendarId: string,
+    subscriptionId: string, options?: Parameters<typeof apiRequest>[1]): Promise<SubscriptionDto> => {
+
+  return apiRequest<SubscriptionDto>(getRefreshSubscriptionUrl(calendarId,subscriptionId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getRefreshSubscriptionMutationKey = () => ['refreshSubscription'] as const;
+
+export const getRefreshSubscriptionMutationOptions = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshSubscription>>, TError,RefreshSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+): UseMutationOptions<Awaited<ReturnType<typeof refreshSubscription>>, TError,RefreshSubscriptionMutationVariables, TContext> => {
+
+const mutationKey = getRefreshSubscriptionMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refreshSubscription>>, RefreshSubscriptionMutationVariables> = (props) => {
+          const {calendarId,subscriptionId} = props ?? {};
+
+          return  refreshSubscription(calendarId,subscriptionId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefreshSubscriptionMutationResult = NonNullable<Awaited<ReturnType<typeof refreshSubscription>>>
+
+    export type RefreshSubscriptionMutationError = ProblemDetails
+    export type RefreshSubscriptionMutationVariables = {calendarId: string;subscriptionId: string}
+
+    /**
+ * @summary Fetch the feed again soon; owner-only. Within a short cooldown of the last attempt nothing changes. Returns the current status.
+ */
+export const useRefreshSubscription = <TError = ProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshSubscription>>, TError,RefreshSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof refreshSubscription>>,
+        TError,
+        RefreshSubscriptionMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRefreshSubscriptionMutationOptions(options), queryClient);
+    }
+    export const getGetSubscribedEventUrl = (calendarId: string,
+    subscriptionId: string,
+    eventId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions/${subscriptionId}/events/${eventId}`
+}
+
+/**
+ * @summary Get one read-only event of a subscribed feed (the id search returns with origin kind Subscription); any grant on the calendar.
+ */
+export const getSubscribedEvent = async (calendarId: string,
+    subscriptionId: string,
+    eventId: string, options?: Parameters<typeof apiRequest>[1]): Promise<SubscribedEventDto> => {
+
+  return apiRequest<SubscribedEventDto>(getGetSubscribedEventUrl(calendarId,subscriptionId,eventId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSubscribedEventQueryKey = (calendarId: string,
+    subscriptionId: string,
+    eventId: string,) => {
+    return [
+    `/api/calendars/${calendarId}/subscriptions/${subscriptionId}/events/${eventId}`
+    ] as const;
+    }
+
+
+export const getGetSubscribedEventQueryOptions = <TData = Awaited<ReturnType<typeof getSubscribedEvent>>, TError = ProblemDetails>(calendarId: string,
+    subscriptionId: string,
+    eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSubscribedEvent>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSubscribedEventQueryKey(calendarId,subscriptionId,eventId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSubscribedEvent>>> = ({ signal }) => getSubscribedEvent(calendarId,subscriptionId,eventId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: calendarId !== null && calendarId !== undefined && subscriptionId !== null && subscriptionId !== undefined && eventId !== null && eventId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSubscribedEvent>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSubscribedEventQueryResult = NonNullable<Awaited<ReturnType<typeof getSubscribedEvent>>>
+export type GetSubscribedEventQueryError = ProblemDetails
+
+
+export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubscribedEvent>>, TError = ProblemDetails>(
+ calendarId: string,
+    subscriptionId: string,
+    eventId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSubscribedEvent>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSubscribedEvent>>,
+          TError,
+          Awaited<ReturnType<typeof getSubscribedEvent>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubscribedEvent>>, TError = ProblemDetails>(
+ calendarId: string,
+    subscriptionId: string,
+    eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSubscribedEvent>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSubscribedEvent>>,
+          TError,
+          Awaited<ReturnType<typeof getSubscribedEvent>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubscribedEvent>>, TError = ProblemDetails>(
+ calendarId: string,
+    subscriptionId: string,
+    eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSubscribedEvent>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get one read-only event of a subscribed feed (the id search returns with origin kind Subscription); any grant on the calendar.
+ */
+
+export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubscribedEvent>>, TError = ProblemDetails>(
+ calendarId: string,
+    subscriptionId: string,
+    eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSubscribedEvent>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSubscribedEventQueryOptions(calendarId,subscriptionId,eventId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getSearchItemsUrl = (params?: SearchItemsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -3640,6 +4189,106 @@ export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCal
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetSyncCalendarsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getGetSyncSubscribedEventsUrl = () => {
+
+
+
+
+  return `/api/sync/subscribed-events`
+}
+
+/**
+ * @summary Snapshot of the read-only events of every published calendar feed the caller's calendars subscribe to, each with its occurrences expanded over the sync window: always reset with no cursor; replace the local set on each call.
+ */
+export const getSyncSubscribedEvents = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfSubscribedEventSyncDto> => {
+
+  return apiRequest<SyncPageOfSubscribedEventSyncDto>(getGetSyncSubscribedEventsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSyncSubscribedEventsQueryKey = () => {
+    return [
+    `/api/sync/subscribed-events`
+    ] as const;
+    }
+
+
+export const getGetSyncSubscribedEventsQueryOptions = <TData = Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError = ProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSyncSubscribedEventsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSyncSubscribedEvents>>> = ({ signal }) => getSyncSubscribedEvents({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSyncSubscribedEventsQueryResult = NonNullable<Awaited<ReturnType<typeof getSyncSubscribedEvents>>>
+export type GetSyncSubscribedEventsQueryError = ProblemDetails
+
+
+export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError = ProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncSubscribedEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncSubscribedEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSyncSubscribedEvents>>,
+          TError,
+          Awaited<ReturnType<typeof getSyncSubscribedEvents>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Snapshot of the read-only events of every published calendar feed the caller's calendars subscribe to, each with its occurrences expanded over the sync window: always reset with no cursor; replace the local set on each call.
+ */
+
+export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError = ProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSyncSubscribedEventsQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

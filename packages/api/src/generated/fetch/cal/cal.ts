@@ -18,6 +18,7 @@ import type {
   CreateCalendarItemRequest,
   CreateCalendarRequest,
   CreateRelationRequest,
+  CreateSubscriptionRequest,
   FileItemToCalendarParams,
   GetChangesParams,
   GetHotspotsParams,
@@ -47,9 +48,13 @@ import type {
   SetItemActionRequest,
   SetItemPromptRequest,
   SetParticipantReminderParams,
+  SubscribedEventDto,
+  SubscriptionDto,
   SyncPageOfContainerDto,
   SyncPageOfItemSyncChange,
-  UpdateCalendarItemRequest
+  SyncPageOfSubscribedEventSyncDto,
+  UpdateCalendarItemRequest,
+  UpdateSubscriptionRequest
 } from '../../models';
 
 import { apiRequest } from '../../../transport';
@@ -275,6 +280,184 @@ export const revokeCalendarOwner = async (calendarId: string,
   {
     ...options,
     method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getListSubscriptionsUrl = (calendarId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions`
+}
+
+/**
+ * @summary List the published calendar feeds shown in a calendar, with their sync status; any grant on the calendar. Only the feed's host is returned, never its address.
+ */
+export const listSubscriptions = async (calendarId: string, options?: Parameters<typeof apiRequest>[1]): Promise<SubscriptionDto[]> => {
+
+  return apiRequest<SubscriptionDto[]>(getListSubscriptionsUrl(calendarId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getCreateSubscriptionUrl = (calendarId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions`
+}
+
+/**
+ * @summary Subscribe a calendar to a published calendar feed (http, https or webcal address); owner-only. Its events appear read-only in the calendar after the first sync.
+ */
+export const createSubscription = async (calendarId: string,
+    createSubscriptionRequest: CreateSubscriptionRequest, options?: Parameters<typeof apiRequest>[1]): Promise<SubscriptionDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<SubscriptionDto>(getCreateSubscriptionUrl(calendarId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createSubscriptionRequest)
+  }
+);}
+
+
+export const getUpdateSubscriptionUrl = (calendarId: string,
+    subscriptionId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions/${subscriptionId}`
+}
+
+/**
+ * @summary Rename or recolour a subscription, or point it at a new feed address (which restarts its sync); owner-only.
+ */
+export const updateSubscription = async (calendarId: string,
+    subscriptionId: string,
+    updateSubscriptionRequest: UpdateSubscriptionRequest, options?: Parameters<typeof apiRequest>[1]): Promise<SubscriptionDto> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return apiRequest<SubscriptionDto>(getUpdateSubscriptionUrl(calendarId,subscriptionId),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateSubscriptionRequest)
+  }
+);}
+
+
+export const getDeleteSubscriptionUrl = (calendarId: string,
+    subscriptionId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions/${subscriptionId}`
+}
+
+/**
+ * @summary Remove a subscription and its events from the calendar; owner-only.
+ */
+export const deleteSubscription = async (calendarId: string,
+    subscriptionId: string, options?: Parameters<typeof apiRequest>[1]): Promise<void> => {
+
+  return apiRequest<void>(getDeleteSubscriptionUrl(calendarId,subscriptionId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+export const getRefreshSubscriptionUrl = (calendarId: string,
+    subscriptionId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions/${subscriptionId}/refresh`
+}
+
+/**
+ * @summary Fetch the feed again soon; owner-only. Within a short cooldown of the last attempt nothing changes. Returns the current status.
+ */
+export const refreshSubscription = async (calendarId: string,
+    subscriptionId: string, options?: Parameters<typeof apiRequest>[1]): Promise<SubscriptionDto> => {
+
+  return apiRequest<SubscriptionDto>(getRefreshSubscriptionUrl(calendarId,subscriptionId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+export const getGetSubscribedEventUrl = (calendarId: string,
+    subscriptionId: string,
+    eventId: string,) => {
+
+
+
+
+  return `/api/calendars/${calendarId}/subscriptions/${subscriptionId}/events/${eventId}`
+}
+
+/**
+ * @summary Get one read-only event of a subscribed feed (the id search returns with origin kind Subscription); any grant on the calendar.
+ */
+export const getSubscribedEvent = async (calendarId: string,
+    subscriptionId: string,
+    eventId: string, options?: Parameters<typeof apiRequest>[1]): Promise<SubscribedEventDto> => {
+
+  return apiRequest<SubscribedEventDto>(getGetSubscribedEventUrl(calendarId,subscriptionId,eventId),
+  {
+    ...options,
+    method: 'GET'
 
 
   }
@@ -1324,6 +1507,29 @@ export const getGetSyncCalendarsUrl = () => {
 export const getSyncCalendars = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfContainerDto> => {
 
   return apiRequest<SyncPageOfContainerDto>(getGetSyncCalendarsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+export const getGetSyncSubscribedEventsUrl = () => {
+
+
+
+
+  return `/api/sync/subscribed-events`
+}
+
+/**
+ * @summary Snapshot of the read-only events of every published calendar feed the caller's calendars subscribe to, each with its occurrences expanded over the sync window: always reset with no cursor; replace the local set on each call.
+ */
+export const getSyncSubscribedEvents = async ( options?: Parameters<typeof apiRequest>[1]): Promise<SyncPageOfSubscribedEventSyncDto> => {
+
+  return apiRequest<SyncPageOfSubscribedEventSyncDto>(getGetSyncSubscribedEventsUrl(),
   {
     ...options,
     method: 'GET'

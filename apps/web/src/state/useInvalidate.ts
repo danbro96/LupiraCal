@@ -53,3 +53,15 @@ export function useInvalidateTasks() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ predicate: (q) => String(q.queryKey[0] ?? '').startsWith('/tasks-api/') });
 }
+
+/** A subscription change reaches the grids as feed occurrences, so the item queries refresh with the list. */
+export function useInvalidateSubscriptions() {
+  const queryClient = useQueryClient();
+  return () =>
+    queryClient.invalidateQueries({
+      predicate: (q) => {
+        const key = String(q.queryKey[0] ?? '');
+        return key.startsWith('/api/items') || (key.startsWith('/api/calendars/') && key.endsWith('/subscriptions'));
+      },
+    });
+}

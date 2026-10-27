@@ -62,12 +62,13 @@ export function CalendarScreen() {
   const todayVisible = now >= range.start && now < range.end;
 
   const { calendars } = useContainers();
-  const { isVisible, tasksVisible } = useCalendarVisibility();
+  const { isVisible, tasksVisible, hiddenSubscriptionIds } = useCalendarVisibility();
   const visible = calendars.filter(isVisible);
 
   const { byCalendar, isLoading } = useRangeOccurrences(visible, from, to, {
     query: q || undefined,
     tag: tag || undefined,
+    hiddenSubscriptionIds,
   });
   const proposed = useProposedByCalendar(visible);
   const tasks = useTaskDeadlines(from, to, tasksVisible);
@@ -93,18 +94,16 @@ export function CalendarScreen() {
 
   // Birthdays are read-time contact projections, not stored items — route them to the read-only card
   // (the ?item= drawer would 404 on their synthetic id) instead of the editable item drawer.
-  // Task deadlines likewise live in LupiraTasks, so they route to the TaskCard.
+  // Task deadlines likewise live in LupiraTasks, so they route to the TaskCard, and feed events to their read-only card.
   const openItem = (id: string, originalStart?: string | null) => {
-    const e = entries.find((x) => x.itemId === id);
+    const e = entries.find((x) => x.itemId === id && (!originalStart || x.originalStart === originalStart))
+      ?? entries.find((x) => x.itemId === id);
     if (e?.task) {
       const { listId, itemId } = e.task;
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
         next.set('task', `${listId}:${itemId}`);
-        next.delete('item');
-        next.delete('occ');
-        next.delete('birthday');
-        next.delete('year');
+        for (const k of ['item', 'occ', 'birthday', 'year', 'subscribed', 'at']) next.delete(k);
         return next;
       });
     } else if (e?.origin?.kind === OriginKind.Birthday) {
@@ -112,8 +111,16 @@ export function CalendarScreen() {
         const next = new URLSearchParams(prev);
         next.set('birthday', e.origin!.sourceId);
         next.set('year', String(e.start.getUTCFullYear()));
-        next.delete('item');
-        next.delete('occ');
+        for (const k of ['item', 'occ', 'subscribed', 'at']) next.delete(k);
+        return next;
+      });
+    } else if (e?.subscription) {
+      const { calendarId, subscriptionId } = e.subscription;
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('subscribed', `${calendarId}:${subscriptionId}:${id}`);
+        next.set('at', e.start.toISOString());
+        for (const k of ['item', 'occ', 'birthday', 'year']) next.delete(k);
         return next;
       });
     } else {
@@ -122,6 +129,7 @@ export function CalendarScreen() {
         next.set('item', id);
         if (originalStart) next.set('occ', originalStart);
         else next.delete('occ');
+        for (const k of ['subscribed', 'at']) next.delete(k);
         return next;
       });
     }

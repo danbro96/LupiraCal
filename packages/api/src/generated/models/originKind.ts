@@ -13,4 +13,5 @@ export type OriginKind = typeof OriginKind[keyof typeof OriginKind];
 
 export const OriginKind = {
   Birthday: 'Birthday',
+  Subscription: 'Subscription',
 } as const;

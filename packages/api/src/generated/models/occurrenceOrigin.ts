@@ -7,8 +7,8 @@
 import type { OriginKind } from './originKind';
 
 /**
- * Ties a projected occurrence back to the entity it was derived from — the birthday occurrence's
- *             Guid OccurrenceOrigin.SourceId is the contact whose birthday it is.
+ * Ties a projected occurrence back to the entity it was derived from: Guid OccurrenceOrigin.SourceId is the contact
+ *             whose birthday it is, or the subscription whose read-only feed event it is.
  */
 export interface OccurrenceOrigin {
   kind: OriginKind;

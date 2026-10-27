@@ -16,6 +16,7 @@ import { CalendarVisibilityProvider } from './CalendarVisibility';
 import { ItemDrawer } from './drawer/ItemDrawer';
 import { BirthdayCard } from './drawer/BirthdayCard';
 import { TaskCard } from './drawer/TaskCard';
+import { SubscribedEventCard } from './drawer/SubscribedEventCard';
 import { AvailabilityModal } from './AvailabilityModal';
 import { NewItemModal } from './NewItemModal';
 
@@ -48,6 +49,8 @@ export function AppShell() {
   const birthdayYear = searchParams.get('year');
   // ?task=<listId>:<itemId> — the tasks API addresses items list-scoped, so the ref carries both GUIDs.
   const [taskListId, taskItemId] = (searchParams.get('task') ?? '').split(':');
+  const [subCalendarId, subscriptionId, subEventId] = (searchParams.get('subscribed') ?? '').split(':');
+  const subscribedAt = searchParams.get('at');
 
   const dropParams = (...keys: string[]) =>
     setSearchParams((prev) => {
@@ -108,6 +111,15 @@ export function AppShell() {
         <BirthdayCard contactId={birthdayContactId} year={birthdayYear} onClose={() => dropParams('birthday', 'year')} />
       )}
       {taskListId && taskItemId && <TaskCard listId={taskListId} itemId={taskItemId} onClose={() => dropParams('task')} />}
+      {subCalendarId && subscriptionId && subEventId && (
+        <SubscribedEventCard
+          calendarId={subCalendarId}
+          subscriptionId={subscriptionId}
+          eventId={subEventId}
+          at={subscribedAt}
+          onClose={() => dropParams('subscribed', 'at')}
+        />
+      )}
       {creating && <NewItemModal onClose={() => setCreating(false)} />}
       {settingAvailability && <AvailabilityModal onClose={() => setSettingAvailability(false)} />}
     </CalendarVisibilityProvider>

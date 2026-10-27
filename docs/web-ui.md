@@ -41,6 +41,14 @@ A form's place is a `PlaceSelection` from `@lupira/cal-domain/placeSelection` (a
 
 Hand-rolled (no calendar lib). `GET /items?from&to` returns recurrence-expanded occurrences; `useRangeOccurrences` makes one query and groups by the occurrence DTO's `calendarIds`. Proposed items ghost from `GET /calendars/{id}/proposed` and are accepted or removed in the item drawer's `CalendarsPanel` (no separate curation screen; `/inbox` redirects to `/`); the availability band joins occurrence → item detail for status. An entry draws in its item's own colour (`itemColor`, `@lupira/cal-tokens/itemColors`), else its calendar's; the drawer (All events / This and following, not availability items) and `NewItemModal` pick it with `ColorSwatches`, "Calendar" clearing it. Tentative items draw outlined (dashed border in the entry's colour over a tint, `TENTATIVE` in `@lupira/cal-tokens/color` via `ui/theme/tentative`); Cancelled ones dim and strike through.
 
+## Subscribed calendars
+
+A calendar can show read-only events from published calendar feeds (cal-api fetches them; rules in `@lupira/cal-domain/subscriptions`).
+
+- `/calendars` → a calendar's "subscriptions…" opens `SubscriptionsPanel`: colour, name, host, status line and event count for every member; owners subscribe (address, name, `ColorSwatches`), rename, recolour, refresh and remove. `useSubscriptions` polls every 5 s while a fetch is due and refreshes the item queries when a feed syncs.
+- `GET /items` returns their occurrences with origin `Subscription`; grid entries draw the `subscribed` glyph. A click opens `?subscribed=<calendarId>:<subscriptionId>:<eventId>&at=<start>` → `SubscribedEventCard`.
+- `CalendarToggles` nests a show/hide switch per subscription under its calendar, remembered per browser (`localPrefs` `subscriptions.hidden`).
+
 ## Recurring items
 
 Rules live in `@lupira/cal-domain/seriesOccurrences` (twin of cal-api's series rules, pinned by its fixtures).

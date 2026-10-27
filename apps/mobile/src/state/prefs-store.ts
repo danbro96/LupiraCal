@@ -13,6 +13,7 @@ const ALL_DAY_ROWS_KEY = 'prefs.allDayRows';
 const CALENDAR_MODE_KEY = 'prefs.calendarMode';
 const LAST_CALENDARS_KEY = 'prefs.lastCalendarIds';
 const LAST_TASK_LIST_KEY = 'prefs.lastTaskListId';
+const HIDDEN_SUBSCRIPTIONS_KEY = 'prefs.hiddenSubscriptionIds';
 
 export const DEFAULT_HOUR_HEIGHT = 44;
 // Four is the most a SegmentedPicker fits on a 360dp phone (Paper's 76dp minimum per segment).
@@ -54,6 +55,8 @@ type Prefs = {
   lastCalendarIds: string[];
   /** The list the last new task went to. */
   lastTaskListId: string | null;
+  /** Subscribed feeds hidden on this device; their events stay in the mirror. */
+  hiddenSubscriptionIds: string[];
   /** Kept per key in meta too, where the headless reconciler reads them. */
   notify: NotifyPrefs;
 };
@@ -68,6 +71,7 @@ type PrefsActions = {
   setCalendarMode(value: CalendarMode): Promise<void>;
   setLastCalendarIds(value: string[]): Promise<void>;
   setLastTaskListId(value: string): Promise<void>;
+  setSubscriptionShown(subscriptionId: string, shown: boolean): Promise<void>;
   setNotify<K extends keyof NotifyPrefs>(key: K, value: NotifyPrefs[K]): Promise<void>;
 };
 
@@ -81,6 +85,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
   calendarMode: 'month',
   lastCalendarIds: [],
   lastTaskListId: null,
+  hiddenSubscriptionIds: [],
   notify: DEFAULT_NOTIFY_PREFS,
 
   init: async () => {
@@ -98,6 +103,7 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
       calendarMode: (await readMeta(CALENDAR_MODE_KEY)) === 'week' ? 'week' : 'month',
       lastCalendarIds: parseJson(await readMeta(LAST_CALENDARS_KEY), isStringArray, []),
       lastTaskListId: await readMeta(LAST_TASK_LIST_KEY),
+      hiddenSubscriptionIds: parseJson(await readMeta(HIDDEN_SUBSCRIPTIONS_KEY), isStringArray, []),
       notify: notifyPrefsFrom(notifyStored),
       loaded: true,
     });
@@ -143,6 +149,12 @@ export const usePrefs = create<Prefs & PrefsActions>((set, get) => ({
   setLastTaskListId: async (value) => {
     set({ lastTaskListId: value });
     await writeMeta(LAST_TASK_LIST_KEY, value);
+  },
+
+  setSubscriptionShown: async (subscriptionId, shown) => {
+    const hiddenSubscriptionIds = [...get().hiddenSubscriptionIds.filter((id) => id !== subscriptionId), ...(shown ? [] : [subscriptionId])].sort();
+    set({ hiddenSubscriptionIds });
+    await writeMeta(HIDDEN_SUBSCRIPTIONS_KEY, JSON.stringify(hiddenSubscriptionIds));
   },
 
   setNotify: async (key, value) => {

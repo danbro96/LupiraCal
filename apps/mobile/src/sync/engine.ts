@@ -19,6 +19,7 @@ import { placeEntryModule } from './modules/placeEntry';
 import { relationshipModule } from './modules/relationship';
 import { residencyModule } from './modules/residency';
 import { residencyPlaceModule } from './modules/residencyPlace';
+import { subscribedEventModule } from './modules/subscribedEvent';
 import { taskItemModule } from './modules/taskItem';
 import { taskListModule } from './modules/taskList';
 import { createNotifier } from './notifications';
@@ -26,10 +27,11 @@ import { queryClient } from './queryClient';
 
 export const SYNC_TASK = 'lupira-calendar-sync';
 
-/** Reads that join across aggregates: the grids show items and birthdays (and calendar kinds), and relationship and
- *  residency rows carry contact names. */
+/** Reads that join across aggregates: the grids show items, birthdays and subscribed events (and calendar kinds), and
+ *  relationship and residency rows carry contact names. */
 const DERIVED_ROOTS = {
   [Aggregate.item]: ['occurrences'],
+  [Aggregate.subscribedEvent]: ['occurrences'],
   [Aggregate.calendar]: ['occurrences'],
   [Aggregate.contact]: ['occurrences', Aggregate.relationship, Aggregate.residency],
 };
@@ -43,7 +45,7 @@ const invalidate = invalidateOnChange(queryClient, DERIVED_ROOTS);
 export const engine = createSyncEngine({
   openDb: getDb,
   modules: [
-    calendarModule, addressBookModule, contactGroupModule, calItemModule, contactModule,
+    calendarModule, addressBookModule, contactGroupModule, calItemModule, subscribedEventModule, contactModule,
     relationshipModule, residencyModule, placeEntryModule, taskListModule, taskItemModule, meModule,
     residencyPlaceModule(async () => residencyPlaceIds(await getDb())),
   ],

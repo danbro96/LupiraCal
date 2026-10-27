@@ -100,6 +100,24 @@ public class AllowlistTests(BffTestFactory factory) : IClassFixture<BffTestFacto
     }
 
     [Theory]
+    [InlineData("GET", "/calendars/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/subscriptions")]
+    [InlineData("POST", "/calendars/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/subscriptions")]
+    [InlineData("PUT", "/calendars/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/subscriptions/7a1d4e2b-5c8f-4b3a-9e6d-1f2a3b4c5d6e")]
+    [InlineData("DELETE", "/calendars/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/subscriptions/7a1d4e2b-5c8f-4b3a-9e6d-1f2a3b4c5d6e")]
+    [InlineData("POST", "/calendars/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/subscriptions/7a1d4e2b-5c8f-4b3a-9e6d-1f2a3b4c5d6e/refresh")]
+    [InlineData("GET", "/calendars/3f2b8c1e-9d4a-4b7e-8a51-0c6d2e9f7a13/subscriptions/7a1d4e2b-5c8f-4b3a-9e6d-1f2a3b4c5d6e/events/0b9e4c2a-6d1f-4a8e-b3c7-5e2f9a1d8c40")]
+    [InlineData("GET", "/sync/subscribed-events")]
+    public async Task Subscription_operations_are_forwarded(string method, string upstreamPath)
+    {
+        var client = Client();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", BffTestFactory.MintToken());
+
+        var resp = await client.SendAsync(new HttpRequestMessage(new HttpMethod(method), "/api" + upstreamPath));
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal(upstreamPath, (await resp.Content.ReadFromJsonAsync<UpstreamEcho>())!.Path);
+    }
+
+    [Theory]
     [InlineData("/api/items/drafts?zone=Europe/Stockholm", "/items/drafts", "text/calendar")]
     [InlineData("/contact-api/contacts/drafts", "/contacts/drafts", "text/vcard")]
     public async Task Draft_reads_are_forwarded(string path, string upstreamPath, string contentType)

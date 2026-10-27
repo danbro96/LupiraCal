@@ -2,6 +2,7 @@ import { OriginKind, type CalendarItemDto, type CalendarItemOccurrenceDto, type 
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { lastDayOf } from '@lupira/cal-domain/occurrences';
 import { occurrenceKey } from '@lupira/cal-domain/seriesOccurrences';
+import { isSubscribedOrigin } from '@lupira/cal-domain/subscriptions';
 import { isOverdue } from '@lupira/cal-domain/tasks';
 import { parseYmd, sameDay, ymd } from '@danbro96/lupira-domain-core/time';
 import type { OpenTask } from '../state/useTaskDeadlines';
@@ -30,15 +31,19 @@ export interface GridEntry {
   parentItemId: string | null;
   parentTitle?: string | null;
   childCount: number;
-  /** Provenance for read-time projections (birthdays → a contact); routes the click to a read-only view. */
+  /** Provenance for read-time projections (birthdays → a contact, feed events → a subscription); routes the click to a read-only view. */
   origin?: OccurrenceOrigin | null;
   /** LupiraTasks provenance (not a cal item; generated OriginKind can't carry it) — routes the click to the TaskCard. */
   task?: { listId: string; itemId: string; dueAt: Date; overdue: boolean };
+  /** Set for a subscribed feed's event — the read-only card addresses it calendar- and subscription-scoped. */
+  subscription?: { calendarId: string; subscriptionId: string };
 }
 
 export const isBirthday = (e: GridEntry) => e.origin?.kind === OriginKind.Birthday;
+export const isSubscribed = (e: GridEntry) => !!e.subscription;
 
 export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: ContainerDto): GridEntry {
+  const subscribed = isSubscribedOrigin(o.origin);
   return {
     key: `${o.id}:${o.originalStart ?? o.start}`,
     itemId: o.id,
@@ -49,7 +54,7 @@ export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: Container
     isAllDay: o.isAllDay,
     dayRange: o.isAllDay ? isoDayRange(o.start, o.end) : undefined,
     color: itemColor(o.color, calendarColor(calendar)),
-    icon: calendar.class === 'System' && calendar.kind ? CALENDAR_KIND_ICONS[calendar.kind] : undefined,
+    icon: subscribed ? 'subscribed' : calendar.class === 'System' && calendar.kind ? CALENDAR_KIND_ICONS[calendar.kind] : undefined,
     status: o.status,
     place: o.locationLabel,
     completeness: o.completeness ? o.completeness.score : null,
@@ -57,6 +62,7 @@ export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: Container
     parentTitle: o.parentTitle,
     childCount: o.childCount,
     origin: o.origin,
+    subscription: subscribed && o.origin ? { calendarId: calendar.id, subscriptionId: o.origin.sourceId } : undefined,
   };
 }
 

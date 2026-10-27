@@ -28,6 +28,7 @@ import { KindIcon } from '../components/KindIcon';
 import { errText } from '../errText';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { WrapRow } from '../components/WrapRow';
+import { SubscriptionsPanel } from '../components/SubscriptionsPanel';
 import { Page } from '../components/Page';
 import { PageHead } from '../components/Page';
 import { ContactsIcon } from '@danbro96/lupira-web-mui/icons';
@@ -96,6 +97,7 @@ export function CalendarsScreen() {
 
 function CalendarRow({ c }: { c: ContainerDto }) {
   const [sharing, setSharing] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
   return (
     <>
       <TableRow>
@@ -119,12 +121,22 @@ function CalendarRow({ c }: { c: ContainerDto }) {
               {sharing ? 'close' : 'share…'}
             </Button>
           )}
+          <Button variant="text" onClick={() => setSubscribing((s) => !s)}>
+            {subscribing ? 'close' : 'subscriptions…'}
+          </Button>
         </TableCell>
       </TableRow>
       {sharing && (
         <TableRow>
           <TableCell colSpan={8}>
             <SharePanel kind="calendar" id={c.id} />
+          </TableCell>
+        </TableRow>
+      )}
+      {subscribing && (
+        <TableRow>
+          <TableCell colSpan={8}>
+            <SubscriptionsPanel calendar={c} />
           </TableCell>
         </TableRow>
       )}

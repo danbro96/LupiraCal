@@ -5,6 +5,9 @@
  * OpenAPI spec version: v1
  */
 
+/**
+ * Whether an item or occurrence is tentative, confirmed or cancelled.
+ */
 export type ItemStatus = typeof ItemStatus[keyof typeof ItemStatus];
 
 

@@ -55,6 +55,7 @@ export function CalendarScreen() {
     // Tasks live in LupiraTasks, not the mirror — route to the read-only TaskDetail screen.
     if (isTaskRow(row)) navigation.navigate('TaskDetail', { listId: row.task.listId, itemId: row.task.itemId });
     else if (row.source === 'birthday') navigation.navigate('ContactDetail', { contactId: row.source_id });
+    else if (row.source === 'subscribed') navigation.navigate('SubscribedEventDetail', { eventId: row.source_id, start: row.start_utc });
     else navigation.navigate('ItemDetail', { itemId: row.source_id, occurrence: row.original_start ?? undefined });
   };
   const createSlot = (day: string, time: string) => {

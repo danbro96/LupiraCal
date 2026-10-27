@@ -12,6 +12,7 @@ export const Aggregate = {
   me: 'contact.me',
   taskList: 'tasks.list',
   taskItem: 'tasks.item',
+  subscribedEvent: 'cal.subscribedEvent',
 } as const;
 
 /** How the sync progress line names each aggregate's docs. */
@@ -27,4 +28,5 @@ export const AGGREGATE_LABELS: Record<string, string> = {
   [Aggregate.residencyPlace]: 'address places',
   [Aggregate.taskList]: 'task lists',
   [Aggregate.taskItem]: 'tasks',
+  [Aggregate.subscribedEvent]: 'subscribed events',
 };

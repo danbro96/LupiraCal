@@ -297,7 +297,9 @@ function EventBlock({ placed, color, placeName, onPress }: {
       }, tentative && tentativeStyle(color), cancelled && styles.cancelled]}
       onPress={() => onPress(item)}
     >
-      <Text style={[styles.eventTitle, { color: fg }, cancelled && styles.struck]} numberOfLines={2}>{displayTitle(item.title)}</Text>
+      <Text style={[styles.eventTitle, { color: fg }, cancelled && styles.struck]} numberOfLines={2}>
+        {item.source === 'subscribed' ? <><Glyph name={ICONS.subscribed} size={CHIP_GLYPH} /> {displayTitle(item.title)}</> : displayTitle(item.title)}
+      </Text>
       <Text style={[styles.eventMeta, { color: fg }]} numberOfLines={1}>{when}</Text>
       {placeName ? <Text style={[styles.eventMeta, { color: fg }]} numberOfLines={1}>{placeName}</Text> : null}
     </Pressable>
@@ -405,7 +407,10 @@ function StripBar({ bar, left, rowColor, onPress }: {
         style={[styles.chipText, { color: task ? (task.overdue ? c.danger : c.textMuted) : tentative ? c.text : textOn(fill ?? '') }, cancelled && styles.struck]}
         numberOfLines={1}
       >
-        {task ? <><Glyph name={ICONS.schedule} size={CHIP_GLYPH} /> {displayTitle(r.title)}</> : r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={CHIP_GLYPH} /> {displayTitle(r.title)}</> : displayTitle(r.title)}
+        {task ? <><Glyph name={ICONS.schedule} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
+          : r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
+          : r.source === 'subscribed' ? <><Glyph name={ICONS.subscribed} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
+          : displayTitle(r.title)}
       </Text>
     </Pressable>
   );

@@ -122,6 +122,19 @@ export type TaskDoc = {
   dueAt?: string | null;
 };
 
+/** A subscribed feed's event as the snapshot mirrors it, read-only; occurrences arrive expanded. */
+export type SubscribedEventDoc = {
+  id: string;
+  subscriptionId: string;
+  calendarId: string;
+  title: string;
+  locationLabel?: string | null;
+  isAllDay: boolean;
+  status: string;
+  color?: string | null;
+  occurrences: { start: string; end?: string | null; originalStart?: string | null }[];
+};
+
 /** A contact group or organization with its current members. */
 export type ContactGroupDoc = {
   id: string; addressBookId: string; kind: string; name: string;

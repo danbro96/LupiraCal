@@ -75,6 +75,7 @@ export const ICON_BY_NAME: Record<IconName, SvgIconComponent> = {
   settings: Icons.SettingsIcon,
   star: Icons.StarIcon,
   starOutline: Icons.StarOutlineIcon,
+  subscribed: Icons.LinkIcon,
   target: Icons.TargetIcon,
   today: TodayIcon,
   tools: Icons.ToolsIcon,

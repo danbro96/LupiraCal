@@ -122,7 +122,9 @@ function DayAgenda({ day, onPress }: { day: string; onPress: (row: CalRow) => vo
             <Text style={[styles.time, { color: c.textMuted }]}>
               {isTaskRow(r) ? <Glyph name={ICONS.schedule} /> : r.source === 'birthday' ? <Glyph name={ICONS.cake} /> : r.all_day === 1 ? 'all day' : fmtTime(new Date(r.start_utc))}
             </Text>
-            <Text style={styles.text} numberOfLines={1}>{displayTitle(r.title)}</Text>
+            <Text style={styles.text} numberOfLines={1}>
+              {r.source === 'subscribed' ? <><Glyph name={ICONS.subscribed} /> {displayTitle(r.title)}</> : displayTitle(r.title)}
+            </Text>
             {isTaskRow(r) && r.task.overdue && <Text style={[styles.flag, { color: c.danger }]}>overdue</Text>}
             {!isTaskRow(r) && statusBadge(r.status) && (
               <Text style={[styles.flag, { color: r.status === 'Cancelled' ? c.danger : c.textMuted }]}>{statusBadge(r.status)}</Text>

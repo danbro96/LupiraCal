@@ -144,7 +144,9 @@ export const MonthView = memo(function MonthView({ monthKey, selectedDay, onSele
                       style={[styles.bar, isTentative(r.status) ? [tentativeStyle(fillOf(r)), styles.tentativeBar] : { backgroundColor: fillOf(r) }]}
                     >
                       <Text style={[styles.barText, { color: isTentative(r.status) ? c.text : textOn(fillOf(r)) }]} numberOfLines={1}>
-                        {r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={BAR_GLYPH} /> {displayTitle(r.title)}</> : displayTitle(r.title)}
+                        {r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={BAR_GLYPH} /> {displayTitle(r.title)}</>
+                          : r.source === 'subscribed' ? <><Glyph name={ICONS.subscribed} size={BAR_GLYPH} /> {displayTitle(r.title)}</>
+                          : displayTitle(r.title)}
                       </Text>
                     </View>
                   ),

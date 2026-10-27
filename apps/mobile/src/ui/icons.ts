@@ -77,6 +77,7 @@ export const ICONS = {
   schedule: 'schedule',
   search: 'search',
   settings: 'settings',
+  subscribed: 'link',
   sync: 'sync',
   saved: 'bookmark',
   star: 'star',

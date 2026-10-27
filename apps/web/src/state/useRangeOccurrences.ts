@@ -1,5 +1,5 @@
 import { useSearchItems } from '@lupira/cal-api/query/cal';
-import type { CalendarItemOccurrenceDto, ContainerDto } from '@lupira/cal-api/models';
+import { OriginKind, type CalendarItemOccurrenceDto, type ContainerDto } from '@lupira/cal-api/models';
 
 export interface CalendarOccurrences {
   calendar: ContainerDto;
@@ -15,16 +15,18 @@ export function useRangeOccurrences(
   calendars: ContainerDto[],
   from: string,
   to: string,
-  filters?: { query?: string; tag?: string },
+  filters?: { query?: string; tag?: string; hiddenSubscriptionIds?: ReadonlySet<string> },
 ): { byCalendar: CalendarOccurrences[]; isLoading: boolean } {
   const { data, isLoading } = useSearchItems(
     { from, to, query: filters?.query, tag: filters?.tag },
     { query: { enabled: calendars.length > 0 } },
   );
 
+  const hidden = filters?.hiddenSubscriptionIds;
+  const shown = (data ?? []).filter((o) => !(o.origin?.kind === OriginKind.Subscription && hidden?.has(o.origin.sourceId)));
   const byCalendar = calendars.map((calendar) => ({
     calendar,
-    occurrences: (data ?? []).filter((o) => o.calendarIds.includes(calendar.id)),
+    occurrences: shown.filter((o) => o.calendarIds.includes(calendar.id)),
   }));
 
   return { byCalendar, isLoading: calendars.length > 0 && isLoading };

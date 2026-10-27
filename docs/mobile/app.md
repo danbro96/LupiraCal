@@ -29,6 +29,7 @@ Shared Paper conventions: `~/Nextcloud/Familj/DevOps/Guides/frontend-estate.md`.
 - An item draws in its own colour (`item_index.color`, `itemColor` in `@lupira/cal-tokens/itemColors`) wherever it is listed (grids, day sheet, search, contact events, hierarchy), else its calendar's; birthdays take the Birthdays calendar's (`useCalendarColors`). Calendar pickers and settings show calendar colours.
 - Tentative items draw outlined in both modes: a dashed border in the item's colour over a tint of it (`TENTATIVE` in `@lupira/cal-tokens/color`, applied by `ui/calendar/tentative`; uniform width and colour, or Android draws the rounded border solid). The week view dims and strikes through Cancelled ones.
 - A tapped occurrence of a recurring event opens as that occurrence (`ItemDetail` `occurrence` = its unmodified start, the `@lupira/cal-domain/seriesOccurrences` key; grid, search, contact events and reminders pass it). See "Recurring events".
+- Subscribed calendar feeds draw with the link glyph and open `SubscribedEventDetail` (read-only: title, time, place, status from `subscribed_occurrences`; description, recurrence and the subscription's name online). `CalendarSettings` → a calendar's Subscriptions (`CalendarSubscriptionsScreen`): status per feed and a per-device hide switch (`prefs.hiddenSubscriptionIds`) for everyone; owners refresh, add and edit (`SubscriptionFormScreen`). Management is online-only (`onlineQuery` under `subscriptions`); a mutation or a newly synced feed triggers `engine.sync()`. Not on the bridge, no notifications.
 - `ItemDetailScreen`'s Hierarchy section shows "Part of <parent>" and the direct children (title, first date) from `item_index.parent_item_id` (`useItemHierarchy`, keyed `['cal.item', 'hierarchy', …]`); a row opens that item. A parent outside the mirror shows no row.
 
 ## Sync
@@ -47,6 +48,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 | `contact.placeEntry` | `/contact-api/sync/place-entries` (doc id = place id) | — | — |
 | `tasks.list` | `/tasks-api/sync/lists` | — | — |
 | `tasks.item` | `/tasks-api/sync/items` | — (edits live in Lupira Tasks) | `task_deadlines` (open deadlines) |
+| `cal.subscribedEvent` | `/api/sync/subscribed-events` (snapshot; occurrences expanded server-side over ±365 d) | — (read-only feed mirror) | `subscribed_occurrences` |
 | `contact.me` | `/contact-api/me` (one-doc snapshot) | — | — |
 | `geo.place` | `/geo-api/places/lookup` (snapshot of the places residencies point at, doc id = the stored place id) | — | — |
 

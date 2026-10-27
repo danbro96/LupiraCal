@@ -26,7 +26,7 @@ import { calendarLabel, useContainers } from '../../state/useContainers';
 import { SEARCH_PAGE_SIZE, useItemSearch } from '../../state/useItemSearch';
 import { errText } from '../errText';
 import { calendarColor } from '../theme/kinds';
-import { CategoryIcon } from '../components/KindIcon';
+import { CategoryIcon, NamedIcon } from '../components/KindIcon';
 import { CategorySelect } from '../components/CategorySelect';
 import { useIsPhone } from '../hooks/useIsPhone';
 import { PageHead } from '../components/Page';
@@ -79,17 +79,22 @@ export function ItemsScreen() {
   const groups = groupOccurrences(occurrences);
   const secondaryCount = [filters.tag, filters.cal, filters.category, filters.status].filter(Boolean).length;
 
-  // Birthdays are read-time contact projections, not stored items — link to the read-only card
-  // (their synthetic id 404s the ?item= drawer); everything else opens the shared item drawer.
+  // Birthdays and feed events are read-time projections, not stored items — link to their read-only cards
+  // (their ids 404 the ?item= drawer); everything else opens the shared item drawer.
   const occHref = (o: CalendarItemOccurrenceDto) => {
     const next = new URLSearchParams(searchParams);
     next.delete('item');
     next.delete('occ');
     next.delete('birthday');
     next.delete('year');
+    next.delete('subscribed');
+    next.delete('at');
     if (o.origin?.kind === OriginKind.Birthday) {
       next.set('birthday', o.origin.sourceId);
       next.set('year', o.start.slice(0, 4));
+    } else if (o.origin?.kind === OriginKind.Subscription) {
+      next.set('subscribed', `${o.calendarIds[0]}:${o.origin.sourceId}:${o.id}`);
+      next.set('at', o.start);
     } else {
       next.set('item', o.id);
       if (o.originalStart) next.set('occ', occurrenceKey(o.originalStart));
@@ -302,7 +307,9 @@ function ItemRow({
           {open ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
         </IconButton>
       )}
-      <CategoryIcon category={o.category} sx={{ fontSize: 22 }} />
+      {o.origin?.kind === OriginKind.Subscription
+        ? <NamedIcon name="subscribed" sx={{ fontSize: 22 }} />
+        : <CategoryIcon category={o.category} sx={{ fontSize: 22 }} />}
       <RowName>{displayTitle(o.title)}</RowName>
       {!indent && o.parentItemId && !drilled && (
         <Chip

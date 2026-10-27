@@ -111,7 +111,7 @@ const searchTextOf = (parts: (string | null | undefined)[]): string => parts.fil
  *  counts well under SQLite's limit. */
 const INSERT_CHUNK = 40;
 
-async function insertChunked(tx: Tx, insertPrefix: string, columns: number, rows: SqlValue[][]): Promise<void> {
+export async function insertChunked(tx: Tx, insertPrefix: string, columns: number, rows: SqlValue[][]): Promise<void> {
   const tuple = `(${Array(columns).fill('?').join(', ')})`;
   for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
     const slice = rows.slice(i, i + INSERT_CHUNK);
