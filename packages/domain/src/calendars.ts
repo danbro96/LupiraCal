@@ -22,6 +22,11 @@ export function defaultCalendarIds(selectable: readonly { id: string; kind?: str
   return fallback ? [fallback.id] : [];
 }
 
+/** The one calendar a multi-calendar item draws under: the lowest-id shown one, so web and mobile agree. */
+export function displayCalendarId(memberIds: readonly string[], isShown: (id: string) => boolean): string | undefined {
+  return [...memberIds].sort().find(isShown);
+}
+
 export function calendarLabel(c: { id: string; displayName?: string | null; slug?: string | null }): string {
   return c.displayName || c.slug || c.id;
 }

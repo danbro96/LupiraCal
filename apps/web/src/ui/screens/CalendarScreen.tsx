@@ -65,7 +65,8 @@ export function CalendarScreen() {
   const { isVisible, tasksVisible, hiddenSubscriptionIds } = useCalendarVisibility();
   const visible = calendars.filter(isVisible);
 
-  const { byCalendar, isLoading } = useRangeOccurrences(visible, from, to, {
+  // The availability calendar renders as the background band, not as chips.
+  const { occurrences, isLoading } = useRangeOccurrences(visible.filter((c) => c.kind !== 'Availability'), from, to, {
     query: q || undefined,
     tag: tag || undefined,
     hiddenSubscriptionIds,
@@ -76,10 +77,7 @@ export function CalendarScreen() {
   const segments = useAvailabilitySegments(availabilityCalendar, from, to);
 
   const entries = useMemo<GridEntry[]>(() => {
-    const accepted = byCalendar
-      // The availability calendar renders as the background band, not as chips.
-      .filter(({ calendar }) => calendar.kind !== 'Availability')
-      .flatMap(({ calendar, occurrences }) => occurrences.map((o) => fromOccurrence(o, calendar)));
+    const accepted = occurrences.map(({ occurrence, calendar }) => fromOccurrence(occurrence, calendar));
     const ghosts = proposed.flatMap(({ calendar, items }) =>
       items.flatMap((i) => {
         const g = fromProposed(i, calendar);
@@ -90,7 +88,7 @@ export function CalendarScreen() {
     const rightNow = new Date();
     const deadlines = tasks.map((t) => fromTask(t, rightNow));
     return [...accepted, ...ghosts, ...deadlines];
-  }, [byCalendar, proposed, tasks, range]);
+  }, [occurrences, proposed, tasks, range]);
 
   // Birthdays are read-time contact projections, not stored items — route them to the read-only card
   // (the ?item= drawer would 404 on their synthetic id) instead of the editable item drawer.

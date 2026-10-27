@@ -1,33 +1,34 @@
 import { useSearchItems } from '@lupira/cal-api/query/cal';
 import { OriginKind, type CalendarItemOccurrenceDto, type ContainerDto } from '@lupira/cal-api/models';
+import { displayCalendarId } from '@lupira/cal-domain/calendars';
 
-export interface CalendarOccurrences {
+export interface PlacedOccurrence {
+  occurrence: CalendarItemOccurrenceDto;
   calendar: ContainerDto;
-  occurrences: CalendarItemOccurrenceDto[];
 }
 
 /**
- * Occurrences per calendar for a window, from one query grouped by `calendarIds` — the DTO carries
- * the accepted memberships, so a query per visible calendar was one request per calendar (eight, on
- * this estate) for data a single call already returns. Toggling a calendar on is now free.
+ * Occurrences in the given calendars for a window, from one query over the DTO's `calendarIds`. An item
+ * filed into several of them draws once, under the calendar `displayCalendarId` picks.
  */
 export function useRangeOccurrences(
   calendars: ContainerDto[],
   from: string,
   to: string,
   filters?: { query?: string; tag?: string; hiddenSubscriptionIds?: ReadonlySet<string> },
-): { byCalendar: CalendarOccurrences[]; isLoading: boolean } {
+): { occurrences: PlacedOccurrence[]; isLoading: boolean } {
   const { data, isLoading } = useSearchItems(
     { from, to, query: filters?.query, tag: filters?.tag },
     { query: { enabled: calendars.length > 0 } },
   );
 
   const hidden = filters?.hiddenSubscriptionIds;
-  const shown = (data ?? []).filter((o) => !(o.origin?.kind === OriginKind.Subscription && hidden?.has(o.origin.sourceId)));
-  const byCalendar = calendars.map((calendar) => ({
-    calendar,
-    occurrences: shown.filter((o) => o.calendarIds.includes(calendar.id)),
-  }));
+  const byId = new Map(calendars.map((c) => [c.id, c]));
+  const occurrences = (data ?? []).flatMap((occurrence) => {
+    if (occurrence.origin?.kind === OriginKind.Subscription && hidden?.has(occurrence.origin.sourceId)) return [];
+    const id = displayCalendarId(occurrence.calendarIds, (c) => byId.has(c));
+    return id ? [{ occurrence, calendar: byId.get(id)! }] : [];
+  });
 
-  return { byCalendar, isLoading: calendars.length > 0 && isLoading };
+  return { occurrences, isLoading: calendars.length > 0 && isLoading };
 }

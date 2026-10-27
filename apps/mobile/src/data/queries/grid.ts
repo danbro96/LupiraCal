@@ -1,4 +1,5 @@
 import type { Tx } from '@danbro96/lupira-expo-sqlite/types';
+import { displayCalendarId } from '@lupira/cal-domain/calendars';
 import { inShownCalendars, preferredCalendar, type CalendarFilter } from './calendarFilter';
 
 export type GridSource = 'item' | 'birthday' | 'subscribed';
@@ -35,7 +36,7 @@ export async function gridRowsBetween(
          WHEN 'item' THEN ${inShownCalendars('o.source_id')}
          WHEN 'subscribed' THEN o.calendar_id IN (SELECT value FROM json_each(?))
          ELSE ? END)` : '';
-  return tx.all<GridRow>(
+  const rows = await tx.all<GridRow & { accepted_calendar_ids: string | null }>(
     `WITH o AS (
        SELECT 'item' AS source, item_id AS source_id, original_start, start_utc, end_utc, start_day, all_day, title, status,
               NULL AS calendar_id, NULL AS color
@@ -56,7 +57,9 @@ export async function gridRowsBetween(
              WHERE ia.item_id = o.source_id AND ca.kind = 'Availability' LIMIT 1) AS is_availability,
             i.avail_status AS avail_status,
             i.place_id AS place_id,
-            COALESCE(o.color, i.color) AS color
+            COALESCE(o.color, i.color) AS color,
+            CASE o.source WHEN 'item' THEN (SELECT json_group_array(ia.calendar_id) FROM item_calendars ia
+              WHERE ia.item_id = o.source_id AND ia.status = 'Accepted') END AS accepted_calendar_ids
      FROM o
      LEFT JOIN item_index i ON o.source = 'item' AND i.id = o.source_id
      LEFT JOIN contact_index c ON o.source = 'birthday' AND c.id = o.source_id${shownFilter}
@@ -64,4 +67,9 @@ export async function gridRowsBetween(
     [fromDay, toDay, fromDay, toDay, fromDay, toDay, JSON.stringify(hiddenSubscriptionIds),
       ...(filter ? [JSON.stringify(filter.calendarIds), JSON.stringify(filter.calendarIds), filter.birthdays ? 1 : 0] : [])],
   );
+  const shown = new Set(filter?.calendarIds);
+  return rows.map(({ accepted_calendar_ids, ...row }) => {
+    const shownId = accepted_calendar_ids ? displayCalendarId(JSON.parse(accepted_calendar_ids) as string[], (id) => shown.has(id)) : undefined;
+    return shownId ? { ...row, calendar_id: shownId } : row;
+  });
 }

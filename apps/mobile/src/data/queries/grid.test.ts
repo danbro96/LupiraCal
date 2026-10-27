@@ -76,6 +76,18 @@ describe('gridRowsBetween', () => {
     expect(rows.map((r) => r.source_id)).toEqual(['meet']);
   });
 
+  it('draws a multi-calendar item once, under its lowest-id shown calendar', async () => {
+    await db.exclusive((tx) => writeItemIndex(tx, 'meet', {
+      doc: {
+        id: 'meet', title: 'Meeting', isAllDay: false, startsAt: '2026-08-10T09:00:00.000Z',
+        calendars: [{ calendarId: 'cal-a', status: 'Accepted' }, { calendarId: 'cal-c', status: 'Accepted' }, { calendarId: 'cal-b', status: 'Accepted' }],
+      },
+      guards: emptyItemGuards(),
+    }));
+    const rows = await gridRowsBetween(db, '2026-08-01', '2026-08-31', { calendarIds: ['cal-b', 'cal-c'], birthdays: false });
+    expect(rows.map((r) => [r.source_id, r.calendar_id])).toEqual([['meet', 'cal-b']]);
+  });
+
   it('merges subscribed occurrences under their calendar and the subscription\'s colour', async () => {
     await db.exclusive((tx) => writeSubscribedIndex(tx, 'match', subscribed('match', 'sub-a', 'cal-a')));
     const rows = (await gridRowsBetween(db, '2026-08-01', '2026-08-31')).filter((r) => r.source === 'subscribed');

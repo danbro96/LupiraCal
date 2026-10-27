@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canWriteCalendar, isCalendarShown } from './calendars';
+import { canWriteCalendar, displayCalendarId, isCalendarShown } from './calendars';
 
 describe('isCalendarShown', () => {
   it('shows Agenda and hides System until chosen otherwise', () => {
@@ -16,5 +16,13 @@ describe('canWriteCalendar', () => {
     expect(canWriteCalendar({ access: 'ReadWrite' })).toBe(true);
     expect(canWriteCalendar({ access: 'Read' })).toBe(false);
     expect(canWriteCalendar({})).toBe(false);
+  });
+});
+
+describe('displayCalendarId', () => {
+  it('picks the lowest-id shown calendar, none when no membership is shown', () => {
+    const shown = new Set(['b', 'c']);
+    expect(displayCalendarId(['c', 'a', 'b'], (id) => shown.has(id))).toBe('b');
+    expect(displayCalendarId(['a'], (id) => shown.has(id))).toBeUndefined();
   });
 });
