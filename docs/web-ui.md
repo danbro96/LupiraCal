@@ -62,6 +62,7 @@ Rules live in `@lupira/cal-domain/seriesOccurrences` (twin of cal-api's series r
 - Delete on an occurrence offers the same scopes: this one (`PUT … { excluded: true }`), this and following (`POST …/following { excluded: true }`), or the whole item.
 
 ## /items page
+- The drawer's Type picker (`CategorySelect`) sets the item's category; it is series-level, so This event dims it.
 
 Global list/search across all readable calendars in one infinite query (`useItemSearch`, skip/take paging, filters in URL params: q/tag/cal/category/status/range/from/to/parent); rows open the shared `?item=` drawer at that occurrence. Search covers accepted items only (never proposed).
 

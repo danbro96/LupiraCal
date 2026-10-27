@@ -47,6 +47,7 @@ import { isItemColor } from '@lupira/cal-tokens/itemColors';
 import { useContainers } from '../../../state/useContainers';
 import { useInvalidateItems } from '../../../state/useInvalidate';
 import { calendarColor } from '../../theme/kinds';
+import { CategorySelect } from '../CategorySelect';
 import { ColorSwatches } from '../ColorSwatches';
 import { CategoryIcon } from '../KindIcon';
 import { AttendeesPanel } from './AttendeesPanel';
@@ -273,6 +274,9 @@ function DrawerBody({
       )}
 
       <WrapRow>
+        <SeriesOnly locked={seriesOnly}>
+          <CategorySelect label="Type" value={item.category ?? 'General'} onChange={(category) => category !== item.category && patch({ category })} />
+        </SeriesOnly>
         <TextField
           select
           label="Status"
