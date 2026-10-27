@@ -6,7 +6,7 @@ import { fieldGap } from '@danbro96/lupira-expo-paper/theme/styles';
 import { pinStart, type PinStart } from '@danbro96/lupira-domain-places/pin';
 import { MIN_PLACE_QUERY } from '@danbro96/lupira-domain-places/placeCandidates';
 import type { PlaceContext } from '@lupira/cal-domain/placeContext';
-import type { OmniboxRow, OmniboxSection, OmniboxSectionKind } from '@lupira/cal-domain/placeOmnibox';
+import { PLACE_SEARCH_PROMPT, type OmniboxRow, type OmniboxSection, type OmniboxSectionKind } from '@lupira/cal-domain/placeOmnibox';
 import { predictionReasonText } from '@lupira/cal-domain/placePrediction';
 import type { PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { useContactList } from '../../state/useContactList';

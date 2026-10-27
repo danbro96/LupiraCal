@@ -1,22 +1,23 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Chip, Icon, Text } from 'react-native-paper';
+import { Chip, Icon, Text, TouchableRipple } from 'react-native-paper';
 import { placeTitle } from '@danbro96/lupira-domain-places/places';
 import type { PlaceContext } from '@lupira/cal-domain/placeContext';
-import { predictionReasonText } from '@lupira/cal-domain/placePrediction';
+import { PLACE_SEARCH_PROMPT } from '@lupira/cal-domain/placeOmnibox';
+import { PREDICTION_CHIPS, predictionReasonText } from '@lupira/cal-domain/placePrediction';
 import { selectPlace, type PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { useContactList } from '../../state/useContactList';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
 import { usePlacePredictions } from '../../state/usePlacePredictions';
 import { ICONS } from '../icons';
-import { spacing, useColors } from '../theme';
+import { radii, spacing, useColors } from '../theme';
 
-/** The event's place as one tap: the likeliest places as chips, the picked one selected, More… for the search.
- *  The line under the chips says why the picked place was offered. */
-export function PlaceChipsRow({ ctx, value, onChange, onMore }: {
+/** The event's place: a search field opening the full search, over the likeliest few places as chips with the
+ *  picked one selected. The line under the chips says why the picked place was offered. */
+export function PlaceChipsRow({ ctx, value, onChange, onSearch }: {
   ctx: PlaceContext;
   value: { placeId: string; label: string } | null;
   onChange: (place: PlaceSelection | null) => void;
-  onMore: () => void;
+  onSearch: () => void;
 }) {
   const c = useColors();
   const predictions = usePlacePredictions(ctx);
@@ -24,19 +25,28 @@ export function PlaceChipsRow({ ctx, value, onChange, onMore }: {
   const stored = usePlaceCoords([value?.placeId]).get(value?.placeId ?? '');
   const nameOf = (id: string) => contacts?.find((x) => x.id === id)?.displayName ?? 'Someone';
   const picked = predictions.find((p) => p.placeId === value?.placeId);
+  const chips = predictions.slice(0, PREDICTION_CHIPS);
   const why = picked?.reasons.map((r) => predictionReasonText(r, nameOf)).join(' · ');
 
   return (
     <View style={styles.field}>
       <View style={styles.row}>
         <Icon source={ICONS.place} size={24} color={c.textMuted} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.chips}>
-          {value && !picked && (
+        <TouchableRipple onPress={onSearch} accessibilityRole="button" style={[styles.search, { borderColor: c.divider }]}>
+          <View style={styles.searchInner}>
+            <Icon source={ICONS.search} size={20} color={c.textMuted} />
+            <Text style={{ color: c.textMuted }} numberOfLines={1}>{PLACE_SEARCH_PROMPT}</Text>
+          </View>
+        </TouchableRipple>
+      </View>
+      {(chips.length > 0 || !!value) && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.chips} style={styles.indent}>
+          {value && !chips.some((p) => p.placeId === value.placeId) && (
             <Chip selected showSelectedOverlay onPress={() => onChange(null)} accessibilityHint="Removes the place">
-              {placeTitle(value.label, stored?.name, value.placeId)}
+              {picked?.label ?? placeTitle(value.label, stored?.name, value.placeId)}
             </Chip>
           )}
-          {predictions.map((p) => (
+          {chips.map((p) => (
             <Chip
               key={p.placeId}
               selected={p.placeId === value?.placeId}
@@ -47,9 +57,8 @@ export function PlaceChipsRow({ ctx, value, onChange, onMore }: {
               {p.label}
             </Chip>
           ))}
-          <Chip icon={ICONS.search} onPress={onMore}>More…</Chip>
         </ScrollView>
-      </View>
+      )}
       {!!why && <Text style={[styles.why, { color: c.textMuted }]} numberOfLines={1}>{why}</Text>}
     </View>
   );
@@ -58,6 +67,9 @@ export function PlaceChipsRow({ ctx, value, onChange, onMore }: {
 const styles = StyleSheet.create({
   field: { marginTop: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  search: { flex: 1, borderWidth: 1, borderRadius: radii.md },
+  searchInner: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: 10 },
+  indent: { marginTop: spacing.sm, marginLeft: 24 + spacing.md },
   chips: { gap: 6, paddingRight: spacing.lg },
   why: { fontSize: 13, marginTop: spacing.xs, marginLeft: 24 + spacing.md },
 });

@@ -379,7 +379,7 @@ export function ItemEditScreen() {
         {otherZone && <Text style={[styles.muted, styles.zoneNote, { color: c.textMuted }]}>Times in {zoneSummary(form.timeZone, zoneAt)}</Text>}
 
         {seriesFields && (
-          <PlaceChipsRow ctx={placeContext} value={form.place} onChange={(p) => set('place', p)} onMore={() => setSheet('place')} />
+          <PlaceChipsRow ctx={placeContext} value={form.place} onChange={(p) => set('place', p)} onSearch={() => setSheet('place')} />
         )}
         {seriesFields && !!placeHint && (
           <View style={styles.hint}>

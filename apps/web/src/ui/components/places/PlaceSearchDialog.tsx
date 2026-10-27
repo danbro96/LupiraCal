@@ -14,7 +14,7 @@ import ListSubheader from '@mui/material/ListSubheader';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import type { PlaceContext } from '@lupira/cal-domain/placeContext';
-import type { OmniboxRow, OmniboxSection } from '@lupira/cal-domain/placeOmnibox';
+import { PLACE_SEARCH_PROMPT, type OmniboxRow, type OmniboxSection } from '@lupira/cal-domain/placeOmnibox';
 import type { PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { CloseIcon, HomeIcon, PlaceIcon, SearchIcon } from '@danbro96/lupira-web-mui/icons';
 import { usePlaceOmnibox } from '../../../state/usePlaceOmnibox';
