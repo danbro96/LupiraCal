@@ -23,9 +23,10 @@ import {
   useRespondToInvitation,
 } from '@lupira/cal-api/query/cal';
 import type { CalendarItemDto } from '@lupira/cal-api/models';
-import { useSearchContacts } from '@lupira/cal-api/query/contact';
+import { useListRelationships, useSearchContacts } from '@lupira/cal-api/query/contact';
 import { initialsOf } from '@danbro96/lupira-domain-contacts/contactNames';
-import { rankByInteraction } from '@lupira/cal-domain/contactRank';
+import { rankByInteraction, withPartnersFirst } from '@lupira/cal-domain/contactRank';
+import { partnerIds } from '@lupira/cal-domain/contactRelations';
 import { NO_ATTENDEES, attendeeSummary, roleLabel, rsvpLabel } from '@lupira/cal-domain/participation';
 import { avatarColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { attendeeName } from '@danbro96/lupira-domain-contacts/contactNames';
@@ -83,12 +84,18 @@ export function AttendeesPanel({ item }: { item: CalendarItemDto }) {
   const [contactId, setContactId] = useState('');
   const [role, setRole] = useState('req-participant');
 
-  // Most-met contacts first; fail-open — while the summary loads (or errors) the list stays alphabetical.
+  // Most-met contacts first, after the attendees' spouses and partners; fail-open — while the summary loads (or
+  // errors) the list stays alphabetical.
   const { data: summary } = useGetParticipationSummary();
-  const invitable = rankByInteraction(
-    (contacts ?? []).filter((c) => c.id !== me && !item.attendees.some((a) => a.contactId === c.id)),
-    summary,
+  const { data: relationships } = useListRelationships();
+  const { partners, others } = withPartnersFirst(
+    rankByInteraction(
+      (contacts ?? []).filter((c) => c.id !== me && !item.attendees.some((a) => a.contactId === c.id)),
+      summary,
+    ),
+    partnerIds(relationships ?? [], item.attendees.map((a) => a.contactId)),
   );
+  const invitable = [...partners, ...others];
   const joinSelf = () => {
     if (me) join(item.id, me).catch((e: unknown) => showSnack(errText(e) ?? 'Could not join.'));
   };

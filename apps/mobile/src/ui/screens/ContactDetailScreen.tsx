@@ -3,6 +3,7 @@ import { birthdayAgeLine, nextBirthday, turningAge } from '@lupira/cal-domain/bi
 import { initialsOf, deceasedLine } from '@danbro96/lupira-domain-contacts/contactNames';
 import { channelLabel, reachAppLink, reachLink } from '@lupira/cal-domain/reach';
 import { fmtPartialDate } from '@lupira/cal-domain/partialDate';
+import { sortAddresses } from '@lupira/cal-domain/residencyOrder';
 import { addressMeta, splitAddresses } from '@danbro96/lupira-domain-contacts/residents';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
@@ -95,7 +96,7 @@ export function ContactDetailScreen() {
   const currentRelations = relations.filter((r) => !r.ended);
   const emergency = (doc.emergencyContactIds as string[] | undefined) ?? [];
   const { current: currentAddresses, other: otherAddresses } = splitAddresses(
-    residencyRows.filter((r) => r.contactId === contactId).map((r) => ({ ...r, type: r.addressType })));
+    sortAddresses(residencyRows.filter((r) => r.contactId === contactId).map((r) => ({ ...r, type: r.addressType }))));
   const addresses = [...currentAddresses, ...otherAddresses];
   const metadata = Object.entries(doc.metadata ?? {});
   const deceased = doc.deceased === true;

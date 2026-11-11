@@ -35,6 +35,7 @@ import { ContactAddressType, DisplayNameFormat, ReachMedium } from '@lupira/cal-
 import { DISPLAY_NAME_FORMAT_LABELS as NAME_FORMAT_LABELS } from '@danbro96/lupira-domain-contacts/contactNames';
 import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { residencySaveError, type ResidencyRowState } from '@lupira/cal-domain/addressDraft';
+import { sortAddresses } from '@lupira/cal-domain/residencyOrder';
 import { fromStored, type PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { AddressForm } from '../places/AddressForm';
@@ -187,7 +188,7 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
       tags: visibleTags(contact.tags),
       // Residency dates are edited as text ("2015", "2015-06", "2015-06-12" — precision = certainty) and
       // parsed at save; a filled moved-out marks the address as former.
-      addresses: residencies.map((r) => ({
+      addresses: sortAddresses(residencies).map((r) => ({
         id: r.id,
         place: fromStored(r.placeId, null),
         type: r.type,

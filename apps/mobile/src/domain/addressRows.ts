@@ -1,4 +1,5 @@
 import { EMPTY_ADDRESS_DRAFT, normalizePostcode, residencyRowState, residencySaveError, type AddressDraft } from '@lupira/cal-domain/addressDraft';
+import { residencyPeriodError } from '@lupira/cal-domain/residencyOrder';
 import type { AddressHint } from './bridgeTranslate';
 import type { FuzzyDateDto, ResidencyDoc } from './docTypes';
 import type { ResidencyFields } from './ops';
@@ -12,6 +13,7 @@ export type AddressRow = {
   label: string;
   type: string;
   draft: AddressDraft;
+  movedIn: FuzzyDateDto | null;
   movedOut: FuzzyDateDto | null;
   removed: boolean;
   /** The phone-typed address this row was started from; resolving it settles the hint. */
@@ -26,12 +28,13 @@ export type ResidencyChange =
 
 export function addressRowsFrom(residencies: readonly ResidencyDoc[]): AddressRow[] {
   return residencies.map((r) => ({
-    key: r.id, stored: r, placeId: r.placeId, label: '', type: r.type ?? 'Home', draft: EMPTY_ADDRESS_DRAFT, movedOut: r.movedOut ?? null, removed: false,
+    key: r.id, stored: r, placeId: r.placeId, label: '', type: r.type ?? 'Home', draft: EMPTY_ADDRESS_DRAFT, movedIn: r.movedIn ?? null,
+    movedOut: r.movedOut ?? null, removed: false,
   }));
 }
 
 export function newAddressRow(key: string): AddressRow {
-  return { key, stored: null, placeId: null, label: '', type: 'Home', draft: EMPTY_ADDRESS_DRAFT, movedOut: null, removed: false };
+  return { key, stored: null, placeId: null, label: '', type: 'Home', draft: EMPTY_ADDRESS_DRAFT, movedIn: null, movedOut: null, removed: false };
 }
 
 /** A hint opens as a new row typed from it, even one standing in for a stored address: whether that one was a typo
@@ -61,21 +64,22 @@ function draftFromHint(hint: AddressHint): AddressDraft {
 }
 
 export function addressSaveError(rows: readonly AddressRow[]): string | null {
-  return residencySaveError(rows.filter((r) => !r.removed).map(residencyRowState));
+  const kept = rows.filter((r) => !r.removed);
+  return residencySaveError(kept.map(residencyRowState)) ?? kept.map((r) => residencyPeriodError(r.movedIn, r.movedOut)).find(Boolean) ?? null;
 }
 
 const sameDate = (a: FuzzyDateDto | null | undefined, b: FuzzyDateDto | null | undefined) =>
   (a?.year ?? null) === (b?.year ?? null) && (a?.month ?? null) === (b?.month ?? null) && (a?.day ?? null) === (b?.day ?? null);
 
 /** What saving the rows asks of contact-api: a new resolved row starts a residency, a removed stored one is erased,
- *  a stored one whose only change is its end date moves out, any other change corrects it wholesale. */
+ *  an open one given an end date and nothing else moves out, any other change corrects it wholesale. */
 export function residencyChanges(rows: readonly AddressRow[]): ResidencyChange[] {
   const changes: ResidencyChange[] = [];
   for (const row of rows) {
     const { stored } = row;
     if (!stored) {
       if (!row.removed && row.placeId) {
-        changes.push({ kind: 'start', residency: { placeId: row.placeId, type: row.type, label: null, movedIn: null, movedOut: row.movedOut } });
+        changes.push({ kind: 'start', residency: { placeId: row.placeId, type: row.type, label: null, movedIn: row.movedIn, movedOut: row.movedOut } });
       }
       continue;
     }
@@ -86,10 +90,10 @@ export function residencyChanges(rows: readonly AddressRow[]): ResidencyChange[]
     const before: ResidencyFields = {
       placeId: stored.placeId, type: stored.type ?? 'Home', label: stored.label ?? null, movedIn: stored.movedIn ?? null, movedOut: stored.movedOut ?? null,
     };
-    const after: ResidencyFields = { ...before, placeId: row.placeId ?? stored.placeId, type: row.type, movedOut: row.movedOut };
+    const after: ResidencyFields = { ...before, placeId: row.placeId ?? stored.placeId, type: row.type, movedIn: row.movedIn, movedOut: row.movedOut };
     const moved = !sameDate(before.movedOut, after.movedOut);
-    const revised = before.placeId !== after.placeId || before.type !== after.type;
-    if (moved && !revised && after.movedOut) changes.push({ kind: 'moveOut', residencyId: stored.id, movedOut: after.movedOut });
+    const revised = before.placeId !== after.placeId || before.type !== after.type || !sameDate(before.movedIn, after.movedIn);
+    if (moved && !revised && !before.movedOut && after.movedOut) changes.push({ kind: 'moveOut', residencyId: stored.id, movedOut: after.movedOut });
     else if (moved || revised) changes.push({ kind: 'revise', residencyId: stored.id, residency: after });
   }
   return changes;

@@ -4,7 +4,7 @@ import { Chip, List, Text } from 'react-native-paper';
 import type { GeocodeResultDto } from '@lupira/cal-api/models';
 import { ContactAddressType } from '@lupira/cal-api/models';
 import { errorText } from '@danbro96/lupira-http/apiError';
-import { fmtFuzzyDate, residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
+import { residencyStatus } from '@danbro96/lupira-domain-contacts/fuzzyDate';
 import { addressTypeLabel, type HouseholdHome } from '@danbro96/lupira-domain-contacts/residents';
 import { placeSpanM } from '@danbro96/lupira-domain-maps/mapZoom';
 import { pinStart, type PinStart } from '@danbro96/lupira-domain-places/pin';
@@ -20,6 +20,7 @@ import { EMPTY_ADDRESS_DRAFT, draftFromComponents, residencyRowState, type Addre
 import { EMPHASIS } from '@lupira/cal-tokens/color';
 import type { AddressRow } from '../../domain/addressRows';
 import { placeFromAddressHit } from '../../state/placeCommands';
+import { FuzzyDateField } from '../components/FuzzyDateField';
 import { useAddressLookup } from '../../state/useAddressLookup';
 import { useHomeCountry } from '../../state/useHomeCountry';
 import { usePlaceCoords } from '../../state/usePlaceLookup';
@@ -31,8 +32,8 @@ const TYPES = Object.values(ContactAddressType);
 const THUMB = 72;
 
 /** One of a contact's addresses, typed as street, postcode, town and country. A matching address becomes the
- *  place and shows on a mini-map to confirm; the pin can be adjusted, an existing place or a relative's home
- *  used instead. A half-typed address blocks the contact's save. */
+ *  place and shows on a mini-map to confirm, with its moved-in and moved-out dates; the pin can be adjusted, an
+ *  existing place or a relative's home used instead. A half-typed address blocks the contact's save. */
 export function AddressForm({ row, seed, household, onChange, onRemove, onUseExisting, onPickOnMap }: {
   row: AddressRow;
   /** The phone-typed address this row was started from. */
@@ -52,7 +53,7 @@ export function AddressForm({ row, seed, household, onChange, onRemove, onUseExi
   const draft = row.draft.countryCode ? row.draft : { ...row.draft, countryCode: homeCountry };
   const lookup = useAddressLookup(row.placeId ? EMPTY_ADDRESS_DRAFT : draft);
   const point = place?.latitude != null && place.longitude != null ? { lat: place.latitude, lon: place.longitude } : null;
-  const status = residencyStatus(row.stored?.movedIn ?? null, row.movedOut);
+  const status = residencyStatus(row.movedIn, row.movedOut);
   const drafting = residencyRowState(row) === 'drafting';
 
   const setDraft = <K extends keyof AddressDraft>(key: K, value: string) => onChange({ ...row, draft: { ...row.draft, [key]: value } });
@@ -71,9 +72,6 @@ export function AddressForm({ row, seed, household, onChange, onRemove, onUseExi
       if (ok) onRemove();
     }).catch(() => toastError('Could not remove the address.'));
   };
-  const today = new Date();
-  const moveOut = () => onChange({ ...row, movedOut: { year: today.getFullYear(), month: today.getMonth() + 1, day: today.getDate() } });
-
   return (
     <View style={[styles.row, status === 'former' && styles.former]}>
       <SegmentedPicker options={TYPES} selected={(TYPES.find((t) => t === row.type) ?? 'Home')} onSelect={(type) => onChange({ ...row, type })} getLabel={addressTypeLabel} />
@@ -86,13 +84,13 @@ export function AddressForm({ row, seed, household, onChange, onRemove, onUseExi
               {!!place?.formattedAddress && place.formattedAddress !== place.name && (
                 <Text style={[styles.line, { color: c.textMuted }]} numberOfLines={2}>{place.formattedAddress}</Text>
               )}
-              {!!row.movedOut && <Text style={[styles.line, { color: c.textMuted }]}>Moved out {fmtFuzzyDate(row.movedOut)}</Text>}
             </View>
           </View>
+          <FuzzyDateField label="Moved in" value={row.movedIn} onChange={(movedIn) => onChange({ ...row, movedIn })} />
+          <FuzzyDateField label="Moved out" value={row.movedOut} onChange={(movedOut) => onChange({ ...row, movedOut })} />
           <View style={styles.actions}>
             {point && <Button variant="text" title="Adjust pin" disabled={!online} onPress={() => onPickOnMap({ ...point, zoom: 17 })} />}
             <Button variant="text" title="Change" onPress={() => onChange({ ...row, placeId: null, label: '' })} />
-            {row.stored && !row.movedOut && status === 'active' && <Button variant="text" title="Moved out" onPress={moveOut} />}
             <Button variant="text" title="Remove" onPress={remove} />
           </View>
         </>

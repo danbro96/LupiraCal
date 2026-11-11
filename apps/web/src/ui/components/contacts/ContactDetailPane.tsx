@@ -27,6 +27,7 @@ import {
 import { useGetContactContext } from '@lupira/cal-api/query/bff-contacts';
 import { visibleTags } from '@lupira/cal-domain/contactTiers';
 import { channelLabel, reachLink } from '@lupira/cal-domain/reach';
+import { sortAddresses } from '@lupira/cal-domain/residencyOrder';
 import { addressMeta, splitAddresses } from '@danbro96/lupira-domain-contacts/residents';
 import { fmtDate } from '@danbro96/lupira-domain-core/time';
 import { addressBookLabel, useAddressBooks } from '../../../state/useAddressBooks';
@@ -98,7 +99,7 @@ export function ContactDetailPane() {
   if (isLoading) return <DetailPane><Typography variant="caption" sx={{ color: 'text.secondary' }} component="p">Loading…</Typography></DetailPane>;
   if (!contact) return <DetailPane><Typography component="p" sx={{ textAlign: 'center', color: 'text.subtle', mt: 6 }}>Contact not found.</Typography></DetailPane>;
 
-  const { current, other } = splitAddresses(residencyRows.filter((r) => r.contactId === contact.id).map((r) => ({ ...r, type: r.addressType })));
+  const { current, other } = splitAddresses(sortAddresses(residencyRows.filter((r) => r.contactId === contact.id).map((r) => ({ ...r, type: r.addressType }))));
   const addresses = [...current, ...other];
   const memberOf = context?.memberOf ?? [];
   const joinable = context?.joinable ?? [];

@@ -7,6 +7,7 @@ import { plural } from '@danbro96/lupira-domain-core/wording';
 import type { ItemCategory } from './itemCategory';
 import type { PlaceContext } from './placeContext';
 import type { PlaceUsage } from './placeUsage';
+import { compareFuzzy } from './residencyOrder';
 
 export type PredictionReason =
   | { kind: 'usedFor'; category: ItemCategory; count: number; lastDay: string }
@@ -233,13 +234,11 @@ export function recentResidencies(
   }
   const dated = residencies
     .flatMap((r) => (r.movedIn && !skip.has(r.placeId) ? [{ placeId: r.placeId, contactId: r.contactId, movedIn: r.movedIn }] : []))
-    .sort((a, b) => fuzzyOrder(b.movedIn, a.movedIn));
+    .sort((a, b) => compareFuzzy(b.movedIn, a.movedIn));
   const byPlace = new Map<string, RecentResidency>();
   for (const r of dated) if (!byPlace.has(r.placeId)) byPlace.set(r.placeId, r);
   return [...byPlace.values()].slice(0, PREDICTION_MAX);
 }
-
-const fuzzyOrder = (a: FuzzyDate, b: FuzzyDate) => a.year - b.year || (a.month ?? 0) - (b.month ?? 0) || (a.day ?? 0) - (b.day ?? 0);
 
 const CATEGORY_NOUNS: Record<ItemCategory, [string, string]> = {
   General: ['event', 'events'],

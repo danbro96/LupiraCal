@@ -5,6 +5,7 @@ import {
   inverseKind,
   isSymmetric,
   kindCategory,
+  partnerIds,
   viewRelationship,
 } from './contactRelations';
 import type { RelationEntry, RelationshipRecord } from './contactRelations';
@@ -249,5 +250,17 @@ describe('viewRelationship', () => {
   it('carries the end date only while ended', () => {
     expect(viewRelationship(LOW, record({ kind: 'Spouse', ended: true, until: '2020-05-01' }))).toMatchObject({ ended: true, until: '2020-05-01' });
     expect(viewRelationship(LOW, record({ kind: 'Spouse', ended: false, until: '2020-05-01' }))).toMatchObject({ ended: false, until: null });
+  });
+});
+
+describe('partnerIds', () => {
+  const rel = (lowId: string, highId: string, kind: RelationshipRecord['kind'], ended = false) => ({ lowId, highId, kind, ended });
+
+  it('finds the current spouses and partners from either side, never the given contacts themselves', () => {
+    const ids = partnerIds(
+      [rel('a', 'b', 'Spouse'), rel('c', 'a', 'Partner'), rel('a', 'd', 'Friend'), rel('a', 'e', 'Spouse', true), rel('b', 'f', 'Partner')],
+      ['a', 'b'],
+    );
+    expect([...ids].sort()).toEqual(['c', 'f']);
   });
 });

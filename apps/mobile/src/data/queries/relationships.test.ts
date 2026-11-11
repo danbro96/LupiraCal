@@ -6,7 +6,7 @@ import { Aggregate } from '../../domain/aggregates';
 import { emptyContactGuards } from '../../domain/docTypes';
 import { CONTACT_DDL, writeContactIndex } from '../indexes/contacts';
 import { RELATIONSHIP_DDL, writeRelationshipIndex } from '../indexes/relationships';
-import { relationshipsOf } from './relationships';
+import { partnersOf, relationshipsOf } from './relationships';
 import { DOCS_DDL, putDoc } from './testDocs';
 
 let db: Db;
@@ -18,8 +18,8 @@ beforeEach(async () => {
 
 const person = (id: string, givenName: string) =>
   db.exclusive((tx) => writeContactIndex(tx, id, { doc: { id, addressBookId: 'ab', givenName }, guards: emptyContactGuards() }));
-const relate = (id: string, lowId: string, highId: string, kind: RelationshipRecord['kind']) =>
-  db.exclusive((tx) => putDoc(tx, Aggregate.relationship, id, { doc: { id, lowId, highId, kind } }, writeRelationshipIndex));
+const relate = (id: string, lowId: string, highId: string, kind: RelationshipRecord['kind'], ended = false) =>
+  db.exclusive((tx) => putDoc(tx, Aggregate.relationship, id, { doc: { id, lowId, highId, kind, ended } }, writeRelationshipIndex));
 
 describe('relationshipsOf', () => {
   it("returns a contact's relationships from either end with the other's name, and none whose other is missing", async () => {
@@ -45,5 +45,18 @@ describe('relationshipsOf', () => {
     await db.exclusive((tx) => writeRelationshipIndex(tx, 'xy', null));
 
     expect(await relationshipsOf(db, 'y')).toEqual([]);
+  });
+});
+
+describe('partnersOf', () => {
+  it('returns the current spouses and partners of any given contact', async () => {
+    await relate('xy', 'x', 'y', 'Spouse');
+    await relate('zx', 'z', 'x', 'Partner', true);
+    await relate('wy', 'w', 'y', 'Friend');
+    await relate('uv', 'u', 'v', 'Partner');
+    await relate('vq', 'q', 'v', 'Spouse');
+
+    expect([...(await partnersOf(db, ['x', 'v']))].sort()).toEqual(['q', 'u', 'y']);
+    expect(await partnersOf(db, [])).toEqual(new Set());
   });
 });

@@ -23,3 +23,14 @@ export function rankByInteraction<T extends { id?: string }>(
   };
   return [...contacts].sort((a, b) => score(b) - score(a) || count(b) - count(a) || lastAt(b) - lastAt(a));
 }
+
+/** `contacts` split into the partners of those already picked and everyone else, each keeping its order. */
+export function withPartnersFirst<T extends { id?: string }>(
+  contacts: readonly T[],
+  partnerIds: ReadonlySet<string>,
+): { partners: T[]; others: T[] } {
+  const partners: T[] = [];
+  const others: T[] = [];
+  for (const c of contacts) (partnerIds.has(c.id ?? '') ? partners : others).push(c);
+  return { partners, others };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rankByInteraction } from './contactRank';
+import { rankByInteraction, withPartnersFirst } from './contactRank';
 
 const c = (id: string) => ({ id });
 
@@ -48,5 +48,13 @@ describe('rankByInteraction', () => {
       ],
     );
     expect(ranked.map((x) => x.id)).toEqual(['bo', 'anna']);
+  });
+});
+
+describe('withPartnersFirst', () => {
+  it('splits partners from everyone else, each keeping the ranked order', () => {
+    const { partners, others } = withPartnersFirst([c('anna'), c('bo'), c('cia'), c('dag')], new Set(['dag', 'bo']));
+    expect(partners.map((x) => x.id)).toEqual(['bo', 'dag']);
+    expect(others.map((x) => x.id)).toEqual(['anna', 'cia']);
   });
 });

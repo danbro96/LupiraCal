@@ -2,7 +2,7 @@ import { RELATION_KINDS, viewRelationship, type ResolvedRelation } from '@lupira
 import { mirrorQuery } from '@danbro96/lupira-expo-query/mirrorQuery';
 import { useQuery } from '@tanstack/react-query';
 import { listContacts } from '../data/queries/contacts';
-import { relationshipsOf } from '../data/queries/relationships';
+import { partnersOf, relationshipsOf } from '../data/queries/relationships';
 import { Aggregate } from '../domain/aggregates';
 import type { ContactDoc, ContactGuards } from '../domain/docTypes';
 import { engine, readyDb } from '../sync/engine';
@@ -25,3 +25,10 @@ export function useContactRelations(id: string) {
       .map(({ record, otherName }) => ({ ...viewRelationship(id, record), displayName: otherName }))
       .sort((a, b) => a.displayName.localeCompare(b.displayName) || RELATION_KINDS.indexOf(a.kind) - RELATION_KINDS.indexOf(b.kind))));
 }
+
+export function usePartnerIds(contactIds: readonly string[]): ReadonlySet<string> {
+  const ids = [...contactIds].sort();
+  return useQuery(mirrorQuery([Aggregate.relationship, 'partners', ...ids], async () => partnersOf(await readyDb(), ids))).data ?? NO_PARTNERS;
+}
+
+const NO_PARTNERS: ReadonlySet<string> = new Set();

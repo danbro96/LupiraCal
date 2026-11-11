@@ -104,10 +104,11 @@ All three live on contact-api as their own records, never on the contact. Its do
 - **Relationships read the same from both contacts.** Never branch UI on a side.
   - Each side has its own `label` (its word for the other); since/note/ended are shared.
   - Web renders `GET /contact-api/contacts/{id}/relations` (the view from that contact), editable from either contact.
-  - `GET /contact-api/relationships` lists them all; the activity tiers use it for `relatedIds`.
+  - `GET /contact-api/relationships` lists them all; the activity tiers use it for `relatedIds`, and `AttendeesPanel` lists the attendees' current spouses and partners first among the invitable (`partnerIds`, `withPartnersFirst`).
 - **Residencies are where a contact lives, holidays and works.**
   - Types: Home, Vacation, Work, Other, plus an optional `label`.
   - Web reads `GET /contact-api/residencies` through `state/useResidencies` (`useResidencyRows`). One fetch feeds the place picker and contact cards.
+  - The contact card and edit form list them Home, Vacation, Work, Other, the latest move-in first within a type (`sortAddresses`, `@lupira/cal-domain/residencyOrder`).
   - The edit form changes residencies one at a time (an end date entered on an open residency, nothing else changed, is a move-out, `POST /residencies/{id}/move-out`); `MoveDialog` tells a household move once (`POST /moves`).
   - A vacation home never makes a household.
   - "Parents' home" is derived, never stored: `@lupira/cal-domain/residents` `parentsHomes`, from Parent relationships

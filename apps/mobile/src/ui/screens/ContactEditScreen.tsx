@@ -19,6 +19,7 @@ import type { ContactCore } from '../../domain/ops';
 import { parseList } from '@lupira/cal-domain/itemForm';
 import { clampBirthdayDay, daysInMonth, monthNames, partialDateToInput, withYearKnown, type BirthdayFields } from '@lupira/cal-domain/partialDate';
 import { CHANNEL_TYPES as SHARED_CHANNEL_TYPES } from '@lupira/cal-domain/reach';
+import { sortAddresses } from '@lupira/cal-domain/residencyOrder';
 import { contactCoreFromForm, contactFormFromDoc, contactFormFromDraft, emptyContactForm } from '../../domain/editors';
 import { contactDraftFromLink } from '../../domain/drafts';
 import { createContact, reviseContact, saveResidencies, setContactChannels, setContactProfiles, setContactTags } from '../../state/actions';
@@ -97,7 +98,7 @@ export function ContactEditScreen() {
   }
   if (!contactId && !bookId && books?.length) setBookId(books[0].id);
   if (addresses === null && residencies) {
-    const seededRows = addressRowsFrom(residencies);
+    const seededRows = addressRowsFrom(sortAddresses(residencies));
     setAddresses(seededRows);
     setAddressBaseline(JSON.stringify(seededRows));
   }

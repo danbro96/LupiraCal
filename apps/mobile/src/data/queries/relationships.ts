@@ -1,4 +1,4 @@
-import type { RelationshipRecord } from '@lupira/cal-domain/contactRelations';
+import { partnerIds, type RelationshipRecord } from '@lupira/cal-domain/contactRelations';
 import type { Tx } from '@danbro96/lupira-expo-sqlite/types';
 import { Aggregate } from '../../domain/aggregates';
 
@@ -16,4 +16,17 @@ export async function relationshipsOf(tx: Tx, contactId: string): Promise<Contac
     [contactId, contactId, contactId],
   );
   return rows.map((r) => ({ record: (JSON.parse(r.local) as { doc: RelationshipRecord }).doc, otherId: r.other_id, otherName: r.other_name }));
+}
+
+export async function partnersOf(tx: Tx, contactIds: readonly string[]): Promise<Set<string>> {
+  if (contactIds.length === 0) return new Set();
+  const marks = contactIds.map(() => '?').join(', ');
+  const rows = await tx.all<{ local: string }>(
+    `SELECT d.local
+     FROM relationship_index r
+     JOIN docs d ON d.aggregate = '${Aggregate.relationship}' AND d.id = r.id AND d.local IS NOT NULL
+     WHERE r.low_id IN (${marks}) OR r.high_id IN (${marks})`,
+    [...contactIds, ...contactIds],
+  );
+  return partnerIds(rows.map((r) => (JSON.parse(r.local) as { doc: RelationshipRecord }).doc), contactIds);
 }

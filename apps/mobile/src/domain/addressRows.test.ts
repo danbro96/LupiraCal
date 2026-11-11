@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { UNFINISHED_ADDRESS } from '@lupira/cal-domain/addressDraft';
+import { MOVED_IN_AFTER_MOVED_OUT } from '@lupira/cal-domain/residencyOrder';
 import { addressRowsFrom, addressSaveError, hintAddressRow, newAddressRow, residencyChanges, settledHintIds, type AddressRow } from './addressRows';
 import type { AddressHint } from './bridgeTranslate';
 import type { ResidencyDoc } from './docTypes';
@@ -18,9 +19,33 @@ describe('residencyChanges', () => {
     ]);
   });
 
-  it('moves out when only the end date changed', () => {
+  it('starts a new row with both its dates', () => {
+    const movedIn = { year: 2019, month: 4 };
+    const movedOut = { year: 2024 };
+    expect(residencyChanges([{ ...newAddressRow('n'), placeId: 'p-2', movedIn, movedOut }])).toEqual([
+      { kind: 'start', residency: { placeId: 'p-2', type: 'Home', label: null, movedIn, movedOut } },
+    ]);
+  });
+
+  it('moves out when an open residency only gained an end date', () => {
     const movedOut = { year: 2026, month: 10, day: 12 };
     expect(residencyChanges([{ ...row, movedOut }])).toEqual([{ kind: 'moveOut', residencyId: 'r-1', movedOut }]);
+  });
+
+  it('corrects a changed move-in, a changed or cleared end date, and an end date given alongside another change', () => {
+    const [former] = addressRowsFrom([{ ...stored, movedOut: { year: 2022 } }]);
+    const residency = { placeId: 'p-1', type: 'Home', label: 'Gotland' };
+    expect(residencyChanges([
+      { ...row, movedIn: { year: 2018, month: 6 } },
+      { ...former, movedOut: { year: 2023 } },
+      { ...former, movedOut: null },
+      { ...row, movedIn: { year: 2019 }, movedOut: { year: 2025 } },
+    ])).toEqual([
+      { kind: 'revise', residencyId: 'r-1', residency: { ...residency, movedIn: { year: 2018, month: 6 }, movedOut: null } },
+      { kind: 'revise', residencyId: 'r-1', residency: { ...residency, movedIn: { year: 2020 }, movedOut: { year: 2023 } } },
+      { kind: 'revise', residencyId: 'r-1', residency: { ...residency, movedIn: { year: 2020 }, movedOut: null } },
+      { kind: 'revise', residencyId: 'r-1', residency: { ...residency, movedIn: { year: 2019 }, movedOut: { year: 2025 } } },
+    ]);
   });
 
   it('corrects a re-placed or retyped row wholesale and erases a removed one', () => {
@@ -38,6 +63,13 @@ describe('addressSaveError', () => {
   it('blocks a half-typed address unless it is removed', () => {
     expect(addressSaveError([row, typing])).toBe(UNFINISHED_ADDRESS);
     expect(addressSaveError([row, { ...typing, removed: true }])).toBeNull();
+  });
+
+  it('blocks a move-in certainly after the move-out unless the row is removed', () => {
+    const backwards: AddressRow = { ...row, movedIn: { year: 2024, month: 3 }, movedOut: { year: 2024, month: 1 } };
+    expect(addressSaveError([backwards])).toBe(MOVED_IN_AFTER_MOVED_OUT);
+    expect(addressSaveError([{ ...backwards, movedOut: { year: 2024 } }])).toBeNull();
+    expect(addressSaveError([{ ...backwards, removed: true }])).toBeNull();
   });
 });
 

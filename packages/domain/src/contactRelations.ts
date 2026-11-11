@@ -109,6 +109,24 @@ export interface RelationshipRecord {
   until?: string | null;
 }
 
+export const PARTNER_KINDS: readonly RelationKind[] = ['Spouse', 'Partner'];
+
+/** The current spouses and partners of `contactIds`, the ids themselves left out. */
+export function partnerIds(
+  relationships: readonly Pick<RelationshipRecord, 'lowId' | 'highId' | 'kind' | 'ended'>[],
+  contactIds: Iterable<string>,
+): Set<string> {
+  const of = new Set(contactIds);
+  const partners = new Set<string>();
+  for (const r of relationships) {
+    if (r.ended || !PARTNER_KINDS.includes(r.kind)) continue;
+    if (of.has(r.lowId)) partners.add(r.highId);
+    if (of.has(r.highId)) partners.add(r.lowId);
+  }
+  for (const id of of) partners.delete(id);
+  return partners;
+}
+
 /** A relationship as seen from one of its contacts: `kind` is the other's role, `label` the viewer's own word. */
 export interface ResolvedRelation {
   otherId: string;
