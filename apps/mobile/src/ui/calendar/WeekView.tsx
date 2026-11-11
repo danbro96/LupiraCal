@@ -7,7 +7,9 @@ import { addDays, daysFrom, fmtBlockTime, fmtDayShort, fmtTime, isToday, minutes
 import { textOn } from '@danbro96/lupira-tokens-core/contrast';
 import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
-import { Gesture, GestureDetector, ScrollView } from 'react-native-gesture-handler';
+import {
+  GestureDetector, ScrollView, useNativeGesture, usePinchGesture, type PinchGestureConfig,
+} from 'react-native-gesture-handler';
 import { Text } from 'react-native-paper';
 import Animated, {
   scrollTo, useAnimatedRef, useAnimatedStyle, useScrollOffset, useSharedValue, type SharedValue,
@@ -476,27 +478,31 @@ function useTimeZoom(initialHours: number) {
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollY = useScrollOffset(scrollRef);
 
-  // eslint-disable-next-line react-hooks/refs -- scrollRef is only used by the pinch worklet's scrollTo on the UI thread
-  const [gestures] = useState(() => {
+  const [pinchConfig] = useState((): PinchGestureConfig => {
     const save = (value: number) => detach(usePrefs.getState().setHourHeight(value), 'prefs:hourHeight');
-    const pinch = Gesture.Pinch()
-      .onStart((e) => {
+    return {
+      onActivate: (e) => {
+        'worklet';
         startH.set(hourH.get());
         anchorHours.set((scrollY.get() + e.focalY) / hourH.get());
-      })
-      .onUpdate((e) => {
+      },
+      onUpdate: (e) => {
+        'worklet';
         // Zoomed all the way out, the whole day fits the viewport — never smaller.
         const minH = Math.max(MIN_HOUR_H, viewportH.get() / 24);
         const next = Math.min(MAX_HOUR_H, Math.max(minH, startH.get() * e.scale));
         hourH.set(next);
         scrollTo(scrollRef, 0, Math.max(0, anchorHours.get() * next - e.focalY), false);
-      })
-      .onEnd(() => {
+      },
+      onDeactivate: () => {
+        'worklet';
         scheduleOnRN(save, Math.round(hourH.get() * 10) / 10);
-      });
-    // The ScrollView joins RNGH's arbitration, so a pinch cancels its scroll and a vertical drag fails the swipe.
-    return { pinch, scroll: Gesture.Native() };
+      },
+    };
   });
+  const pinch = usePinchGesture(pinchConfig);
+  // The ScrollView joins RNGH's arbitration, so a pinch cancels its scroll and a vertical drag fails the swipe.
+  const scroll = useNativeGesture();
 
   const lanesStyle = useAnimatedStyle(() => ({ height: 24 * hourH.get() }));
   const scrollToHours = useCallback((hours: number) => {
@@ -506,7 +512,7 @@ function useTimeZoom(initialHours: number) {
     viewportH.set(e.nativeEvent.layout.height);
   }, [viewportH]);
 
-  return { ...gestures, hourH, scrollRef, initialOffset, lanesStyle, scrollToHours, onViewportLayout };
+  return { pinch, scroll, hourH, scrollRef, initialOffset, lanesStyle, scrollToHours, onViewportLayout };
 }
 
 const styles = StyleSheet.create({

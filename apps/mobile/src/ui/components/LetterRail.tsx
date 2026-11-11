@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { Text } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -39,25 +39,24 @@ export function LetterRail({ letters, present, onSelect }: {
     settle.current = { timer: setTimeout(flush, SETTLE_MS), letter: letters[i] };
   });
 
-  const gesture = useMemo(() => {
-    const count = letters.length;
-    const pick = (y: number) => {
-      'worklet';
-      if (height.get() <= 0) return;
-      const i = Math.min(count - 1, Math.max(0, Math.floor((y / height.get()) * count)));
-      if (i === active.get()) return;
-      active.set(i);
-      scheduleOnRN(select, i);
-    };
-    return Gesture.Pan()
-      .minDistance(0)
-      .onBegin((e) => pick(e.y))
-      .onUpdate((e) => pick(e.y))
-      .onFinalize(() => {
-        active.set(-1);
-        scheduleOnRN(flush);
-      });
-  }, [letters, select, flush, height, active]);
+  const count = letters.length;
+  const pick = (y: number) => {
+    'worklet';
+    if (height.get() <= 0) return;
+    const i = Math.min(count - 1, Math.max(0, Math.floor((y / height.get()) * count)));
+    if (i === active.get()) return;
+    active.set(i);
+    scheduleOnRN(select, i);
+  };
+  const gesture = usePanGesture({
+    minDistance: 0,
+    onBegin: (e) => pick(e.y),
+    onUpdate: (e) => pick(e.y),
+    onFinalize: () => {
+      active.set(-1);
+      scheduleOnRN(flush);
+    },
+  });
 
   const bubbleStyle = useAnimatedStyle(() => {
     const slot = height.get() / letters.length;

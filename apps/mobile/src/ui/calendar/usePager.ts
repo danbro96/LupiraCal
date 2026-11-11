@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
-import { Gesture } from 'react-native-gesture-handler';
+import { usePanGesture } from 'react-native-gesture-handler';
 import { cancelAnimation, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { useLatestCallback } from '@danbro96/lupira-expo-paper/hooks/useLatestCallback';
@@ -25,7 +25,7 @@ export function usePager(onStep: (dir: 1 | -1) => void) {
   const dragBase = useSharedValue(0);
   const step = useLatestCallback(onStep);
 
-  const [actions] = useState(() => {
+  const [{ commitPending, settle }] = useState(() => {
     const commitPending = () => {
       'worklet';
       const dir = pending.get();
@@ -41,30 +41,31 @@ export function usePager(onStep: (dir: 1 | -1) => void) {
         if (done) commitPending();
       }));
     };
-    const gesture = Gesture.Pan()
-      .maxPointers(1)
-      .activeOffsetX([-LOCK_PX, LOCK_PX])
-      .failOffsetY([-LOCK_PX, LOCK_PX])
-      .onStart(() => {
-        commitPending();
-        cancelAnimation(offset);
-        dragBase.set(offset.get());
-      })
-      .onUpdate((e) => {
-        offset.set(dragBase.get() + e.translationX);
-      })
-      .onEnd((e, success) => {
-        const w = width.get();
-        const moved = offset.get() + page.get() * w;
-        const far = Math.abs(moved) > w * COMMIT_FRACTION;
-        const flung = Math.abs(e.velocityX) > COMMIT_VELOCITY && Math.sign(e.velocityX) === Math.sign(moved);
-        settle(success && w > 0 && (far || flung) ? (moved < 0 ? 1 : -1) : 0);
-      });
-    return { gesture, settle };
+    return { commitPending, settle };
+  });
+  const gesture = usePanGesture({
+    maxPointers: 1,
+    activeOffsetX: [-LOCK_PX, LOCK_PX],
+    failOffsetY: [-LOCK_PX, LOCK_PX],
+    onActivate: () => {
+      commitPending();
+      cancelAnimation(offset);
+      dragBase.set(offset.get());
+    },
+    onUpdate: (e) => {
+      offset.set(dragBase.get() + e.translationX);
+    },
+    onDeactivate: (e) => {
+      const w = width.get();
+      const moved = offset.get() + page.get() * w;
+      const far = Math.abs(moved) > w * COMMIT_FRACTION;
+      const flung = Math.abs(e.velocityX) > COMMIT_VELOCITY && Math.sign(e.velocityX) === Math.sign(moved);
+      settle(!e.canceled && w > 0 && (far || flung) ? (moved < 0 ? 1 : -1) : 0);
+    },
   });
 
   /** Animate one page over, as a swipe would, e.g. for a tap on a neighbouring page's content. */
-  const slide = (dir: 1 | -1) => actions.settle(dir);
+  const slide = (dir: 1 | -1) => settle(dir);
 
   const snapTo = (p: number) => {
     cancelAnimation(offset);
@@ -79,5 +80,5 @@ export function usePager(onStep: (dir: 1 | -1) => void) {
   };
 
   const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
-  return { gesture: actions.gesture, slideStyle, slide, snapTo, onPageLayout };
+  return { gesture, slideStyle, slide, snapTo, onPageLayout };
 }

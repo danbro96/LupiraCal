@@ -4,9 +4,9 @@ import { fmtDayTitle, fmtTime, isThisYear, parseYmd } from '@danbro96/lupira-dom
 import { textOn } from '@danbro96/lupira-tokens-core/contrast';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { Chip, FAB, Text } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, type SharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -47,15 +47,15 @@ export function DaySheet({ day, areaH, onDismiss, onOpenOccurrence }: {
 
   const dismiss = useLatestCallback(onDismiss);
 
-  const [drag] = useState(() => Gesture.Pan()
-    .activeOffsetY([-6, 6])
-    .onStart(() => {
+  const drag = usePanGesture({
+    activeOffsetY: [-6, 6],
+    onActivate: () => {
       startH.set(height.get());
-    })
-    .onUpdate((e) => {
+    },
+    onUpdate: (e) => {
       height.set(Math.max(0, Math.min(areaH.get() * CEILING, startH.get() - e.translationY)));
-    })
-    .onEnd(() => {
+    },
+    onDeactivate: () => {
       const H = areaH.get();
       if (height.get() < H * CLOSE_BELOW) {
         height.set(withTiming(0, { duration: 150 }, (done) => {
@@ -64,7 +64,8 @@ export function DaySheet({ day, areaH, onDismiss, onOpenOccurrence }: {
       } else {
         height.set(withSpring(height.get() > H * (LOW + HIGH) / 2 ? H * HIGH : H * LOW, SPRING));
       }
-    }));
+    },
+  });
   const sheetStyle = useAnimatedStyle(() => ({ height: height.get() }));
 
   return (
