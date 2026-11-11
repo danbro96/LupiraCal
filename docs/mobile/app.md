@@ -48,13 +48,13 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 | `contact.residency` | `/contact-api/sync/residencies` | `contact.residency.*` ops | `residency_index`, view `bridge_residencies` |
 | `contact.placeEntry` | `/contact-api/sync/place-entries` (doc id = place id) | `contact.placeEntry.*` ops (set / remove a code) | — |
 | `tasks.list` | `/tasks-api/sync/lists` | — | — |
-| `tasks.item` | `/tasks-api/sync/items` | — (edits live in Lupira Tasks) | `task_deadlines` (open deadlines) |
+| `tasks.item` | `/tasks-api/sync/items` | — (edits live in Lupira Tasks) | `task_deadlines` (open deadlines by local `due_day`; `due_on` or a UTC `due_at`) |
 | `cal.subscribedEvent` | `/api/sync/subscribed-events` (snapshot; occurrences expanded server-side over ±365 d) | — (read-only feed mirror) | `subscribed_occurrences` |
 | `cal.holiday` | `/api/sync/holidays` (snapshot; each holiday's dates from last year through two years ahead) | — (computed server-side) | `holiday_occurrences` |
 | `contact.me` | `/contact-api/me` (one-doc snapshot) | — | — |
 | `geo.place` | `/geo-api/places/lookup` (snapshot of the places residencies point at, doc id = the stored place id) | — | — |
 
-- New tasks come from the new-event editor's Event | Task switch (title carried over, due = the tapped day) and from ItemDetail's "Add task" (`TaskCreateScreen`, linked to the event); both share `useTaskComposer` + `TaskFields` and post straight to tasks-api — online-only, no op — and `engine.sync()` pulls them in. The list picker reads the `tasks.list` mirror; from an event, a `task` relation links the event (`@lupira/cal-domain/tasks` `TASK_RELATION`).
+- New tasks come from the new-event editor's Event | Task switch (title carried over, due = the tapped day, time optional) and from ItemDetail's "Add task" (`TaskCreateScreen`, linked to the event); both share `useTaskComposer` + `TaskFields` and post straight to tasks-api — online-only, no op — and `engine.sync()` pulls them in. The list picker reads the `tasks.list` mirror; from an event, a `task` relation links the event (`@lupira/cal-domain/tasks` `TASK_RELATION`).
 - Every change to an input (pulled doc, queued op, discard, ack) recomputes `local = reduce(server, ...ops)` with `domain/mirrorReducers` and rewrites the module's index rows; a deleted doc is `null`. Table DDL and row writers live in `data/indexes/`, the reads over them in `data/queries/`.
 - Ops (`domain/ops.ts`) carry `aggregate`/`aggregateId` from `stamp()`; `state/actions.ts` is the write surface, `sync/replayOp.ts` the REST replay (`Idempotency-Key: commandId`). Ops of one aggregate replay in order; a parked or backed-off op holds the ones behind it.
 - Residency ops hold on the contact's id, so an address added to a contact created offline waits for that create. A start sends a UUIDv7 `sourceKey`; its residency id is `deterministicIdFor(residencyStreamKey(contactId, key))`, contact-api's `Residency.StreamIdOf` (fixture in `domain/ids.test.ts`). Move-out replays as `POST /residencies/{id}/move-out`, not the wholesale correction.

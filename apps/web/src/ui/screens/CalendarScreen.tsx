@@ -84,7 +84,7 @@ export function CalendarScreen() {
         return g && g.start < range.end && (g.end ?? g.start) >= range.start ? [g] : [];
       }),
     );
-    // Server range-filters on dueAt; overdue is judged at render time, not clock-tick-live.
+    // Server range-filters on the due; overdue is judged at render time, not clock-tick-live.
     const rightNow = new Date();
     const deadlines = tasks.map((t) => fromTask(t, rightNow));
     return [...accepted, ...ghosts, ...deadlines];

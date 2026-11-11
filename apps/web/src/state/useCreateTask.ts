@@ -5,15 +5,15 @@ import { createListItem, listListItems } from '@lupira/cal-api/fetch/tasks';
 import { newTaskBody, TASK_RELATION } from '@lupira/cal-domain/tasks';
 import { useInvalidateItems, useInvalidateTasks } from './useInvalidate';
 
-export type NewTask = { listId: string; title: string; dueDay: string | null; eventId?: string };
+export type NewTask = { listId: string; title: string; dueDay: string | null; dueTime: string | null; eventId?: string };
 
 /** Adds a LupiraTasks task at the top of its list and, when made from an event, links the event to it. */
 export function useCreateTask() {
   const invalidateTasks = useInvalidateTasks();
   const invalidateItems = useInvalidateItems();
   return useMutation({
-    mutationFn: async ({ listId, title, dueDay, eventId }: NewTask) => {
-      const task = await createListItem(listId, newTaskBody(uuidv7(), title, dueDay, await listListItems(listId)));
+    mutationFn: async ({ listId, title, dueDay, dueTime, eventId }: NewTask) => {
+      const task = await createListItem(listId, newTaskBody(uuidv7(), title, { day: dueDay, time: dueTime }, await listListItems(listId)));
       if (eventId) await createItemRelation(eventId, { ...TASK_RELATION, toRef: task.id });
       return task;
     },

@@ -1,11 +1,11 @@
 import type { TaskLike } from '@lupira/cal-domain/tasks';
 import type { Tx } from '@danbro96/lupira-expo-sqlite/types';
 
-/** Open task deadlines due in [fromIso, toIso). */
-export async function taskDeadlinesBetween(tx: Tx, fromIso: string, toIso: string): Promise<TaskLike[]> {
+/** Open task deadlines due on a day in [fromDay, toDay). */
+export async function taskDeadlinesBetween(tx: Tx, fromDay: string, toDay: string): Promise<TaskLike[]> {
   return tx.all<TaskLike>(
-    `SELECT item_id AS id, list_id AS listId, title, due AS dueAt, status
-     FROM task_deadlines WHERE due >= ? AND due < ? ORDER BY due`,
-    [fromIso, toIso],
+    `SELECT item_id AS id, list_id AS listId, title, due_on AS dueOn, due_at AS dueAt, status
+     FROM task_deadlines WHERE due_day >= ? AND due_day < ? ORDER BY due_day, due_at`,
+    [fromDay, toDay],
   );
 }

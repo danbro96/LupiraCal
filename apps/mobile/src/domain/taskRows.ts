@@ -17,16 +17,16 @@ export type TaskDeadlineRow = {
   is_availability: 0;
   avail_status: null;
   color: null;
-  task: { listId: string; itemId: string; dueAt: string; overdue: boolean };
+  task: { listId: string; itemId: string; dueAt: string | null; overdue: boolean };
 };
 
 export function taskDeadlineRows(items: TaskLike[], now: Date): TaskDeadlineRow[] {
   return items.filter(isOpenDeadline).map((t) => ({
     source: 'task' as const,
     source_id: t.id,
-    start_utc: t.dueAt,
+    start_utc: t.dueAt ?? `${t.dueOn}T00:00:00.000Z`,
     end_utc: null,
-    start_day: dueDay(t.dueAt),
+    start_day: dueDay(t),
     all_day: 1 as const,
     title: t.title,
     status: t.status,
@@ -34,7 +34,7 @@ export function taskDeadlineRows(items: TaskLike[], now: Date): TaskDeadlineRow[
     is_availability: 0 as const,
     avail_status: null,
     color: null,
-    task: { listId: t.listId, itemId: t.id, dueAt: t.dueAt, overdue: isOverdue(t.dueAt, now) },
+    task: { listId: t.listId, itemId: t.id, dueAt: t.dueAt ?? null, overdue: isOverdue(t, now) },
   }));
 }
 

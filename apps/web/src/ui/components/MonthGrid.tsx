@@ -168,6 +168,7 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
             {shown.map((e) => {
               const fk = familyKey(e);
               const accent = fk ? familyAccent(fk) : undefined;
+              const time = e.task ? e.task.dueAt : e.isAllDay ? null : e.start;
               return (
                 <ButtonBase
                   key={e.key}
@@ -175,12 +176,12 @@ export function MonthGrid({ date, weeks, entries, segments, compact, onOpenItem,
                   onClick={() => onOpenItem(e.itemId, e.originalStart)}
                   onMouseEnter={fk ? () => setHoverFamily(fk) : undefined}
                   onMouseLeave={fk ? () => setHoverFamily(null) : undefined}
-                  title={e.ghost ? `${e.title} (proposed)` : e.task ? `${e.title} — due ${fmtTime(e.task.dueAt)}` : e.title}
+                  title={e.ghost ? `${e.title} (proposed)` : e.task?.dueAt ? `${e.title} — due ${fmtTime(e.task.dueAt)}` : e.title}
                 >
                   <Box component="span" sx={{ ...DOT, width: 7, height: 7 }} style={{ background: e.color }} />
-                  {!e.isAllDay && (
+                  {time && (
                     <Box component="span" sx={{ color: 'text.subtle', flex: 'none' }}>
-                      {fmtTime(e.start)}
+                      {fmtTime(time)}
                     </Box>
                   )}
                   <Box

@@ -12690,6 +12690,14 @@
             ],
             "format": "uuid"
           },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A date-only due; `dueAt` is the timed one. At most one is set.",
+            "format": "date"
+          },
           "dueAt": {
             "type": [
               "null",
@@ -13725,6 +13733,14 @@
                 "$ref": "#/components/schemas/PersonRef"
               }
             ]
+          },
+          "dueOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A date-only due; `dueAt` is the timed one. At most one is set.",
+            "format": "date"
           },
           "dueAt": {
             "type": [

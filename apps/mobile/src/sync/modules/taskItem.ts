@@ -11,5 +11,5 @@ export const taskItemModule: AggregateModule<ItemDto, ItemGuardsDto, never, Task
     fetch: (since) => syncItems(since ? { since } : undefined),
     fromWire: (c) => ({ id: c.item.id, state: { doc: c.item, guards: c.guards } }),
   },
-  index: { version: 1, tables: TASK_TABLES, ddl: TASK_DDL, write: writeTaskIndex },
+  index: { version: 2, tables: TASK_TABLES, ddl: TASK_DDL, write: writeTaskIndex },
 };

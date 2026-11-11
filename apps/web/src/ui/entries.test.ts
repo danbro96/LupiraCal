@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { CalendarItemDto, CalendarItemOccurrenceDto, ContainerDto } from '@lupira/cal-api/models';
 import { ITEM_COLORS } from '@lupira/cal-tokens/itemColors';
-import { fromOccurrence, fromProposed, isHoliday, isSubscribed } from './entries';
+import type { OpenTask } from '../state/useTaskDeadlines';
+import { fromOccurrence, fromProposed, fromTask, isHoliday, isSubscribed } from './entries';
 
 const calendar: ContainerDto = { id: 'cal-1', type: 'calendar', slug: 'family', access: 'Owner', color: '#123456' };
 
@@ -88,5 +89,25 @@ describe('holiday entries', () => {
     const plain = fromOccurrence(occurrence({}), calendar);
     expect(isHoliday(plain)).toBe(false);
     expect(plain.holiday).toBeUndefined();
+  });
+});
+
+describe('task deadline entries', () => {
+  const task = (due: { dueOn: string } | { dueAt: string }) =>
+    ({ id: 't-1', listId: 'l-1', title: 'Renew passport', status: 'Open', completed: false, ...due }) as OpenTask;
+
+  it('pins a date-only due to its day without a time', () => {
+    const entry = fromTask(task({ dueOn: '2026-08-15' }), new Date(2026, 7, 15, 23, 0));
+    expect(entry.isAllDay).toBe(true);
+    expect(entry.dayRange).toEqual({ first: '2026-08-15', last: '2026-08-15' });
+    expect(entry.task).toEqual({ listId: 'l-1', itemId: 't-1', dueAt: null, overdue: false });
+  });
+
+  it('pins a timed due to its local day and carries its instant', () => {
+    const due = new Date(2026, 7, 15, 18, 0);
+    const entry = fromTask(task({ dueAt: due.toISOString() }), new Date(2026, 7, 15, 19, 0));
+    expect(entry.isAllDay).toBe(true);
+    expect(entry.dayRange).toEqual({ first: '2026-08-15', last: '2026-08-15' });
+    expect(entry.task).toEqual({ listId: 'l-1', itemId: 't-1', dueAt: due, overdue: true });
   });
 });

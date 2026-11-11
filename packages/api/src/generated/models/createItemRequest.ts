@@ -15,6 +15,11 @@ export interface CreateItemRequest {
   title: string;
   /** @nullable */
   parentItemId?: string | null;
+  /**
+     * A date-only due; `dueAt` is the timed one. At most one is set.
+     * @nullable
+     */
+  dueOn?: string | null;
   /** @nullable */
   dueAt?: string | null;
   /** @nullable */

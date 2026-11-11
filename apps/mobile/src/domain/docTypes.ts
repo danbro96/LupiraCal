@@ -119,6 +119,7 @@ export type TaskDoc = {
   title: string;
   status: string;
   completed: boolean;
+  dueOn?: string | null;
   dueAt?: string | null;
 };
 

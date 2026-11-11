@@ -207,12 +207,12 @@ and completing stay in Lupira Tasks.
 ### Scope
 - [x] Tasks operations in `@lupira/cal-api` (`fetch/tasks`) from the merged BFF contract; `dueFrom/dueTo` search server-side
 - [x] `lupira-tasks-aud` in `OIDC_SCOPES` (refresh grants never widen scopes — see Manual steps)
-- [x] `domain/taskRows.ts` + tests: GridRow-shaped `source:'task'` rows (all-day pin on the local due day — dueAt is "done by"), `isTaskRow` guard, half-open `monthUtcRange`, `taskDeepLink`
-- [x] `useTaskDeadlines(dayKeys)`: `mirrorQuery` over the `task_deadlines` index, keyed `['tasks.item', 'deadlines', monthKey]`, gated on the pref; Cancelled and completed tasks never enter the index
-- [x] Render merges: MonthView bars, WeekView all-day strip, day-sheet agenda — muted outline chips, ⏰ prefix, danger when overdue; `CalRow = GridRow | TaskDeadlineRow` union at the seams
+- [x] `domain/taskRows.ts` + tests: GridRow-shaped `source:'task'` rows (all-day pin on the local due day — a due is "done by"), `isTaskRow` guard, half-open `monthDayRange`, `taskDeepLink`
+- [x] `useTaskDeadlines(dayKeys)`: `mirrorQuery` over the `task_deadlines` index by `due_day`, keyed `['tasks.item', 'deadlines', monthKey]`, gated on the pref; Cancelled and completed tasks never enter the index
+- [x] Render merges: MonthView bars, WeekView all-day strip, day-sheet agenda — muted outline chips, ⏰ prefix (and a timed due's time on week chips and in the agenda), danger when overdue; `CalRow = GridRow | TaskDeadlineRow` union at the seams
 - [x] Tap → read-only `TaskDetailScreen` (`{listId, itemId}`, from the mirror): due/status/priority/notes/assignee + "Open in Lupira Tasks ↗" deep link (`lupiratasks://task/<listId>/<itemId>`, fire-and-catch — no canOpenURL, keeps the `<queries>` manifest out)
 - [x] `showTaskDeadlines` pref (kernel meta, default on) + Settings switch under Calendars
-- [x] New task from the new-event editor's Event | Task switch and `TaskCreateScreen` from ItemDetail ("Add task"): list (writable, unarchived `tasks.list` docs; last one in `prefs.lastTaskListId`), title, optional due day. Online-only: `POST /tasks-api/lists/{listId}/items` with a top-of-list sort key from `GET /tasks-api/lists/{listId}/items`; from an event, `POST /api/items/{id}/relations` (`TASK_RELATION`); then `engine.sync()` pulls the task in
+- [x] New task from the new-event editor's Event | Task switch and `TaskCreateScreen` from ItemDetail ("Add task"): list (writable, unarchived `tasks.list` docs; last one in `prefs.lastTaskListId`), title, optional due day and time (`dueOn` / `dueAt`). Online-only: `POST /tasks-api/lists/{listId}/items` with a top-of-list sort key from `GET /tasks-api/lists/{listId}/items`; from an event, `POST /api/items/{id}/relations` (`TASK_RELATION`); then `engine.sync()` pulls the task in
 
 ### Exit criteria
 - [x] Root `npm run typecheck` / `lint` / `test` green (taskRows tests ride the mobile vitest gate)

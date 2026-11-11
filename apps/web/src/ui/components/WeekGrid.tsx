@@ -7,7 +7,7 @@ import type { AvailabilitySegment } from '../../state/useAvailability';
 import { clampToDay, drawnEnd, foldLanes, hiddenPerColumn, inAllDayStrip, layoutColumns, packLanes } from '@lupira/cal-domain/occurrences';
 import { type DayRail, familyKey, railsForDay } from '@lupira/cal-domain/family';
 import { isRedDay } from '@lupira/cal-domain/holidays';
-import { addDays, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, ymd } from '@danbro96/lupira-domain-core/time';
+import { addDays, fmtBlockTime, fmtDayShort, fmtTime, isToday, minutesOfDay, ymd } from '@danbro96/lupira-domain-core/time';
 import { textOn } from '@danbro96/lupira-tokens-core/contrast';
 import { availabilityColor } from '@danbro96/lupira-tokens-calendar/kinds';
 import { EMPHASIS, TENTATIVE } from '@lupira/cal-tokens/color';
@@ -253,6 +253,7 @@ function AllDayStrip({
             style={{ background: e.task ? undefined : isTentative(e) ? tentativeFill(e.color) : e.color }}
           >
             {e.icon && <NamedIcon name={e.icon} sx={{ verticalAlign: -2, mr: 0.25 }} />}
+            {e.task?.dueAt && `${fmtTime(e.task.dueAt)} `}
             {e.title}
             {e.childCount > 0 ? ` · ${e.childCount}` : ''}
           </ButtonBase>

@@ -3,7 +3,7 @@ import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
 import { lastDayOf } from '@lupira/cal-domain/occurrences';
 import { occurrenceKey } from '@lupira/cal-domain/seriesOccurrences';
 import { isSubscribedOrigin } from '@lupira/cal-domain/subscriptions';
-import { isOverdue } from '@lupira/cal-domain/tasks';
+import { dueDay, isOverdue } from '@lupira/cal-domain/tasks';
 import { parseYmd, sameDay, ymd } from '@danbro96/lupira-domain-core/time';
 import type { OpenTask } from '../state/useTaskDeadlines';
 import type { IconName } from '@lupira/cal-tokens/icons';
@@ -34,7 +34,7 @@ export interface GridEntry {
   /** Provenance for read-time projections (birthdays → a contact, feed events → a subscription); routes the click to a read-only view. */
   origin?: OccurrenceOrigin | null;
   /** LupiraTasks provenance (not a cal item; generated OriginKind can't carry it) — routes the click to the TaskCard. */
-  task?: { listId: string; itemId: string; dueAt: Date; overdue: boolean };
+  task?: { listId: string; itemId: string; dueAt: Date | null; overdue: boolean };
   /** Set for a subscribed feed's event — the read-only card addresses it calendar- and subscription-scoped. */
   subscription?: { calendarId: string; subscriptionId: string };
   /** Set for a computed holiday: a red day or an eve. */
@@ -70,24 +70,24 @@ export function fromOccurrence(o: CalendarItemOccurrenceDto, calendar: Container
   };
 }
 
-/** A task deadline pinned to its due day's all-day strip — `dueAt` means "done by", not "occurs at",
- *  so a timed block at the due instant would mislead; the exact time lives in the TaskCard. */
+/** A task deadline pinned to its due day's all-day strip — a due means "done by", not "occurs at",
+ *  so a timed block at the due instant would mislead; a timed due's time rides on the chip. */
 export function fromTask(t: OpenTask, now: Date): GridEntry {
-  const due = new Date(t.dueAt);
-  const overdue = isOverdue(t.dueAt, now);
+  const day = dueDay(t);
+  const overdue = isOverdue(t, now);
   return {
     key: `task:${t.id}`,
     itemId: t.id,
     title: displayTitle(t.title),
-    start: new Date(due.getFullYear(), due.getMonth(), due.getDate()),
+    start: parseYmd(day),
     end: null,
     isAllDay: true,
-    dayRange: { first: ymd(due), last: ymd(due) },
+    dayRange: { first: day, last: day },
     color: overdue ? 'var(--mui-palette-error-main)' : 'var(--mui-palette-text-secondary)',
     icon: 'schedule',
     parentItemId: null,
     childCount: 0,
-    task: { listId: t.listId, itemId: t.id, dueAt: due, overdue },
+    task: { listId: t.listId, itemId: t.id, dueAt: t.dueAt != null ? new Date(t.dueAt) : null, overdue },
   };
 }
 

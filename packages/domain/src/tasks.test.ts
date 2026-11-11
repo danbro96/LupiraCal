@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ymd } from '@danbro96/lupira-domain-core/time';
+import { fmtDate, ymd } from '@danbro96/lupira-domain-core/time';
 import {
-  dueAtEndOfDay, dueDay, dueLine, initialTaskListId, isOpenDeadline, isOverdue, isTaskOverdue, monthUtcRange, newTaskBody,
+  dueDay, dueFromPick, dueLine, initialTaskListId, isOpenDeadline, isOverdue, isTaskOverdue, monthDayRange, newTaskBody,
   newTaskSortOrder, taskDeepLink, taskWebUrl, writableTaskLists, type TaskLike, type TaskListLike,
 } from './tasks';
 
@@ -20,34 +20,42 @@ describe('isOpenDeadline', () => {
     expect(isOpenDeadline(task({ dueAt: undefined }))).toBe(false);
     expect(isOpenDeadline(task({ status: 'Cancelled' }))).toBe(false);
     expect(isOpenDeadline(task({}))).toBe(true);
+    expect(isOpenDeadline(task({ dueAt: null, dueOn: '2026-08-15' }))).toBe(true);
   });
 });
 
 describe('dueDay', () => {
   it('is the LOCAL day of dueAt', () => {
     const local = new Date(2026, 7, 15, 23, 30);
-    expect(dueDay(local.toISOString())).toBe(ymd(local));
+    expect(dueDay({ dueAt: local.toISOString() })).toBe(ymd(local));
+  });
+
+  it('is dueOn itself for a date-only due', () => {
+    expect(dueDay({ dueOn: '2026-08-15' })).toBe('2026-08-15');
   });
 });
 
 describe('isOverdue', () => {
-  it('is strict: due exactly now is not overdue', () => {
+  it('is strict for a timed due: due exactly now is not overdue', () => {
     const due = new Date(2026, 7, 15, 12, 0);
-    expect(isOverdue(due.toISOString(), new Date(2026, 7, 15, 11, 59))).toBe(false);
-    expect(isOverdue(due.toISOString(), due)).toBe(false);
-    expect(isOverdue(due.toISOString(), new Date(2026, 7, 15, 12, 1))).toBe(true);
+    expect(isOverdue({ dueAt: due.toISOString() }, new Date(2026, 7, 15, 11, 59))).toBe(false);
+    expect(isOverdue({ dueAt: due.toISOString() }, due)).toBe(false);
+    expect(isOverdue({ dueAt: due.toISOString() }, new Date(2026, 7, 15, 12, 1))).toBe(true);
+  });
+
+  it('holds a date-only due through its whole local day', () => {
+    expect(isOverdue({ dueOn: '2026-08-15' }, new Date(2026, 7, 15, 23, 59))).toBe(false);
+    expect(isOverdue({ dueOn: '2026-08-15' }, new Date(2026, 7, 16, 0, 0))).toBe(true);
   });
 });
 
-describe('monthUtcRange', () => {
-  it('spans the local month half-open', () => {
-    const { dueFrom, dueTo } = monthUtcRange('2026-08');
-    expect(dueFrom).toBe(new Date(2026, 7, 1).toISOString());
-    expect(dueTo).toBe(new Date(2026, 8, 1).toISOString());
+describe('monthDayRange', () => {
+  it('spans the month half-open', () => {
+    expect(monthDayRange('2026-08')).toEqual({ fromDay: '2026-08-01', toDay: '2026-09-01' });
   });
 
   it('rolls the year at December', () => {
-    expect(monthUtcRange('2026-12').dueTo).toBe(new Date(2027, 0, 1).toISOString());
+    expect(monthDayRange('2026-12').toDay).toBe('2027-01-01');
   });
 });
 
@@ -65,6 +73,11 @@ describe('dueLine', () => {
     expect(dueLine({ dueAt: '2026-10-01T10:00:00Z', completed: true }, now)).not.toMatch(/overdue/);
     expect(dueLine({ dueAt: null }, now)).toBe('No deadline');
     expect(isTaskOverdue({ dueAt: '2026-10-09T10:00:00Z' }, now)).toBe(false);
+  });
+
+  it('gives a date-only due its date alone', () => {
+    expect(dueLine({ dueOn: '2026-10-04' }, now)).toBe(`Due ${fmtDate(new Date(2026, 9, 4))}`);
+    expect(dueLine({ dueOn: '2026-10-03' }, now)).toMatch(/ — overdue$/);
   });
 });
 
@@ -92,10 +105,11 @@ describe('initialTaskListId', () => {
   });
 });
 
-describe('dueAtEndOfDay', () => {
-  it('is the last instant of the LOCAL day', () => {
-    expect(new Date(dueAtEndOfDay('2026-10-12')).getTime()).toBe(new Date(2026, 9, 12, 23, 59, 59, 999).getTime());
-    expect(dueDay(dueAtEndOfDay('2026-10-12'))).toBe('2026-10-12');
+describe('dueFromPick', () => {
+  it('makes a day alone date-only and a day with a time a local instant', () => {
+    expect(dueFromPick(null, '09:00')).toEqual({ dueOn: null, dueAt: null });
+    expect(dueFromPick('2026-10-12', null)).toEqual({ dueOn: '2026-10-12', dueAt: null });
+    expect(dueFromPick('2026-10-12', '18:30')).toEqual({ dueOn: null, dueAt: new Date(2026, 9, 12, 18, 30).toISOString() });
   });
 });
 
@@ -111,7 +125,11 @@ describe('newTaskSortOrder', () => {
 });
 
 describe('newTaskBody', () => {
-  it('trims the title and leaves an undated task without dueAt', () => {
-    expect(newTaskBody('id', '  Pack  ', null, [])).toEqual({ id: 'id', title: 'Pack', dueAt: null, sortOrder: 'a0' });
+  it('trims the title and leaves an undated task without a due', () => {
+    expect(newTaskBody('id', '  Pack  ', { day: null, time: null }, [])).toEqual({ id: 'id', title: 'Pack', dueOn: null, dueAt: null, sortOrder: 'a0' });
+  });
+
+  it('sends a picked day as dueOn', () => {
+    expect(newTaskBody('id', 'Pack', { day: '2026-10-12', time: null }, [])).toMatchObject({ dueOn: '2026-10-12', dueAt: null });
   });
 });

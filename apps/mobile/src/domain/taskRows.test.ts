@@ -23,6 +23,14 @@ describe('taskDeadlineRows', () => {
     expect(rows[0].task).toEqual({ listId: 'l1', itemId: 'i1', dueAt: local.toISOString(), overdue: false });
   });
 
+  it('shapes a date-only due on its own day, without a time, overdue only after it', () => {
+    const due = task({ dueAt: null, dueOn: '2026-08-15' });
+    const [row] = taskDeadlineRows([due], new Date(2026, 7, 15, 23, 59));
+    expect(row.start_day).toBe('2026-08-15');
+    expect(row.task).toEqual({ listId: 'l1', itemId: 'i1', dueAt: null, overdue: false });
+    expect(taskDeadlineRows([due], new Date(2026, 7, 16))[0].task.overdue).toBe(true);
+  });
+
   it('applies the shared open-deadline rule', () => {
     const rows = taskDeadlineRows(
       [task({ id: 'a', dueAt: null }), task({ id: 'b', status: 'Cancelled' }), task({ id: 'c' })],

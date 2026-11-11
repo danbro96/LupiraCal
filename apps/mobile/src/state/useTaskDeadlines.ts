@@ -1,4 +1,4 @@
-import { monthUtcRange } from '@lupira/cal-domain/tasks';
+import { monthDayRange } from '@lupira/cal-domain/tasks';
 import { mirrorQuery } from '@danbro96/lupira-expo-query/mirrorQuery';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { taskDeadlinesBetween } from '../data/queries/tasks';
@@ -16,8 +16,8 @@ export function useTaskDeadlines(dayKeys: string[]): TaskDeadlineRow[] {
   const results = useQueries({
     queries: monthKeys.map((monthKey) => ({
       ...mirrorQuery([Aggregate.taskItem, 'deadlines', monthKey], async () => {
-        const { dueFrom, dueTo } = monthUtcRange(monthKey);
-        return taskDeadlineRows(await taskDeadlinesBetween(await readyDb(), dueFrom, dueTo), new Date());
+        const { fromDay, toDay } = monthDayRange(monthKey);
+        return taskDeadlineRows(await taskDeadlinesBetween(await readyDb(), fromDay, toDay), new Date());
       }),
       enabled: showTasks,
     })),

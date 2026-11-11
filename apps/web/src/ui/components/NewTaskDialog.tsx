@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -17,13 +18,13 @@ import { readPref, writePref } from '../../state/localPrefs';
 import { errText } from '../errText';
 import { useIsPhone } from '../hooks/useIsPhone';
 
-type FormValues = { listId: string; title: string; dueDay: string };
+type FormValues = { listId: string; title: string; dueDay: string; dueTime: string };
 
 const LAST_LIST = 'newTask.listId';
 
 export type TaskEvent = { id: string; title: string; day: string | null };
 
-/** A LupiraTasks task from the calendar: list, title, optional due day; made from an event, it links to it. */
+/** A LupiraTasks task from the calendar: list, title, optional due day and time; made from an event, it links to it. */
 export function NewTaskDialog({ event, onClose }: { event?: TaskEvent; onClose: () => void }) {
   const isPhone = useIsPhone();
   const { lists, isLoading } = useWritableTaskLists();
@@ -46,12 +47,13 @@ function TaskForm({ lists, event, onClose }: { lists: ListDto[]; event?: TaskEve
   const showSnack = useSnackbar();
   const create = useCreateTask();
   const { control, handleSubmit } = useForm<FormValues>({
-    defaultValues: { listId: initialTaskListId(lists, readPref(LAST_LIST)), title: '', dueDay: event?.day ?? '' },
+    defaultValues: { listId: initialTaskListId(lists, readPref(LAST_LIST)), title: '', dueDay: event?.day ?? '', dueTime: '' },
   });
+  const dueDay = useWatch({ control, name: 'dueDay' });
 
   const submit = handleSubmit((v) => {
     create.mutate(
-      { listId: v.listId, title: v.title, dueDay: v.dueDay || null, eventId: event?.id },
+      { listId: v.listId, title: v.title, dueDay: v.dueDay || null, dueTime: v.dueTime || null, eventId: event?.id },
       {
         onSuccess: (task) => {
           writePref(LAST_LIST, v.listId);
@@ -109,11 +111,20 @@ function TaskForm({ lists, event, onClose }: { lists: ListDto[]; event?: TaskEve
             </TextField>
           )}
         />
-        <Controller
-          name="dueDay"
-          control={control}
-          render={({ field }) => <TextField type="date" label="Due" slotProps={{ inputLabel: { shrink: true } }} {...field} />}
-        />
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Controller
+            name="dueDay"
+            control={control}
+            render={({ field }) => <TextField type="date" label="Due" sx={{ flex: 3 }} slotProps={{ inputLabel: { shrink: true } }} {...field} />}
+          />
+          <Controller
+            name="dueTime"
+            control={control}
+            render={({ field }) => (
+              <TextField type="time" label="Time" disabled={!dueDay} sx={{ flex: 2 }} slotProps={{ inputLabel: { shrink: true } }} {...field} />
+            )}
+          />
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button variant="outlined" type="button" onClick={onClose}>

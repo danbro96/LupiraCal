@@ -3,7 +3,7 @@ import {
   clampToDay, drawnEnd, foldLanes, hiddenPerColumn, inAllDayStrip, lastDayOf, layoutColumns, packLanes, type Positioned,
 } from '@lupira/cal-domain/occurrences';
 import { displayTitle } from '@danbro96/lupira-domain-events/itemLabels';
-import { addDays, daysFrom, fmtBlockTime, fmtDayShort, isToday, minutesOfDay, parseYmd, ymd } from '@danbro96/lupira-domain-core/time';
+import { addDays, daysFrom, fmtBlockTime, fmtDayShort, fmtTime, isToday, minutesOfDay, parseYmd, ymd } from '@danbro96/lupira-domain-core/time';
 import { textOn } from '@danbro96/lupira-tokens-core/contrast';
 import { memo, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
@@ -409,7 +409,7 @@ function StripBar({ bar, left, rowColor, onPress }: {
         style={[styles.chipText, { color: task ? (task.overdue ? c.danger : c.textMuted) : tentative ? c.text : textOn(fill ?? '') }, cancelled && styles.struck]}
         numberOfLines={1}
       >
-        {task ? <><Glyph name={ICONS.schedule} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
+        {task ? <><Glyph name={ICONS.schedule} size={CHIP_GLYPH} /> {task.dueAt ? `${fmtTime(new Date(task.dueAt))} ` : ''}{displayTitle(r.title)}</>
           : r.source === 'birthday' ? <><Glyph name={ICONS.cake} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
           : r.source === 'subscribed' ? <><Glyph name={ICONS.subscribed} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>
           : r.source === 'holiday' ? <><Glyph name={ICONS.celebration} size={CHIP_GLYPH} /> {displayTitle(r.title)}</>

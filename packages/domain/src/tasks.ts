@@ -1,53 +1,61 @@
 import { generateKeyBetween } from 'fractional-indexing';
-import { fmtWhen, parseYmd, ymd } from '@danbro96/lupira-domain-core/time';
+import { addMonths, fmtWhen, parseYmd, ymd } from '@danbro96/lupira-domain-core/time';
+import { wallToIso } from './zonedTime';
+
+type DueFields = { dueOn?: string | null; dueAt?: string | null };
+
+/** A set due: a whole day (`dueOn`, 'yyyy-MM-dd') or a timed instant (`dueAt`), never both. */
+export type Due = { dueOn: string; dueAt?: null } | { dueOn?: null; dueAt: string };
 
 /** What both clients need from a LupiraTasks item; structural so no wire type reaches this package. */
-export type TaskLike = {
+export type TaskLike = DueFields & {
   id: string;
   listId: string;
   title: string;
-  dueAt?: string | null;
   status: string;
 };
 
-export type OpenDeadline = TaskLike & { dueAt: string };
+export type OpenDeadline = TaskLike & Due;
+
+function hasDue<T extends DueFields>(t: T): t is T & Due {
+  return t.dueOn != null || t.dueAt != null;
+}
 
 /** Cancelled is closed but `completed: false` server-side, so a completed=false fetch still returns it. */
 export function isOpenDeadline(t: TaskLike): t is OpenDeadline {
-  return !!t.dueAt && t.status !== 'Cancelled';
+  return hasDue(t) && t.status !== 'Cancelled';
 }
 
-/** `dueAt` means "done by", not "occurs at": a deadline pins to its LOCAL due day as an all-day entry. */
-export function dueDay(dueAt: string): string {
-  return ymd(new Date(dueAt));
+/** A due means "done by", not "occurs at": a deadline pins to its LOCAL due day as an all-day entry. */
+export function dueDay(d: Due): string {
+  return d.dueOn != null ? d.dueOn : ymd(new Date(d.dueAt));
 }
 
-export function isOverdue(dueAt: string, now: Date): boolean {
-  return new Date(dueAt) < now;
+/** A date-only due is overdue once its local day has passed; a timed one once its instant has. */
+export function isOverdue(d: Due, now: Date): boolean {
+  return d.dueOn != null ? d.dueOn < ymd(now) : new Date(d.dueAt) < now;
 }
 
 /** A task that is still open past its deadline. */
-export function isTaskOverdue(t: { dueAt?: string | null; completed?: boolean | null }, now: Date): boolean {
-  return !!t.dueAt && !t.completed && isOverdue(t.dueAt, now);
+export function isTaskOverdue(t: DueFields & { completed?: boolean | null }, now: Date): boolean {
+  return hasDue(t) && !t.completed && isOverdue(t, now);
 }
 
-/** "Due 5 Oct 2026 18:00", "… — overdue", or "No deadline". */
-export function dueLine(t: { dueAt?: string | null; completed?: boolean | null }, now: Date): string {
-  if (!t.dueAt) return 'No deadline';
-  return `Due ${fmtWhen(t.dueAt, false)}${isTaskOverdue(t, now) ? ' — overdue' : ''}`;
+/** "Due 5 Oct 2026", "Due 5 Oct 2026 18:00", "… — overdue", or "No deadline". */
+export function dueLine(t: DueFields & { completed?: boolean | null }, now: Date): string {
+  if (!hasDue(t)) return 'No deadline';
+  const when = t.dueOn != null ? fmtWhen(t.dueOn, true) : fmtWhen(t.dueAt, false);
+  return `Due ${when}${isTaskOverdue(t, now) ? ' — overdue' : ''}`;
 }
 
 export function assigneeLabel(a: { displayName?: string | null; email: string }): string {
   return a.displayName || a.email;
 }
 
-/** Half-open [dueFrom, dueTo) covering the LOCAL month, in the ISO instants the API filters on. */
-export function monthUtcRange(monthKey: string): { dueFrom: string; dueTo: string } {
-  const [y, m] = monthKey.split('-').map(Number);
-  return {
-    dueFrom: new Date(y, m - 1, 1).toISOString(),
-    dueTo: new Date(y, m, 1).toISOString(),
-  };
+/** Half-open ['yyyy-MM-dd', 'yyyy-MM-dd') due days covering a month ('yyyy-MM'). */
+export function monthDayRange(monthKey: string): { fromDay: string; toDay: string } {
+  const first = parseYmd(`${monthKey}-01`);
+  return { fromDay: ymd(first), toDay: ymd(addMonths(first, 1)) };
 }
 
 export function taskDeepLink(listId: string, itemId: string): string {
@@ -84,19 +92,23 @@ export function initialTaskListId(lists: TaskListLike[], lastId: string | null |
   return lists.find((l) => l.id === lastId)?.id ?? lists[0]?.id ?? '';
 }
 
-/** A date-only due means "done by the end of that local day", as Lupira Tasks stores it. */
-export function dueAtEndOfDay(day: string): string {
-  const d = parseYmd(day);
-  d.setHours(23, 59, 59, 999);
-  return d.toISOString();
-}
-
 /** Order key that puts a new top-level task first, where Lupira Tasks inserts its own. */
 export function newTaskSortOrder(items: { parentItemId?: string | null; sortOrder: string }[]): string {
   const first = items.filter((i) => !i.parentItemId).map((i) => i.sortOrder).sort()[0];
   return generateKeyBetween(null, first ?? null);
 }
 
-export function newTaskBody(id: string, title: string, dueDay: string | null, listItems: Parameters<typeof newTaskSortOrder>[0]) {
-  return { id, title: title.trim(), dueAt: dueDay ? dueAtEndOfDay(dueDay) : null, sortOrder: newTaskSortOrder(listItems) };
+/** A picked due as the API takes it: a day alone is date-only, a day and a local 'HH:mm' a timed instant. */
+export function dueFromPick(day: string | null, time: string | null): { dueOn: string | null; dueAt: string | null } {
+  if (!day) return { dueOn: null, dueAt: null };
+  return time ? { dueOn: null, dueAt: wallToIso(day, time, null) } : { dueOn: day, dueAt: null };
+}
+
+export function newTaskBody(
+  id: string,
+  title: string,
+  due: { day: string | null; time: string | null },
+  listItems: Parameters<typeof newTaskSortOrder>[0],
+) {
+  return { id, title: title.trim(), ...dueFromPick(due.day, due.time), sortOrder: newTaskSortOrder(listItems) };
 }
