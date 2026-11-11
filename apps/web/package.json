@@ -27,7 +27,7 @@
     "@danbro96/lupira-tokens-calendar": "0.2.0",
     "@danbro96/lupira-tokens-core": "0.3.0",
     "@danbro96/lupira-web-maplibre": "0.3.2",
-    "@danbro96/lupira-web-mui": "0.2.1",
+    "@danbro96/lupira-web-mui": "0.3.0",
     "@danbro96/lupira-web-session": "0.2.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
