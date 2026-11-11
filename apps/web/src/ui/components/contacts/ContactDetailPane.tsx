@@ -36,9 +36,9 @@ import { CompletenessBadge } from '../drawer/CompletenessBadge';
 import { errText } from '../../errText';
 import { useSnackbar } from '@danbro96/lupira-web-mui/SnackbarHost';
 import { PlaceTile } from '../places/PlaceTile';
-import { EntryCodes } from '../places/EntryCodes';
+import { PlaceEntryCodes } from '../places/PlaceEntryCodes';
 import { useParentsHomes, useResidencyRows } from '../../../state/useResidencies';
-import { useCopy } from '../../hooks/useCopy';
+import { useCopy } from '@danbro96/lupira-web-mui/useCopy';
 import { ContactCircles } from './ContactCircles';
 import { ContactEditForm } from './ContactEditForm';
 import { MoveDialog } from './MoveDialog';
@@ -189,13 +189,13 @@ export function ContactDetailPane() {
               {current.map((a, i) => (
                 <Box key={`now-${i}`}>
                   <PlaceTile placeId={a.placeId} meta={addressMeta(a)} />
-                  <EntryCodes placeId={a.placeId} />
+                  <PlaceEntryCodes placeId={a.placeId} />
                 </Box>
               ))}
               {parentsHomes.map((p) => (
                 <Box key={`parents-${p.placeId}`}>
                   <PlaceTile placeId={p.placeId} meta={p.label} />
-                  <EntryCodes placeId={p.placeId} />
+                  <PlaceEntryCodes placeId={p.placeId} />
                 </Box>
               ))}
               {other.length > 0 && (

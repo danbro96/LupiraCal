@@ -22,6 +22,7 @@ const item = (itemId: string) => stamp(Aggregate.item, itemId);
 const contact = (contactId: string) => stamp(Aggregate.contact, contactId);
 const residency = (residencyId: string) => stamp(Aggregate.residency, residencyId);
 const group = (groupId: string) => stamp(Aggregate.contactGroup, groupId);
+const placeEntry = (placeId: string) => stamp(Aggregate.placeEntry, placeId);
 
 async function submit(ops: ClientOp | ClientOp[]): Promise<void> {
   await engine.enqueue(await withHoldKeys(await readyDb(), [ops].flat()));
@@ -245,4 +246,13 @@ export async function addToGroup(groupId: string, contactId: string): Promise<vo
 
 export async function removeFromGroup(groupId: string, contactId: string): Promise<void> {
   await submit({ kind: 'contact.group.removeMember', groupId, contactId, ...group(groupId) });
+}
+
+export async function setEntryCode(placeId: string, code: { id: string | null; label: string; code: string; note: string | null }): Promise<void> {
+  const codeId = code.id ?? uuidv7();
+  await submit({ kind: 'contact.placeEntry.setCode', placeId, codeId, label: code.label, code: code.code, note: code.note, ...placeEntry(placeId) });
+}
+
+export async function removeEntryCode(placeId: string, codeId: string): Promise<void> {
+  await submit({ kind: 'contact.placeEntry.removeCode', placeId, codeId, ...placeEntry(placeId) });
 }

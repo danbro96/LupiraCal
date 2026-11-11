@@ -113,11 +113,14 @@ All three live on contact-api as their own records, never on the contact. Its do
   - "Parents' home" is derived, never stored: `@lupira/cal-domain/residents` `parentsHomes`, from Parent relationships
     and their current Home residencies.
 - **Door codes belong to a place.**
-  - `places/EntryCodes` shows them masked, click to reveal, with copy. It appears on contact cards.
-  - Visibility follows the residents: the API answers 404 unless you can read someone living there now.
+  - `places/PlaceEntryCodes` binds the generated hooks to `@danbro96/lupira-web-mui/EntryCodes`: masked, click to
+    reveal, then copy or edit; one form adds and edits (label, code, note) and removes behind a confirm. It sits under
+    the contact card's current homes and parents' homes.
+  - Visibility follows the residents: the API answers 404 unless you can read someone living there now; writes need
+    write access to one of them.
 - **Mobile mirrors all three** via unpaged feeds (`pullRelationships`/`pullResidencies`/`pullPlaceEntries`; schema
-  v4–v5) and reads them offline. `ui/components/EntryCodes` shows codes on contact cards. Codes are
-  never logged.
+  v4–v5) and reads them offline. `ui/components/PlaceEntryCodes` puts `@danbro96/lupira-expo-paper`'s `EntryCodes`
+  on contact cards, editable offline through `contact.placeEntry.*` ops. Codes are never logged.
 
 ## Known API gaps (UI works around)
 

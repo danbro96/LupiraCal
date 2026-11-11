@@ -46,7 +46,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 | `contact` | `/contact-api/sync/contacts` | `contact.*` ops | `contact_index`, `birthday_occurrences`, view `bridge_contacts` |
 | `contact.relationship` | `/contact-api/sync/relationships` | — | `relationship_index` |
 | `contact.residency` | `/contact-api/sync/residencies` | `contact.residency.*` ops | `residency_index`, view `bridge_residencies` |
-| `contact.placeEntry` | `/contact-api/sync/place-entries` (doc id = place id) | — | — |
+| `contact.placeEntry` | `/contact-api/sync/place-entries` (doc id = place id) | `contact.placeEntry.*` ops (set / remove a code) | — |
 | `tasks.list` | `/tasks-api/sync/lists` | — | — |
 | `tasks.item` | `/tasks-api/sync/items` | — (edits live in Lupira Tasks) | `task_deadlines` (open deadlines) |
 | `cal.subscribedEvent` | `/api/sync/subscribed-events` (snapshot; occurrences expanded server-side over ±365 d) | — (read-only feed mirror) | `subscribed_occurrences` |
@@ -58,6 +58,7 @@ The offline kernel is `@danbro96/lupira-sync-engine` over `lupira-calendar.db` (
 - Every change to an input (pulled doc, queued op, discard, ack) recomputes `local = reduce(server, ...ops)` with `domain/mirrorReducers` and rewrites the module's index rows; a deleted doc is `null`. Table DDL and row writers live in `data/indexes/`, the reads over them in `data/queries/`.
 - Ops (`domain/ops.ts`) carry `aggregate`/`aggregateId` from `stamp()`; `state/actions.ts` is the write surface, `sync/replayOp.ts` the REST replay (`Idempotency-Key: commandId`). Ops of one aggregate replay in order; a parked or backed-off op holds the ones behind it.
 - Residency ops hold on the contact's id, so an address added to a contact created offline waits for that create. A start sends a UUIDv7 `sourceKey`; its residency id is `deterministicIdFor(residencyStreamKey(contactId, key))`, contact-api's `Residency.StreamIdOf` (fixture in `domain/ids.test.ts`). Move-out replays as `POST /residencies/{id}/move-out`, not the wholesale correction.
+- Door-code ops hold on the place id. An added code's id is a client UUIDv7, so an edit or remove queued behind it names the same code; `canAdd` from `usePlaceEntry` (someone you can see lives there now) shows "Add door code" on a place with none.
 - Group membership ops hold on the contact's id too, so adding a contact created offline waits for that create. A remove that 404s is done; an add that 404s parks.
 - Occurrences are materialized over a rolling horizon (`domain/materialize`, `expandSeries`: excluded and cancelled occurrences left out, moved ones at their new start, per-occurrence title and status in the row); `sync/horizon.ts` keeps it in kernel meta and reindexes `cal.item` and `contact` when it drifts a month. Grid, search, contact events and notification reads COALESCE the row's title and status over the item's.
 - Item ops queue per hold key (`calItemModule.holdKeyOf` = the op's `holdKey`, else its item). Ops on a series created by a split the server hasn't confirmed take the hold key of the series it continues (`sync/holdKeys` over `data/queries/itemLineage`, set at enqueue by `state/actions` and the bridge drain), so they never replay before the split.

@@ -34,16 +34,15 @@ export function useParentsHomes(contactId: string | null, rows: readonly Contact
   return parentsHomes(contactId, parents, rows);
 }
 
-/** A place's door codes from the mirror, shown only while the mirror still has someone living there now — a move-out
- *  date passing changes nothing on the server's feed until the next full sync. */
-export function usePlaceEntry(placeId: string | null | undefined, rows: readonly ContactAddressRow[]): PlaceEntryDoc | null {
+/** A place's door codes from the mirror, kept only while the mirror still has someone living there now (`canAdd`) — a
+ *  move-out date passing changes nothing on the server's feed until the next full sync. */
+export function usePlaceEntry(placeId: string | null | undefined, rows: readonly ContactAddressRow[]): { codes: PlaceEntryDoc['codes']; canAdd: boolean } {
   const q = useQuery({
     ...mirrorQuery([Aggregate.placeEntry, placeId], () => engine.doc<PlaceEntryDoc, null>(Aggregate.placeEntry, placeId!)),
     enabled: !!placeId,
   });
-  const entry = q.data?.doc;
-  const lived = rows.some((r) => r.placeId === placeId && residencyStatus(r.movedIn, r.movedOut) === 'active');
-  return lived && entry && entry.codes.length > 0 ? entry : null;
+  const canAdd = !!placeId && rows.some((r) => r.placeId === placeId && residencyStatus(r.movedIn, r.movedOut) === 'active');
+  return { codes: canAdd ? (q.data?.doc?.codes ?? []) : [], canAdd };
 }
 
 /** One contact's residencies from the mirror, as the docs its editor starts its rows from; undefined while loading. */

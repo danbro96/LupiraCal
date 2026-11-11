@@ -5,8 +5,8 @@ import {
 import { fileItemToCalendar, removeItemFromCalendar } from '@lupira/cal-api/fetch/cal';
 import type { ItemColor, UpdateCalendarItemRequest } from '@lupira/cal-api/models';
 import {
-  addContactGroupMember, addResidency, createContact, deleteContact, moveOutOfResidency, removeContactGroupMember, removeResidency, reviseContact,
-  reviseResidency, setContactChannels, setContactProfiles, setContactTags,
+  addContactGroupMember, addResidency, createContact, deleteContact, moveOutOfResidency, removeContactGroupMember, removeEntryCode, removeResidency,
+  reviseContact, reviseResidency, setContactChannels, setContactProfiles, setContactTags, setEntryCode,
 } from '@lupira/cal-api/fetch/contact';
 import type { ContactAddressType, ContactReachChannel, ResidencyRequest } from '@lupira/cal-api/models';
 import { participationIdOf } from '@lupira/cal-domain/participation';
@@ -174,6 +174,12 @@ export async function replayOp(op: ClientOp): Promise<void> {
       return;
     case 'contact.group.removeMember':
       await unlessNotFound(() => removeContactGroupMember(op.groupId, op.contactId, idem));
+      return;
+    case 'contact.placeEntry.setCode':
+      await setEntryCode(op.placeId, op.codeId, { label: op.label, code: op.code, note: op.note }, idem);
+      return;
+    case 'contact.placeEntry.removeCode':
+      await unlessNotFound(() => removeEntryCode(op.placeId, op.codeId, idem));
       return;
   }
 }

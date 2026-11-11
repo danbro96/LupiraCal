@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ContactDoc, ItemDoc } from './docTypes';
 import { emptyContactGuards, emptyItemGuards } from './docTypes';
 import type { MirrorContact, MirrorItem } from './mirrorReducers';
-import { applyContactGroupOp, applyContactOp, applyItemOp, applyResidencyOp, continuationOf } from './mirrorReducers';
+import { applyContactGroupOp, applyContactOp, applyItemOp, applyPlaceEntryOp, applyResidencyOp, continuationOf } from './mirrorReducers';
 import type { ClientOp } from './ops';
 
 const T = (m: number) => `2026-07-01T12:${String(m).padStart(2, '0')}:00.000Z`;
@@ -437,5 +437,34 @@ describe('applyContactGroupOp', () => {
   it('leaves a missing group missing', () => {
     expect(applyContactGroupOp(null, add('bo', 1))).toBeNull();
     expect(applyContactGroupOp(null, remove('anna', 2))).toBeNull();
+  });
+});
+
+describe('applyPlaceEntryOp', () => {
+  const at = { aggregate: 'contact.placeEntry', aggregateId: 'p-1', placeId: 'p-1', occurredAt: T(1) } as const;
+  const set = (codeId: string, label: string, code: string, n: number, note: string | null = null): ClientOp =>
+    ({ ...at, kind: 'contact.placeEntry.setCode', codeId, label, code, note, commandId: cmd(n) });
+  const remove = (codeId: string, n: number): ClientOp => ({ ...at, kind: 'contact.placeEntry.removeCode', codeId, commandId: cmd(n) });
+
+  it('starts the entry with its first code, trimmed', () => {
+    expect(applyPlaceEntryOp(null, set('k-1', ' Port ', ' 1234 ', 1, '  '))).toEqual({
+      doc: { placeId: 'p-1', codes: [{ id: 'k-1', label: 'Port', code: '1234', note: null }] },
+      guards: null,
+    });
+  });
+
+  it('re-adds an edited code at the end, as the server applies it', () => {
+    const two = applyPlaceEntryOp(applyPlaceEntryOp(null, set('k-1', 'Port', '1234', 1)), set('k-2', 'Gate', '9', 2));
+    const edited = applyPlaceEntryOp(two, set('k-1', 'Port', '4321', 3, 'ring 2nd floor'))!;
+    expect(edited.doc.codes).toEqual([
+      { id: 'k-2', label: 'Gate', code: '9', note: null },
+      { id: 'k-1', label: 'Port', code: '4321', note: 'ring 2nd floor' },
+    ]);
+  });
+
+  it('removes a code and keeps the emptied entry; a missing entry stays missing', () => {
+    const one = applyPlaceEntryOp(null, set('k-1', 'Port', '1234', 1));
+    expect(applyPlaceEntryOp(one, remove('k-1', 2))).toEqual({ doc: { placeId: 'p-1', codes: [] }, guards: null });
+    expect(applyPlaceEntryOp(null, remove('k-1', 3))).toBeNull();
   });
 });

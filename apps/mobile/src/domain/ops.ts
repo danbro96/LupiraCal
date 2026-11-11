@@ -7,7 +7,8 @@ import type { ContactDoc, FuzzyDateDto, ItemDoc, ItemGuards, ParticipantReminder
  *  their optimistic mirror effect and replayed with `Idempotency-Key: commandId` + `occurredAt`, so a
  *  redelivery is a server no-op and a stale one loses its section's LWW instead of clobbering. */
 
-export type OpAggregate = typeof Aggregate.item | typeof Aggregate.contact | typeof Aggregate.residency | typeof Aggregate.contactGroup;
+export type OpAggregate =
+  | typeof Aggregate.item | typeof Aggregate.contact | typeof Aggregate.residency | typeof Aggregate.contactGroup | typeof Aggregate.placeEntry;
 
 /** `holdKey`: the queue this op replays in order with, when not its own aggregate's — set at enqueue. */
 type Base = { commandId: string; occurredAt: string; aggregate: OpAggregate; aggregateId: string; holdKey?: string };
@@ -73,6 +74,9 @@ export type ClientOp = Base & (
   | { kind: 'contact.residency.remove'; residencyId: string; contactId: string }
   | { kind: 'contact.group.addMember'; groupId: string; contactId: string }
   | { kind: 'contact.group.removeMember'; groupId: string; contactId: string }
+  /** `codeId` is minted on add, so an edit or remove queued behind it names the same code. */
+  | { kind: 'contact.placeEntry.setCode'; placeId: string; codeId: string; label: string; code: string; note: string | null }
+  | { kind: 'contact.placeEntry.removeCode'; placeId: string; codeId: string }
 );
 
 export type OpKind = ClientOp['kind'];
@@ -109,4 +113,6 @@ export const OP_LABELS: Record<OpKind, string> = {
   'contact.residency.remove': 'Remove address',
   'contact.group.addMember': 'Add to group',
   'contact.group.removeMember': 'Remove from group',
+  'contact.placeEntry.setCode': 'Save door code',
+  'contact.placeEntry.removeCode': 'Remove door code',
 };

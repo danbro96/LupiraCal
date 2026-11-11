@@ -19,6 +19,8 @@ const contact = vi.hoisted(() => ({
   removeResidency: vi.fn(),
   addContactGroupMember: vi.fn(),
   removeContactGroupMember: vi.fn(),
+  setEntryCode: vi.fn(),
+  removeEntryCode: vi.fn(),
 }));
 vi.mock('@lupira/cal-api/fetch/contact', () => contact);
 
@@ -216,6 +218,32 @@ describe('residency replay', () => {
   it('treats a residency already gone as removed', async () => {
     contact.removeResidency.mockRejectedValue(new ApiError(404, 'gone'));
     await expect(replayOp({ ...at, kind: 'contact.residency.remove' })).resolves.toBeUndefined();
+  });
+});
+
+describe('door code replay', () => {
+  const at = {
+    aggregate: 'contact.placeEntry', aggregateId: 'p-1', placeId: 'p-1', codeId: 'k-1',
+    occurredAt: '2026-11-11T12:00:00Z', commandId: '0192f0c4-0000-7000-8000-000000000030',
+  } as const;
+
+  beforeEach(() => {
+    contact.setEntryCode.mockReset().mockResolvedValue({});
+    contact.removeEntryCode.mockReset().mockResolvedValue({});
+  });
+
+  it('sets the code under its minted id and the op command id', async () => {
+    await replayOp({ ...at, kind: 'contact.placeEntry.setCode', label: 'Port', code: '1234', note: null });
+    const [placeId, codeId, body, options] = contact.setEntryCode.mock.calls[0];
+    expect([placeId, codeId, body, options.headers['Idempotency-Key']]).toEqual(['p-1', 'k-1', { label: 'Port', code: '1234', note: null }, at.commandId]);
+  });
+
+  it('a code already gone is removed; a set nobody may make parks', async () => {
+    contact.removeEntryCode.mockRejectedValue(new ApiError(404, 'gone'));
+    await expect(replayOp({ ...at, kind: 'contact.placeEntry.removeCode' })).resolves.toBeUndefined();
+
+    contact.setEntryCode.mockRejectedValue(new ApiError(404, 'nobody lives there'));
+    await expect(replayOp({ ...at, kind: 'contact.placeEntry.setCode', label: 'Port', code: '1234', note: null })).rejects.toMatchObject({ status: 404 });
   });
 });
 

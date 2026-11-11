@@ -21,7 +21,7 @@ import { useParentsHomes, useResidencyRows } from '../../state/useResidencies';
 import { Centered } from '../components/Centered';
 import { ContactEventsSection } from '../contact/ContactEventsSection';
 import { ContactGroupChips } from '../contact/ContactGroupChips';
-import { EntryCodes } from '../components/EntryCodes';
+import { PlaceEntryCodes } from '../components/PlaceEntryCodes';
 import { useConfirm } from '@danbro96/lupira-expo-paper/components/ConfirmDialog';
 import { PlaceTile } from '../components/PlaceTile';
 import { TagRow } from '../components/TagRow';
@@ -169,13 +169,13 @@ export function ContactDetailScreen() {
       {currentAddresses.map((a, i) => (
         <View key={`now-${i}`}>
           <PlaceTile placeId={a.placeId} meta={addressMeta(a)} directions />
-          <EntryCodes placeId={a.placeId} />
+          <PlaceEntryCodes placeId={a.placeId} />
         </View>
       ))}
       {parentsHomes.map((p) => (
         <View key={`parents-${p.placeId}`}>
           <PlaceTile placeId={p.placeId} meta={p.label} directions />
-          <EntryCodes placeId={p.placeId} />
+          <PlaceEntryCodes placeId={p.placeId} />
         </View>
       ))}
       {otherAddresses.length > 0 && (

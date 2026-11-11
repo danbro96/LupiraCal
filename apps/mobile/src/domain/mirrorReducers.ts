@@ -3,7 +3,7 @@ import {
   applyOccurrenceChange, continuedParticipationId, followDeviations, hasSeriesOccurrence, isFirstOccurrence, overrideFor, splitSeries,
 } from '@lupira/cal-domain/seriesOccurrences';
 import type {
-  ContactDoc, ContactGroupDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, ReachChannel, ResidencyDoc, SectionGuard, SocialProfile,
+  ContactDoc, ContactGroupDoc, ContactGuards, ItemAttendee, ItemDoc, ItemGuards, PlaceEntryDoc, ReachChannel, ResidencyDoc, SectionGuard, SocialProfile,
 } from './docTypes';
 import { emptyContactGuards, emptyItemGuards, ZERO_GUARD } from './docTypes';
 import type { ClientOp, ContactCore, ItemCore, ResidencyFields } from './ops';
@@ -19,6 +19,7 @@ export type MirrorItem = { doc: ItemDoc; guards: ItemGuards };
 export type MirrorContact = { doc: ContactDoc; guards: ContactGuards };
 export type MirrorResidency = { doc: ResidencyDoc; guards: null };
 export type MirrorContactGroup = { doc: ContactGroupDoc; guards: null };
+export type MirrorPlaceEntry = { doc: PlaceEntryDoc; guards: null };
 
 export function applyItemOp(state: MirrorItem | null, op: ClientOp): MirrorItem | null {
   switch (op.kind) {
@@ -313,6 +314,22 @@ export function applyContactGroupOp(state: MirrorContactGroup | null, op: Client
       return { ...state, doc: { ...state.doc, members: [...members, { contactId: op.contactId, role: null, since: null, until: null }] } };
     case 'contact.group.removeMember':
       return { ...state, doc: { ...state.doc, members: members.filter((m) => m.contactId !== op.contactId) } };
+    default:
+      return state;
+  }
+}
+
+/** PlaceEntry.Apply's twin: a set re-adds its code at the end, and an emptied entry stays. */
+export function applyPlaceEntryOp(state: MirrorPlaceEntry | null, op: ClientOp): MirrorPlaceEntry | null {
+  switch (op.kind) {
+    case 'contact.placeEntry.setCode': {
+      const code = { id: op.codeId, label: op.label.trim(), code: op.code.trim(), note: op.note?.trim() || null };
+      const codes = (state?.doc.codes ?? []).filter((c) => c.id !== op.codeId);
+      return { doc: { placeId: op.placeId, codes: [...codes, code] }, guards: null };
+    }
+    case 'contact.placeEntry.removeCode':
+      if (!state) return state;
+      return { ...state, doc: { ...state.doc, codes: state.doc.codes.filter((c) => c.id !== op.codeId) } };
     default:
       return state;
   }

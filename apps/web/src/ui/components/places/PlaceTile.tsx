@@ -8,7 +8,7 @@ import { placeTitle } from '@danbro96/lupira-domain-places/places';
 import { GEO_API_BASE_URL } from '../../../config';
 import { siblingLinks } from '../../../config/siblings';
 import { useGeoPlace } from '../../../state/usePlaces';
-import { useCopy } from '../../hooks/useCopy';
+import { useCopy } from '@danbro96/lupira-web-mui/useCopy';
 import { ClearIcon, CopyIcon, EditIcon, PlaceIcon } from '@danbro96/lupira-web-mui/icons';
 
 const MiniMap = lazy(() => import('@danbro96/lupira-web-maplibre/MiniMap'));
