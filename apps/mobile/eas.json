@@ -9,20 +9,20 @@
       "distribution": "internal",
       "channel": "development",
       "environment": "development",
-      "node": "24.19.0",
+      "node": "26.13.1",
       "android": { "buildType": "apk" }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "environment": "preview",
-      "node": "24.19.0",
+      "node": "26.13.1",
       "android": { "buildType": "apk" }
     },
     "production": {
       "channel": "production",
       "environment": "production",
-      "node": "24.19.0",
+      "node": "26.13.1",
       "android": { "buildType": "app-bundle" },
       "autoIncrement": true
     }
