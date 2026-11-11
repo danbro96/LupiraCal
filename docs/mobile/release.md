@@ -31,7 +31,7 @@ AAB from `npx eas-cli build -p android --profile production`, add testers, share
 
 Sideloadable APK: `npx eas-cli build -p android --profile preview` (from `apps/mobile`).
 Monorepo: EAS archives the git root and installs the workspace; the root `.npmrc`
-(cooldown + ignore-scripts) applies on the build host.
+(cooldown) applies on the build host. EAS's npm predates the install-script policy, so install scripts run there.
 
 ## OTA update (JS-only)
 
