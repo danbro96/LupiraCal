@@ -77,16 +77,17 @@ phones run the Play build; the dev client is a development tool.
 - Cleartext HTTP is blocked: the LAN/emulator presets are hidden in release builds
   (Settings shows only https presets + custom).
 
-## Native cutover (1.1.0 → 1.2.0)
+## Native cutover (1.2.0 → 1.3.0)
 
-1. Deploy cal-api, then the BFF (the reminder PUT and `LocationUnresolved` are additive).
-2. `runtime/1.1.0` at the last 1.1.0-runtime commit carries straggler OTAs.
-3. Clean-tree `npx expo-updates fingerprint:generate --platform android` differs from 1.1.0's;
-   `npx expo export --platform android` bundles; dev-client device pass.
-4. Secrets + Play key in place → `git push origin main:release/android` → 1.2.0 on internal.
-5. OTAs from `main` now target 1.2.0 only; 1.1.0 fixes go out from `runtime/1.1.0`.
-6. Play Console: declare `USE_EXACT_ALARM` (calendar app) in the app content form before the
-   release leaves internal testing.
+1. The SDK 58 work sits on branch `sdk-58`; `main` keeps serving OTAs to 1.2.0 until the 1.3.0
+   production build is submitted.
+2. Clean-tree `npx expo-updates fingerprint:generate --platform android` differs from 1.2.0's;
+   `npx expo export --platform android` bundles.
+3. `npx eas-cli build -p android --profile preview` from `sdk-58` → device pass (R8 is on in the
+   preview APK too).
+4. `npx eas-cli build -p android --profile production --auto-submit` → 1.3.0 on internal, then
+   merge `sdk-58` into `main`. OTAs from `main` target 1.3.0 only; 1.2.0 installs move up through
+   Play (no `runtime/1.2.0` branch).
 
 ## Upgrade drill (per release, before promoting)
 

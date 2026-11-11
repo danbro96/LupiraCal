@@ -23,6 +23,7 @@ criteria are verifiable commands/observations.
 | M14 | Device feedback pass | LupiraCal, LupiraCalApi | in-progress |
 | M15 | Native 1.2.0 | LupiraCal, LupiraCalApi | in-progress |
 | M16 | Per-occurrence editing | LupiraCal, LupiraCalApi | in-progress |
+| M17 | Native 1.3.0 (SDK 58) | LupiraCal | in-progress |
 
 Fixed identity: Android package `com.lupira.calendar`, scheme `lupiracalendar`
 (redirect `lupiracalendar://oauthredirect`), Authentik public client `lupira-cal-mobile`,
@@ -317,6 +318,25 @@ part ships in one native build (Kotlin bridge + JS together).
 - [ ] Device: a moved occurrence's reminder fires at the new time and its notification opens that occurrence
 - [ ] Device: the Android calendar shows exclusions and moved occurrences at the right local time across a DST change
 - [ ] Device: editing / deleting one occurrence in the stock calendar arrives as an occurrence change (not a new item), with no echo after two syncs
+
+## M17 — Native 1.3.0 (SDK 58)   [status: in-progress]
+
+Expo SDK 58 (RN 0.88.1, React 19.3.0) on Node 26 with R8 keep rules. Ships as one EAS build (1.3.0) to Play
+internal.
+
+### Scope
+- [x] Node 26.13.1: `.node-version`, `engines`, the three EAS profiles, the client image
+- [x] Expo 58.0.23 SDK pins; `@sentry/react-native` 8.34.0, MapLibre RN 11.5.1, Paper 5.15.4, React Navigation 7.5; version 1.3.0
+- [x] Calendar gestures on the Gesture Handler 3 hook API (pager, day sheet, letter rail, week pinch zoom)
+- [x] R8 keep rules via `expo-build-properties`: WorkManager's Room database and input mergers, `org.maplibre.reactnative`
+- [x] Bridge: `lint {}` block for AGP 9
+
+### Exit criteria
+- [x] Root `npm run typecheck` / `lint` / `test` green; bridge JVM tests green; `npx expo export --platform android` bundles
+- [ ] Preview build: cold start, sign in, sync; month and week swipes, day sheet drag, week pinch zoom, contacts letter rail
+- [ ] Device: account sync adapter, reminders (a foreground one shows a banner), RSVP actions from a killed app
+- [ ] Sentry: a release-build crash symbolicates through the R8 mapping
+- [ ] 1.2.0 → 1.3.0 upgrade drill (outbox survives)
 
 ## Split into Lupira Maps and Lupira Photos
 
