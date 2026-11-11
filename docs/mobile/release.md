@@ -71,6 +71,9 @@ phones run the Play build; the dev client is a development tool.
 ## Release-build behavior differences
 
 - JS is bundled into the app — no Metro dependency.
+- R8 shrinks and obfuscates the Java/Kotlin code. `expo-build-properties` adds keep rules for
+  WorkManager's Room database and input mergers (created by reflection; `expo-background-task`
+  runs on WorkManager) and for `org.maplibre.reactnative` (the wrapper ships no consumer rules).
 - Cleartext HTTP is blocked: the LAN/emulator presets are hidden in release builds
   (Settings shows only https presets + custom).
 
