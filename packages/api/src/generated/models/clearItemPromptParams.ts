@@ -6,8 +6,6 @@
  */
 
 export type ClearItemPromptParams = {
-/**
- * @nullable
- */
-occurredAt?: string | null;
+  /** @nullable */
+  occurredAt?: string | null;
 };

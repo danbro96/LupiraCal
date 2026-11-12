@@ -125,7 +125,6 @@ export function useGetContactContext<TData = Awaited<ReturnType<typeof getContac
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactContext>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-
 export function useGetContactContext<TData = Awaited<ReturnType<typeof getContactContext>>, TError = void>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactContext>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient

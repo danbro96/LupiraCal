@@ -6,5 +6,5 @@
  */
 
 export type ListRelationEdgesParams = {
-toKind: string;
+  toKind: string;
 };

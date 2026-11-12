@@ -6,8 +6,8 @@
  */
 
 export type AddContactGroupMemberParams = {
-contactId: string;
-role?: string;
-since?: string;
-until?: string;
+  contactId: string;
+  role?: string;
+  since?: string;
+  until?: string;
 };

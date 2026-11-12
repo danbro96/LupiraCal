@@ -6,5 +6,5 @@
  */
 
 export type RevokeCalendarOwnerParams = {
-email: string;
+  email: string;
 };

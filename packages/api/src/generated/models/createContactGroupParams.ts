@@ -6,6 +6,6 @@
  */
 
 export type CreateContactGroupParams = {
-kind?: string;
-name: string;
+  kind?: string;
+  name: string;
 };

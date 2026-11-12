@@ -6,8 +6,6 @@
  */
 
 export type RestoreOccurrenceParams = {
-/**
- * @nullable
- */
-occurredAt?: string | null;
+  /** @nullable */
+  occurredAt?: string | null;
 };

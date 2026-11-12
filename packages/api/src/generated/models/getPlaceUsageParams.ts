@@ -6,14 +6,10 @@
  */
 
 export type GetPlaceUsageParams = {
-/**
- * @nullable
- */
-from?: string | null;
-/**
- * @nullable
- */
-to?: string | null;
-calendarId?: string;
-limit?: number;
+  /** @nullable */
+  from?: string | null;
+  /** @nullable */
+  to?: string | null;
+  calendarId?: string;
+  limit?: number;
 };

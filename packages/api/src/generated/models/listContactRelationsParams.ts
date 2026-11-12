@@ -6,5 +6,5 @@
  */
 
 export type ListContactRelationsParams = {
-includeInferred?: boolean;
+  includeInferred?: boolean;
 };

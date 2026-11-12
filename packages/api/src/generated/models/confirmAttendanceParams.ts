@@ -6,8 +6,6 @@
  */
 
 export type ConfirmAttendanceParams = {
-/**
- * @nullable
- */
-occurredAt?: string | null;
+  /** @nullable */
+  occurredAt?: string | null;
 };

@@ -6,10 +6,8 @@
  */
 
 export type InviteParticipantParams = {
-contactId: string;
-role?: string;
-/**
- * @nullable
- */
-occurredAt?: string | null;
+  contactId: string;
+  role?: string;
+  /** @nullable */
+  occurredAt?: string | null;
 };

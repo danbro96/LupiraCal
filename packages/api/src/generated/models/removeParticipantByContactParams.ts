@@ -6,5 +6,5 @@
  */
 
 export type RemoveParticipantByContactParams = {
-contactId: string;
+  contactId: string;
 };

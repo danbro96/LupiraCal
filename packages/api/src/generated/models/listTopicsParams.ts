@@ -6,9 +6,9 @@
  */
 
 export type ListTopicsParams = {
-status?: string[];
-contactId?: string;
-cursor?: string;
-limit?: number;
-principalId?: string;
+  status?: string[];
+  contactId?: string;
+  cursor?: string;
+  limit?: number;
+  principalId?: string;
 };

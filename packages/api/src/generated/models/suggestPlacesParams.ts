@@ -6,6 +6,6 @@
  */
 
 export type SuggestPlacesParams = {
-q: string;
-limit?: number;
+  q: string;
+  limit?: number;
 };

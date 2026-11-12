@@ -7,9 +7,9 @@
 import type { TasksItemStatus } from './tasksItemStatus';
 
 export type ListItemsParams = {
-query?: string;
-completed?: boolean;
-status?: TasksItemStatus;
-dueFrom?: string;
-dueTo?: string;
+  query?: string;
+  completed?: boolean;
+  status?: TasksItemStatus;
+  dueFrom?: string;
+  dueTo?: string;
 };

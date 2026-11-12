@@ -6,22 +6,18 @@
  */
 
 export type SearchItemsParams = {
-query?: string;
-/**
- * @nullable
- */
-from?: string | null;
-/**
- * @nullable
- */
-to?: string | null;
-calendarId?: string;
-tag?: string;
-parentId?: string;
-contactId?: string;
-category?: string;
-status?: string;
-skip?: number;
-take?: number;
-desc?: boolean;
+  query?: string;
+  /** @nullable */
+  from?: string | null;
+  /** @nullable */
+  to?: string | null;
+  calendarId?: string;
+  tag?: string;
+  parentId?: string;
+  contactId?: string;
+  category?: string;
+  status?: string;
+  skip?: number;
+  take?: number;
+  desc?: boolean;
 };

@@ -6,8 +6,6 @@
  */
 
 export type ClearContactDeceasedParams = {
-/**
- * @nullable
- */
-occurredAt?: string | null;
+  /** @nullable */
+  occurredAt?: string | null;
 };

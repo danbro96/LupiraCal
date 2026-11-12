@@ -7,13 +7,13 @@
 import type { GeocodeIntent } from './geocodeIntent';
 
 export type ForwardGeocodeParams = {
-q?: string;
-street?: string;
-postcode?: string;
-locality?: string;
-countryCode?: string;
-intent?: GeocodeIntent;
-nearLat?: number;
-nearLon?: number;
-limit?: number;
+  q?: string;
+  street?: string;
+  postcode?: string;
+  locality?: string;
+  countryCode?: string;
+  intent?: GeocodeIntent;
+  nearLat?: number;
+  nearLon?: number;
+  limit?: number;
 };

@@ -6,5 +6,5 @@
  */
 
 export type ListListsParams = {
-archived?: boolean;
+  archived?: boolean;
 };

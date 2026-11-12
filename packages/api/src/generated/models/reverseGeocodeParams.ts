@@ -7,7 +7,7 @@
 import type { ReversePrecision } from './reversePrecision';
 
 export type ReverseGeocodeParams = {
-lat: number;
-lon: number;
-precision?: ReversePrecision;
+  lat: number;
+  lon: number;
+  precision?: ReversePrecision;
 };

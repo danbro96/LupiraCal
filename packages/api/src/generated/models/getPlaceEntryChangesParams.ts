@@ -6,6 +6,6 @@
  */
 
 export type GetPlaceEntryChangesParams = {
-since?: string;
-limit?: number;
+  since?: string;
+  limit?: number;
 };

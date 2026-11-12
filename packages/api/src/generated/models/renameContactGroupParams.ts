@@ -6,5 +6,5 @@
  */
 
 export type RenameContactGroupParams = {
-name: string;
+  name: string;
 };

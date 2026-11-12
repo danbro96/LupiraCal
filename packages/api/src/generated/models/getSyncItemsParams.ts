@@ -6,6 +6,6 @@
  */
 
 export type GetSyncItemsParams = {
-since?: string;
-limit?: number;
+  since?: string;
+  limit?: number;
 };

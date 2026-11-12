@@ -117,6 +117,7 @@ export type SearchQueryResult = NonNullable<Awaited<ReturnType<typeof search>>>
 export type SearchQueryError = ProblemDetails
 
 
+/** @summary Hybrid research search over the corpus (semantic + full-text, reranked). */
 export function useSearch<TData = Awaited<ReturnType<typeof search>>, TError = ProblemDetails>(
  params: undefined |  SearchParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -127,6 +128,7 @@ export function useSearch<TData = Awaited<ReturnType<typeof search>>, TError = P
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Hybrid research search over the corpus (semantic + full-text, reranked). */
 export function useSearch<TData = Awaited<ReturnType<typeof search>>, TError = ProblemDetails>(
  params?: SearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -137,14 +139,12 @@ export function useSearch<TData = Awaited<ReturnType<typeof search>>, TError = P
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Hybrid research search over the corpus (semantic + full-text, reranked). */
 export function useSearch<TData = Awaited<ReturnType<typeof search>>, TError = ProblemDetails>(
  params?: SearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Hybrid research search over the corpus (semantic + full-text, reranked).
- */
-
+/** @summary Hybrid research search over the corpus (semantic + full-text, reranked). */
 export function useSearch<TData = Awaited<ReturnType<typeof search>>, TError = ProblemDetails>(
  params?: SearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -232,6 +232,7 @@ export type ListTopicsQueryResult = NonNullable<Awaited<ReturnType<typeof listTo
 export type ListTopicsQueryError = ProblemDetails
 
 
+/** @summary List topics by status and/or contact (poll alternative to closed-topic push). */
 export function useListTopics<TData = Awaited<ReturnType<typeof listTopics>>, TError = ProblemDetails>(
  params: undefined |  ListTopicsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTopics>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -242,6 +243,7 @@ export function useListTopics<TData = Awaited<ReturnType<typeof listTopics>>, TE
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List topics by status and/or contact (poll alternative to closed-topic push). */
 export function useListTopics<TData = Awaited<ReturnType<typeof listTopics>>, TError = ProblemDetails>(
  params?: ListTopicsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTopics>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -252,14 +254,12 @@ export function useListTopics<TData = Awaited<ReturnType<typeof listTopics>>, TE
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List topics by status and/or contact (poll alternative to closed-topic push). */
 export function useListTopics<TData = Awaited<ReturnType<typeof listTopics>>, TError = ProblemDetails>(
  params?: ListTopicsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTopics>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List topics by status and/or contact (poll alternative to closed-topic push).
- */
-
+/** @summary List topics by status and/or contact (poll alternative to closed-topic push). */
 export function useListTopics<TData = Awaited<ReturnType<typeof listTopics>>, TError = ProblemDetails>(
  params?: ListTopicsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTopics>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -343,6 +343,7 @@ export type GetTopicQueryResult = NonNullable<Awaited<ReturnType<typeof getTopic
 export type GetTopicQueryError = ProblemDetails
 
 
+/** @summary Get a topic with its ordered message window (open-topic tail). */
 export function useGetTopic<TData = Awaited<ReturnType<typeof getTopic>>, TError = ProblemDetails>(
  id: string,
     params: undefined |  GetTopicParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTopic>>, TError, TData>> & Pick<
@@ -354,6 +355,7 @@ export function useGetTopic<TData = Awaited<ReturnType<typeof getTopic>>, TError
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get a topic with its ordered message window (open-topic tail). */
 export function useGetTopic<TData = Awaited<ReturnType<typeof getTopic>>, TError = ProblemDetails>(
  id: string,
     params?: GetTopicParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTopic>>, TError, TData>> & Pick<
@@ -365,15 +367,13 @@ export function useGetTopic<TData = Awaited<ReturnType<typeof getTopic>>, TError
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get a topic with its ordered message window (open-topic tail). */
 export function useGetTopic<TData = Awaited<ReturnType<typeof getTopic>>, TError = ProblemDetails>(
  id: string,
     params?: GetTopicParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTopic>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Get a topic with its ordered message window (open-topic tail).
- */
-
+/** @summary Get a topic with its ordered message window (open-topic tail). */
 export function useGetTopic<TData = Awaited<ReturnType<typeof getTopic>>, TError = ProblemDetails>(
  id: string,
     params?: GetTopicParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTopic>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}

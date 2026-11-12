@@ -6,6 +6,6 @@
  */
 
 export type GetContactChangesParams = {
-since?: string;
-limit?: number;
+  since?: string;
+  limit?: number;
 };

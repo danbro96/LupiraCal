@@ -6,8 +6,6 @@
  */
 
 export type LeaveItemParams = {
-/**
- * @nullable
- */
-occurredAt?: string | null;
+  /** @nullable */
+  occurredAt?: string | null;
 };

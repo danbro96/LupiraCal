@@ -6,12 +6,8 @@
  */
 
 export type GetParticipationSummaryParams = {
-/**
- * @nullable
- */
-from?: string | null;
-/**
- * @nullable
- */
-to?: string | null;
+  /** @nullable */
+  from?: string | null;
+  /** @nullable */
+  to?: string | null;
 };

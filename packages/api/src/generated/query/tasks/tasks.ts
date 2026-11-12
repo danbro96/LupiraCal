@@ -126,6 +126,10 @@ export type ListListsQueryResult = NonNullable<Awaited<ReturnType<typeof listLis
 export type ListListsQueryError = ProblemDetails
 
 
+/**
+ * `?archived=true` returns the caller's archived lists instead of the active ones.
+ * @summary List the lists the caller is a member of.
+ */
 export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TError = ProblemDetails>(
  params: undefined |  ListListsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -136,6 +140,10 @@ export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TErr
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * `?archived=true` returns the caller's archived lists instead of the active ones.
+ * @summary List the lists the caller is a member of.
+ */
 export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TError = ProblemDetails>(
  params?: ListListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -146,14 +154,18 @@ export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TErr
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * `?archived=true` returns the caller's archived lists instead of the active ones.
+ * @summary List the lists the caller is a member of.
+ */
 export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TError = ProblemDetails>(
  params?: ListListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * `?archived=true` returns the caller's archived lists instead of the active ones.
  * @summary List the lists the caller is a member of.
  */
-
 export function useListLists<TData = Awaited<ReturnType<typeof listLists>>, TError = ProblemDetails>(
  params?: ListListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -234,6 +246,10 @@ export type ListItemsQueryResult = NonNullable<Awaited<ReturnType<typeof listIte
 export type ListItemsQueryError = ProblemDetails
 
 
+/**
+ * Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).
+ * @summary Search items across the caller's lists (Viewer+).
+ */
 export function useListItems<TData = Awaited<ReturnType<typeof listItems>>, TError = ProblemDetails>(
  params: undefined |  ListItemsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listItems>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -244,6 +260,10 @@ export function useListItems<TData = Awaited<ReturnType<typeof listItems>>, TErr
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).
+ * @summary Search items across the caller's lists (Viewer+).
+ */
 export function useListItems<TData = Awaited<ReturnType<typeof listItems>>, TError = ProblemDetails>(
  params?: ListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listItems>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -254,14 +274,18 @@ export function useListItems<TData = Awaited<ReturnType<typeof listItems>>, TErr
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).
+ * @summary Search items across the caller's lists (Viewer+).
+ */
 export function useListItems<TData = Awaited<ReturnType<typeof listItems>>, TError = ProblemDetails>(
  params?: ListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Case-insensitive `query` title substring, optional `completed`/`status`. `dueFrom`/`dueTo` bound `dueAt` half-open `[from, to)`; either bound implies `dueAt` is set. Spans every list the caller is a member of (archived included).
  * @summary Search items across the caller's lists (Viewer+).
  */
-
 export function useListItems<TData = Awaited<ReturnType<typeof listItems>>, TError = ProblemDetails>(
  params?: ListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -346,6 +370,10 @@ export type ListListItemsQueryResult = NonNullable<Awaited<ReturnType<typeof lis
 export type ListListItemsQueryError = ProblemDetails
 
 
+/**
+ * Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.
+ * @summary List a list's items (Viewer+).
+ */
 export function useListListItems<TData = Awaited<ReturnType<typeof listListItems>>, TError = ProblemDetails>(
  listId: string,
     params: undefined |  ListListItemsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData>> & Pick<
@@ -357,6 +385,10 @@ export function useListListItems<TData = Awaited<ReturnType<typeof listListItems
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.
+ * @summary List a list's items (Viewer+).
+ */
 export function useListListItems<TData = Awaited<ReturnType<typeof listListItems>>, TError = ProblemDetails>(
  listId: string,
     params?: ListListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData>> & Pick<
@@ -368,15 +400,19 @@ export function useListListItems<TData = Awaited<ReturnType<typeof listListItems
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.
+ * @summary List a list's items (Viewer+).
+ */
 export function useListListItems<TData = Awaited<ReturnType<typeof listListItems>>, TError = ProblemDetails>(
  listId: string,
     params?: ListListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Excludes deleted items; ordered by `sortOrder`. Filters: `completed`, `tagId`, `parentItemId`, `assignedTo`, `status`.
  * @summary List a list's items (Viewer+).
  */
-
 export function useListListItems<TData = Awaited<ReturnType<typeof listListItems>>, TError = ProblemDetails>(
  listId: string,
     params?: ListListItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listListItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
@@ -472,6 +508,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateListItemMutationVariables = {listId: string;data: CreateItemRequest}
 
     /**
+ * Body `{ id (GUIDv7), title, parentItemId?, dueAt?, assigneeEmail?, quantity?, unit?, priority? (0..9), tagIds?, sortOrder, occurredAt? }`. Re-sending an existing id is idempotent.
  * @summary Add an item (Editor+).
  */
 export const useCreateListItem = <TError = ProblemDetails,
@@ -543,6 +580,7 @@ export type TasksGetItemQueryResult = NonNullable<Awaited<ReturnType<typeof task
 export type TasksGetItemQueryError = ProblemDetails
 
 
+/** @summary Get a single item (Viewer+). */
 export function useTasksGetItem<TData = Awaited<ReturnType<typeof tasksGetItem>>, TError = ProblemDetails>(
  listId: string,
     itemId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof tasksGetItem>>, TError, TData>> & Pick<
@@ -554,6 +592,7 @@ export function useTasksGetItem<TData = Awaited<ReturnType<typeof tasksGetItem>>
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get a single item (Viewer+). */
 export function useTasksGetItem<TData = Awaited<ReturnType<typeof tasksGetItem>>, TError = ProblemDetails>(
  listId: string,
     itemId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tasksGetItem>>, TError, TData>> & Pick<
@@ -565,15 +604,13 @@ export function useTasksGetItem<TData = Awaited<ReturnType<typeof tasksGetItem>>
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get a single item (Viewer+). */
 export function useTasksGetItem<TData = Awaited<ReturnType<typeof tasksGetItem>>, TError = ProblemDetails>(
  listId: string,
     itemId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tasksGetItem>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Get a single item (Viewer+).
- */
-
+/** @summary Get a single item (Viewer+). */
 export function useTasksGetItem<TData = Awaited<ReturnType<typeof tasksGetItem>>, TError = ProblemDetails>(
  listId: string,
     itemId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tasksGetItem>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
@@ -655,6 +692,10 @@ export type SyncListsQueryResult = NonNullable<Awaited<ReturnType<typeof syncLis
 export type SyncListsQueryError = ProblemDetails
 
 
+/**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. Lists leave the mirror through `reset`, so `deleted` is always empty.
+ * @summary Lists the caller can read that changed since a cursor, for an offline mirror.
+ */
 export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TError = ProblemDetails>(
  params: undefined |  SyncListsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -665,6 +706,10 @@ export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TErr
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. Lists leave the mirror through `reset`, so `deleted` is always empty.
+ * @summary Lists the caller can read that changed since a cursor, for an offline mirror.
+ */
 export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TError = ProblemDetails>(
  params?: SyncListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -675,14 +720,18 @@ export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TErr
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. Lists leave the mirror through `reset`, so `deleted` is always empty.
+ * @summary Lists the caller can read that changed since a cursor, for an offline mirror.
+ */
 export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TError = ProblemDetails>(
  params?: SyncListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. Lists leave the mirror through `reset`, so `deleted` is always empty.
  * @summary Lists the caller can read that changed since a cursor, for an offline mirror.
  */
-
 export function useSyncLists<TData = Awaited<ReturnType<typeof syncLists>>, TError = ProblemDetails>(
  params?: SyncListsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncLists>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -763,6 +812,10 @@ export type SyncItemsQueryResult = NonNullable<Awaited<ReturnType<typeof syncIte
 export type SyncItemsQueryError = ProblemDetails
 
 
+/**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. `deleted` holds the ids of deleted items.
+ * @summary Items of the caller's readable lists that changed since a cursor, with per-field guards.
+ */
 export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TError = ProblemDetails>(
  params: undefined |  SyncItemsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -773,6 +826,10 @@ export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TErr
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. `deleted` holds the ids of deleted items.
+ * @summary Items of the caller's readable lists that changed since a cursor, with per-field guards.
+ */
 export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TError = ProblemDetails>(
  params?: SyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -783,14 +840,18 @@ export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TErr
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. `deleted` holds the ids of deleted items.
+ * @summary Items of the caller's readable lists that changed since a cursor, with per-field guards.
+ */
 export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TError = ProblemDetails>(
  params?: SyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
+ * Omit `since` for a full sync; then pass back each returned `cursor`, looping while `hasMore`. `reset: true` = drop the mirror before applying the page (first page of a full sync, or the caller gained or lost a list). `limit` defaults to 200, max 500. `deleted` holds the ids of deleted items.
  * @summary Items of the caller's readable lists that changed since a cursor, with per-field guards.
  */
-
 export function useSyncItems<TData = Awaited<ReturnType<typeof syncItems>>, TError = ProblemDetails>(
  params?: SyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient

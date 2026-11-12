@@ -178,9 +178,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type BootstrapMeMutationError = ProblemDetails
     export type BootstrapMeMutationVariables = {data?: null | BootstrapRequest}
 
-    /**
- * @summary Idempotently ensure the caller has the standard calendar set; returns it. Calendars it creates get the optional body's DefaultTimezone (IANA id), else the server default; existing calendars are unchanged.
- */
+    /** @summary Idempotently ensure the caller has the standard calendar set; returns it. Calendars it creates get the optional body's DefaultTimezone (IANA id), else the server default; existing calendars are unchanged. */
 export const useBootstrapMe = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bootstrapMe>>, TError,BootstrapMeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -253,6 +251,7 @@ export type GetPlaceUsageQueryResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetPlaceUsageQueryError = ProblemDetails
 
 
+/** @summary Places your events used — as their location or a travel endpoint — derived at read time from non-cancelled occurrences in calendars you can read (or calendarId), recurrences expanded up to `to`. Merged-away place ids fold into their survivor. Per place: event count, last day, per-category counts and the top 5 attendees. Ordered by last day, then event count. Defaults: from = 3 years before now, to = now, limit 200 (max 500). */
 export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage>>, TError = ProblemDetails>(
  params: undefined |  GetPlaceUsageParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -263,6 +262,7 @@ export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Places your events used — as their location or a travel endpoint — derived at read time from non-cancelled occurrences in calendars you can read (or calendarId), recurrences expanded up to `to`. Merged-away place ids fold into their survivor. Per place: event count, last day, per-category counts and the top 5 attendees. Ordered by last day, then event count. Defaults: from = 3 years before now, to = now, limit 200 (max 500). */
 export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage>>, TError = ProblemDetails>(
  params?: GetPlaceUsageParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -273,14 +273,12 @@ export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Places your events used — as their location or a travel endpoint — derived at read time from non-cancelled occurrences in calendars you can read (or calendarId), recurrences expanded up to `to`. Merged-away place ids fold into their survivor. Per place: event count, last day, per-category counts and the top 5 attendees. Ordered by last day, then event count. Defaults: from = 3 years before now, to = now, limit 200 (max 500). */
 export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage>>, TError = ProblemDetails>(
  params?: GetPlaceUsageParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Places your events used — as their location or a travel endpoint — derived at read time from non-cancelled occurrences in calendars you can read (or calendarId), recurrences expanded up to `to`. Merged-away place ids fold into their survivor. Per place: event count, last day, per-category counts and the top 5 attendees. Ordered by last day, then event count. Defaults: from = 3 years before now, to = now, limit 200 (max 500).
- */
-
+/** @summary Places your events used — as their location or a travel endpoint — derived at read time from non-cancelled occurrences in calendars you can read (or calendarId), recurrences expanded up to `to`. Merged-away place ids fold into their survivor. Per place: event count, last day, per-category counts and the top 5 attendees. Ordered by last day, then event count. Defaults: from = 3 years before now, to = now, limit 200 (max 500). */
 export function useGetPlaceUsage<TData = Awaited<ReturnType<typeof getPlaceUsage>>, TError = ProblemDetails>(
  params?: GetPlaceUsageParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceUsage>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -360,6 +358,7 @@ export type GetParticipationSummaryQueryResult = NonNullable<Awaited<ReturnType<
 export type GetParticipationSummaryQueryError = ProblemDetails
 
 
+/** @summary Per-contact participation across your readable calendars (contactId, count of items with a started occurrence, latest started occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Declined and withdrawn participations and cancelled items don't count. Optional from/to restricts the occurrences considered. A ranking signal for contact pickers/resolvers. */
 export function useGetParticipationSummary<TData = Awaited<ReturnType<typeof getParticipationSummary>>, TError = ProblemDetails>(
  params: undefined |  GetParticipationSummaryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getParticipationSummary>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -370,6 +369,7 @@ export function useGetParticipationSummary<TData = Awaited<ReturnType<typeof get
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Per-contact participation across your readable calendars (contactId, count of items with a started occurrence, latest started occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Declined and withdrawn participations and cancelled items don't count. Optional from/to restricts the occurrences considered. A ranking signal for contact pickers/resolvers. */
 export function useGetParticipationSummary<TData = Awaited<ReturnType<typeof getParticipationSummary>>, TError = ProblemDetails>(
  params?: GetParticipationSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getParticipationSummary>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -380,14 +380,12 @@ export function useGetParticipationSummary<TData = Awaited<ReturnType<typeof get
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Per-contact participation across your readable calendars (contactId, count of items with a started occurrence, latest started occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Declined and withdrawn participations and cancelled items don't count. Optional from/to restricts the occurrences considered. A ranking signal for contact pickers/resolvers. */
 export function useGetParticipationSummary<TData = Awaited<ReturnType<typeof getParticipationSummary>>, TError = ProblemDetails>(
  params?: GetParticipationSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getParticipationSummary>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Per-contact participation across your readable calendars (contactId, count of items with a started occurrence, latest started occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Declined and withdrawn participations and cancelled items don't count. Optional from/to restricts the occurrences considered. A ranking signal for contact pickers/resolvers.
- */
-
+/** @summary Per-contact participation across your readable calendars (contactId, count of items with a started occurrence, latest started occurrence start, recency-weighted score), ordered by score: each past occurrence weighs 0.5^(age / 90 days), the next planned one 1. Declined and withdrawn participations and cancelled items don't count. Optional from/to restricts the occurrences considered. A ranking signal for contact pickers/resolvers. */
 export function useGetParticipationSummary<TData = Awaited<ReturnType<typeof getParticipationSummary>>, TError = ProblemDetails>(
  params?: GetParticipationSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getParticipationSummary>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -460,6 +458,7 @@ export type ListContainersQueryResult = NonNullable<Awaited<ReturnType<typeof li
 export type ListContainersQueryError = ProblemDetails
 
 
+/** @summary List the calendars the caller can access. */
 export function useListContainers<TData = Awaited<ReturnType<typeof listContainers>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainers>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -470,6 +469,7 @@ export function useListContainers<TData = Awaited<ReturnType<typeof listContaine
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List the calendars the caller can access. */
 export function useListContainers<TData = Awaited<ReturnType<typeof listContainers>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainers>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -480,14 +480,12 @@ export function useListContainers<TData = Awaited<ReturnType<typeof listContaine
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List the calendars the caller can access. */
 export function useListContainers<TData = Awaited<ReturnType<typeof listContainers>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainers>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List the calendars the caller can access.
- */
-
+/** @summary List the calendars the caller can access. */
 export function useListContainers<TData = Awaited<ReturnType<typeof listContainers>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContainers>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -579,9 +577,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateCalendarMutationError = ProblemDetails
     export type CreateCalendarMutationVariables = {data: CreateCalendarRequest}
 
-    /**
- * @summary Create a calendar. DefaultTimezone (IANA id) defaults to the server default. (Address books are managed by LupiraContactApi.)
- */
+    /** @summary Create a calendar. DefaultTimezone (IANA id) defaults to the server default. (Address books are managed by LupiraContactApi.) */
 export const useCreateCalendar = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCalendar>>, TError,CreateCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -667,9 +663,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type GrantCalendarOwnerMutationError = ProblemDetails
     export type GrantCalendarOwnerMutationVariables = {calendarId: string;data: GrantOwnerRequest}
 
-    /**
- * @summary Grant a member access to a calendar (access = owner|read-write|read; default owner).
- */
+    /** @summary Grant a member access to a calendar (access = owner|read-write|read; default owner). */
 export const useGrantCalendarOwner = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantCalendarOwner>>, TError,GrantCalendarOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -749,9 +743,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RevokeCalendarOwnerMutationError = ProblemDetails
     export type RevokeCalendarOwnerMutationVariables = {calendarId: string;params: RevokeCalendarOwnerParams}
 
-    /**
- * @summary Revoke a member's access to a calendar (by email). 409 if it would remove the last owner.
- */
+    /** @summary Revoke a member's access to a calendar (by email). 409 if it would remove the last owner. */
 export const useRevokeCalendarOwner = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeCalendarOwner>>, TError,RevokeCalendarOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -817,6 +809,7 @@ export type ListSubscriptionsQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type ListSubscriptionsQueryError = ProblemDetails
 
 
+/** @summary List the published calendar feeds shown in a calendar, with their sync status; any grant on the calendar. Only the feed's host is returned, never its address. */
 export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubscriptions>>, TError = ProblemDetails>(
  calendarId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -827,6 +820,7 @@ export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubsc
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List the published calendar feeds shown in a calendar, with their sync status; any grant on the calendar. Only the feed's host is returned, never its address. */
 export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubscriptions>>, TError = ProblemDetails>(
  calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -837,14 +831,12 @@ export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubsc
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List the published calendar feeds shown in a calendar, with their sync status; any grant on the calendar. Only the feed's host is returned, never its address. */
 export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubscriptions>>, TError = ProblemDetails>(
  calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List the published calendar feeds shown in a calendar, with their sync status; any grant on the calendar. Only the feed's host is returned, never its address.
- */
-
+/** @summary List the published calendar feeds shown in a calendar, with their sync status; any grant on the calendar. Only the feed's host is returned, never its address. */
 export function useListSubscriptions<TData = Awaited<ReturnType<typeof listSubscriptions>>, TError = ProblemDetails>(
  calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSubscriptions>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -937,9 +929,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateSubscriptionMutationError = ProblemDetails
     export type CreateSubscriptionMutationVariables = {calendarId: string;data: CreateSubscriptionRequest}
 
-    /**
- * @summary Subscribe a calendar to a published calendar feed (http, https or webcal address); owner-only. Its events appear read-only in the calendar after the first sync.
- */
+    /** @summary Subscribe a calendar to a published calendar feed (http, https or webcal address); owner-only. Its events appear read-only in the calendar after the first sync. */
 export const useCreateSubscription = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSubscription>>, TError,CreateSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1027,9 +1017,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateSubscriptionMutationError = ProblemDetails
     export type UpdateSubscriptionMutationVariables = {calendarId: string;subscriptionId: string;data: UpdateSubscriptionRequest}
 
-    /**
- * @summary Rename or recolour a subscription, or point it at a new feed address (which restarts its sync); owner-only.
- */
+    /** @summary Rename or recolour a subscription, or point it at a new feed address (which restarts its sync); owner-only. */
 export const useUpdateSubscription = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSubscription>>, TError,UpdateSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1102,9 +1090,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteSubscriptionMutationError = ProblemDetails
     export type DeleteSubscriptionMutationVariables = {calendarId: string;subscriptionId: string}
 
-    /**
- * @summary Remove a subscription and its events from the calendar; owner-only.
- */
+    /** @summary Remove a subscription and its events from the calendar; owner-only. */
 export const useDeleteSubscription = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteSubscription>>, TError,DeleteSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1177,9 +1163,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RefreshSubscriptionMutationError = ProblemDetails
     export type RefreshSubscriptionMutationVariables = {calendarId: string;subscriptionId: string}
 
-    /**
- * @summary Fetch the feed again soon; owner-only. Within a short cooldown of the last attempt nothing changes. Returns the current status.
- */
+    /** @summary Fetch the feed again soon; owner-only. Within a short cooldown of the last attempt nothing changes. Returns the current status. */
 export const useRefreshSubscription = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshSubscription>>, TError,RefreshSubscriptionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1253,6 +1237,7 @@ export type GetSubscribedEventQueryResult = NonNullable<Awaited<ReturnType<typeo
 export type GetSubscribedEventQueryError = ProblemDetails
 
 
+/** @summary Get one read-only event of a subscribed feed (the id search returns with origin kind Subscription); any grant on the calendar. */
 export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubscribedEvent>>, TError = ProblemDetails>(
  calendarId: string,
     subscriptionId: string,
@@ -1265,6 +1250,7 @@ export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubsc
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get one read-only event of a subscribed feed (the id search returns with origin kind Subscription); any grant on the calendar. */
 export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubscribedEvent>>, TError = ProblemDetails>(
  calendarId: string,
     subscriptionId: string,
@@ -1277,16 +1263,14 @@ export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubsc
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get one read-only event of a subscribed feed (the id search returns with origin kind Subscription); any grant on the calendar. */
 export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubscribedEvent>>, TError = ProblemDetails>(
  calendarId: string,
     subscriptionId: string,
     eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSubscribedEvent>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Get one read-only event of a subscribed feed (the id search returns with origin kind Subscription); any grant on the calendar.
- */
-
+/** @summary Get one read-only event of a subscribed feed (the id search returns with origin kind Subscription); any grant on the calendar. */
 export function useGetSubscribedEvent<TData = Awaited<ReturnType<typeof getSubscribedEvent>>, TError = ProblemDetails>(
  calendarId: string,
     subscriptionId: string,
@@ -1368,6 +1352,7 @@ export type SearchItemsQueryResult = NonNullable<Awaited<ReturnType<typeof searc
 export type SearchItemsQueryError = ProblemDetails
 
 
+/** @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read. */
 export function useSearchItems<TData = Awaited<ReturnType<typeof searchItems>>, TError = ProblemDetails>(
  params: undefined |  SearchItemsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchItems>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1378,6 +1363,7 @@ export function useSearchItems<TData = Awaited<ReturnType<typeof searchItems>>, 
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read. */
 export function useSearchItems<TData = Awaited<ReturnType<typeof searchItems>>, TError = ProblemDetails>(
  params?: SearchItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchItems>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1388,14 +1374,12 @@ export function useSearchItems<TData = Awaited<ReturnType<typeof searchItems>>, 
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read. */
 export function useSearchItems<TData = Awaited<ReturnType<typeof searchItems>>, TError = ProblemDetails>(
  params?: SearchItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read.
- */
-
+/** @summary Search calendar items (text + tag + parent + attendee contact + category/status filter; recurrence expanded in-window; from/to match occurrences overlapping the window). Text queries and parent/contact filters with no from/to match all-time; otherwise the window defaults to ±1 year. skip/take page over occurrences sorted by start (desc=true for newest first). Only items accepted into a calendar you can read. */
 export function useSearchItems<TData = Awaited<ReturnType<typeof searchItems>>, TError = ProblemDetails>(
  params?: SearchItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -1487,9 +1471,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateItemMutationError = ProblemDetails
     export type CreateItemMutationVariables = {data: CreateCalendarItemRequest}
 
-    /**
- * @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location is a resolved PlaceId (Location = its label), or free text kept as a label only with LocationUnresolved=true (no geo lookup); free text alone 400s.
- */
+    /** @summary Create a calendar item (filed into CalendarId if given, else unfiled for later curation). A location is a resolved PlaceId (Location = its label), or free text kept as a label only with LocationUnresolved=true (no geo lookup); free text alone 400s. */
 export const useCreateItem = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItem>>, TError,CreateItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1584,6 +1566,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ReadItemDraftsMutationVariables = {data: string;params?: ReadItemDraftsParams}
 
     /**
+ * The body is the file's text (text/calendar or text/plain, at most 5 MB). Each draft maps 1:1 onto CreateItem; send its SourceKey (derived per caller from the event) so creating from the same file twice is a no-op. A recurring event's changed occurrences are not part of its draft. Location is a free-text label to resolve to a place first. zone (IANA id, e.g. the device zone) reads times the file gives without a zone as wall-clock times there and becomes their StartTimezone; without it they are read as UTC. An unknown zone is a 400.
  * @summary Reads a calendar file into item drafts without saving them.
  */
 export const useReadItemDrafts = <TError = ProblemDetails,
@@ -1651,6 +1634,7 @@ export type GetItemQueryResult = NonNullable<Awaited<ReturnType<typeof getItem>>
 export type GetItemQueryError = ProblemDetails
 
 
+/** @summary Get a single calendar item. */
 export function useGetItem<TData = Awaited<ReturnType<typeof getItem>>, TError = ProblemDetails>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getItem>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1661,6 +1645,7 @@ export function useGetItem<TData = Awaited<ReturnType<typeof getItem>>, TError =
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get a single calendar item. */
 export function useGetItem<TData = Awaited<ReturnType<typeof getItem>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getItem>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1671,14 +1656,12 @@ export function useGetItem<TData = Awaited<ReturnType<typeof getItem>>, TError =
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get a single calendar item. */
 export function useGetItem<TData = Awaited<ReturnType<typeof getItem>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getItem>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Get a single calendar item.
- */
-
+/** @summary Get a single calendar item. */
 export function useGetItem<TData = Awaited<ReturnType<typeof getItem>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getItem>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -1771,9 +1754,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateItemMutationError = ProblemDetails
     export type UpdateItemMutationVariables = {id: string;data: UpdateCalendarItemRequest}
 
-    /**
- * @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones, clearing the parent with ParentItemIdProvided=true and a null ParentItemId). A location change needs PlaceId, or LocationUnresolved=true to store Location as a label with no place. Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates.
- */
+    /** @summary Update a calendar item. Plain fields: omitted = kept; fields paired with a *Provided sentinel are written verbatim when it is true (enables clearing recurrence, switching all-day, editing timezones, clearing the parent with ParentItemIdProvided=true and a null ParentItemId). A location change needs PlaceId, or LocationUnresolved=true to store Location as a label with no place. Offline clients send Idempotency-Key (their command id) + body OccurredAt for replay-safe, last-writer-wins updates. */
 export const useUpdateItem = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateItem>>, TError,UpdateItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1844,9 +1825,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteItemMutationError = ProblemDetails
     export type DeleteItemMutationVariables = {id: string}
 
-    /**
- * @summary Delete a calendar item (soft delete + tombstone). A replay bearing the same Idempotency-Key succeeds instead of 404ing.
- */
+    /** @summary Delete a calendar item (soft delete + tombstone). A replay bearing the same Idempotency-Key succeeds instead of 404ing. */
 export const useDeleteItem = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteItem>>, TError,DeleteItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1934,9 +1913,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ChangeOccurrenceMutationError = ProblemDetails
     export type ChangeOccurrenceMutationVariables = {id: string;originalStart: string;data: ChangeOccurrenceRequest}
 
-    /**
- * @summary Change one occurrence of a recurring item, addressed by its unmodified start (UTC, e.g. 2026-05-31T16:00:00Z; originalStart from SearchItems). Excluded=true removes it from the series; otherwise StartsAt/EndsAt/Title/Description/Status override the series for that occurrence (omitted = inherit). Replaces the occurrence's previous change.
- */
+    /** @summary Change one occurrence of a recurring item, addressed by its unmodified start (UTC, e.g. 2026-05-31T16:00:00Z; originalStart from SearchItems). Excluded=true removes it from the series; otherwise StartsAt/EndsAt/Title/Description/Status override the series for that occurrence (omitted = inherit). Replaces the occurrence's previous change. */
 export const useChangeOccurrence = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeOccurrence>>, TError,ChangeOccurrenceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2018,9 +1995,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RestoreOccurrenceMutationError = ProblemDetails
     export type RestoreOccurrenceMutationVariables = {id: string;originalStart: string;params?: RestoreOccurrenceParams}
 
-    /**
- * @summary Revert one occurrence of a recurring item to the series (drops its exclusion or override).
- */
+    /** @summary Revert one occurrence of a recurring item to the series (drops its exclusion or override). */
 export const useRestoreOccurrence = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreOccurrence>>, TError,RestoreOccurrenceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2108,9 +2083,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ChangeFollowingOccurrencesMutationError = ProblemDetails
     export type ChangeFollowingOccurrencesMutationVariables = {id: string;originalStart: string;data: ChangeFollowingOccurrencesRequest}
 
-    /**
- * @summary Change one occurrence of a recurring item and every one after it, addressed by its unmodified start (UTC; originalStart from SearchItems). The series ends before it; a new series continuing it (continuesItemId) takes the rest with Changes applied, or Excluded=true deletes them. At the first occurrence the whole series is updated or deleted instead. SourceKey fixes the new series' id for offline clients; an OccurredAt older than the series' last schedule change is a 409. A one-off added occurrence can't start a series (400).
- */
+    /** @summary Change one occurrence of a recurring item and every one after it, addressed by its unmodified start (UTC; originalStart from SearchItems). The series ends before it; a new series continuing it (continuesItemId) takes the rest with Changes applied, or Excluded=true deletes them. At the first occurrence the whole series is updated or deleted instead. SourceKey fixes the new series' id for offline clients; an OccurredAt older than the series' last schedule change is a 409. A one-off added occurrence can't start a series (400). */
 export const useChangeFollowingOccurrences = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof changeFollowingOccurrences>>, TError,ChangeFollowingOccurrencesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2205,9 +2178,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type MergeItemMetadataMutationError = ProblemDetails
     export type MergeItemMetadataMutationVariables = {id: string;data: JsonObject;params?: MergeItemMetadataParams}
 
-    /**
- * @summary Merge arbitrary JSON metadata into a calendar item. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe, last-writer-wins merges.
- */
+    /** @summary Merge arbitrary JSON metadata into a calendar item. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe, last-writer-wins merges. */
 export const useMergeItemMetadata = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof mergeItemMetadata>>, TError,MergeItemMetadataMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2293,9 +2264,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetItemPromptMutationError = ProblemDetails
     export type SetItemPromptMutationVariables = {id: string;data: SetItemPromptRequest}
 
-    /**
- * @summary Set the LLM-interpreted payload on an item (server-side only; never in the export). 409 if the item carries an action.
- */
+    /** @summary Set the LLM-interpreted payload on an item (server-side only; never in the export). 409 if the item carries an action. */
 export const useSetItemPrompt = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemPrompt>>, TError,SetItemPromptMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2375,9 +2344,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ClearItemPromptMutationError = ProblemDetails
     export type ClearItemPromptMutationVariables = {id: string;params?: ClearItemPromptParams}
 
-    /**
- * @summary Clear the item's LLM payload.
- */
+    /** @summary Clear the item's LLM payload. */
 export const useClearItemPrompt = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemPrompt>>, TError,ClearItemPromptMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2463,9 +2430,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetItemActionMutationError = ProblemDetails
     export type SetItemActionMutationVariables = {id: string;data: SetItemActionRequest}
 
-    /**
- * @summary Set the deterministic payload on an item (server-side only; never in the export). 409 if the item carries a prompt.
- */
+    /** @summary Set the deterministic payload on an item (server-side only; never in the export). 409 if the item carries a prompt. */
 export const useSetItemAction = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setItemAction>>, TError,SetItemActionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2545,9 +2510,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ClearItemActionMutationError = ProblemDetails
     export type ClearItemActionMutationVariables = {id: string;params?: ClearItemActionParams}
 
-    /**
- * @summary Clear the item's deterministic payload.
- */
+    /** @summary Clear the item's deterministic payload. */
 export const useClearItemAction = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearItemAction>>, TError,ClearItemActionMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2633,9 +2596,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateItemRelationMutationError = ProblemDetails
     export type CreateItemRelationMutationVariables = {id: string;data: CreateRelationRequest}
 
-    /**
- * @summary Link a calendar item to an external reference (e.g. a LupiraTasks item, or an Activity-API engagement/project).
- */
+    /** @summary Link a calendar item to an external reference (e.g. a LupiraTasks item, or an Activity-API engagement/project). */
 export const useCreateItemRelation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createItemRelation>>, TError,CreateItemRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2701,6 +2662,7 @@ export type ListItemRelationsQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type ListItemRelationsQueryError = ProblemDetails
 
 
+/** @summary List a calendar item's relations. */
 export function useListItemRelations<TData = Awaited<ReturnType<typeof listItemRelations>>, TError = ProblemDetails>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listItemRelations>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -2711,6 +2673,7 @@ export function useListItemRelations<TData = Awaited<ReturnType<typeof listItemR
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List a calendar item's relations. */
 export function useListItemRelations<TData = Awaited<ReturnType<typeof listItemRelations>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listItemRelations>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -2721,14 +2684,12 @@ export function useListItemRelations<TData = Awaited<ReturnType<typeof listItemR
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List a calendar item's relations. */
 export function useListItemRelations<TData = Awaited<ReturnType<typeof listItemRelations>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listItemRelations>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List a calendar item's relations.
- */
-
+/** @summary List a calendar item's relations. */
 export function useListItemRelations<TData = Awaited<ReturnType<typeof listItemRelations>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listItemRelations>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -2808,6 +2769,7 @@ export type ListRelationEdgesQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type ListRelationEdgesQueryError = ProblemDetails
 
 
+/** @summary Every edge of one kind the caller can see, with its item and reference — e.g. all photo links. */
 export function useListRelationEdges<TData = Awaited<ReturnType<typeof listRelationEdges>>, TError = ProblemDetails>(
  params: ListRelationEdgesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationEdges>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -2818,6 +2780,7 @@ export function useListRelationEdges<TData = Awaited<ReturnType<typeof listRelat
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every edge of one kind the caller can see, with its item and reference — e.g. all photo links. */
 export function useListRelationEdges<TData = Awaited<ReturnType<typeof listRelationEdges>>, TError = ProblemDetails>(
  params: ListRelationEdgesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationEdges>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -2828,14 +2791,12 @@ export function useListRelationEdges<TData = Awaited<ReturnType<typeof listRelat
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every edge of one kind the caller can see, with its item and reference — e.g. all photo links. */
 export function useListRelationEdges<TData = Awaited<ReturnType<typeof listRelationEdges>>, TError = ProblemDetails>(
  params: ListRelationEdgesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationEdges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Every edge of one kind the caller can see, with its item and reference — e.g. all photo links.
- */
-
+/** @summary Every edge of one kind the caller can see, with its item and reference — e.g. all photo links. */
 export function useListRelationEdges<TData = Awaited<ReturnType<typeof listRelationEdges>>, TError = ProblemDetails>(
  params: ListRelationEdgesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationEdges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -2915,6 +2876,7 @@ export type GetHotspotsQueryResult = NonNullable<Awaited<ReturnType<typeof getHo
 export type GetHotspotsQueryError = ProblemDetails
 
 
+/** @summary Places where your events and photos concentrate, derived at read time and ranked by active days (distinct UTC days with an event occurrence or a photo). Events come from calendars you can read (or calendarId), photos are your own. Defaults: all-time up to now, minDays 3, limit 100. A hotspot carries the LupiraGeoApi PlaceId it anchors to, else a reverse-geocoded label. */
 export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, TError = ProblemDetails>(
  params: undefined |  GetHotspotsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -2925,6 +2887,7 @@ export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, 
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Places where your events and photos concentrate, derived at read time and ranked by active days (distinct UTC days with an event occurrence or a photo). Events come from calendars you can read (or calendarId), photos are your own. Defaults: all-time up to now, minDays 3, limit 100. A hotspot carries the LupiraGeoApi PlaceId it anchors to, else a reverse-geocoded label. */
 export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, TError = ProblemDetails>(
  params?: GetHotspotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -2935,14 +2898,12 @@ export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, 
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Places where your events and photos concentrate, derived at read time and ranked by active days (distinct UTC days with an event occurrence or a photo). Events come from calendars you can read (or calendarId), photos are your own. Defaults: all-time up to now, minDays 3, limit 100. A hotspot carries the LupiraGeoApi PlaceId it anchors to, else a reverse-geocoded label. */
 export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, TError = ProblemDetails>(
  params?: GetHotspotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Places where your events and photos concentrate, derived at read time and ranked by active days (distinct UTC days with an event occurrence or a photo). Events come from calendars you can read (or calendarId), photos are your own. Defaults: all-time up to now, minDays 3, limit 100. A hotspot carries the LupiraGeoApi PlaceId it anchors to, else a reverse-geocoded label.
- */
-
+/** @summary Places where your events and photos concentrate, derived at read time and ranked by active days (distinct UTC days with an event occurrence or a photo). Events come from calendars you can read (or calendarId), photos are your own. Defaults: all-time up to now, minDays 3, limit 100. A hotspot carries the LupiraGeoApi PlaceId it anchors to, else a reverse-geocoded label. */
 export function useGetHotspots<TData = Awaited<ReturnType<typeof getHotspots>>, TError = ProblemDetails>(
  params?: GetHotspotsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getHotspots>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -3015,6 +2976,7 @@ export type ListProposedItemsQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type ListProposedItemsQueryError = ProblemDetails
 
 
+/** @summary List items proposed into a calendar (awaiting accept/reject). */
 export function useListProposedItems<TData = Awaited<ReturnType<typeof listProposedItems>>, TError = ProblemDetails>(
  calendarId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProposedItems>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3025,6 +2987,7 @@ export function useListProposedItems<TData = Awaited<ReturnType<typeof listPropo
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List items proposed into a calendar (awaiting accept/reject). */
 export function useListProposedItems<TData = Awaited<ReturnType<typeof listProposedItems>>, TError = ProblemDetails>(
  calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProposedItems>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3035,14 +2998,12 @@ export function useListProposedItems<TData = Awaited<ReturnType<typeof listPropo
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List items proposed into a calendar (awaiting accept/reject). */
 export function useListProposedItems<TData = Awaited<ReturnType<typeof listProposedItems>>, TError = ProblemDetails>(
  calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProposedItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List items proposed into a calendar (awaiting accept/reject).
- */
-
+/** @summary List items proposed into a calendar (awaiting accept/reject). */
 export function useListProposedItems<TData = Awaited<ReturnType<typeof listProposedItems>>, TError = ProblemDetails>(
  calendarId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProposedItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -3131,9 +3092,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AcceptItemIntoCalendarMutationError = ProblemDetails
     export type AcceptItemIntoCalendarMutationVariables = {itemId: string;calendarId: string;params?: AcceptItemIntoCalendarParams}
 
-    /**
- * @summary Accept a proposed item into a calendar. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe, last-writer-wins filing.
- */
+    /** @summary Accept a proposed item into a calendar. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe, last-writer-wins filing. */
 export const useAcceptItemIntoCalendar = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptItemIntoCalendar>>, TError,AcceptItemIntoCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3215,9 +3174,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type FileItemToCalendarMutationError = ProblemDetails
     export type FileItemToCalendarMutationVariables = {itemId: string;calendarId: string;params?: FileItemToCalendarParams}
 
-    /**
- * @summary File an existing item into a calendar (status=proposed|accepted, default proposed). Offline clients pass ?occurredAt= + Idempotency-Key.
- */
+    /** @summary File an existing item into a calendar (status=proposed|accepted, default proposed). Offline clients pass ?occurredAt= + Idempotency-Key. */
 export const useFileItemToCalendar = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof fileItemToCalendar>>, TError,FileItemToCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3299,9 +3256,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveItemFromCalendarMutationError = ProblemDetails
     export type RemoveItemFromCalendarMutationVariables = {itemId: string;calendarId: string;params?: RemoveItemFromCalendarParams}
 
-    /**
- * @summary Remove an item from a calendar (reject / unfile). Offline clients pass ?occurredAt= + Idempotency-Key.
- */
+    /** @summary Remove an item from a calendar (reject / unfile). Offline clients pass ?occurredAt= + Idempotency-Key. */
 export const useRemoveItemFromCalendar = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeItemFromCalendar>>, TError,RemoveItemFromCalendarMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3381,9 +3336,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type InviteParticipantMutationError = ProblemDetails
     export type InviteParticipantMutationVariables = {id: string;params: InviteParticipantParams}
 
-    /**
- * @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Inviting to an item that had already ended (at occurredAt, else now) also confirms attendance, stamped at the item's end. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
- */
+    /** @summary Invite a contact (must be a Contact id). role = chair|req-participant|opt-participant|non-participant (or the enum name); default req-participant, anything else 400s. A contact already invited is a no-op. Inviting to an item that had already ended (at occurredAt, else now) also confirms attendance, stamped at the item's end. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery. */
 export const useInviteParticipant = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inviteParticipant>>, TError,InviteParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3463,9 +3416,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveParticipantByContactMutationError = ProblemDetails
     export type RemoveParticipantByContactMutationVariables = {id: string;params: RemoveParticipantByContactParams}
 
-    /**
- * @summary Remove a contact from the item — every participation it holds; a contact holding none is a no-op. For clients that never learned the participation id.
- */
+    /** @summary Remove a contact from the item — every participation it holds; a contact holding none is a no-op. For clients that never learned the participation id. */
 export const useRemoveParticipantByContact = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeParticipantByContact>>, TError,RemoveParticipantByContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3547,9 +3498,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RespondToInvitationMutationError = ProblemDetails
     export type RespondToInvitationMutationVariables = {id: string;participationId: string;params?: RespondToInvitationParams}
 
-    /**
- * @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s. The current RSVP again is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
- */
+    /** @summary Record an RSVP. status = needs-action|accepted|declined|tentative|delegated (or the enum name); required, anything else 400s. The current RSVP again is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery. */
 export const useRespondToInvitation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof respondToInvitation>>, TError,RespondToInvitationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3631,9 +3580,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ConfirmAttendanceMutationError = ProblemDetails
     export type ConfirmAttendanceMutationVariables = {id: string;participationId: string;params?: ConfirmAttendanceParams}
 
-    /**
- * @summary Confirm attendance; already confirmed is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
- */
+    /** @summary Confirm attendance; already confirmed is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery. */
 export const useConfirmAttendance = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmAttendance>>, TError,ConfirmAttendanceMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3715,9 +3662,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type LeaveItemMutationError = ProblemDetails
     export type LeaveItemMutationVariables = {id: string;participationId: string;params?: LeaveItemParams}
 
-    /**
- * @summary Record that the participant left; already left is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
- */
+    /** @summary Record that the participant left; already left is a no-op. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery. */
 export const useLeaveItem = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof leaveItem>>, TError,LeaveItemMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3799,9 +3744,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetParticipantReminderMutationError = ProblemDetails
     export type SetParticipantReminderMutationVariables = {id: string;participationId: string;params?: SetParticipantReminderParams}
 
-    /**
- * @summary Set this participant's own reminder for the item, delivered on their device. mode = Default|Off|Before; required, anything else 400s. minutesBefore (0..40320) is required for Before and rejected otherwise. Last writer wins per participation on occurredAt. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery.
- */
+    /** @summary Set this participant's own reminder for the item, delivered on their device. mode = Default|Off|Before; required, anything else 400s. minutesBefore (0..40320) is required for Before and rejected otherwise. Last writer wins per participation on occurredAt. Offline clients pass ?occurredAt= + Idempotency-Key for replay-safe delivery. */
 export const useSetParticipantReminder = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setParticipantReminder>>, TError,SetParticipantReminderMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3874,9 +3817,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveParticipantMutationError = ProblemDetails
     export type RemoveParticipantMutationVariables = {id: string;participationId: string}
 
-    /**
- * @summary Remove an attendee. Pass Idempotency-Key so a redelivered removal succeeds rather than 404s.
- */
+    /** @summary Remove an attendee. Pass Idempotency-Key so a redelivered removal succeeds rather than 404s. */
 export const useRemoveParticipant = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeParticipant>>, TError,RemoveParticipantMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3949,6 +3890,7 @@ export type GetSyncItemsQueryResult = NonNullable<Awaited<ReturnType<typeof getS
 export type GetSyncItemsQueryError = ProblemDetails
 
 
+/** @summary Paged item feed for offline mirrors. Omit since for a full sync (reset: replace the mirror; no tombstones); later pages and deltas return items the caller can read that changed past the cursor, plus ids of items deleted or no longer visible. Loop while hasMore, persisting cursor between calls. */
 export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>, TError = ProblemDetails>(
  params: undefined |  GetSyncItemsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3959,6 +3901,7 @@ export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Paged item feed for offline mirrors. Omit since for a full sync (reset: replace the mirror; no tombstones); later pages and deltas return items the caller can read that changed past the cursor, plus ids of items deleted or no longer visible. Loop while hasMore, persisting cursor between calls. */
 export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>, TError = ProblemDetails>(
  params?: GetSyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3969,14 +3912,12 @@ export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Paged item feed for offline mirrors. Omit since for a full sync (reset: replace the mirror; no tombstones); later pages and deltas return items the caller can read that changed past the cursor, plus ids of items deleted or no longer visible. Loop while hasMore, persisting cursor between calls. */
 export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>, TError = ProblemDetails>(
  params?: GetSyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Paged item feed for offline mirrors. Omit since for a full sync (reset: replace the mirror; no tombstones); later pages and deltas return items the caller can read that changed past the cursor, plus ids of items deleted or no longer visible. Loop while hasMore, persisting cursor between calls.
- */
-
+/** @summary Paged item feed for offline mirrors. Omit since for a full sync (reset: replace the mirror; no tombstones); later pages and deltas return items the caller can read that changed past the cursor, plus ids of items deleted or no longer visible. Loop while hasMore, persisting cursor between calls. */
 export function useGetSyncItems<TData = Awaited<ReturnType<typeof getSyncItems>>, TError = ProblemDetails>(
  params?: GetSyncItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncItems>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4056,6 +3997,7 @@ export type GetChangesQueryResult = NonNullable<Awaited<ReturnType<typeof getCha
 export type GetChangesQueryError = ProblemDetails
 
 
+/** @summary Alias of GET /sync/items for existing clients. */
 export function useGetChanges<TData = Awaited<ReturnType<typeof getChanges>>, TError = ProblemDetails>(
  params: undefined |  GetChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChanges>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4066,6 +4008,7 @@ export function useGetChanges<TData = Awaited<ReturnType<typeof getChanges>>, TE
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Alias of GET /sync/items for existing clients. */
 export function useGetChanges<TData = Awaited<ReturnType<typeof getChanges>>, TError = ProblemDetails>(
  params?: GetChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChanges>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4076,14 +4019,12 @@ export function useGetChanges<TData = Awaited<ReturnType<typeof getChanges>>, TE
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Alias of GET /sync/items for existing clients. */
 export function useGetChanges<TData = Awaited<ReturnType<typeof getChanges>>, TError = ProblemDetails>(
  params?: GetChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Alias of GET /sync/items for existing clients.
- */
-
+/** @summary Alias of GET /sync/items for existing clients. */
 export function useGetChanges<TData = Awaited<ReturnType<typeof getChanges>>, TError = ProblemDetails>(
  params?: GetChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4156,6 +4097,7 @@ export type GetSyncCalendarsQueryResult = NonNullable<Awaited<ReturnType<typeof 
 export type GetSyncCalendarsQueryError = ProblemDetails
 
 
+/** @summary Snapshot of the caller's calendars: always reset with every calendar in changed and no cursor; replace the local set on each call. */
 export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCalendars>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4166,6 +4108,7 @@ export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCal
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the caller's calendars: always reset with every calendar in changed and no cursor; replace the local set on each call. */
 export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCalendars>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4176,14 +4119,12 @@ export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCal
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the caller's calendars: always reset with every calendar in changed and no cursor; replace the local set on each call. */
 export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCalendars>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Snapshot of the caller's calendars: always reset with every calendar in changed and no cursor; replace the local set on each call.
- */
-
+/** @summary Snapshot of the caller's calendars: always reset with every calendar in changed and no cursor; replace the local set on each call. */
 export function useGetSyncCalendars<TData = Awaited<ReturnType<typeof getSyncCalendars>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncCalendars>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4256,6 +4197,7 @@ export type GetSyncSubscribedEventsQueryResult = NonNullable<Awaited<ReturnType<
 export type GetSyncSubscribedEventsQueryError = ProblemDetails
 
 
+/** @summary Snapshot of the read-only events of every published calendar feed the caller's calendars subscribe to, each with its occurrences expanded over the sync window: always reset with no cursor; replace the local set on each call. */
 export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4266,6 +4208,7 @@ export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof get
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the read-only events of every published calendar feed the caller's calendars subscribe to, each with its occurrences expanded over the sync window: always reset with no cursor; replace the local set on each call. */
 export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4276,14 +4219,12 @@ export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof get
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the read-only events of every published calendar feed the caller's calendars subscribe to, each with its occurrences expanded over the sync window: always reset with no cursor; replace the local set on each call. */
 export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Snapshot of the read-only events of every published calendar feed the caller's calendars subscribe to, each with its occurrences expanded over the sync window: always reset with no cursor; replace the local set on each call.
- */
-
+/** @summary Snapshot of the read-only events of every published calendar feed the caller's calendars subscribe to, each with its occurrences expanded over the sync window: always reset with no cursor; replace the local set on each call. */
 export function useGetSyncSubscribedEvents<TData = Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncSubscribedEvents>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4356,6 +4297,7 @@ export type GetSyncHolidaysQueryResult = NonNullable<Awaited<ReturnType<typeof g
 export type GetSyncHolidaysQueryError = ProblemDetails
 
 
+/** @summary Snapshot of the computed holidays of the caller's Holidays calendars, each with its dates over the sync window: always reset with no cursor; replace the local set on each call. */
 export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHolidays>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4366,6 +4308,7 @@ export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHoli
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the computed holidays of the caller's Holidays calendars, each with its dates over the sync window: always reset with no cursor; replace the local set on each call. */
 export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHolidays>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4376,14 +4319,12 @@ export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHoli
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the computed holidays of the caller's Holidays calendars, each with its dates over the sync window: always reset with no cursor; replace the local set on each call. */
 export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHolidays>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Snapshot of the computed holidays of the caller's Holidays calendars, each with its dates over the sync window: always reset with no cursor; replace the local set on each call.
- */
-
+/** @summary Snapshot of the computed holidays of the caller's Holidays calendars, each with its dates over the sync window: always reset with no cursor; replace the local set on each call. */
 export function useGetSyncHolidays<TData = Awaited<ReturnType<typeof getSyncHolidays>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncHolidays>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4456,6 +4397,7 @@ export type GetSyncContainersQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type GetSyncContainersQueryError = ProblemDetails
 
 
+/** @summary Snapshot of the caller's calendars for mirror reconciliation. Containers are plain documents with no event history (no cursor) — fetch once per sync cycle and diff locally. */
 export function useGetSyncContainers<TData = Awaited<ReturnType<typeof getSyncContainers>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncContainers>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4466,6 +4408,7 @@ export function useGetSyncContainers<TData = Awaited<ReturnType<typeof getSyncCo
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the caller's calendars for mirror reconciliation. Containers are plain documents with no event history (no cursor) — fetch once per sync cycle and diff locally. */
 export function useGetSyncContainers<TData = Awaited<ReturnType<typeof getSyncContainers>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncContainers>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4476,14 +4419,12 @@ export function useGetSyncContainers<TData = Awaited<ReturnType<typeof getSyncCo
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the caller's calendars for mirror reconciliation. Containers are plain documents with no event history (no cursor) — fetch once per sync cycle and diff locally. */
 export function useGetSyncContainers<TData = Awaited<ReturnType<typeof getSyncContainers>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncContainers>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Snapshot of the caller's calendars for mirror reconciliation. Containers are plain documents with no event history (no cursor) — fetch once per sync cycle and diff locally.
- */
-
+/** @summary Snapshot of the caller's calendars for mirror reconciliation. Containers are plain documents with no event history (no cursor) — fetch once per sync cycle and diff locally. */
 export function useGetSyncContainers<TData = Awaited<ReturnType<typeof getSyncContainers>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSyncContainers>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient

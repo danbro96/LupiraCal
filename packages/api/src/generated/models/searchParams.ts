@@ -7,12 +7,12 @@
 import type { MessageSource } from './messageSource';
 
 export type SearchParams = {
-q?: string;
-from?: string;
-to?: string;
-source?: MessageSource;
-participant?: string;
-conversationId?: string;
-limit?: number;
-principalId?: string;
+  q?: string;
+  from?: string;
+  to?: string;
+  source?: MessageSource;
+  participant?: string;
+  conversationId?: string;
+  limit?: number;
+  principalId?: string;
 };

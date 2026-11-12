@@ -6,5 +6,5 @@
  */
 
 export type ReadItemDraftsParams = {
-zone?: string;
+  zone?: string;
 };

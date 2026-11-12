@@ -7,5 +7,5 @@
 import type { ContactRelationKind } from './contactRelationKind';
 
 export type RemoveContactRelationParams = {
-kind: ContactRelationKind;
+  kind: ContactRelationKind;
 };

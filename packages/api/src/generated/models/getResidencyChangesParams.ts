@@ -6,6 +6,6 @@
  */
 
 export type GetResidencyChangesParams = {
-since?: string;
-limit?: number;
+  since?: string;
+  limit?: number;
 };

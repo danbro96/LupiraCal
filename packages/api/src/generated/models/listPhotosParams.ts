@@ -9,16 +9,16 @@ import type { AssetStatus } from './assetStatus';
 import type { PhotoSort } from './photoSort';
 
 export type ListPhotosParams = {
-from?: string;
-to?: string;
-bbox?: string;
-kind?: AssetKind;
-status?: AssetStatus;
-located?: boolean;
-place?: string;
-sourceAlbum?: string;
-trashed?: boolean;
-sort?: PhotoSort;
-limit?: number;
-cursor?: string;
+  from?: string;
+  to?: string;
+  bbox?: string;
+  kind?: AssetKind;
+  status?: AssetStatus;
+  located?: boolean;
+  place?: string;
+  sourceAlbum?: string;
+  trashed?: boolean;
+  sort?: PhotoSort;
+  limit?: number;
+  cursor?: string;
 };

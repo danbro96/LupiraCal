@@ -6,6 +6,6 @@
  */
 
 export type GetChangesParams = {
-since?: string;
-limit?: number;
+  since?: string;
+  limit?: number;
 };

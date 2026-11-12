@@ -6,5 +6,5 @@
  */
 
 export type GetContactCirclesParams = {
-focusId?: string;
+  focusId?: string;
 };

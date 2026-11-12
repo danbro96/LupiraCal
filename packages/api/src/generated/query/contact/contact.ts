@@ -158,6 +158,7 @@ export type GetMeQueryResult = NonNullable<Awaited<ReturnType<typeof getMe>>>
 export type GetMeQueryError = ProblemDetails
 
 
+/** @summary The caller's resolved local identity (JIT-provisioned on first login). While no contact is linked, one carrying the login email in a readable book is linked. */
 export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -168,6 +169,7 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Pro
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary The caller's resolved local identity (JIT-provisioned on first login). While no contact is linked, one carrying the login email in a readable book is linked. */
 export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -178,14 +180,12 @@ export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = Pro
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary The caller's resolved local identity (JIT-provisioned on first login). While no contact is linked, one carrying the login email in a readable book is linked. */
 export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary The caller's resolved local identity (JIT-provisioned on first login). While no contact is linked, one carrying the login email in a readable book is linked.
- */
-
+/** @summary The caller's resolved local identity (JIT-provisioned on first login). While no contact is linked, one carrying the login email in a readable book is linked. */
 export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -263,9 +263,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ContactBootstrapMeMutationError = ProblemDetails
 
 
-    /**
- * @summary Idempotently ensure the caller has a personal address book and a linked contact of its own (one carrying the login email in a readable book, else a new one in the personal book); returns all accessible books.
- */
+    /** @summary Idempotently ensure the caller has a personal address book and a linked contact of its own (one carrying the login email in a readable book, else a new one in the personal book); returns all accessible books. */
 export const useContactBootstrapMe = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof contactBootstrapMe>>, TError,void, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -350,9 +348,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetMyContactMutationError = ProblemDetails
     export type SetMyContactMutationVariables = {data: SetMyContactRequest}
 
-    /**
- * @summary Link the caller's identity to its own contact ("this card is me") — the default focus for contact circles.
- */
+    /** @summary Link the caller's identity to its own contact ("this card is me") — the default focus for contact circles. */
 export const useSetMyContact = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setMyContact>>, TError,SetMyContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -418,6 +414,7 @@ export type ListAddressBooksQueryResult = NonNullable<Awaited<ReturnType<typeof 
 export type ListAddressBooksQueryError = ProblemDetails
 
 
+/** @summary List the address books the caller can access. */
 export function useListAddressBooks<TData = Awaited<ReturnType<typeof listAddressBooks>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAddressBooks>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -428,6 +425,7 @@ export function useListAddressBooks<TData = Awaited<ReturnType<typeof listAddres
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List the address books the caller can access. */
 export function useListAddressBooks<TData = Awaited<ReturnType<typeof listAddressBooks>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAddressBooks>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -438,14 +436,12 @@ export function useListAddressBooks<TData = Awaited<ReturnType<typeof listAddres
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List the address books the caller can access. */
 export function useListAddressBooks<TData = Awaited<ReturnType<typeof listAddressBooks>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAddressBooks>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List the address books the caller can access.
- */
-
+/** @summary List the address books the caller can access. */
 export function useListAddressBooks<TData = Awaited<ReturnType<typeof listAddressBooks>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAddressBooks>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -537,9 +533,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateAddressBookMutationError = ProblemDetails
     export type CreateAddressBookMutationVariables = {data: CreateAddressBookRequest}
 
-    /**
- * @summary Create an address book; the caller becomes its owner.
- */
+    /** @summary Create an address book; the caller becomes its owner. */
 export const useCreateAddressBook = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAddressBook>>, TError,CreateAddressBookMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -625,9 +619,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type UpdateAddressBookMutationError = ProblemDetails
     export type UpdateAddressBookMutationVariables = {addressBookId: string;data: UpdateAddressBookRequest}
 
-    /**
- * @summary Rename an address book or change its display name (owner only; merge — omitted fields are kept).
- */
+    /** @summary Rename an address book or change its display name (owner only; merge — omitted fields are kept). */
 export const useUpdateAddressBook = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAddressBook>>, TError,UpdateAddressBookMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -698,9 +690,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteAddressBookMutationError = ProblemDetails
     export type DeleteAddressBookMutationVariables = {addressBookId: string}
 
-    /**
- * @summary Delete an empty address book (owner only). 409 if it still holds contacts or groups, or is the personal book.
- */
+    /** @summary Delete an empty address book (owner only). 409 if it still holds contacts or groups, or is the personal book. */
 export const useDeleteAddressBook = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAddressBook>>, TError,DeleteAddressBookMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -766,6 +756,7 @@ export type ListAddressBookOwnersQueryResult = NonNullable<Awaited<ReturnType<ty
 export type ListAddressBookOwnersQueryError = ProblemDetails
 
 
+/** @summary List who has access to an address book and at what level (owner only). */
 export function useListAddressBookOwners<TData = Awaited<ReturnType<typeof listAddressBookOwners>>, TError = ProblemDetails>(
  addressBookId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAddressBookOwners>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -776,6 +767,7 @@ export function useListAddressBookOwners<TData = Awaited<ReturnType<typeof listA
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List who has access to an address book and at what level (owner only). */
 export function useListAddressBookOwners<TData = Awaited<ReturnType<typeof listAddressBookOwners>>, TError = ProblemDetails>(
  addressBookId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAddressBookOwners>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -786,14 +778,12 @@ export function useListAddressBookOwners<TData = Awaited<ReturnType<typeof listA
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List who has access to an address book and at what level (owner only). */
 export function useListAddressBookOwners<TData = Awaited<ReturnType<typeof listAddressBookOwners>>, TError = ProblemDetails>(
  addressBookId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAddressBookOwners>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List who has access to an address book and at what level (owner only).
- */
-
+/** @summary List who has access to an address book and at what level (owner only). */
 export function useListAddressBookOwners<TData = Awaited<ReturnType<typeof listAddressBookOwners>>, TError = ProblemDetails>(
  addressBookId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAddressBookOwners>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -886,9 +876,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type GrantAddressBookOwnerMutationError = ProblemDetails
     export type GrantAddressBookOwnerMutationVariables = {addressBookId: string;data: GrantOwnerRequest}
 
-    /**
- * @summary Grant a member access to an address book (access = owner|read-write|read; default owner).
- */
+    /** @summary Grant a member access to an address book (access = owner|read-write|read; default owner). */
 export const useGrantAddressBookOwner = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof grantAddressBookOwner>>, TError,GrantAddressBookOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -968,9 +956,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RevokeAddressBookOwnerMutationError = ProblemDetails
     export type RevokeAddressBookOwnerMutationVariables = {addressBookId: string;params: RevokeAddressBookOwnerParams}
 
-    /**
- * @summary Revoke a member's access to an address book (by email). 409 if it would remove the last owner.
- */
+    /** @summary Revoke a member's access to an address book (by email). 409 if it would remove the last owner. */
 export const useRevokeAddressBookOwner = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeAddressBookOwner>>, TError,RevokeAddressBookOwnerMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1043,6 +1029,7 @@ export type SearchContactsQueryResult = NonNullable<Awaited<ReturnType<typeof se
 export type SearchContactsQueryError = ProblemDetails
 
 
+/** @summary Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive). */
 export function useSearchContacts<TData = Awaited<ReturnType<typeof searchContacts>>, TError = ProblemDetails>(
  params: undefined |  SearchContactsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchContacts>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1053,6 +1040,7 @@ export function useSearchContacts<TData = Awaited<ReturnType<typeof searchContac
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive). */
 export function useSearchContacts<TData = Awaited<ReturnType<typeof searchContacts>>, TError = ProblemDetails>(
  params?: SearchContactsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchContacts>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1063,14 +1051,12 @@ export function useSearchContacts<TData = Awaited<ReturnType<typeof searchContac
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive). */
 export function useSearchContacts<TData = Awaited<ReturnType<typeof searchContacts>>, TError = ProblemDetails>(
  params?: SearchContactsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchContacts>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive).
- */
-
+/** @summary Search contacts by name: every query word is a name part, or the name text contains the query (case/diacritic-insensitive). */
 export function useSearchContacts<TData = Awaited<ReturnType<typeof searchContacts>>, TError = ProblemDetails>(
  params?: SearchContactsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof searchContacts>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -1162,9 +1148,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateContactMutationError = ProblemDetails
     export type CreateContactMutationVariables = {data: CreateContactRequest}
 
-    /**
- * @summary Create a contact.
- */
+    /** @summary Create a contact. */
 export const useCreateContact = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContact>>, TError,CreateContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1249,9 +1233,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ReadContactDraftsMutationError = ProblemDetails
     export type ReadContactDraftsMutationVariables = {data: string}
 
-    /**
- * @summary Reads a contacts file into contact drafts without saving them. The body is the file as shared from a phone (one or more contacts, max 5 MB). Each draft maps onto the create request; send its sourceKey along so importing the same file again creates nothing new.
- */
+    /** @summary Reads a contacts file into contact drafts without saving them. The body is the file as shared from a phone (one or more contacts, max 5 MB). Each draft maps onto the create request; send its sourceKey along so importing the same file again creates nothing new. */
 export const useReadContactDrafts = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof readContactDrafts>>, TError,ReadContactDraftsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1317,6 +1299,7 @@ export type GetContactQueryResult = NonNullable<Awaited<ReturnType<typeof getCon
 export type GetContactQueryError = ProblemDetails
 
 
+/** @summary Get a single contact. */
 export function useGetContact<TData = Awaited<ReturnType<typeof getContact>>, TError = ProblemDetails>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContact>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1327,6 +1310,7 @@ export function useGetContact<TData = Awaited<ReturnType<typeof getContact>>, TE
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get a single contact. */
 export function useGetContact<TData = Awaited<ReturnType<typeof getContact>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContact>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1337,14 +1321,12 @@ export function useGetContact<TData = Awaited<ReturnType<typeof getContact>>, TE
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Get a single contact. */
 export function useGetContact<TData = Awaited<ReturnType<typeof getContact>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContact>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Get a single contact.
- */
-
+/** @summary Get a single contact. */
 export function useGetContact<TData = Awaited<ReturnType<typeof getContact>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContact>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -1437,9 +1419,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ReviseContactMutationError = ProblemDetails
     export type ReviseContactMutationVariables = {id: string;data: ReviseContactRequest}
 
-    /**
- * @summary Update a contact (merge — provided fields overwrite/append, unmentioned fields are kept).
- */
+    /** @summary Update a contact (merge — provided fields overwrite/append, unmentioned fields are kept). */
 export const useReviseContact = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseContact>>, TError,ReviseContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1510,9 +1490,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteContactMutationError = ProblemDetails
     export type DeleteContactMutationVariables = {id: string}
 
-    /**
- * @summary Delete a contact (soft delete + tombstone). 409 if it is a member's own contact.
- */
+    /** @summary Delete a contact (soft delete + tombstone). 409 if it is a member's own contact. */
 export const useDeleteContact = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContact>>, TError,DeleteContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1598,9 +1576,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type MoveContactMutationError = ProblemDetails
     export type MoveContactMutationVariables = {id: string;data: MoveContactRequest}
 
-    /**
- * @summary Move a contact to another address book, keeping its id (so relations, group memberships and links to it survive), content and ETag. Needs write access to both books; moving it to its current book is a no-op. The sync feed reports it deleted to readers of the old book and changed to readers of the new one.
- */
+    /** @summary Move a contact to another address book, keeping its id (so relations, group memberships and links to it survive), content and ETag. Needs write access to both books; moving it to its current book is a no-op. The sync feed reports it deleted to readers of the old book and changed to readers of the new one. */
 export const useMoveContact = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveContact>>, TError,MoveContactMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1673,6 +1649,7 @@ export type GetContactCirclesQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type GetContactCirclesQueryError = ProblemDetails
 
 
+/** @summary Computed social circles (close family, extended family, friends, colleagues, household) around a focus contact — the caller's own linked contact unless focusId overrides. Degree is a closeness bucket (1 immediate, 2 two-generation kin, 3 cousin). Ended relations are excluded. */
 export function useGetContactCircles<TData = Awaited<ReturnType<typeof getContactCircles>>, TError = ProblemDetails>(
  params: undefined |  GetContactCirclesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactCircles>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -1683,6 +1660,7 @@ export function useGetContactCircles<TData = Awaited<ReturnType<typeof getContac
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Computed social circles (close family, extended family, friends, colleagues, household) around a focus contact — the caller's own linked contact unless focusId overrides. Degree is a closeness bucket (1 immediate, 2 two-generation kin, 3 cousin). Ended relations are excluded. */
 export function useGetContactCircles<TData = Awaited<ReturnType<typeof getContactCircles>>, TError = ProblemDetails>(
  params?: GetContactCirclesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactCircles>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -1693,14 +1671,12 @@ export function useGetContactCircles<TData = Awaited<ReturnType<typeof getContac
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Computed social circles (close family, extended family, friends, colleagues, household) around a focus contact — the caller's own linked contact unless focusId overrides. Degree is a closeness bucket (1 immediate, 2 two-generation kin, 3 cousin). Ended relations are excluded. */
 export function useGetContactCircles<TData = Awaited<ReturnType<typeof getContactCircles>>, TError = ProblemDetails>(
  params?: GetContactCirclesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactCircles>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Computed social circles (close family, extended family, friends, colleagues, household) around a focus contact — the caller's own linked contact unless focusId overrides. Degree is a closeness bucket (1 immediate, 2 two-generation kin, 3 cousin). Ended relations are excluded.
- */
-
+/** @summary Computed social circles (close family, extended family, friends, colleagues, household) around a focus contact — the caller's own linked contact unless focusId overrides. Degree is a closeness bucket (1 immediate, 2 two-generation kin, 3 cousin). Ended relations are excluded. */
 export function useGetContactCircles<TData = Awaited<ReturnType<typeof getContactCircles>>, TError = ProblemDetails>(
  params?: GetContactCirclesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactCircles>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -1793,9 +1769,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type MarkContactDeceasedMutationError = ProblemDetails
     export type MarkContactDeceasedMutationVariables = {id: string;data: SetDeceasedRequest}
 
-    /**
- * @summary Mark a contact as deceased (idempotent; the date may be unknown). Deceased contacts stay in the kinship graph — death is not deletion.
- */
+    /** @summary Mark a contact as deceased (idempotent; the date may be unknown). Deceased contacts stay in the kinship graph — death is not deletion. */
 export const useMarkContactDeceased = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof markContactDeceased>>, TError,MarkContactDeceasedMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1875,9 +1849,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ClearContactDeceasedMutationError = ProblemDetails
     export type ClearContactDeceasedMutationVariables = {id: string;params?: ClearContactDeceasedParams}
 
-    /**
- * @summary Undo a deceased marking recorded in error — the only way to clear it.
- */
+    /** @summary Undo a deceased marking recorded in error — the only way to clear it. */
 export const useClearContactDeceased = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearContactDeceased>>, TError,ClearContactDeceasedMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -1963,9 +1935,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetContactProfilesMutationError = ProblemDetails
     export type SetContactProfilesMutationVariables = {id: string;data: SetContactProfilesRequest}
 
-    /**
- * @summary Replace the contact's social/IM handles wholesale. Service names are canonicalized; well-known services (telegram, messenger, whatsapp…) get the profile URL derived from the handle. At most one preferred handle per service.
- */
+    /** @summary Replace the contact's social/IM handles wholesale. Service names are canonicalized; well-known services (telegram, messenger, whatsapp…) get the profile URL derived from the handle. At most one preferred handle per service. */
 export const useSetContactProfiles = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactProfiles>>, TError,SetContactProfilesMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2051,9 +2021,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetEmergencyContactsMutationError = ProblemDetails
     export type SetEmergencyContactsMutationVariables = {id: string;data: SetEmergencyContactsRequest}
 
-    /**
- * @summary Replace the contact's emergency-contact designation wholesale (order = priority, empty clears). A designation, not a relation kind — your emergency contact is usually also a spouse or friend.
- */
+    /** @summary Replace the contact's emergency-contact designation wholesale (order = priority, empty clears). A designation, not a relation kind — your emergency contact is usually also a spouse or friend. */
 export const useSetEmergencyContacts = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setEmergencyContacts>>, TError,SetEmergencyContactsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2139,9 +2107,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetContactChannelsMutationError = ProblemDetails
     export type SetContactChannelsMutationVariables = {id: string;data: SetContactChannelsRequest}
 
-    /**
- * @summary Replace the contact's reach channels (emails + phones) wholesale (empty clears). Unlike the merge update, this can remove a channel; values are trimmed, type tokens lowercased, duplicates dropped, at most one preferred per medium.
- */
+    /** @summary Replace the contact's reach channels (emails + phones) wholesale (empty clears). Unlike the merge update, this can remove a channel; values are trimmed, type tokens lowercased, duplicates dropped, at most one preferred per medium. */
 export const useSetContactChannels = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactChannels>>, TError,SetContactChannelsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2227,9 +2193,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetContactTagsMutationError = ProblemDetails
     export type SetContactTagsMutationVariables = {id: string;data: SetContactTagsRequest}
 
-    /**
- * @summary Replace the contact's tags wholesale (empty clears). Unlike the merge update, this can remove a tag; entries are trimmed and de-duplicated case-insensitively.
- */
+    /** @summary Replace the contact's tags wholesale (empty clears). Unlike the merge update, this can remove a tag; entries are trimmed and de-duplicated case-insensitively. */
 export const useSetContactTags = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setContactTags>>, TError,SetContactTagsMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2306,6 +2270,7 @@ export type ListContactRelationsQueryResult = NonNullable<Awaited<ReturnType<typ
 export type ListContactRelationsQueryError = ProblemDetails
 
 
+/** @summary The contact's relationships, identical whichever side stores them: each entry's kind is the other contact's role relative to this one and its label this contact's own name for them. Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred. */
 export function useListContactRelations<TData = Awaited<ReturnType<typeof listContactRelations>>, TError = ProblemDetails>(
  id: string,
     params: undefined |  ListContactRelationsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactRelations>>, TError, TData>> & Pick<
@@ -2317,6 +2282,7 @@ export function useListContactRelations<TData = Awaited<ReturnType<typeof listCo
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary The contact's relationships, identical whichever side stores them: each entry's kind is the other contact's role relative to this one and its label this contact's own name for them. Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred. */
 export function useListContactRelations<TData = Awaited<ReturnType<typeof listContactRelations>>, TError = ProblemDetails>(
  id: string,
     params?: ListContactRelationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactRelations>>, TError, TData>> & Pick<
@@ -2328,15 +2294,13 @@ export function useListContactRelations<TData = Awaited<ReturnType<typeof listCo
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary The contact's relationships, identical whichever side stores them: each entry's kind is the other contact's role relative to this one and its label this contact's own name for them. Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred. */
 export function useListContactRelations<TData = Awaited<ReturnType<typeof listContactRelations>>, TError = ProblemDetails>(
  id: string,
     params?: ListContactRelationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactRelations>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary The contact's relationships, identical whichever side stores them: each entry's kind is the other contact's role relative to this one and its label this contact's own name for them. Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred.
- */
-
+/** @summary The contact's relationships, identical whichever side stores them: each entry's kind is the other contact's role relative to this one and its label this contact's own name for them. Set includeInferred=true to also return kin derived from the parent/child graph (siblings, grandparents/-children, aunts/uncles, cousins, nieces/nephews), tagged Provenance=Inferred. */
 export function useListContactRelations<TData = Awaited<ReturnType<typeof listContactRelations>>, TError = ProblemDetails>(
  id: string,
     params?: ListContactRelationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactRelations>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
@@ -2430,9 +2394,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AddContactRelationMutationError = ProblemDetails
     export type AddContactRelationMutationVariables = {id: string;data: AddContactRelationRequest}
 
-    /**
- * @summary Upsert a relationship from either side: 'toContactId is this contact's kind'. The label is this contact's own name for the other; since and note are shared. Re-adding revises it and revives an ended one.
- */
+    /** @summary Upsert a relationship from either side: 'toContactId is this contact's kind'. The label is this contact's own name for the other; since and note are shared. Re-adding revises it and revives an ended one. */
 export const useAddContactRelation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactRelation>>, TError,AddContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2514,9 +2476,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveContactRelationMutationError = ProblemDetails
     export type RemoveContactRelationMutationVariables = {id: string;toContactId: string;params: RemoveContactRelationParams}
 
-    /**
- * @summary Remove a relationship entered by mistake, from either side. A relationship that ran its course should be ended instead.
- */
+    /** @summary Remove a relationship entered by mistake, from either side. A relationship that ran its course should be ended instead. */
 export const useRemoveContactRelation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactRelation>>, TError,RemoveContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2604,9 +2564,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type EndContactRelationMutationError = ProblemDetails
     export type EndContactRelationMutationVariables = {id: string;toContactId: string;data: EndContactRelationRequest}
 
-    /**
- * @summary Mark a relationship as ended, from either side (ex-spouse, falling-out): it stays, flagged with an optional end date, and no longer asserts current kinship. Re-adding it revives it.
- */
+    /** @summary Mark a relationship as ended, from either side (ex-spouse, falling-out): it stays, flagged with an optional end date, and no longer asserts current kinship. Re-adding it revives it. */
 export const useEndContactRelation = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endContactRelation>>, TError,EndContactRelationMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2672,6 +2630,7 @@ export type ListContactGroupsQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type ListContactGroupsQueryError = ProblemDetails
 
 
+/** @summary List groups (personal groupings + organizations) in an address book. */
 export function useListContactGroups<TData = Awaited<ReturnType<typeof listContactGroups>>, TError = ProblemDetails>(
  addressBookId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactGroups>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -2682,6 +2641,7 @@ export function useListContactGroups<TData = Awaited<ReturnType<typeof listConta
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List groups (personal groupings + organizations) in an address book. */
 export function useListContactGroups<TData = Awaited<ReturnType<typeof listContactGroups>>, TError = ProblemDetails>(
  addressBookId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactGroups>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -2692,14 +2652,12 @@ export function useListContactGroups<TData = Awaited<ReturnType<typeof listConta
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List groups (personal groupings + organizations) in an address book. */
 export function useListContactGroups<TData = Awaited<ReturnType<typeof listContactGroups>>, TError = ProblemDetails>(
  addressBookId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactGroups>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List groups (personal groupings + organizations) in an address book.
- */
-
+/** @summary List groups (personal groupings + organizations) in an address book. */
 export function useListContactGroups<TData = Awaited<ReturnType<typeof listContactGroups>>, TError = ProblemDetails>(
  addressBookId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactGroups>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -2786,9 +2744,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type CreateContactGroupMutationError = ProblemDetails
     export type CreateContactGroupMutationVariables = {addressBookId: string;params: CreateContactGroupParams}
 
-    /**
- * @summary Create a group. kind = group|organization (an employer is an organization-kind group).
- */
+    /** @summary Create a group. kind = group|organization (an employer is an organization-kind group). */
 export const useCreateContactGroup = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createContactGroup>>, TError,CreateContactGroupMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2868,9 +2824,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RenameContactGroupMutationError = ProblemDetails
     export type RenameContactGroupMutationVariables = {groupId: string;params: RenameContactGroupParams}
 
-    /**
- * @summary Rename a group.
- */
+    /** @summary Rename a group. */
 export const useRenameContactGroup = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renameContactGroup>>, TError,RenameContactGroupMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -2941,9 +2895,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type DeleteContactGroupMutationError = ProblemDetails
     export type DeleteContactGroupMutationVariables = {groupId: string}
 
-    /**
- * @summary Delete a group.
- */
+    /** @summary Delete a group. */
 export const useDeleteContactGroup = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteContactGroup>>, TError,DeleteContactGroupMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3023,9 +2975,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AddContactGroupMemberMutationError = ProblemDetails
     export type AddContactGroupMemberMutationVariables = {groupId: string;params: AddContactGroupMemberParams}
 
-    /**
- * @summary Add a contact to a group; for an organization, role is the title held there (re-adding updates it).
- */
+    /** @summary Add a contact to a group; for an organization, role is the title held there (re-adding updates it). */
 export const useAddContactGroupMember = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addContactGroupMember>>, TError,AddContactGroupMemberMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3098,9 +3048,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveContactGroupMemberMutationError = ProblemDetails
     export type RemoveContactGroupMemberMutationVariables = {groupId: string;contactId: string}
 
-    /**
- * @summary Remove a contact from a group.
- */
+    /** @summary Remove a contact from a group. */
 export const useRemoveContactGroupMember = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeContactGroupMember>>, TError,RemoveContactGroupMemberMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3166,6 +3114,7 @@ export type ListRelationshipsQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type ListRelationshipsQueryError = ProblemDetails
 
 
+/** @summary Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact. */
 export function useListRelationships<TData = Awaited<ReturnType<typeof listRelationships>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3176,6 +3125,7 @@ export function useListRelationships<TData = Awaited<ReturnType<typeof listRelat
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact. */
 export function useListRelationships<TData = Awaited<ReturnType<typeof listRelationships>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3186,14 +3136,12 @@ export function useListRelationships<TData = Awaited<ReturnType<typeof listRelat
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact. */
 export function useListRelationships<TData = Awaited<ReturnType<typeof listRelationships>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact.
- */
-
+/** @summary Every relationship whose two contacts the caller can read. Per contact, GET /contacts/{id}/relations gives the view from that contact. */
 export function useListRelationships<TData = Awaited<ReturnType<typeof listRelationships>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRelationships>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -3266,6 +3214,7 @@ export type ListContactResidenciesQueryResult = NonNullable<Awaited<ReturnType<t
 export type ListContactResidenciesQueryError = ProblemDetails
 
 
+/** @summary Where the contact lives, holidays and works: current residencies first, then the most recent move-in first. */
 export function useListContactResidencies<TData = Awaited<ReturnType<typeof listContactResidencies>>, TError = ProblemDetails>(
  id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3276,6 +3225,7 @@ export function useListContactResidencies<TData = Awaited<ReturnType<typeof list
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Where the contact lives, holidays and works: current residencies first, then the most recent move-in first. */
 export function useListContactResidencies<TData = Awaited<ReturnType<typeof listContactResidencies>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3286,14 +3236,12 @@ export function useListContactResidencies<TData = Awaited<ReturnType<typeof list
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Where the contact lives, holidays and works: current residencies first, then the most recent move-in first. */
 export function useListContactResidencies<TData = Awaited<ReturnType<typeof listContactResidencies>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Where the contact lives, holidays and works: current residencies first, then the most recent move-in first.
- */
-
+/** @summary Where the contact lives, holidays and works: current residencies first, then the most recent move-in first. */
 export function useListContactResidencies<TData = Awaited<ReturnType<typeof listContactResidencies>>, TError = ProblemDetails>(
  id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listContactResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -3386,9 +3334,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AddResidencyMutationError = ProblemDetails
     export type AddResidencyMutationVariables = {id: string;data: ResidencyRequest}
 
-    /**
- * @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place. Repeating a create with the same sourceKey returns the same residency.
- */
+    /** @summary Start a residency at a LupiraGeoApi place (resolve the address there first — no free text). Refused when it overlaps another of the contact's residencies at the same place. Repeating a create with the same sourceKey returns the same residency. */
 export const useAddResidency = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addResidency>>, TError,AddResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3474,9 +3420,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ReviseResidencyMutationError = ProblemDetails
     export type ReviseResidencyMutationVariables = {id: string;data: ResidencyRequest}
 
-    /**
- * @summary Correct a residency as entered: place, type, label and period, wholesale. A move is told with move-out or POST /moves instead.
- */
+    /** @summary Correct a residency as entered: place, type, label and period, wholesale. A move is told with move-out or POST /moves instead. */
 export const useReviseResidency = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviseResidency>>, TError,ReviseResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3547,9 +3491,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveResidencyMutationError = ProblemDetails
     export type RemoveResidencyMutationVariables = {id: string}
 
-    /**
- * @summary Erase a residency entered by mistake. One that ended should be moved out of instead.
- */
+    /** @summary Erase a residency entered by mistake. One that ended should be moved out of instead. */
 export const useRemoveResidency = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeResidency>>, TError,RemoveResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3635,9 +3577,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type MoveOutOfResidencyMutationError = ProblemDetails
     export type MoveOutOfResidencyMutationVariables = {id: string;data: MoveOutRequest}
 
-    /**
- * @summary End a residency: the contact moved out on the given date (a year, year-month, or day).
- */
+    /** @summary End a residency: the contact moved out on the given date (a year, year-month, or day). */
 export const useMoveOutOfResidency = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof moveOutOfResidency>>, TError,MoveOutOfResidencyMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3703,6 +3643,7 @@ export type ListResidenciesQueryResult = NonNullable<Awaited<ReturnType<typeof l
 export type ListResidenciesQueryError = ProblemDetails
 
 
+/** @summary Every residency of a contact the caller can read — who lives, holidays and works where. */
 export function useListResidencies<TData = Awaited<ReturnType<typeof listResidencies>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3713,6 +3654,7 @@ export function useListResidencies<TData = Awaited<ReturnType<typeof listResiden
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every residency of a contact the caller can read — who lives, holidays and works where. */
 export function useListResidencies<TData = Awaited<ReturnType<typeof listResidencies>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3723,14 +3665,12 @@ export function useListResidencies<TData = Awaited<ReturnType<typeof listResiden
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every residency of a contact the caller can read — who lives, holidays and works where. */
 export function useListResidencies<TData = Awaited<ReturnType<typeof listResidencies>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Every residency of a contact the caller can read — who lives, holidays and works where.
- */
-
+/** @summary Every residency of a contact the caller can read — who lives, holidays and works where. */
 export function useListResidencies<TData = Awaited<ReturnType<typeof listResidencies>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResidencies>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -3822,9 +3762,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RecordMoveMutationError = ProblemDetails
     export type RecordMoveMutationVariables = {data: MoveRequest}
 
-    /**
- * @summary Several contacts move together: each one's current residencies at fromPlaceId end on movedIn, and a residency at toPlaceId starts then. All or nothing. Returns the new residencies.
- */
+    /** @summary Several contacts move together: each one's current residencies at fromPlaceId end on movedIn, and a residency at toPlaceId starts then. All or nothing. Returns the new residencies. */
 export const useRecordMove = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recordMove>>, TError,RecordMoveMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -3890,6 +3828,7 @@ export type GetPlaceEntryQueryResult = NonNullable<Awaited<ReturnType<typeof get
 export type GetPlaceEntryQueryError = ProblemDetails
 
 
+/** @summary The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404. */
 export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry>>, TError = ProblemDetails>(
  placeId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -3900,6 +3839,7 @@ export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404. */
 export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry>>, TError = ProblemDetails>(
  placeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -3910,14 +3850,12 @@ export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404. */
 export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry>>, TError = ProblemDetails>(
  placeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404.
- */
-
+/** @summary The door and gate codes at a place. Visible while the caller can read a contact currently living there; otherwise 404. */
 export function useGetPlaceEntry<TData = Awaited<ReturnType<typeof getPlaceEntry>>, TError = ProblemDetails>(
  placeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntry>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4012,9 +3950,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type SetEntryCodeMutationError = ProblemDetails
     export type SetEntryCodeMutationVariables = {placeId: string;codeId: string;data: SetEntryCodeRequest}
 
-    /**
- * @summary Add or replace a code (the client mints codeId). Needs write on a contact currently living there.
- */
+    /** @summary Add or replace a code (the client mints codeId). Needs write on a contact currently living there. */
 export const useSetEntryCode = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setEntryCode>>, TError,SetEntryCodeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -4087,9 +4023,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type RemoveEntryCodeMutationError = ProblemDetails
     export type RemoveEntryCodeMutationVariables = {placeId: string;codeId: string}
 
-    /**
- * @summary Remove a code. Needs write on a contact currently living there.
- */
+    /** @summary Remove a code. Needs write on a contact currently living there. */
 export const useRemoveEntryCode = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeEntryCode>>, TError,RemoveEntryCodeMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<
@@ -4162,6 +4096,7 @@ export type GetContactChangesQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type GetContactChangesQueryError = ProblemDetails
 
 
+/** @summary Contacts for offline mirrors: every contact the caller can read that changed since the cursor, with its section guards, plus tombstone ids for contacts deleted or no longer readable (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContactChanges>>, TError = ProblemDetails>(
  params: undefined |  GetContactChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4172,6 +4107,7 @@ export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContac
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Contacts for offline mirrors: every contact the caller can read that changed since the cursor, with its section guards, plus tombstone ids for contacts deleted or no longer readable (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContactChanges>>, TError = ProblemDetails>(
  params?: GetContactChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4182,14 +4118,12 @@ export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContac
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Contacts for offline mirrors: every contact the caller can read that changed since the cursor, with its section guards, plus tombstone ids for contacts deleted or no longer readable (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContactChanges>>, TError = ProblemDetails>(
  params?: GetContactChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Contacts for offline mirrors: every contact the caller can read that changed since the cursor, with its section guards, plus tombstone ids for contacts deleted or no longer readable (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
- */
-
+/** @summary Contacts for offline mirrors: every contact the caller can read that changed since the cursor, with its section guards, plus tombstone ids for contacts deleted or no longer readable (incl. moved to an unreadable address book). Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetContactChanges<TData = Awaited<ReturnType<typeof getContactChanges>>, TError = ProblemDetails>(
  params?: GetContactChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4269,6 +4203,7 @@ export type ContactGetChangesQueryResult = NonNullable<Awaited<ReturnType<typeof
 export type ContactGetChangesQueryError = ProblemDetails
 
 
+/** @summary Same feed as GET /sync/contacts, kept for existing installs. */
 export function useContactGetChanges<TData = Awaited<ReturnType<typeof contactGetChanges>>, TError = ProblemDetails>(
  params: undefined |  ContactGetChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof contactGetChanges>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4279,6 +4214,7 @@ export function useContactGetChanges<TData = Awaited<ReturnType<typeof contactGe
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Same feed as GET /sync/contacts, kept for existing installs. */
 export function useContactGetChanges<TData = Awaited<ReturnType<typeof contactGetChanges>>, TError = ProblemDetails>(
  params?: ContactGetChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof contactGetChanges>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4289,14 +4225,12 @@ export function useContactGetChanges<TData = Awaited<ReturnType<typeof contactGe
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Same feed as GET /sync/contacts, kept for existing installs. */
 export function useContactGetChanges<TData = Awaited<ReturnType<typeof contactGetChanges>>, TError = ProblemDetails>(
  params?: ContactGetChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof contactGetChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Same feed as GET /sync/contacts, kept for existing installs.
- */
-
+/** @summary Same feed as GET /sync/contacts, kept for existing installs. */
 export function useContactGetChanges<TData = Awaited<ReturnType<typeof contactGetChanges>>, TError = ProblemDetails>(
  params?: ContactGetChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof contactGetChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4376,6 +4310,7 @@ export type GetRelationshipChangesQueryResult = NonNullable<Awaited<ReturnType<t
 export type GetRelationshipChangesQueryError = ProblemDetails
 
 
+/** @summary Relationships for offline mirrors: those whose two contacts the caller can read that changed since the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(
  params: undefined |  GetRelationshipChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4386,6 +4321,7 @@ export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getR
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Relationships for offline mirrors: those whose two contacts the caller can read that changed since the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(
  params?: GetRelationshipChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4396,14 +4332,12 @@ export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getR
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Relationships for offline mirrors: those whose two contacts the caller can read that changed since the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(
  params?: GetRelationshipChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Relationships for offline mirrors: those whose two contacts the caller can read that changed since the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
- */
-
+/** @summary Relationships for offline mirrors: those whose two contacts the caller can read that changed since the cursor (directly, or through a contact on them), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetRelationshipChanges<TData = Awaited<ReturnType<typeof getRelationshipChanges>>, TError = ProblemDetails>(
  params?: GetRelationshipChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRelationshipChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4483,6 +4417,7 @@ export type GetResidencyChangesQueryResult = NonNullable<Awaited<ReturnType<type
 export type GetResidencyChangesQueryError = ProblemDetails
 
 
+/** @summary Residencies for offline mirrors: those of contacts the caller can read that changed since the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(
  params: undefined |  GetResidencyChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4493,6 +4428,7 @@ export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResi
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Residencies for offline mirrors: those of contacts the caller can read that changed since the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(
  params?: GetResidencyChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4503,14 +4439,12 @@ export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResi
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Residencies for offline mirrors: those of contacts the caller can read that changed since the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(
  params?: GetResidencyChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Residencies for offline mirrors: those of contacts the caller can read that changed since the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
- */
-
+/** @summary Residencies for offline mirrors: those of contacts the caller can read that changed since the cursor (directly, or through their contact), plus tombstone ids for removed or no-longer-visible ones. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetResidencyChanges<TData = Awaited<ReturnType<typeof getResidencyChanges>>, TError = ProblemDetails>(
  params?: GetResidencyChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getResidencyChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4590,6 +4524,7 @@ export type GetPlaceEntryChangesQueryResult = NonNullable<Awaited<ReturnType<typ
 export type GetPlaceEntryChangesQueryError = ProblemDetails
 
 
+/** @summary Door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(
  params: undefined |  GetPlaceEntryChangesParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4600,6 +4535,7 @@ export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPla
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(
  params?: GetPlaceEntryChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4610,14 +4546,12 @@ export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPla
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(
  params?: GetPlaceEntryChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first.
- */
-
+/** @summary Door and gate codes for offline mirrors, per place the caller can see a current resident of. Tombstones are place ids no longer visible. Omit since for a full sync; loop while hasMore, persisting cursor between calls. reset = drop the local mirror first. */
 export function useGetPlaceEntryChanges<TData = Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError = ProblemDetails>(
  params?: GetPlaceEntryChangesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPlaceEntryChanges>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4690,6 +4624,7 @@ export type GetAddressBookSnapshotQueryResult = NonNullable<Awaited<ReturnType<t
 export type GetAddressBookSnapshotQueryError = ProblemDetails
 
 
+/** @summary Every address book the caller can read, with their access level. Always a complete snapshot (reset, no cursor): replace the local copy on each call. */
 export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4700,6 +4635,7 @@ export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getA
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every address book the caller can read, with their access level. Always a complete snapshot (reset, no cursor): replace the local copy on each call. */
 export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4710,14 +4646,12 @@ export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getA
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every address book the caller can read, with their access level. Always a complete snapshot (reset, no cursor): replace the local copy on each call. */
 export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Every address book the caller can read, with their access level. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
- */
-
+/** @summary Every address book the caller can read, with their access level. Always a complete snapshot (reset, no cursor): replace the local copy on each call. */
 export function useGetAddressBookSnapshot<TData = Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAddressBookSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4790,6 +4724,7 @@ export type GetContactGroupSnapshotQueryResult = NonNullable<Awaited<ReturnType<
 export type GetContactGroupSnapshotQueryError = ProblemDetails
 
 
+/** @summary Every contact group in an address book the caller can read. Always a complete snapshot (reset, no cursor): replace the local copy on each call. */
 export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4800,6 +4735,7 @@ export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof get
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every contact group in an address book the caller can read. Always a complete snapshot (reset, no cursor): replace the local copy on each call. */
 export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4810,14 +4746,12 @@ export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof get
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Every contact group in an address book the caller can read. Always a complete snapshot (reset, no cursor): replace the local copy on each call. */
 export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Every contact group in an address book the caller can read. Always a complete snapshot (reset, no cursor): replace the local copy on each call.
- */
-
+/** @summary Every contact group in an address book the caller can read. Always a complete snapshot (reset, no cursor): replace the local copy on each call. */
 export function useGetContactGroupSnapshot<TData = Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getContactGroupSnapshot>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -4890,6 +4824,7 @@ export type ContactGetSyncContainersQueryResult = NonNullable<Awaited<ReturnType
 export type ContactGetSyncContainersQueryError = ProblemDetails
 
 
+/** @summary Snapshot of the caller's address books + contact groups for mirror reconciliation (no cursor — fetch once per sync cycle and diff locally). */
 export function useContactGetSyncContainers<TData = Awaited<ReturnType<typeof contactGetSyncContainers>>, TError = ProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof contactGetSyncContainers>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -4900,6 +4835,7 @@ export function useContactGetSyncContainers<TData = Awaited<ReturnType<typeof co
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the caller's address books + contact groups for mirror reconciliation (no cursor — fetch once per sync cycle and diff locally). */
 export function useContactGetSyncContainers<TData = Awaited<ReturnType<typeof contactGetSyncContainers>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof contactGetSyncContainers>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -4910,14 +4846,12 @@ export function useContactGetSyncContainers<TData = Awaited<ReturnType<typeof co
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary Snapshot of the caller's address books + contact groups for mirror reconciliation (no cursor — fetch once per sync cycle and diff locally). */
 export function useContactGetSyncContainers<TData = Awaited<ReturnType<typeof contactGetSyncContainers>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof contactGetSyncContainers>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary Snapshot of the caller's address books + contact groups for mirror reconciliation (no cursor — fetch once per sync cycle and diff locally).
- */
-
+/** @summary Snapshot of the caller's address books + contact groups for mirror reconciliation (no cursor — fetch once per sync cycle and diff locally). */
 export function useContactGetSyncContainers<TData = Awaited<ReturnType<typeof contactGetSyncContainers>>, TError = ProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof contactGetSyncContainers>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient

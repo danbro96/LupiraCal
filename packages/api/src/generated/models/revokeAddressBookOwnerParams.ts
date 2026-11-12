@@ -6,5 +6,5 @@
  */
 
 export type RevokeAddressBookOwnerParams = {
-email: string;
+  email: string;
 };

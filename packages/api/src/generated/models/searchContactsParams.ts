@@ -6,6 +6,6 @@
  */
 
 export type SearchContactsParams = {
-query?: string;
-addressBookId?: string;
+  query?: string;
+  addressBookId?: string;
 };

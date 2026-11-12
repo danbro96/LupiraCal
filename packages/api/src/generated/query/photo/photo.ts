@@ -118,6 +118,7 @@ export type ListPhotosQueryResult = NonNullable<Awaited<ReturnType<typeof listPh
 export type ListPhotosQueryError = ProblemDetails
 
 
+/** @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash. */
 export function useListPhotos<TData = Awaited<ReturnType<typeof listPhotos>>, TError = ProblemDetails>(
  params: undefined |  ListPhotosParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotos>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -128,6 +129,7 @@ export function useListPhotos<TData = Awaited<ReturnType<typeof listPhotos>>, TE
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash. */
 export function useListPhotos<TData = Awaited<ReturnType<typeof listPhotos>>, TError = ProblemDetails>(
  params?: ListPhotosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotos>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -138,14 +140,12 @@ export function useListPhotos<TData = Awaited<ReturnType<typeof listPhotos>>, TE
       >, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/** @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash. */
 export function useListPhotos<TData = Awaited<ReturnType<typeof listPhotos>>, TError = ProblemDetails>(
  params?: ListPhotosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotos>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash.
- */
-
+/** @summary List assets (keyset-paged, newest taken first by default) with presigned thumbnail URLs. trashed=true lists only the trash. */
 export function useListPhotos<TData = Awaited<ReturnType<typeof listPhotos>>, TError = ProblemDetails>(
  params?: ListPhotosParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPhotos>>, TError, TData>>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient
@@ -237,9 +237,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type LookupPhotosMutationError = ProblemDetails
     export type LookupPhotosMutationVariables = {data: LookupPhotosRequest}
 
-    /**
- * @summary Hydrate up to 200 assets by id — turns relation references into renderable items.
- */
+    /** @summary Hydrate up to 200 assets by id — turns relation references into renderable items. */
 export const useLookupPhotos = <TError = ProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof lookupPhotos>>, TError,LookupPhotosMutationVariables, TContext>, request?: SecondParameter<typeof apiRequest>}
  , queryClient?: QueryClient): UseMutationResult<

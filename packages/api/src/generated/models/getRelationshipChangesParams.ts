@@ -6,6 +6,6 @@
  */
 
 export type GetRelationshipChangesParams = {
-since?: string;
-limit?: number;
+  since?: string;
+  limit?: number;
 };

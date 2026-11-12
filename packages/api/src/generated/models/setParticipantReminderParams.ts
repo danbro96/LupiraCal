@@ -6,10 +6,8 @@
  */
 
 export type SetParticipantReminderParams = {
-mode?: string;
-minutesBefore?: number;
-/**
- * @nullable
- */
-occurredAt?: string | null;
+  mode?: string;
+  minutesBefore?: number;
+  /** @nullable */
+  occurredAt?: string | null;
 };

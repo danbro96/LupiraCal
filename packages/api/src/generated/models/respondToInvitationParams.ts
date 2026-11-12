@@ -6,9 +6,7 @@
  */
 
 export type RespondToInvitationParams = {
-status?: string;
-/**
- * @nullable
- */
-occurredAt?: string | null;
+  status?: string;
+  /** @nullable */
+  occurredAt?: string | null;
 };

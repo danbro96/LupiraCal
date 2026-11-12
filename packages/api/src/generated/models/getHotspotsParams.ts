@@ -6,15 +6,11 @@
  */
 
 export type GetHotspotsParams = {
-/**
- * @nullable
- */
-from?: string | null;
-/**
- * @nullable
- */
-to?: string | null;
-calendarId?: string;
-minDays?: number;
-limit?: number;
+  /** @nullable */
+  from?: string | null;
+  /** @nullable */
+  to?: string | null;
+  calendarId?: string;
+  minDays?: number;
+  limit?: number;
 };
