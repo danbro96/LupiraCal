@@ -35,7 +35,7 @@ import { ContactAddressType, DisplayNameFormat, ReachMedium } from '@lupira/cal-
 import { DISPLAY_NAME_FORMAT_LABELS as NAME_FORMAT_LABELS } from '@danbro96/lupira-domain-contacts/contactNames';
 import { visibleTags, withPinPreserved } from '@lupira/cal-domain/contactTiers';
 import { residencySaveError, type ResidencyRowState } from '@lupira/cal-domain/addressDraft';
-import { sortAddresses } from '@lupira/cal-domain/residencyOrder';
+import { residencyPeriodError, sortAddresses } from '@lupira/cal-domain/residencyOrder';
 import { fromStored, type PlaceSelection } from '@lupira/cal-domain/placeSelection';
 import { useInvalidateContacts } from '../../../state/useInvalidate';
 import { AddressForm } from '../places/AddressForm';
@@ -245,7 +245,7 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
       return;
     }
 
-    // Parse before the first write, so an unparseable residency date can't leave the form half-saved.
+    // Check before the first write, so a bad residency date can't leave the form half-saved.
     const cleanAddresses: (AddressValues & { id: string | null })[] = [];
     for (const a of v.addresses) {
       if (!a.place) continue;
@@ -253,6 +253,11 @@ export function ContactEditForm({ contact, residencies, onDone }: { contact: Con
       const movedOut = a.movedOutText.trim() ? parseFuzzyInput(a.movedOutText) : null;
       if ((a.movedInText.trim() && !movedIn) || (a.movedOutText.trim() && !movedOut)) {
         setError('root', { message: 'Residency dates must be YYYY, YYYY-MM, or YYYY-MM-DD.' });
+        return;
+      }
+      const periodError = residencyPeriodError(movedIn, movedOut);
+      if (periodError) {
+        setError('root', { message: periodError });
         return;
       }
       cleanAddresses.push({ id: a.id, placeId: a.place.placeId, type: a.type, label: a.label.trim() || null, movedIn, movedOut });
